@@ -1,0 +1,162 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+usage() {
+  cat <<'EOF'
+Usage: init-project.sh --target <path> [--cursor] [--force] [--dry-run]
+
+Initialize a target project with SDLC-SPDD scaffold files.
+
+Options:
+  --target <path>   Target project path (required)
+  --cursor          Install Cursor command templates
+  --force           Overwrite existing generated files
+  --dry-run         Show actions without writing files
+  --help            Print this help message
+EOF
+}
+
+TARGET=""
+INSTALL_CURSOR=0
+FORCE=0
+DRY_RUN=0
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --target)
+      TARGET="${2:-}"
+      shift 2
+      ;;
+    --cursor)
+      INSTALL_CURSOR=1
+      shift
+      ;;
+    --force)
+      FORCE=1
+      shift
+      ;;
+    --dry-run)
+      DRY_RUN=1
+      shift
+      ;;
+    --help|-h)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown option: $1" >&2
+      usage >&2
+      exit 1
+      ;;
+  esac
+done
+
+if [[ -z "${TARGET}" ]]; then
+  echo "Error: --target is required" >&2
+  usage >&2
+  exit 1
+fi
+
+TARGET="$(cd "${TARGET}" && pwd)"
+
+created=()
+skipped=()
+
+copy_if_missing() {
+  local src="$1"
+  local dest="$2"
+  if [[ -f "${dest}" && "${FORCE}" -eq 0 ]]; then
+    skipped+=("${dest}")
+    return
+  fi
+  if [[ "${DRY_RUN}" -eq 1 ]]; then
+    echo "[dry-run] would copy ${src} -> ${dest}"
+    created+=("${dest}")
+    return
+  fi
+  mkdir -p "$(dirname "${dest}")"
+  cp "${src}" "${dest}"
+  created+=("${dest}")
+}
+
+ensure_dir() {
+  local dir="$1"
+  if [[ "${DRY_RUN}" -eq 1 ]]; then
+    echo "[dry-run] would mkdir -p ${dir}"
+    return
+  fi
+  mkdir -p "${dir}"
+}
+
+ensure_gitkeep() {
+  local dir="$1"
+  local file="${dir}/.gitkeep"
+  if [[ -f "${file}" && "${FORCE}" -eq 0 ]]; then
+    skipped+=("${file}")
+    return
+  fi
+  if [[ "${DRY_RUN}" -eq 1 ]]; then
+    echo "[dry-run] would create ${file}"
+    created+=("${file}")
+    return
+  fi
+  mkdir -p "${dir}"
+  : > "${file}"
+  created+=("${file}")
+}
+
+# Create folder structure
+for dir in \
+  requirements \
+  spdd/canvas \
+  spdd/tasks \
+  spdd/reviews \
+  spdd/sync \
+  agent-context/memory \
+  agent-context/playbooks \
+  agent-context/features \
+  agent-context/harness; do
+  ensure_dir "${TARGET}/${dir}"
+  ensure_gitkeep "${TARGET}/${dir}"
+done
+
+# Copy memory and harness templates
+for file in \
+  project-memory.md \
+  architecture-decisions.md \
+  known-pitfalls.md \
+  reusable-patterns.md; do
+  copy_if_missing \
+    "${REPO_ROOT}/agent-context/memory/${file}" \
+    "${TARGET}/agent-context/memory/${file}"
+done
+
+copy_if_missing \
+  "${REPO_ROOT}/agent-context/harness/quality-gates.md" \
+  "${TARGET}/agent-context/harness/quality-gates.md"
+
+copy_if_missing \
+  "${REPO_ROOT}/agent-context/harness/validation-rules.md" \
+  "${TARGET}/agent-context/harness/validation-rules.md"
+
+if [[ "${INSTALL_CURSOR}" -eq 1 ]]; then
+  if [[ "${DRY_RUN}" -eq 1 ]]; then
+    echo "[dry-run] would install Cursor commands via install-cursor-commands.sh"
+  else
+    "${SCRIPT_DIR}/install-cursor-commands.sh" --target "${TARGET}" $([[ "${FORCE}" -eq 1 ]] && echo --force)
+  fi
+fi
+
+if [[ "${DRY_RUN}" -eq 0 ]]; then
+  "${SCRIPT_DIR}/detect-stack.sh" --target "${TARGET}" || true
+fi
+
+echo "SDLC-SPDD initialization complete for: ${TARGET}"
+echo "Created or updated (${#created[@]}):"
+printf '  %s\n' "${created[@]:-none}"
+echo "Skipped existing (${#skipped[@]}):"
+printf '  %s\n' "${skipped[@]:-none}"
+echo "Recommended next step: run /sdlc-spdd-init in Cursor, then /sdlc-spdd-plan"

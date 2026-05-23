@@ -1,0 +1,29 @@
+name: Validate REASONS Canvas
+
+on:
+  pull_request:
+    paths:
+      - 'spdd/canvas/**'
+      - 'examples/**/spdd/canvas/**'
+      - 'scripts/validate-reasons-canvas.sh'
+  push:
+    branches: [main]
+    paths:
+      - 'spdd/canvas/**'
+      - 'examples/**/spdd/canvas/**'
+      - 'scripts/validate-reasons-canvas.sh'
+
+jobs:
+  validate-canvas:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate example Spring Boot canvas
+        run: ./scripts/validate-reasons-canvas.sh examples/spring-boot-order-api/spdd/canvas/FEAT-001-order-status-api.md
+
+      - name: Validate all canvases under examples
+        run: |
+          find examples -path '*/spdd/canvas/*.md' -print0 | while IFS= read -r -d '' file; do
+            ./scripts/validate-reasons-canvas.sh "$file"
+          done

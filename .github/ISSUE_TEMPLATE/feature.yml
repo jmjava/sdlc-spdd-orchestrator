@@ -1,0 +1,29 @@
+name: Feature
+description: New feature work tracked with a REASONS Canvas
+title: "[FEAT]: "
+labels: ["feature"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What should be built?
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: How will we know this is done?
+    validations:
+      required: true
+  - type: textarea
+    id: non_goals
+    attributes:
+      label: Non-Goals
+      description: What is explicitly out of scope?
+  - type: input
+    id: work_id
+    attributes:
+      label: Work ID (if already assigned)
+      placeholder: FEAT-001-short-name
