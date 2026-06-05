@@ -20,17 +20,20 @@ The user may provide:
 - A partial feature idea
 - A bug report
 - A refactor goal
+- Skill directives such as `#TDD`, `#java`, `#security`, or exclusions such as `!Kafka`
 
 If a Jira or GitHub issue is referenced, capture the external link in the canvas Metadata section.
+If skill directives are provided, record included and excluded skills in the canvas or progress log and load only relevant guidance.
 
 ## Required Behavior
 
 1. Inspect the repository structure.
 2. Detect the stack.
 3. Identify relevant files and modules.
-4. Create or update a feature folder under `agent-context/features/`.
-5. Create a REASONS Canvas under `spdd/canvas/`.
-6. Use the sections:
+4. Identify requested skill directives and relevant playbooks or memory.
+5. Create or update a feature folder under `agent-context/features/`.
+6. Create a REASONS Canvas under `spdd/canvas/`.
+7. Use the sections:
    - Requirements
    - Entities
    - Approach
@@ -38,11 +41,11 @@ If a Jira or GitHub issue is referenced, capture the external link in the canvas
    - Operations
    - Norms
    - Safeguards
-7. Break work into small implementation tasks.
-8. Do not modify source code.
-9. Do not invent requirements that were not requested.
-10. Ask for clarification only when needed to prevent incorrect work.
-11. If clarification is not essential, make reasonable assumptions and record them in the canvas.
+8. Break work into small implementation tasks.
+9. Do not modify source code.
+10. Do not invent requirements that were not requested.
+11. Ask for clarification only when needed to prevent incorrect work.
+12. If clarification is not essential, make reasonable assumptions and record them in the canvas.
 
 ## Output
 

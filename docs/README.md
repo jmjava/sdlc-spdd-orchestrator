@@ -6,6 +6,7 @@ Use these guides to install the scaffold, invoke the SDLC-SPDD commands, link wo
 
 | Guide | Use it for |
 |-------|------------|
+| [Hybrid SDLC Agents + SPDD model](hybrid-model.md) | How SDLC Agents lifecycle patterns combine with SPDD/REASONS prompt governance |
 | [Workflow](workflow.md) | The SDLC-SPDD lifecycle and quality gates |
 | [Cursor usage](cursor-usage.md) | Installing and invoking Cursor commands |
 | [GitHub Copilot usage](copilot-usage.md) | Installing and invoking Copilot instructions and prompt files |

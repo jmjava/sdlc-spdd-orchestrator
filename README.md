@@ -1,6 +1,6 @@
 # SDLC-SPDD Orchestrator
 
-A Cursor-first AI software delivery scaffold that combines SDLC Agents' multi-agent lifecycle with OpenSPDD's REASONS Canvas design-contract model.
+A multi-assistant AI software delivery scaffold that combines SDLC Agents' role-separated lifecycle with SPDD's REASONS Canvas design-contract model.
 
 ## What This Is
 
@@ -25,13 +25,13 @@ It is not a replacement for Cursor, Claude Code, Copilot, OpenSPDD, or SDLC Agen
 
 It is a scaffold that makes those tools more disciplined and repeatable.
 
-## Why Combine SDLC Agents and OpenSPDD?
+## Why Combine SDLC Agents and SPDD?
 
-SDLC Agents provides the software delivery lifecycle and role separation.
+SDLC Agents provides the software delivery lifecycle, specialized agent roles, architecture-first handoffs, progressive context loading, continual learning, and guardrails.
 
-OpenSPDD provides the structured design contract.
+SPDD provides the structured prompt contract through the REASONS Canvas and the rule that prompt artifacts evolve with code.
 
-Together they create a practical workflow where AI agents do not just generate code; they operate against an explicit contract.
+Together they create a practical workflow where AI agents do not just generate code; they operate in role-specific phases against an explicit, versioned design contract.
 
 ## Quick Start
 
@@ -57,8 +57,9 @@ Then in Cursor or GitHub Copilot Chat:
     /sdlc-spdd-init
     /sdlc-spdd-plan @requirements/my-feature.md
     /sdlc-spdd-architect @spdd/canvas/FEAT-001-my-feature.md
-    /sdlc-spdd-code @spdd/tasks/FEAT-001/T01-task.md
+    /sdlc-spdd-code @spdd/canvas/FEAT-001-my-feature.md operation T01
     /sdlc-spdd-review @spdd/canvas/FEAT-001-my-feature.md
+    /sdlc-spdd-prompt-update @spdd/canvas/FEAT-001-my-feature.md
     /sdlc-spdd-retro @spdd/canvas/FEAT-001-my-feature.md
     /sdlc-spdd-sync @spdd/canvas/FEAT-001-my-feature.md
 
@@ -71,6 +72,7 @@ Then in Cursor or GitHub Copilot Chat:
       -> Review
       -> Code Task 2
       -> Review
+      -> Prompt Update when intent changes
       -> Retro
       -> Sync
 
@@ -104,6 +106,7 @@ See [docs/java-spring-boot-usage.md](docs/java-spring-boot-usage.md) and [exampl
 
 - [Documentation hub](docs/README.md)
 - [Architecture](docs/architecture.md)
+- [Hybrid SDLC Agents + SPDD model](docs/hybrid-model.md)
 - [Workflow](docs/workflow.md)
 - [Cursor usage](docs/cursor-usage.md)
 - [GitHub Copilot usage](docs/copilot-usage.md)

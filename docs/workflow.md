@@ -1,5 +1,10 @@
 # Workflow
 
+This workflow is hybrid:
+
+- SDLC Agents supplies the role-separated lifecycle: initialize, plan, architect, code, review, retro, and curator-style sync.
+- SPDD supplies the governed prompt artifact: the REASONS Canvas and prompt/code synchronization loop.
+
 ## Recommended Sequence
 
 1. **Initialize** — `/sdlc-spdd-init` or `./scripts/init-project.sh --target . --cursor --copilot`
@@ -36,3 +41,5 @@ Use [integration-linking.md](integration-linking.md) to link canvases to Jira-ba
 Use [jira-runbook.md](jira-runbook.md) to create new Jira issues and keep Jira synchronized with canvas, progress, review, and sync artifacts.
 
 Use [spdd-compliance.md](spdd-compliance.md) to verify the workflow remains compliant with Structured Prompt-Driven Development.
+
+Use [hybrid-model.md](hybrid-model.md) to understand how SDLC Agents lifecycle practices and SPDD prompt governance fit together.

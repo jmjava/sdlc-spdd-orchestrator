@@ -4,7 +4,7 @@ Use these instructions for every GitHub Copilot Chat request in this workspace.
 
 ## Operating Model
 
-This repository uses SDLC-SPDD: a software delivery lifecycle backed by REASONS Canvas design contracts.
+This repository uses SDLC-SPDD: SDLC Agents-style lifecycle roles backed by SPDD REASONS Canvas design contracts.
 
 Default lifecycle:
 
@@ -21,6 +21,8 @@ Preserve context by reading relevant artifacts before answering:
 - `agent-context/features/`
 - `agent-context/harness/`
 
+Use progressive disclosure: load only the artifacts relevant to the current Work ID, phase, and operation.
+
 ## Work Rules
 
 - Use a Work ID for each unit of work, such as `FEAT-001-order-status-api`.
@@ -33,6 +35,7 @@ Preserve context by reading relevant artifacts before answering:
 - Ask clarifying questions only when needed to prevent incorrect work; otherwise state assumptions in the canvas or progress log.
 - For behavior or requirement changes, update the REASONS Canvas before changing code.
 - For non-behavioral refactors, review the code change and then sync the canvas back to implementation reality.
+- Treat `#SkillName` markers as explicit skill requests and `!SkillName` markers as exclusions. Record selected skills in the canvas or progress log when relevant.
 
 ## Context-Preserving Questions
 
