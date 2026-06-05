@@ -75,4 +75,3 @@ echo "Installed Copilot files (${#installed[@]}):"
 printf '  %s\n' "${installed[@]:-none}"
 echo "Skipped existing (${#skipped[@]}):"
 printf '  %s\n' "${skipped[@]:-none}"
-

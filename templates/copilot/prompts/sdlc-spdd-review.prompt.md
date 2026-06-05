@@ -52,4 +52,3 @@ Include:
 - Test gaps
 - Drift from canvas
 - Recommended next prompt
-

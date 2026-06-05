@@ -42,4 +42,3 @@ Print a short summary of:
 - Created folders
 - Existing folders preserved
 - Recommended next prompt
-

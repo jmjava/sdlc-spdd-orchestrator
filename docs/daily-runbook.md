@@ -251,4 +251,3 @@ The handoff should include:
 ### Continue interrupted work
 
     For <WORK-ID>, read the canvas, progress log, review report, and current diff. Tell me whether to code, review, sync, or retro next.
-

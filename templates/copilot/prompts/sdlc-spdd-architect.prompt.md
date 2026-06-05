@@ -41,4 +41,3 @@ Use one of these readiness values:
 - Needs Clarification
 - Needs Redesign
 - Blocked
-

@@ -40,4 +40,3 @@ After implementation, summarize:
 - Tests added
 - Validation performed
 - Risks or follow-ups
-

@@ -161,4 +161,3 @@ Current boundaries:
 - PDF output is provided as a PDF-friendly Markdown cheat sheet unless a team-approved converter is installed.
 
 These boundaries do not break SPDD compliance because SPDD requires governed prompt artifacts and closed-loop synchronization; it does not require a specific Jira or Pages automation mechanism.
-

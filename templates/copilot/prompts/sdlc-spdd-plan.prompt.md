@@ -61,4 +61,3 @@ Also print a short summary of:
 - Files likely affected
 - Risks
 - Next recommended prompt
-

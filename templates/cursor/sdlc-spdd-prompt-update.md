@@ -45,4 +45,3 @@ Include:
 - Safeguards changed
 - Whether the canvas is ready for architecture review or coding
 - Recommended next command
-

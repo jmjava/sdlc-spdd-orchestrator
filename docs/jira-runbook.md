@@ -207,4 +207,3 @@ Before done:
 - Final comment includes validation, review result, and remaining follow-ups.
 - Canvas sync log records implementation drift.
 - Retro updates reusable memory.
-

@@ -45,4 +45,3 @@ Good question patterns:
     For BUG-003, compare @agent-context/features/BUG-003/progress-log.md with the current diff. What context am I missing before coding?
 
     Using the current canvas and @agent-context/memory/known-pitfalls.md, what risks should I check before review?
-

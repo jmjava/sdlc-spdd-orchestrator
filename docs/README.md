@@ -48,4 +48,3 @@ Start new work from a requirement document:
 Start one approved implementation task:
 
     /sdlc-spdd-code @spdd/canvas/FEAT-001-my-feature.md
-

@@ -124,4 +124,3 @@ Refactor with no behavior change:
 ## End-of-Session Handoff
 
     For <WORK-ID>, summarize completed work, validation, open risks, and next command from the canvas, progress log, and current git status.
-

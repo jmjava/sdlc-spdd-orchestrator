@@ -185,4 +185,3 @@ Before done:
 - Retro captures reusable learning.
 - Sync log records drift and remaining work.
 - Jira or GitHub issue update can be generated from the canvas and progress log.
-

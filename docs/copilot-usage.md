@@ -81,4 +81,3 @@ Use the Work ID and file references.
 - Prompt files are manually invoked; they do not run on every chat request.
 - Keep source code changes out of planning, architecture, retro, and sync prompts unless explicitly requested.
 - Use `@` file references when your Copilot client supports them; otherwise paste the relevant file path and ask Copilot to read it.
-

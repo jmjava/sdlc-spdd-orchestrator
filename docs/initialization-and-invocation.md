@@ -187,4 +187,3 @@ If a refactor changes only internal structure, review the change and then sync t
 
     /sdlc-spdd-review @spdd/canvas/<WORK-ID>.md
     /sdlc-spdd-sync @spdd/canvas/<WORK-ID>.md
-

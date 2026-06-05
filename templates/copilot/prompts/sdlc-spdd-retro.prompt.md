@@ -36,4 +36,3 @@ Include:
 - Reusable patterns
 - Mistakes to avoid
 - Suggested future safeguards
-
