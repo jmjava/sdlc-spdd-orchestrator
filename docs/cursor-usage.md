@@ -12,6 +12,8 @@ Or install commands only:
 
 Commands are copied to `.cursor/commands/`.
 
+To install GitHub Copilot prompt files instead, see [copilot-usage.md](copilot-usage.md).
+
 ## Available Commands
 
 | Command | Purpose |
@@ -30,4 +32,8 @@ Commands are copied to `.cursor/commands/`.
 - Keep planning and architect phases free of application code changes.
 - Run review after each coding operation when possible.
 
-See also: [workflow.md](workflow.md)
+See also:
+
+- [workflow.md](workflow.md)
+- [initialization-and-invocation.md](initialization-and-invocation.md)
+- [daily-runbook.md](daily-runbook.md)

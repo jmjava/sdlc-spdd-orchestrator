@@ -40,11 +40,19 @@ Clone this repo:
     git clone https://github.com/jmjava/sdlc-spdd-orchestrator.git
     cd sdlc-spdd-orchestrator
 
-Install into a target project:
+Install into a target project for Cursor:
 
     ./scripts/init-project.sh --target /path/to/your/project --cursor
 
-Then in Cursor:
+Install into a target project for GitHub Copilot:
+
+    ./scripts/init-project.sh --target /path/to/your/project --copilot
+
+Install both assistant integrations:
+
+    ./scripts/init-project.sh --target /path/to/your/project --cursor --copilot
+
+Then in Cursor or GitHub Copilot Chat:
 
     /sdlc-spdd-init
     /sdlc-spdd-plan @requirements/my-feature.md
@@ -70,7 +78,7 @@ Then in Cursor:
 
 | Path | Purpose |
 |------|---------|
-| `templates/` | REASONS Canvas, Cursor commands, stack rules |
+| `templates/` | REASONS Canvas, Cursor commands, Copilot prompts, stack rules |
 | `scripts/` | Init, detect, validate, sync helpers |
 | `agent-context/` | Memory, playbooks, harness for this repo |
 | `examples/` | Reference workflows (Spring Boot, Tekton) |
@@ -94,9 +102,17 @@ See [docs/java-spring-boot-usage.md](docs/java-spring-boot-usage.md) and [exampl
 
 ## Documentation
 
+- [Documentation hub](docs/README.md)
 - [Architecture](docs/architecture.md)
 - [Workflow](docs/workflow.md)
 - [Cursor usage](docs/cursor-usage.md)
+- [GitHub Copilot usage](docs/copilot-usage.md)
+- [Initialization and invocation](docs/initialization-and-invocation.md)
+- [Daily runbook](docs/daily-runbook.md)
+- [Integration linking](docs/integration-linking.md)
+- [Cheat sheet](docs/sdlc-spdd-cheat-sheet.md)
+- [GitHub project setup](docs/github-project-setup.md)
+- [Tekton usage](docs/tekton-usage.md)
 - [Design decisions](docs/design-decisions.md)
 - [Roadmap](docs/roadmap.md)
 

@@ -6,13 +6,14 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 usage() {
   cat <<'EOF'
-Usage: init-project.sh --target <path> [--cursor] [--force] [--dry-run]
+Usage: init-project.sh --target <path> [--cursor] [--copilot] [--force] [--dry-run]
 
 Initialize a target project with SDLC-SPDD scaffold files.
 
 Options:
   --target <path>   Target project path (required)
   --cursor          Install Cursor command templates
+  --copilot         Install GitHub Copilot instructions and prompt files
   --force           Overwrite existing generated files
   --dry-run         Show actions without writing files
   --help            Print this help message
@@ -21,6 +22,7 @@ EOF
 
 TARGET=""
 INSTALL_CURSOR=0
+INSTALL_COPILOT=0
 FORCE=0
 DRY_RUN=0
 
@@ -32,6 +34,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --cursor)
       INSTALL_CURSOR=1
+      shift
+      ;;
+    --copilot)
+      INSTALL_COPILOT=1
       shift
       ;;
     --force)
@@ -150,6 +156,14 @@ if [[ "${INSTALL_CURSOR}" -eq 1 ]]; then
   fi
 fi
 
+if [[ "${INSTALL_COPILOT}" -eq 1 ]]; then
+  if [[ "${DRY_RUN}" -eq 1 ]]; then
+    echo "[dry-run] would install Copilot prompts via install-copilot-prompts.sh"
+  else
+    "${SCRIPT_DIR}/install-copilot-prompts.sh" --target "${TARGET}" $([[ "${FORCE}" -eq 1 ]] && echo --force)
+  fi
+fi
+
 if [[ "${DRY_RUN}" -eq 0 ]]; then
   "${SCRIPT_DIR}/detect-stack.sh" --target "${TARGET}" || true
 fi
@@ -159,4 +173,4 @@ echo "Created or updated (${#created[@]}):"
 printf '  %s\n' "${created[@]:-none}"
 echo "Skipped existing (${#skipped[@]}):"
 printf '  %s\n' "${skipped[@]:-none}"
-echo "Recommended next step: run /sdlc-spdd-init in Cursor, then /sdlc-spdd-plan"
+echo "Recommended next step: run /sdlc-spdd-init in Cursor or Copilot Chat, then /sdlc-spdd-plan"
