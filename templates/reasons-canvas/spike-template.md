@@ -10,7 +10,10 @@
 - Owner:
 - Target Project:
 - Stack:
-- Related Issue:
+- Source System:
+- Source Issue:
+- Source URL:
+- Docs URL:
 - Related PR:
 
 ## R - Requirements
@@ -123,6 +126,8 @@ Spike summary and recommendation.
 
 - Do not change production behavior without a separate feature canvas.
 - Do not add permanent dependencies from spike code without review.
+- Do not implement behavior changes until this canvas is updated with `/sdlc-spdd-prompt-update`.
+- Do not let implementation drift from this canvas without running `/sdlc-spdd-sync`.
 
 ## Review Checklist
 

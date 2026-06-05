@@ -21,6 +21,7 @@ Implement exactly one approved operation from a REASONS Canvas.
 8. Do not change public APIs unless the selected task requires it.
 9. Do not add dependencies unless the canvas allows it.
 10. Update task status and progress log.
+11. If the requested behavior conflicts with the canvas, stop and recommend `/sdlc-spdd-prompt-update` before changing code.
 
 If no task is selected, ask the user which operation to implement before changing code.
 

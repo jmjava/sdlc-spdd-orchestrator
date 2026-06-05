@@ -31,6 +31,8 @@ Preserve context by reading relevant artifacts before answering:
 - Update progress, review, retro, and sync artifacts when the active SDLC skill calls for it.
 - Preserve useful project memory in `agent-context/memory/`.
 - Ask clarifying questions only when needed to prevent incorrect work; otherwise state assumptions in the canvas or progress log.
+- For behavior or requirement changes, update the REASONS Canvas before changing code.
+- For non-behavioral refactors, review the code change and then sync the canvas back to implementation reality.
 
 ## Context-Preserving Questions
 

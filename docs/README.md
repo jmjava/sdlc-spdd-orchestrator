@@ -12,6 +12,8 @@ Use these guides to install the scaffold, invoke the SDLC-SPDD commands, link wo
 | [Initialization and invocation](initialization-and-invocation.md) | First run, starting work, asking context-preserving questions, and invoking each SDLC skill in Cursor or Copilot |
 | [Daily runbook](daily-runbook.md) | Repeatable daily actions for triage, planning, coding, review, retro, and sync |
 | [Integration linking](integration-linking.md) | Linking canvases and work items to Jira-based systems or GitHub Pages |
+| [Jira runbook](jira-runbook.md) | Creating new Jira issues and keeping Jira synchronized with SDLC-SPDD artifacts |
+| [SPDD compliance](spdd-compliance.md) | Mapping this scaffold to the Structured Prompt-Driven Development contract |
 | [Cheat sheet](sdlc-spdd-cheat-sheet.md) | One-page PDF-friendly quick reference |
 
 ## Existing Reference Guides

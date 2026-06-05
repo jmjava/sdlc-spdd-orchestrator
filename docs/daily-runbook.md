@@ -9,7 +9,9 @@ Use this runbook when operating an initialized application day to day.
 3. Ask questions with explicit artifact references.
 4. Code one approved operation at a time.
 5. Review against the canvas before starting the next operation.
-6. Record learnings and drift before the work disappears from memory.
+6. For behavior changes, update the canvas before coding.
+7. For refactors, review the code and then sync the canvas.
+8. Record learnings and drift before the work disappears from memory.
 
 ## Morning or Start-of-Session Check
 
@@ -149,6 +151,12 @@ If review requests changes:
 
 Then review again.
 
+If review finds that the intended behavior or acceptance criteria changed:
+
+    /sdlc-spdd-prompt-update @spdd/canvas/<WORK-ID>.md
+
+Then architect or code from the updated canvas.
+
 ## Sync Drift
 
 Use sync when implementation reality differs from the canvas, or after several reviewed operations.
@@ -166,6 +174,26 @@ Use sync to record:
 - Accepted drift
 
 Do not use sync to hide unreviewed changes.
+
+Do not use sync for a new behavior requirement. Update the source issue and canvas first:
+
+    /sdlc-spdd-prompt-update @spdd/canvas/<WORK-ID>.md
+
+## Keep Jira Synchronized
+
+Use [jira-runbook.md](jira-runbook.md) when work is tracked in Jira.
+
+Create new Jira issue draft:
+
+    Draft a Jira issue for this request. Include issue type, summary, business value, scope in, scope out, Given/When/Then acceptance criteria, labels, components, and links.
+
+Daily Jira comment:
+
+    For <WORK-ID>, read the canvas, progress log, review report, and sync log. Draft a Jira update for <JIRA-KEY> with state, completed operations, validation, risks, and next command.
+
+Behavior change from Jira:
+
+    Jira <JIRA-KEY> changed acceptance criteria: <new rule>. For <WORK-ID>, update the canvas first with /sdlc-spdd-prompt-update. Do not change source code.
 
 ## Capture Retro
 

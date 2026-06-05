@@ -47,6 +47,18 @@ If the work starts from GitHub Issues:
 
 Use Jira links when work is governed by Jira status, sprint planning, assignment, or acceptance criteria.
 
+For detailed issue creation and synchronization steps, see [jira-runbook.md](jira-runbook.md).
+
+### Create a new Jira issue
+
+When the request starts outside Jira, first draft the issue from the requirement:
+
+    Draft a Jira issue for this request. Include issue type, summary, business value, scope in, scope out, Given/When/Then acceptance criteria, labels, components, and links.
+
+Create the issue in Jira using your team's approved UI, automation, MCP tool, or API workflow. After Jira returns a key, plan from that key:
+
+    /sdlc-spdd-plan Jira ABC-123: <summary>. Link the canvas to https://jira.example.com/browse/ABC-123 and use the Jira acceptance criteria as the Requirements source.
+
 ### Start from Jira
 
 Prompt:
@@ -83,6 +95,17 @@ If your repository uses a stricter branch naming policy, keep the Jira key in th
 Use this when posting status back to Jira manually:
 
     For FEAT-001, read @spdd/canvas/FEAT-001-order-status-api.md and @agent-context/features/FEAT-001-order-status-api/progress-log.md. Draft a Jira update for ABC-123 with status, completed work, validation, risks, and next step.
+
+### Keep Jira and canvas in sync
+
+Use this rule:
+
+- If Jira acceptance criteria or intended behavior change, update Jira and then run `/sdlc-spdd-prompt-update` before coding.
+- If code was refactored without behavior change, review and then run `/sdlc-spdd-sync`.
+
+Prompt:
+
+    Jira ABC-123 changed acceptance criteria: <new rule>. For FEAT-001, update @spdd/canvas/FEAT-001-order-status-api.md first with /sdlc-spdd-prompt-update. Do not change source code.
 
 ### Jira status mapping
 

@@ -57,6 +57,7 @@ Bug:
 | Harden design before coding | `/sdlc-spdd-architect @spdd/canvas/WORK-ID.md` |
 | Implement one task | `/sdlc-spdd-code @spdd/canvas/WORK-ID.md operation T01` |
 | Review implementation | `/sdlc-spdd-review @spdd/canvas/WORK-ID.md` |
+| Update changed intent | `/sdlc-spdd-prompt-update @spdd/canvas/WORK-ID.md` |
 | Capture learnings | `/sdlc-spdd-retro @spdd/canvas/WORK-ID.md` |
 | Reconcile drift | `/sdlc-spdd-sync @spdd/canvas/WORK-ID.md` |
 
@@ -100,6 +101,25 @@ Canvas Metadata should include:
     - Pull request: TBD
 
 Use Jira for status and ownership. Use GitHub Pages for published docs and runbooks.
+
+Create Jira draft:
+
+    Draft a Jira issue with summary, business value, scope in/out, Given/When/Then acceptance criteria, labels, components, and links.
+
+Sync Jira:
+
+    For <WORK-ID>, draft a Jira update for <JIRA-KEY> from the canvas, progress log, review report, and sync log.
+
+## SPDD Rule
+
+Behavior or requirement change:
+
+    /sdlc-spdd-prompt-update @spdd/canvas/<WORK-ID>.md
+
+Refactor with no behavior change:
+
+    /sdlc-spdd-review @spdd/canvas/<WORK-ID>.md
+    /sdlc-spdd-sync @spdd/canvas/<WORK-ID>.md
 
 ## End-of-Session Handoff
 

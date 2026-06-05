@@ -20,6 +20,7 @@ This installs:
 - `.github/prompts/sdlc-spdd-architect.prompt.md`
 - `.github/prompts/sdlc-spdd-code.prompt.md`
 - `.github/prompts/sdlc-spdd-review.prompt.md`
+- `.github/prompts/sdlc-spdd-prompt-update.prompt.md`
 - `.github/prompts/sdlc-spdd-retro.prompt.md`
 - `.github/prompts/sdlc-spdd-sync.prompt.md`
 
@@ -32,6 +33,7 @@ In GitHub Copilot Chat, invoke prompt files with slash commands:
     /sdlc-spdd-architect @spdd/canvas/FEAT-001-order-status-api.md
     /sdlc-spdd-code @spdd/canvas/FEAT-001-order-status-api.md operation T01
     /sdlc-spdd-review @spdd/canvas/FEAT-001-order-status-api.md
+    /sdlc-spdd-prompt-update @spdd/canvas/FEAT-001-order-status-api.md
     /sdlc-spdd-retro @spdd/canvas/FEAT-001-order-status-api.md
     /sdlc-spdd-sync @spdd/canvas/FEAT-001-order-status-api.md
 

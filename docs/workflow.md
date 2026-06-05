@@ -7,8 +7,9 @@
 3. **Architect** — `/sdlc-spdd-architect @spdd/canvas/FEAT-001-my-feature.md`
 4. **Code** — `/sdlc-spdd-code` for one task at a time
 5. **Review** — `/sdlc-spdd-review @spdd/canvas/FEAT-001-my-feature.md`
-6. **Retro** — `/sdlc-spdd-retro @spdd/canvas/FEAT-001-my-feature.md`
-7. **Sync** — `/sdlc-spdd-sync @spdd/canvas/FEAT-001-my-feature.md`
+6. **Prompt update when intent changes** — `/sdlc-spdd-prompt-update @spdd/canvas/FEAT-001-my-feature.md`
+7. **Retro** — `/sdlc-spdd-retro @spdd/canvas/FEAT-001-my-feature.md`
+8. **Sync** — `/sdlc-spdd-sync @spdd/canvas/FEAT-001-my-feature.md`
 
 ## Work IDs
 
@@ -31,3 +32,7 @@ Use [initialization-and-invocation.md](initialization-and-invocation.md) for fir
 Use [daily-runbook.md](daily-runbook.md) for repeatable daily actions across triage, planning, architecture, coding, review, retro, sync, and handoff.
 
 Use [integration-linking.md](integration-linking.md) to link canvases to Jira-based systems, GitHub issues, pull requests, and GitHub Pages documentation.
+
+Use [jira-runbook.md](jira-runbook.md) to create new Jira issues and keep Jira synchronized with canvas, progress, review, and sync artifacts.
+
+Use [spdd-compliance.md](spdd-compliance.md) to verify the workflow remains compliant with Structured Prompt-Driven Development.

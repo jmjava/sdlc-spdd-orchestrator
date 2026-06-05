@@ -17,6 +17,8 @@ Do not implement code unless explicitly asked.
 7. Identify stale tasks.
 8. Update the canvas while preserving useful history.
 9. Add follow-up tasks where needed.
+10. Do not use sync to paper over behavior or requirement changes that should have updated the canvas first.
+11. If a behavior change is discovered, record it as a follow-up and recommend `/sdlc-spdd-prompt-update`.
 
 ## Output
 

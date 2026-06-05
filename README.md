@@ -110,6 +110,8 @@ See [docs/java-spring-boot-usage.md](docs/java-spring-boot-usage.md) and [exampl
 - [Initialization and invocation](docs/initialization-and-invocation.md)
 - [Daily runbook](docs/daily-runbook.md)
 - [Integration linking](docs/integration-linking.md)
+- [Jira runbook](docs/jira-runbook.md)
+- [SPDD compliance](docs/spdd-compliance.md)
 - [Cheat sheet](docs/sdlc-spdd-cheat-sheet.md)
 - [GitHub project setup](docs/github-project-setup.md)
 - [Tekton usage](docs/tekton-usage.md)

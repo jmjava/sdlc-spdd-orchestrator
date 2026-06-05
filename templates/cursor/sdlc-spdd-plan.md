@@ -12,10 +12,13 @@ The user may provide:
 
 - A plain-language requirement
 - A path to a requirement document
+- A Jira issue key or URL
 - A GitHub issue
 - A partial feature idea
 - A bug report
 - A refactor goal
+
+If a Jira or GitHub issue is referenced, capture the external link in the canvas Metadata section.
 
 ## Required Behavior
 

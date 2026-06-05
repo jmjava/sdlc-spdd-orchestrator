@@ -10,7 +10,10 @@
 - Owner:
 - Target Project:
 - Stack:
-- Related Issue:
+- Source System:
+- Source Issue:
+- Source URL:
+- Docs URL:
 - Related PR:
 
 ## R - Requirements
@@ -198,6 +201,7 @@ Describe expected documentation updates.
 - Do not silently swallow exceptions.
 - Do not mark the feature complete until acceptance criteria are satisfied.
 - Do not mark the feature complete until tests pass or failures are documented.
+- Do not implement behavior changes until this canvas is updated with `/sdlc-spdd-prompt-update`.
 - Do not let implementation drift from this canvas without running `/sdlc-spdd-sync`.
 
 ## Review Checklist

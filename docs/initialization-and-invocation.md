@@ -160,6 +160,7 @@ If you need to ask a quick question, still anchor it:
 | Architect | `/sdlc-spdd-architect @spdd/canvas/WORK-ID.md` | `/sdlc-spdd-architect @spdd/canvas/WORK-ID.md` | Harden the canvas before coding |
 | Code | `/sdlc-spdd-code @spdd/canvas/WORK-ID.md operation T01` | `/sdlc-spdd-code @spdd/canvas/WORK-ID.md operation T01` | Implement one approved operation |
 | Review | `/sdlc-spdd-review @spdd/canvas/WORK-ID.md` | `/sdlc-spdd-review @spdd/canvas/WORK-ID.md` | Review changes against the canvas |
+| Prompt update | `/sdlc-spdd-prompt-update @spdd/canvas/WORK-ID.md` | `/sdlc-spdd-prompt-update @spdd/canvas/WORK-ID.md` | Update the canvas first when requirements, acceptance criteria, or behavior intent change |
 | Retro | `/sdlc-spdd-retro @spdd/canvas/WORK-ID.md` | `/sdlc-spdd-retro @spdd/canvas/WORK-ID.md` | Capture reusable learnings |
 | Sync | `/sdlc-spdd-sync @spdd/canvas/WORK-ID.md` | `/sdlc-spdd-sync @spdd/canvas/WORK-ID.md` | Reconcile implementation reality with the canvas |
 
@@ -177,4 +178,13 @@ For most work, use this sequence:
     /sdlc-spdd-sync @spdd/canvas/<WORK-ID>.md
 
 Use review after each coding operation when the change is risky, touches shared behavior, or changes user-visible behavior.
+
+If the requirement or intended behavior changes midstream, update the canvas before coding:
+
+    /sdlc-spdd-prompt-update @spdd/canvas/<WORK-ID>.md
+
+If a refactor changes only internal structure, review the change and then sync the canvas:
+
+    /sdlc-spdd-review @spdd/canvas/<WORK-ID>.md
+    /sdlc-spdd-sync @spdd/canvas/<WORK-ID>.md
 
