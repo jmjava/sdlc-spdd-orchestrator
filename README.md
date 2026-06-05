@@ -52,6 +52,10 @@ Install both assistant integrations:
 
     ./scripts/init-project.sh --target /path/to/your/project --cursor --copilot
 
+Or run the integrated setup wrapper:
+
+    ./scripts/setup-agent-prompts.sh --target /path/to/your/project --all
+
 Then in Cursor or GitHub Copilot Chat:
 
     /sdlc-spdd-init
@@ -62,6 +66,16 @@ Then in Cursor or GitHub Copilot Chat:
     /sdlc-spdd-prompt-update @spdd/canvas/FEAT-001-my-feature.md
     /sdlc-spdd-retro @spdd/canvas/FEAT-001-my-feature.md
     /sdlc-spdd-sync @spdd/canvas/FEAT-001-my-feature.md
+
+For a new agent session, resync previous work and create a session brief:
+
+    cd /path/to/your/project
+    ./scripts/sdlc-spdd/resync-agent-session.sh --target . --work-id FEAT-001-my-feature --check-only
+    ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id FEAT-001-my-feature --phase code
+
+At the end of a session, persist memory for future agents:
+
+    ./scripts/sdlc-spdd/capture-session-memory.sh --target . --work-id FEAT-001-my-feature --phase code --summary "Completed T01" --validation "tests passed" --next "/sdlc-spdd-review @spdd/canvas/FEAT-001-my-feature.md"
 
 ## Recommended Workflow
 
@@ -81,7 +95,7 @@ Then in Cursor or GitHub Copilot Chat:
 | Path | Purpose |
 |------|---------|
 | `templates/` | REASONS Canvas, Cursor commands, Copilot prompts, stack rules |
-| `scripts/` | Init, detect, validate, sync helpers |
+| `scripts/` | Init, prompt setup, session start/resync/capture, detect, validate, sync helpers |
 | `agent-context/` | Memory, playbooks, harness for this repo |
 | `examples/` | Reference workflows (Spring Boot, Tekton) |
 | `docs/` | Architecture, workflow, and usage guides |
@@ -107,6 +121,7 @@ See [docs/java-spring-boot-usage.md](docs/java-spring-boot-usage.md) and [exampl
 - [Documentation hub](docs/README.md)
 - [Architecture](docs/architecture.md)
 - [Hybrid SDLC Agents + SPDD model](docs/hybrid-model.md)
+- [Agent session scripts](docs/agent-session-scripts.md)
 - [Workflow](docs/workflow.md)
 - [Cursor usage](docs/cursor-usage.md)
 - [GitHub Copilot usage](docs/copilot-usage.md)

@@ -21,6 +21,8 @@ SDLC-SPDD Orchestrator combines four layers:
 ## Artifact Model
 
 - Feature workspace: `agent-context/features/<WORK-ID>/`
+- Session handoffs: `agent-context/sessions/`
+- Durable session history: `agent-context/memory/session-history.md`
 - Canonical canvas: `spdd/canvas/<WORK-ID>.md`
 - Reviews: `spdd/reviews/`
 - Sync logs: `spdd/sync/`

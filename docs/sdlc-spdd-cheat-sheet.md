@@ -22,6 +22,24 @@ Both:
 
     ./scripts/init-project.sh --target /path/to/app --cursor --copilot
 
+Integrated setup:
+
+    ./scripts/setup-agent-prompts.sh --target /path/to/app --all
+
+## Session Handoff
+
+Start or resume:
+
+    ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase>
+
+Check previous work:
+
+    ./scripts/sdlc-spdd/resync-agent-session.sh --target . --work-id <WORK-ID> --check-only
+
+Capture memory:
+
+    ./scripts/sdlc-spdd/capture-session-memory.sh --target . --work-id <WORK-ID> --phase <phase> --summary "<summary>" --validation "<tests>" --next "<next command>"
+
 ## Lifecycle
 
     Initialize -> Plan -> Architect -> Code -> Review -> Retro -> Sync

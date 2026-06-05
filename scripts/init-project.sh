@@ -124,7 +124,9 @@ for dir in \
   agent-context/memory \
   agent-context/playbooks \
   agent-context/features \
-  agent-context/harness; do
+  agent-context/sessions \
+  agent-context/harness \
+  scripts/sdlc-spdd; do
   ensure_dir "${TARGET}/${dir}"
   ensure_gitkeep "${TARGET}/${dir}"
 done
@@ -134,10 +136,18 @@ for file in \
   project-memory.md \
   architecture-decisions.md \
   known-pitfalls.md \
-  reusable-patterns.md; do
+  reusable-patterns.md \
+  session-history.md; do
   copy_if_missing \
     "${REPO_ROOT}/agent-context/memory/${file}" \
     "${TARGET}/agent-context/memory/${file}"
+done
+
+# Copy playbooks for SDLC Agents-style handoffs and repeatable workflows
+for file in "${REPO_ROOT}"/agent-context/playbooks/*.md; do
+  copy_if_missing \
+    "${file}" \
+    "${TARGET}/agent-context/playbooks/$(basename "${file}")"
 done
 
 copy_if_missing \
@@ -147,6 +157,21 @@ copy_if_missing \
 copy_if_missing \
   "${REPO_ROOT}/agent-context/harness/validation-rules.md" \
   "${TARGET}/agent-context/harness/validation-rules.md"
+
+# Copy runtime session scripts into the target project for cross-session handoffs
+for file in \
+  start-agent-session.sh \
+  resync-agent-session.sh \
+  capture-session-memory.sh \
+  sync-agent-context.sh \
+  validate-reasons-canvas.sh; do
+  copy_if_missing \
+    "${REPO_ROOT}/scripts/${file}" \
+    "${TARGET}/scripts/sdlc-spdd/${file}"
+  if [[ "${DRY_RUN}" -eq 0 && -f "${TARGET}/scripts/sdlc-spdd/${file}" ]]; then
+    chmod +x "${TARGET}/scripts/sdlc-spdd/${file}"
+  fi
+done
 
 if [[ "${INSTALL_CURSOR}" -eq 1 ]]; then
   if [[ "${DRY_RUN}" -eq 1 ]]; then
@@ -174,3 +199,4 @@ printf '  %s\n' "${created[@]:-none}"
 echo "Skipped existing (${#skipped[@]}):"
 printf '  %s\n' "${skipped[@]:-none}"
 echo "Recommended next step: run /sdlc-spdd-init in Cursor or Copilot Chat, then /sdlc-spdd-plan"
+echo "Session scripts installed under: ${TARGET}/scripts/sdlc-spdd"

@@ -7,6 +7,7 @@ Use these guides to install the scaffold, invoke the SDLC-SPDD commands, link wo
 | Guide | Use it for |
 |-------|------------|
 | [Hybrid SDLC Agents + SPDD model](hybrid-model.md) | How SDLC Agents lifecycle patterns combine with SPDD/REASONS prompt governance |
+| [Agent session scripts](agent-session-scripts.md) | Runnable setup, session resume/resync, and memory capture commands |
 | [Workflow](workflow.md) | The SDLC-SPDD lifecycle and quality gates |
 | [Cursor usage](cursor-usage.md) | Installing and invoking Cursor commands |
 | [GitHub Copilot usage](copilot-usage.md) | Installing and invoking Copilot instructions and prompt files |
@@ -32,7 +33,7 @@ Use these guides to install the scaffold, invoke the SDLC-SPDD commands, link wo
 
 Install the scaffold into a target application:
 
-    ./scripts/init-project.sh --target /path/to/your/project --cursor --copilot
+    ./scripts/setup-agent-prompts.sh --target /path/to/your/project --all
 
 Initialize the application context in Cursor:
 
@@ -49,3 +50,8 @@ Start new work from a requirement document:
 Start one approved implementation task:
 
     /sdlc-spdd-code @spdd/canvas/FEAT-001-my-feature.md
+
+Capture session memory:
+
+    cd /path/to/your/project
+    ./scripts/sdlc-spdd/capture-session-memory.sh --target . --work-id FEAT-001-my-feature --phase code --summary "Completed T01" --validation "tests passed"

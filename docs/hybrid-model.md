@@ -76,6 +76,19 @@ SPDD reference:
       -> Sync Agent reconciles accepted implementation drift
       -> Retro Agent captures reusable learning
 
+## Scripted Session Lifecycle
+
+The hybrid model is operationalized with scripts:
+
+| Need | Script | Hybrid role |
+|------|--------|-------------|
+| Install prompts and artifacts | `scripts/setup-agent-prompts.sh` | Creates assistant adapters plus SPDD artifact folders and SDLC memory/playbooks |
+| Start a new session | `scripts/sdlc-spdd/start-agent-session.sh` | Builds an SDLC handoff brief anchored to SPDD artifacts |
+| Resync previous work | `scripts/sdlc-spdd/resync-agent-session.sh` | Checks or reconciles canvas copies and validates the REASONS contract |
+| Capture session learning | `scripts/sdlc-spdd/capture-session-memory.sh` | Persists retro-style memory for future agents |
+
+Use these scripts around assistant invocations so context survives beyond chat history.
+
 ## Context Loading Rules
 
 Use SDLC Agents-style progressive disclosure with SPDD artifacts:

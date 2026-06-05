@@ -7,14 +7,17 @@ This workflow is hybrid:
 
 ## Recommended Sequence
 
-1. **Initialize** — `/sdlc-spdd-init` or `./scripts/init-project.sh --target . --cursor --copilot`
-2. **Plan** — `/sdlc-spdd-plan @requirements/my-feature.md`
-3. **Architect** — `/sdlc-spdd-architect @spdd/canvas/FEAT-001-my-feature.md`
-4. **Code** — `/sdlc-spdd-code` for one task at a time
-5. **Review** — `/sdlc-spdd-review @spdd/canvas/FEAT-001-my-feature.md`
-6. **Prompt update when intent changes** — `/sdlc-spdd-prompt-update @spdd/canvas/FEAT-001-my-feature.md`
-7. **Retro** — `/sdlc-spdd-retro @spdd/canvas/FEAT-001-my-feature.md`
-8. **Sync** — `/sdlc-spdd-sync @spdd/canvas/FEAT-001-my-feature.md`
+1. **Set up prompts and memory** — `./scripts/setup-agent-prompts.sh --target . --all`
+2. **Initialize** — `/sdlc-spdd-init` or `./scripts/init-project.sh --target . --cursor --copilot`
+3. **Start session** — `./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase>`
+4. **Plan** — `/sdlc-spdd-plan @requirements/my-feature.md`
+5. **Architect** — `/sdlc-spdd-architect @spdd/canvas/FEAT-001-my-feature.md`
+6. **Code** — `/sdlc-spdd-code` for one task at a time
+7. **Review** — `/sdlc-spdd-review @spdd/canvas/FEAT-001-my-feature.md`
+8. **Prompt update when intent changes** — `/sdlc-spdd-prompt-update @spdd/canvas/FEAT-001-my-feature.md`
+9. **Retro** — `/sdlc-spdd-retro @spdd/canvas/FEAT-001-my-feature.md`
+10. **Sync** — `/sdlc-spdd-sync @spdd/canvas/FEAT-001-my-feature.md`
+11. **Capture memory** — `./scripts/sdlc-spdd/capture-session-memory.sh --target . --work-id <WORK-ID> --phase <phase> --summary "<summary>"`
 
 ## Work IDs
 
@@ -43,3 +46,5 @@ Use [jira-runbook.md](jira-runbook.md) to create new Jira issues and keep Jira s
 Use [spdd-compliance.md](spdd-compliance.md) to verify the workflow remains compliant with Structured Prompt-Driven Development.
 
 Use [hybrid-model.md](hybrid-model.md) to understand how SDLC Agents lifecycle practices and SPDD prompt governance fit together.
+
+Use [agent-session-scripts.md](agent-session-scripts.md) for runnable setup, resync, session handoff, and memory capture commands.

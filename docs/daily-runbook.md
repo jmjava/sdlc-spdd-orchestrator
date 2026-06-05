@@ -17,7 +17,14 @@ Use this runbook when operating an initialized application day to day.
 
 Goal: recover context before asking the assistant to act.
 
+First resync and generate a session brief:
+
+    ./scripts/sdlc-spdd/resync-agent-session.sh --target . --work-id <WORK-ID> --check-only
+    ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase>
+
 Prompt:
+
+    For <WORK-ID>, read @agent-context/sessions/current-session.md first.
 
     For <WORK-ID>, read @spdd/canvas/<WORK-ID>.md, @agent-context/features/<WORK-ID>/progress-log.md, and @agent-context/memory/known-pitfalls.md. Summarize:
     - current status
@@ -216,6 +223,19 @@ Prompt:
 
     For <WORK-ID>, create a handoff summary from @spdd/canvas/<WORK-ID>.md, @agent-context/features/<WORK-ID>/progress-log.md, and current git status. Include completed work, validation, open risks, and next command.
 
+Persist that handoff:
+
+    ./scripts/sdlc-spdd/capture-session-memory.sh \
+      --target . \
+      --work-id <WORK-ID> \
+      --phase <phase> \
+      --summary "<completed work>" \
+      --validation "<tests or checks>" \
+      --decisions "<decisions, if any>" \
+      --pitfalls "<pitfalls, if any>" \
+      --patterns "<patterns, if any>" \
+      --next "<next command>"
+
 The handoff should include:
 
 - Work ID
@@ -249,5 +269,8 @@ The handoff should include:
     For <WORK-ID>, read @spdd/canvas/<WORK-ID>.md before answering. <question>
 
 ### Continue interrupted work
+
+    ./scripts/sdlc-spdd/resync-agent-session.sh --target . --work-id <WORK-ID> --check-only
+    ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase resume
 
     For <WORK-ID>, read the canvas, progress log, review report, and current diff. Tell me whether to code, review, sync, or retro next.

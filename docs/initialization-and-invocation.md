@@ -6,6 +6,10 @@ This guide shows how to initialize an application, start work, ask context-prese
 
 From this scaffold repository, install SDLC-SPDD into the target application.
 
+Install the integrated combined system:
+
+    ./scripts/setup-agent-prompts.sh --target /path/to/your/project --all
+
 Install for Cursor:
 
     ./scripts/init-project.sh --target /path/to/your/project --cursor
@@ -31,9 +35,12 @@ The target application receives:
 - `spdd/sync/`
 - `agent-context/memory/`
 - `agent-context/features/`
+- `agent-context/sessions/`
+- `agent-context/playbooks/`
 - `agent-context/harness/`
 - `.cursor/commands/` when `--cursor` is used
 - `.github/copilot-instructions.md` and `.github/prompts/` when `--copilot` is used
+- `scripts/sdlc-spdd/` runtime session scripts
 
 ## Initialize Context Inside the Application
 
@@ -63,6 +70,21 @@ Expected result:
 - Memory and harness files are created or preserved.
 - Existing application code is not changed.
 - The assistant recommends the next SDLC-SPDD skill.
+
+## Start or Resume an Agent Session
+
+Before asking a new agent to continue previous work, create a session brief:
+
+    cd /path/to/your/project
+    ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id FEAT-001-order-status-api --phase code
+
+If the work may have drifted between the feature workspace and canonical canvas, resync first:
+
+    ./scripts/sdlc-spdd/resync-agent-session.sh --target . --work-id FEAT-001-order-status-api --check-only
+
+Then ask the assistant:
+
+    For FEAT-001-order-status-api, read @agent-context/sessions/current-session.md and continue with the recommended SDLC-SPDD command.
 
 ## How to Start Work
 
@@ -187,3 +209,7 @@ If a refactor changes only internal structure, review the change and then sync t
 
     /sdlc-spdd-review @spdd/canvas/<WORK-ID>.md
     /sdlc-spdd-sync @spdd/canvas/<WORK-ID>.md
+
+End each meaningful session by persisting memory:
+
+    ./scripts/sdlc-spdd/capture-session-memory.sh --target . --work-id <WORK-ID> --phase <phase> --summary "<summary>" --validation "<tests>" --next "<next command>"
