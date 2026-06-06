@@ -30,6 +30,7 @@ This installs:
 - `agent-context/features/`
 - `agent-context/sessions/`
 - `agent-context/harness/`
+- `docs/sdlc-spdd/`
 - `.cursor/commands/`
 - `.github/copilot-instructions.md`
 - `.github/prompts/`
@@ -101,9 +102,11 @@ From the target app:
 
     test -d agent-context
     test -d spdd/canvas
+    test -d docs/sdlc-spdd
     test -d scripts/sdlc-spdd
     test -f agent-context/memory/project-memory.md
     test -f agent-context/playbooks/session-handoff-playbook.md
+    test -f docs/sdlc-spdd/first-day-with-sdlc-spdd.md
 
 For Cursor:
 
@@ -121,12 +124,15 @@ Avoid hand-editing generated framework prompt files unless you intend to keep lo
 - `.cursor/commands/sdlc-spdd-*.md`
 - `.github/prompts/sdlc-spdd-*.prompt.md`
 - `scripts/sdlc-spdd/*.sh`
+- `docs/sdlc-spdd/*.md`
 
 Team-specific process guidance should usually live in:
 
 - `agent-context/playbooks/`
 - `agent-context/memory/`
 - project docs
+
+Keep application-specific documentation outside `docs/sdlc-spdd/` so framework upgrades can refresh SDLC-SPDD docs safely.
 
 ## Troubleshooting
 

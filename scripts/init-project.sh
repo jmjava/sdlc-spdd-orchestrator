@@ -126,6 +126,7 @@ for dir in \
   agent-context/features \
   agent-context/sessions \
   agent-context/harness \
+  docs/sdlc-spdd \
   scripts/sdlc-spdd; do
   ensure_dir "${TARGET}/${dir}"
   ensure_gitkeep "${TARGET}/${dir}"
@@ -157,6 +158,13 @@ copy_if_missing \
 copy_if_missing \
   "${REPO_ROOT}/agent-context/harness/validation-rules.md" \
   "${TARGET}/agent-context/harness/validation-rules.md"
+
+# Copy user-facing SDLC-SPDD docs into the target project.
+for file in "${REPO_ROOT}"/docs/*.md; do
+  copy_if_missing \
+    "${file}" \
+    "${TARGET}/docs/sdlc-spdd/$(basename "${file}")"
+done
 
 # Copy runtime session scripts into the target project for cross-session handoffs
 for file in \
@@ -199,4 +207,5 @@ printf '  %s\n' "${created[@]:-none}"
 echo "Skipped existing (${#skipped[@]}):"
 printf '  %s\n' "${skipped[@]:-none}"
 echo "Recommended next step: run /sdlc-spdd-init in Cursor or Copilot Chat, then /sdlc-spdd-plan"
+echo "Local SDLC-SPDD docs installed under: ${TARGET}/docs/sdlc-spdd"
 echo "Session scripts installed under: ${TARGET}/scripts/sdlc-spdd"

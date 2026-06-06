@@ -60,15 +60,19 @@ You can treat these five pages as the canonical onboarding path.
 
 First day path:
 
-    Read docs/first-day-with-sdlc-spdd.md
+    Read first-day-with-sdlc-spdd.md
 
 Understand the system:
 
-    Read docs/ten-thousand-foot-view.md
+    Read ten-thousand-foot-view.md
 
 Install the scaffold into a target application:
 
     ./scripts/setup-agent-prompts.sh --target /path/to/your/project --all
+
+After install, target-local usage docs are available at:
+
+    /path/to/your/project/docs/sdlc-spdd/
 
 Initialize the application context in Cursor:
 

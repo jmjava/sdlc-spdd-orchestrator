@@ -34,6 +34,10 @@ Integrated setup:
 
     ./scripts/setup-agent-prompts.sh --target /path/to/app --all
 
+Target-local docs:
+
+    docs/sdlc-spdd/
+
 Upgrade older install:
 
     ./scripts/upgrade-project.sh --target /path/to/app --all

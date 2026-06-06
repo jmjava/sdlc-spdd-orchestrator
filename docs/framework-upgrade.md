@@ -9,6 +9,7 @@ The upgrade script updates **framework-owned files only**.
 It does not overwrite:
 
 - application source code
+- application docs outside `docs/sdlc-spdd/`
 - `requirements/`
 - `spdd/canvas/`
 - `spdd/tasks/`
@@ -25,6 +26,7 @@ It can update:
 - `agent-context/playbooks/*.md`
 - `agent-context/harness/*.md`
 - `agent-context/README.md`
+- `docs/sdlc-spdd/*.md`
 - `scripts/sdlc-spdd/*.sh`
 
 Existing framework files are backed up before replacement by default.
@@ -85,6 +87,7 @@ After upgrade, review:
 - assistant prompts if your team customized `.cursor/commands/` or `.github/prompts/`
 - `.github/copilot-instructions.md` if your project had custom Copilot rules
 - playbooks if your team edited `agent-context/playbooks/`
+- SDLC-SPDD docs if your team edited `docs/sdlc-spdd/`
 - backup folder for any local framework changes worth reapplying
 
 Do not move application implementation files into the backup folder. The upgrade script never writes application source paths.

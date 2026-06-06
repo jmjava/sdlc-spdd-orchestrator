@@ -14,6 +14,7 @@ an earlier version of this scaffold.
 The upgrade is framework-only:
   - updates SDLC-SPDD assistant prompts
   - updates SDLC-SPDD playbooks and harness files
+  - updates target-local SDLC-SPDD documentation under docs/sdlc-spdd/
   - updates target-local SDLC-SPDD runtime scripts
   - creates missing session and memory files
   - does not touch application source files
@@ -208,6 +209,7 @@ for dir in \
   agent-context/features \
   agent-context/sessions \
   agent-context/harness \
+  docs/sdlc-spdd \
   scripts/sdlc-spdd; do
   ensure_gitkeep "${TARGET}/${dir}"
 done
@@ -241,6 +243,13 @@ for file in \
   copy_framework_file \
     "${REPO_ROOT}/agent-context/harness/${file}" \
     "${TARGET}/agent-context/harness/${file}"
+done
+
+# User-facing docs are framework-owned when installed under docs/sdlc-spdd.
+for file in "${REPO_ROOT}"/docs/*.md; do
+  copy_framework_file \
+    "${file}" \
+    "${TARGET}/docs/sdlc-spdd/$(basename "${file}")"
 done
 
 # Target-local runtime scripts are framework-owned and safe to upgrade.
@@ -288,4 +297,4 @@ if [[ "${BACKUP}" -eq 1 ]]; then
   echo "Backups (${#backed_up[@]}):"
   printf '  %s\n' "${backed_up[@]:-none}"
 fi
-echo "Not touched: application source, requirements, canvases, feature workspaces, reviews, sync logs, and existing memory content."
+echo "Not touched: application source, requirements, canvases, feature workspaces, reviews, sync logs, existing memory content, or application docs outside docs/sdlc-spdd."

@@ -42,6 +42,7 @@ The target app receives:
 - `agent-context/features/`
 - `agent-context/sessions/`
 - `agent-context/harness/`
+- `docs/sdlc-spdd/`
 - `.cursor/commands/`
 - `.github/copilot-instructions.md`
 - `.github/prompts/`
@@ -57,7 +58,7 @@ Preview first:
 
     ./scripts/upgrade-project.sh --target /path/to/app --all --dry-run
 
-The upgrade updates framework-owned prompts, playbooks, harness files, and target-local runtime scripts. It preserves application source, requirements, canvases, feature workspaces, reviews, sync logs, and existing memory content.
+The upgrade updates framework-owned prompts, playbooks, harness files, target-local docs under `docs/sdlc-spdd/`, and target-local runtime scripts. It preserves application source, application docs outside `docs/sdlc-spdd/`, requirements, canvases, feature workspaces, reviews, sync logs, and existing memory content.
 
 ## 2. Start a New Agent Session
 
