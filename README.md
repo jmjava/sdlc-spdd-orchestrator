@@ -124,28 +124,43 @@ See [docs/java-spring-boot-usage.md](docs/java-spring-boot-usage.md) and [exampl
 
 ## Documentation
 
-- [Documentation hub](docs/README.md)
-- [First day with SDLC-SPDD](docs/first-day-with-sdlc-spdd.md)
-- [10,000-foot view](docs/ten-thousand-foot-view.md)
-- [Installing into your project](docs/installing-into-your-project.md)
-- [Maintaining your project](docs/maintaining-your-project.md)
-- [Top useful concepts and commands](docs/useful-concepts-and-commands.md)
-- [Architecture](docs/architecture.md)
-- [Hybrid SDLC Agents + SPDD model](docs/hybrid-model.md)
-- [Agent session scripts](docs/agent-session-scripts.md)
-- [Framework upgrade](docs/framework-upgrade.md)
+Start with the [documentation hub](docs/README.md), or jump to a path below.
+
+### New-user path
+
+1. [First day with SDLC-SPDD](docs/first-day-with-sdlc-spdd.md)
+2. [10,000-foot view](docs/ten-thousand-foot-view.md)
+3. [Installing into your project](docs/installing-into-your-project.md)
+4. [Top useful concepts and commands](docs/useful-concepts-and-commands.md)
+5. [Maintaining your project](docs/maintaining-your-project.md)
+
+### Daily operation
+
 - [Workflow](docs/workflow.md)
+- [Daily runbook](docs/daily-runbook.md)
+- [Initialization and invocation](docs/initialization-and-invocation.md)
+- [Agent session scripts](docs/agent-session-scripts.md)
+- [Cheat sheet](docs/sdlc-spdd-cheat-sheet.md)
+
+### Setup, upgrade, and assistant adapters
+
+- [Framework upgrade](docs/framework-upgrade.md)
 - [Cursor usage](docs/cursor-usage.md)
 - [GitHub Copilot usage](docs/copilot-usage.md)
-- [Initialization and invocation](docs/initialization-and-invocation.md)
-- [Daily runbook](docs/daily-runbook.md)
-- [Integration linking](docs/integration-linking.md)
+
+### Integrations
+
 - [Jira runbook](docs/jira-runbook.md)
-- [SPDD compliance](docs/spdd-compliance.md)
-- [Cheat sheet](docs/sdlc-spdd-cheat-sheet.md)
+- [Integration linking](docs/integration-linking.md)
 - [GitHub project setup](docs/github-project-setup.md)
-- [Tekton usage](docs/tekton-usage.md)
+
+### Architecture and reference
+
+- [Hybrid SDLC Agents + SPDD model](docs/hybrid-model.md)
+- [SPDD compliance](docs/spdd-compliance.md)
+- [Architecture](docs/architecture.md)
 - [Design decisions](docs/design-decisions.md)
+- [Tekton usage](docs/tekton-usage.md)
 - [Roadmap](docs/roadmap.md)
 
 ## License
