@@ -56,6 +56,10 @@ Or run the integrated setup wrapper:
 
     ./scripts/setup-agent-prompts.sh --target /path/to/your/project --all
 
+Upgrade an existing project initialized by an older version without touching application source, canvases, feature workspaces, or existing memory:
+
+    ./scripts/upgrade-project.sh --target /path/to/your/project --all
+
 Then in Cursor or GitHub Copilot Chat:
 
     /sdlc-spdd-init
@@ -122,6 +126,7 @@ See [docs/java-spring-boot-usage.md](docs/java-spring-boot-usage.md) and [exampl
 - [Architecture](docs/architecture.md)
 - [Hybrid SDLC Agents + SPDD model](docs/hybrid-model.md)
 - [Agent session scripts](docs/agent-session-scripts.md)
+- [Framework upgrade](docs/framework-upgrade.md)
 - [Workflow](docs/workflow.md)
 - [Cursor usage](docs/cursor-usage.md)
 - [GitHub Copilot usage](docs/copilot-usage.md)

@@ -26,6 +26,10 @@ Preview changes without writing files:
 
     ./scripts/init-project.sh --target /path/to/your/project --cursor --copilot --dry-run
 
+Upgrade an existing older installation without overwriting implementation files or accumulated memory:
+
+    ./scripts/upgrade-project.sh --target /path/to/your/project --all
+
 The target application receives:
 
 - `requirements/`

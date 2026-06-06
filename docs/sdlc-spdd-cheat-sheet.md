@@ -26,6 +26,10 @@ Integrated setup:
 
     ./scripts/setup-agent-prompts.sh --target /path/to/app --all
 
+Upgrade older install:
+
+    ./scripts/upgrade-project.sh --target /path/to/app --all
+
 ## Session Handoff
 
 Start or resume:

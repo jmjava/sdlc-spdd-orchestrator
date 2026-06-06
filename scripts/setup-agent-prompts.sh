@@ -105,3 +105,6 @@ echo "  2. Start or resume context:"
 echo "     ${TARGET}/scripts/sdlc-spdd/start-agent-session.sh --target ${TARGET} --phase init"
 echo "  3. Invoke:"
 echo "     /sdlc-spdd-init"
+echo
+echo "For projects initialized by an older version, use:"
+echo "  ${SCRIPT_DIR}/upgrade-project.sh --target ${TARGET} --all"

@@ -13,6 +13,7 @@ They solve three operational needs:
 | Script | Purpose |
 |--------|---------|
 | `scripts/setup-agent-prompts.sh` | Integrated setup for folders, memory, sessions, playbooks, Cursor prompts, and Copilot prompts |
+| `scripts/upgrade-project.sh` | Framework-only upgrade for older initialized projects without overwriting implementation files or existing memory |
 | `scripts/sdlc-spdd/start-agent-session.sh` | Target-local script that creates a session brief for a new agent |
 | `scripts/sdlc-spdd/resync-agent-session.sh` | Target-local script that checks or reconciles feature/canonical canvases, validates the canvas, and creates a session brief |
 | `scripts/sdlc-spdd/capture-session-memory.sh` | Target-local script that persists current session summary, validation, decisions, pitfalls, patterns, and next steps |
@@ -45,6 +46,18 @@ The target app receives:
 - `.github/copilot-instructions.md`
 - `.github/prompts/`
 - `scripts/sdlc-spdd/` runtime session scripts
+
+## Upgrade an Older Installation
+
+Run this from the SDLC-SPDD orchestrator repository:
+
+    ./scripts/upgrade-project.sh --target /path/to/app --all
+
+Preview first:
+
+    ./scripts/upgrade-project.sh --target /path/to/app --all --dry-run
+
+The upgrade updates framework-owned prompts, playbooks, harness files, and target-local runtime scripts. It preserves application source, requirements, canvases, feature workspaces, reviews, sync logs, and existing memory content.
 
 ## 2. Start a New Agent Session
 

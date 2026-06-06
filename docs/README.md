@@ -8,6 +8,7 @@ Use these guides to install the scaffold, invoke the SDLC-SPDD commands, link wo
 |-------|------------|
 | [Hybrid SDLC Agents + SPDD model](hybrid-model.md) | How SDLC Agents lifecycle patterns combine with SPDD/REASONS prompt governance |
 | [Agent session scripts](agent-session-scripts.md) | Runnable setup, session resume/resync, and memory capture commands |
+| [Framework upgrade](framework-upgrade.md) | Upgrade older target projects without overwriting implementation files or accumulated memory |
 | [Workflow](workflow.md) | The SDLC-SPDD lifecycle and quality gates |
 | [Cursor usage](cursor-usage.md) | Installing and invoking Cursor commands |
 | [GitHub Copilot usage](copilot-usage.md) | Installing and invoking Copilot instructions and prompt files |
@@ -55,3 +56,7 @@ Capture session memory:
 
     cd /path/to/your/project
     ./scripts/sdlc-spdd/capture-session-memory.sh --target . --work-id FEAT-001-my-feature --phase code --summary "Completed T01" --validation "tests passed"
+
+Upgrade an older installation:
+
+    ./scripts/upgrade-project.sh --target /path/to/your/project --all
