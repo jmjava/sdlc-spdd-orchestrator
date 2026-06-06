@@ -6,13 +6,14 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 usage() {
   cat <<'EOF'
-Usage: init-project.sh --target <path> [--cursor] [--force] [--dry-run]
+Usage: init-project.sh --target <path> [--cursor] [--copilot] [--force] [--dry-run]
 
 Initialize a target project with SDLC-SPDD scaffold files.
 
 Options:
   --target <path>   Target project path (required)
   --cursor          Install Cursor command templates
+  --copilot         Install GitHub Copilot instructions and prompt files
   --force           Overwrite existing generated files
   --dry-run         Show actions without writing files
   --help            Print this help message
@@ -21,6 +22,7 @@ EOF
 
 TARGET=""
 INSTALL_CURSOR=0
+INSTALL_COPILOT=0
 FORCE=0
 DRY_RUN=0
 
@@ -32,6 +34,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --cursor)
       INSTALL_CURSOR=1
+      shift
+      ;;
+    --copilot)
+      INSTALL_COPILOT=1
       shift
       ;;
     --force)
@@ -118,7 +124,9 @@ for dir in \
   agent-context/memory \
   agent-context/playbooks \
   agent-context/features \
-  agent-context/harness; do
+  agent-context/sessions \
+  agent-context/harness \
+  scripts/sdlc-spdd; do
   ensure_dir "${TARGET}/${dir}"
   ensure_gitkeep "${TARGET}/${dir}"
 done
@@ -128,10 +136,18 @@ for file in \
   project-memory.md \
   architecture-decisions.md \
   known-pitfalls.md \
-  reusable-patterns.md; do
+  reusable-patterns.md \
+  session-history.md; do
   copy_if_missing \
     "${REPO_ROOT}/agent-context/memory/${file}" \
     "${TARGET}/agent-context/memory/${file}"
+done
+
+# Copy playbooks for SDLC Agents-style handoffs and repeatable workflows
+for file in "${REPO_ROOT}"/agent-context/playbooks/*.md; do
+  copy_if_missing \
+    "${file}" \
+    "${TARGET}/agent-context/playbooks/$(basename "${file}")"
 done
 
 copy_if_missing \
@@ -142,11 +158,34 @@ copy_if_missing \
   "${REPO_ROOT}/agent-context/harness/validation-rules.md" \
   "${TARGET}/agent-context/harness/validation-rules.md"
 
+# Copy runtime session scripts into the target project for cross-session handoffs
+for file in \
+  start-agent-session.sh \
+  resync-agent-session.sh \
+  capture-session-memory.sh \
+  sync-agent-context.sh \
+  validate-reasons-canvas.sh; do
+  copy_if_missing \
+    "${REPO_ROOT}/scripts/${file}" \
+    "${TARGET}/scripts/sdlc-spdd/${file}"
+  if [[ "${DRY_RUN}" -eq 0 && -f "${TARGET}/scripts/sdlc-spdd/${file}" ]]; then
+    chmod +x "${TARGET}/scripts/sdlc-spdd/${file}"
+  fi
+done
+
 if [[ "${INSTALL_CURSOR}" -eq 1 ]]; then
   if [[ "${DRY_RUN}" -eq 1 ]]; then
     echo "[dry-run] would install Cursor commands via install-cursor-commands.sh"
   else
     "${SCRIPT_DIR}/install-cursor-commands.sh" --target "${TARGET}" $([[ "${FORCE}" -eq 1 ]] && echo --force)
+  fi
+fi
+
+if [[ "${INSTALL_COPILOT}" -eq 1 ]]; then
+  if [[ "${DRY_RUN}" -eq 1 ]]; then
+    echo "[dry-run] would install Copilot prompts via install-copilot-prompts.sh"
+  else
+    "${SCRIPT_DIR}/install-copilot-prompts.sh" --target "${TARGET}" $([[ "${FORCE}" -eq 1 ]] && echo --force)
   fi
 fi
 
@@ -159,4 +198,5 @@ echo "Created or updated (${#created[@]}):"
 printf '  %s\n' "${created[@]:-none}"
 echo "Skipped existing (${#skipped[@]}):"
 printf '  %s\n' "${skipped[@]:-none}"
-echo "Recommended next step: run /sdlc-spdd-init in Cursor, then /sdlc-spdd-plan"
+echo "Recommended next step: run /sdlc-spdd-init in Cursor or Copilot Chat, then /sdlc-spdd-plan"
+echo "Session scripts installed under: ${TARGET}/scripts/sdlc-spdd"

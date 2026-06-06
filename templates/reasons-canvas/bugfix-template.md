@@ -10,7 +10,10 @@
 - Owner:
 - Target Project:
 - Stack:
-- Related Issue:
+- Source System:
+- Source Issue:
+- Source URL:
+- Docs URL:
 - Related PR:
 
 ## R - Requirements
@@ -164,6 +167,8 @@ Note any release notes or runbook updates.
 - Do not change security behavior without explicit mention.
 - Do not silently swallow exceptions.
 - Do not mark complete until acceptance criteria are satisfied.
+- Do not implement behavior changes until this canvas is updated with `/sdlc-spdd-prompt-update`.
+- Do not let implementation drift from this canvas without running `/sdlc-spdd-sync`.
 
 ## Review Checklist
 

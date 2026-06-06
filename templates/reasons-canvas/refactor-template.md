@@ -10,7 +10,10 @@
 - Owner:
 - Target Project:
 - Stack:
-- Related Issue:
+- Source System:
+- Source Issue:
+- Source URL:
+- Docs URL:
 - Related PR:
 
 ## R - Requirements
@@ -140,6 +143,8 @@ Existing tests must continue to pass; add coverage if gaps exist.
 - Do not change public API behavior unless explicitly in scope.
 - Do not delete tests without justification.
 - Do not mark complete until tests pass.
+- Do not implement behavior changes until this canvas is updated with `/sdlc-spdd-prompt-update`.
+- Do not let implementation drift from this canvas without running `/sdlc-spdd-sync`.
 
 ## Review Checklist
 

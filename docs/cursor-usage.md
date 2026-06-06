@@ -12,6 +12,8 @@ Or install commands only:
 
 Commands are copied to `.cursor/commands/`.
 
+To install GitHub Copilot prompt files instead, see [copilot-usage.md](copilot-usage.md).
+
 ## Available Commands
 
 | Command | Purpose |
@@ -21,6 +23,7 @@ Commands are copied to `.cursor/commands/`.
 | `/sdlc-spdd-architect` | Harden canvas before coding |
 | `/sdlc-spdd-code` | Implement one approved operation |
 | `/sdlc-spdd-review` | Review changes against canvas |
+| `/sdlc-spdd-prompt-update` | Update canvas first when requirements or behavior intent change |
 | `/sdlc-spdd-retro` | Capture learnings into memory |
 | `/sdlc-spdd-sync` | Reconcile canvas with code |
 
@@ -30,4 +33,8 @@ Commands are copied to `.cursor/commands/`.
 - Keep planning and architect phases free of application code changes.
 - Run review after each coding operation when possible.
 
-See also: [workflow.md](workflow.md)
+See also:
+
+- [workflow.md](workflow.md)
+- [initialization-and-invocation.md](initialization-and-invocation.md)
+- [daily-runbook.md](daily-runbook.md)
