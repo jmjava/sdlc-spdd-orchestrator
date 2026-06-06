@@ -121,6 +121,7 @@ for dir in \
   spdd/tasks \
   spdd/reviews \
   spdd/sync \
+  session-notes \
   agent-context/memory \
   agent-context/playbooks \
   agent-context/features \
@@ -131,6 +132,22 @@ for dir in \
   ensure_dir "${TARGET}/${dir}"
   ensure_gitkeep "${TARGET}/${dir}"
 done
+
+# Create optional project planning artifacts without overwriting existing plans.
+copy_if_missing \
+  "${REPO_ROOT}/templates/project-docs/ROADMAP.md" \
+  "${TARGET}/ROADMAP.md"
+
+shopt -s nullglob
+milestone_files=("${TARGET}"/milestone-*.md)
+shopt -u nullglob
+if ((${#milestone_files[@]} == 0)); then
+  copy_if_missing \
+    "${REPO_ROOT}/templates/project-docs/milestone-1.md" \
+    "${TARGET}/milestone-1.md"
+else
+  skipped+=("${TARGET}/milestone-*.md")
+fi
 
 # Copy memory and harness templates
 for file in \

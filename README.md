@@ -139,6 +139,7 @@ Start with the [documentation hub](docs/README.md), or jump to a path below.
 - [Workflow](docs/workflow.md)
 - [Daily runbook](docs/daily-runbook.md)
 - [Initialization and invocation](docs/initialization-and-invocation.md)
+- [Roadmap, milestones, and session notes](docs/roadmap-milestones-and-session-notes.md)
 - [Agent session scripts](docs/agent-session-scripts.md)
 - [Cheat sheet](docs/sdlc-spdd-cheat-sheet.md)
 

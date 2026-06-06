@@ -10,6 +10,9 @@ It does not overwrite:
 
 - application source code
 - application docs outside `docs/sdlc-spdd/`
+- existing `ROADMAP.md`
+- existing `milestone-*.md`
+- existing `session-notes/`
 - `requirements/`
 - `spdd/canvas/`
 - `spdd/tasks/`
@@ -28,6 +31,12 @@ It can update:
 - `agent-context/README.md`
 - `docs/sdlc-spdd/*.md`
 - `scripts/sdlc-spdd/*.sh`
+
+It can create when missing:
+
+- `ROADMAP.md`
+- `milestone-1.md`
+- `session-notes/`
 
 Existing framework files are backed up before replacement by default.
 

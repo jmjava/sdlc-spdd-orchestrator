@@ -48,6 +48,7 @@ Expected result:
 - `requirements/` exists.
 - `spdd/` exists.
 - `agent-context/` exists.
+- `ROADMAP.md`, `milestone-1.md`, and `session-notes/` exist when they were missing.
 - stack information is captured in project memory.
 - no application source code is changed.
 
@@ -95,6 +96,11 @@ From Jira:
 Planning should create a REASONS Canvas under:
 
     spdd/canvas/<WORK-ID>.md
+
+If this work belongs to a milestone, include that in the canvas Metadata:
+
+    - Roadmap: ROADMAP.md
+    - Milestone: milestone-1.md
 
 ## 6. Harden Architecture Before Coding
 
@@ -149,6 +155,7 @@ At the end of the session:
       --phase code \
       --summary "Implemented T01 for order status lookup." \
       --validation "Tests run: <command/result>" \
+      --milestone milestone-1.md \
       --next "/sdlc-spdd-review @spdd/canvas/FEAT-001-order-status-api.md"
 
 This stores context in files that future sessions can read.

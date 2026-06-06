@@ -37,6 +37,9 @@ The target application receives:
 - `spdd/tasks/`
 - `spdd/reviews/`
 - `spdd/sync/`
+- `ROADMAP.md`
+- `milestone-1.md` when no `milestone-*.md` files exist
+- `session-notes/`
 - `agent-context/memory/`
 - `agent-context/features/`
 - `agent-context/sessions/`
@@ -89,6 +92,10 @@ If the work may have drifted between the feature workspace and canonical canvas,
 Then ask the assistant:
 
     For FEAT-001-order-status-api, read @agent-context/sessions/current-session.md and continue with the recommended SDLC-SPDD command.
+
+If the work belongs to a milestone:
+
+    For FEAT-001-order-status-api, also read @ROADMAP.md and @milestone-1.md before planning or resuming.
 
 ## How to Start Work
 

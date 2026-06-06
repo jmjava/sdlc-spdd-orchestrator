@@ -9,6 +9,8 @@ Maintenance means keeping the framework, prompts, memory, canvases, and external
 Run these checks regularly:
 
 - [ ] Framework prompts and scripts are current.
+- [ ] `ROADMAP.md` and active `milestone-*.md` files reflect current progress.
+- [ ] daily session notes are captured under `session-notes/`.
 - [ ] `agent-context/sessions/current-session.md` reflects the active work.
 - [ ] feature workspace canvas and canonical canvas are in sync.
 - [ ] memory captures recent decisions, pitfalls, and patterns.
@@ -40,6 +42,10 @@ From the target app:
 Then ask:
 
     For <WORK-ID>, read @agent-context/sessions/current-session.md before answering.
+
+When milestone planning is active, also include:
+
+    Read @ROADMAP.md and the active @milestone-*.md file before planning or resuming.
 
 ## Check Canvas Sync
 
@@ -77,12 +83,25 @@ At the end of meaningful work:
 
 Memory is stored in:
 
+- `session-notes/YYYY-MM-DD.md`
 - `agent-context/memory/session-history.md`
 - `agent-context/memory/project-memory.md`
 - `agent-context/memory/architecture-decisions.md`
 - `agent-context/memory/known-pitfalls.md`
 - `agent-context/memory/reusable-patterns.md`
 - `agent-context/features/<WORK-ID>/progress-log.md`
+
+To tie a session to roadmap and milestone progress:
+
+    ./scripts/sdlc-spdd/capture-session-memory.sh \
+      --target . \
+      --work-id <WORK-ID> \
+      --phase <phase> \
+      --summary "<what changed>" \
+      --validation "<tests or checks>" \
+      --milestone milestone-1.md \
+      --roadmap-note "<roadmap-level progress note>" \
+      --next "<next command>"
 
 ## Maintain Jira and GitHub Links
 
@@ -114,6 +133,9 @@ Use these boundaries:
 | `scripts/sdlc-spdd/` | framework-owned runtime scripts; update through upgrade script |
 | `agent-context/playbooks/` | team workflow guidance; safe place for team process notes |
 | `agent-context/memory/` | durable project knowledge; preserve and append |
+| `ROADMAP.md` | project-owned milestone progress; preserve and append intentionally |
+| `milestone-*.md` | project-owned milestone scope and status; preserve and append intentionally |
+| `session-notes/` | project-owned daily session summaries |
 | `spdd/canvas/` | design contract; update through SDLC-SPDD skills |
 
 ## Archive Old Sessions
@@ -150,6 +172,7 @@ Retro:
 ## Read Next
 
 - [Agent session scripts](agent-session-scripts.md)
+- [Roadmap, milestones, and session notes](roadmap-milestones-and-session-notes.md)
 - [Framework upgrade](framework-upgrade.md)
 - [Jira runbook](jira-runbook.md)
 - [SPDD compliance](spdd-compliance.md)

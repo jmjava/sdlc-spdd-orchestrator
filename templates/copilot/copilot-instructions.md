@@ -17,6 +17,9 @@ Preserve context by reading relevant artifacts before answering:
 - `spdd/tasks/`
 - `spdd/reviews/`
 - `spdd/sync/`
+- `ROADMAP.md`
+- `milestone-*.md`
+- `session-notes/`
 - `agent-context/memory/`
 - `agent-context/features/`
 - `agent-context/harness/`

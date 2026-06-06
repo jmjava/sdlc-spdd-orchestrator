@@ -7,6 +7,7 @@ They solve three operational needs:
 1. Set up assistant prompts, playbooks, memory, sessions, and SPDD folders.
 2. Resync a new agent session with previous work.
 3. Persist current session learning into durable memory.
+4. Connect session summaries to `ROADMAP.md`, `milestone-*.md`, and `session-notes/`.
 
 ## Script Overview
 
@@ -37,6 +38,9 @@ The target app receives:
 - `spdd/tasks/`
 - `spdd/reviews/`
 - `spdd/sync/`
+- `ROADMAP.md`
+- `milestone-1.md` when no `milestone-*.md` exists
+- `session-notes/`
 - `agent-context/memory/`
 - `agent-context/playbooks/`
 - `agent-context/features/`
@@ -78,6 +82,7 @@ The brief includes:
 - phase
 - recommended command
 - canvas sync state
+- roadmap and milestone status
 - artifact status
 - memory files to read
 - playbooks to consider
@@ -118,6 +123,8 @@ At the end of a session, persist what happened:
       --phase code \
       --summary "Implemented operation T01 for order status lookup." \
       --validation "mvn test" \
+      --milestone milestone-1.md \
+      --roadmap-note "FEAT-001 completed its first implementation operation." \
       --decisions "Status lookup stays in OrderStatusService." \
       --pitfalls "Legacy orders may not have status history." \
       --patterns "Use focused service tests for status transitions." \
@@ -127,6 +134,9 @@ This updates:
 
 - `agent-context/memory/session-history.md`
 - `agent-context/features/<WORK-ID>/progress-log.md`
+- `session-notes/YYYY-MM-DD.md`
+- `milestone-*.md` when `--milestone` is provided
+- `ROADMAP.md` when `--roadmap-note` is provided
 - `agent-context/memory/project-memory.md`
 - `agent-context/memory/architecture-decisions.md` when `--decisions` is provided
 - `agent-context/memory/known-pitfalls.md` when `--pitfalls` is provided

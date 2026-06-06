@@ -17,6 +17,9 @@ Options:
   --decisions <text>    Architecture or product decisions to append
   --pitfalls <text>     Pitfalls to remember
   --patterns <text>     Reusable patterns to remember
+  --milestone <path>    Milestone doc to append, such as milestone-1.md
+  --roadmap-note <text> Append a progress note to ROADMAP.md
+  --no-session-note     Do not write session-notes/YYYY-MM-DD.md
   --next <text>         Next recommended command or action
   --dry-run             Print the memory entry without writing files
   --help                Print this help message
@@ -36,7 +39,10 @@ VALIDATION=""
 DECISIONS=""
 PITFALLS=""
 PATTERNS=""
+MILESTONE=""
+ROADMAP_NOTE=""
 NEXT_STEP=""
+WRITE_SESSION_NOTE=1
 DRY_RUN=0
 
 while [[ $# -gt 0 ]]; do
@@ -77,9 +83,21 @@ while [[ $# -gt 0 ]]; do
       PATTERNS="${2:-}"
       shift 2
       ;;
+    --milestone)
+      MILESTONE="${2:-}"
+      shift 2
+      ;;
+    --roadmap-note)
+      ROADMAP_NOTE="${2:-}"
+      shift 2
+      ;;
     --next)
       NEXT_STEP="${2:-}"
       shift 2
+      ;;
+    --no-session-note)
+      WRITE_SESSION_NOTE=0
+      shift
       ;;
     --dry-run)
       DRY_RUN=1
@@ -123,11 +141,15 @@ fi
 
 TARGET="$(cd "${TARGET}" && pwd)"
 timestamp="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+session_day="$(date -u +"%Y-%m-%d")"
 
 memory_dir="${TARGET}/agent-context/memory"
 feature_dir="${TARGET}/agent-context/features/${WORK_ID}"
 session_dir="${TARGET}/agent-context/sessions"
-mkdir -p "${memory_dir}" "${feature_dir}" "${session_dir}"
+session_notes_dir="${TARGET}/session-notes"
+if [[ "${DRY_RUN}" -eq 0 ]]; then
+  mkdir -p "${memory_dir}" "${feature_dir}" "${session_dir}" "${session_notes_dir}"
+fi
 
 session_history="${memory_dir}/session-history.md"
 project_memory="${memory_dir}/project-memory.md"
@@ -136,12 +158,29 @@ known_pitfalls="${memory_dir}/known-pitfalls.md"
 reusable_patterns="${memory_dir}/reusable-patterns.md"
 progress_log="${feature_dir}/progress-log.md"
 current_session="${session_dir}/current-session.md"
+daily_session_note="${session_notes_dir}/${session_day}.md"
+roadmap_file="${TARGET}/ROADMAP.md"
+milestone_file=""
+if [[ -n "${MILESTONE}" ]]; then
+  milestone_file="${MILESTONE}"
+  if [[ "${milestone_file}" != *.md ]]; then
+    milestone_file="${milestone_file}.md"
+  fi
+  if [[ "${milestone_file}" != /* ]]; then
+    milestone_file="${TARGET}/${milestone_file}"
+  fi
+fi
 
 ensure_file() {
   local path="$1"
   local title="$2"
   if [[ ! -f "${path}" ]]; then
-    printf '# %s\n\n' "${title}" > "${path}"
+    if [[ "${DRY_RUN}" -eq 1 ]]; then
+      echo "[dry-run] would create ${path}"
+    else
+      mkdir -p "$(dirname "${path}")"
+      printf '# %s\n\n' "${title}" > "${path}"
+    fi
   fi
 }
 
@@ -151,6 +190,9 @@ ensure_file "${architecture_decisions}" "Architecture Decisions"
 ensure_file "${known_pitfalls}" "Known Pitfalls"
 ensure_file "${reusable_patterns}" "Reusable Patterns"
 ensure_file "${progress_log}" "Progress Log: ${WORK_ID}"
+if [[ "${WRITE_SESSION_NOTE}" -eq 1 ]]; then
+  ensure_file "${daily_session_note}" "Session Notes: ${session_day}"
+fi
 
 entry="$(cat <<EOF
 
@@ -161,6 +203,8 @@ entry="$(cat <<EOF
 - Decisions: ${DECISIONS:-None}
 - Pitfalls: ${PITFALLS:-None}
 - Reusable patterns: ${PATTERNS:-None}
+- Milestone: ${MILESTONE:-None}
+- Roadmap note: ${ROADMAP_NOTE:-None}
 - Next: ${NEXT_STEP:-Not recorded}
 EOF
 )"
@@ -172,6 +216,10 @@ fi
 
 printf '%s\n' "${entry}" >> "${session_history}"
 printf '%s\n' "${entry}" >> "${progress_log}"
+
+if [[ "${WRITE_SESSION_NOTE}" -eq 1 ]]; then
+  printf '%s\n' "${entry}" >> "${daily_session_note}"
+fi
 
 {
   echo
@@ -212,6 +260,30 @@ if [[ -n "${PATTERNS}" ]]; then
   } >> "${reusable_patterns}"
 fi
 
+if [[ -n "${milestone_file}" ]]; then
+  ensure_file "${milestone_file}" "$(basename "${milestone_file}" .md)"
+  {
+    echo
+    echo "### ${timestamp} - ${WORK_ID} - ${PHASE}"
+    echo
+    echo "- Summary: ${SUMMARY}"
+    echo "- Validation: ${VALIDATION:-Not recorded}"
+    echo "- Next: ${NEXT_STEP:-Not recorded}"
+  } >> "${milestone_file}"
+fi
+
+if [[ -n "${ROADMAP_NOTE}" ]]; then
+  ensure_file "${roadmap_file}" "Roadmap"
+  {
+    echo
+    echo "### ${timestamp} - ${WORK_ID} - ${PHASE}"
+    echo
+    echo "- ${ROADMAP_NOTE}"
+    echo "- Summary: ${SUMMARY}"
+    echo "- Next: ${NEXT_STEP:-Not recorded}"
+  } >> "${roadmap_file}"
+fi
+
 if [[ -f "${current_session}" ]]; then
   {
     echo
@@ -227,4 +299,13 @@ fi
 echo "Captured session memory:"
 echo "  ${session_history}"
 echo "  ${progress_log}"
+if [[ "${WRITE_SESSION_NOTE}" -eq 1 ]]; then
+  echo "  ${daily_session_note}"
+fi
+if [[ -n "${milestone_file}" ]]; then
+  echo "  ${milestone_file}"
+fi
+if [[ -n "${ROADMAP_NOTE}" ]]; then
+  echo "  ${roadmap_file}"
+fi
 echo "Updated durable memory as applicable."

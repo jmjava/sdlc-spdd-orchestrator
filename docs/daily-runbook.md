@@ -32,6 +32,10 @@ Prompt:
     - open risks
     - recommended SDLC-SPDD command
 
+If the work belongs to a milestone, include:
+
+    Also read @ROADMAP.md, the active @milestone-*.md file, and today's @session-notes/YYYY-MM-DD.md if it exists.
+
 If no Work ID exists yet:
 
     We are starting new work for <short requirement>. Create a Work ID, plan the work, and link any external issue I provide.
@@ -231,6 +235,8 @@ Persist that handoff:
       --phase <phase> \
       --summary "<completed work>" \
       --validation "<tests or checks>" \
+      --milestone milestone-1.md \
+      --roadmap-note "<milestone-level progress, if useful>" \
       --decisions "<decisions, if any>" \
       --pitfalls "<pitfalls, if any>" \
       --patterns "<patterns, if any>" \

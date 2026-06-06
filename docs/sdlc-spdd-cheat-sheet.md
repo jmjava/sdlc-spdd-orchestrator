@@ -38,6 +38,12 @@ Target-local docs:
 
     docs/sdlc-spdd/
 
+Project planning:
+
+    ROADMAP.md
+    milestone-1.md
+    session-notes/
+
 Upgrade older install:
 
     ./scripts/upgrade-project.sh --target /path/to/app --all
@@ -55,6 +61,10 @@ Check previous work:
 Capture memory:
 
     ./scripts/sdlc-spdd/capture-session-memory.sh --target . --work-id <WORK-ID> --phase <phase> --summary "<summary>" --validation "<tests>" --next "<next command>"
+
+Capture milestone progress:
+
+    ./scripts/sdlc-spdd/capture-session-memory.sh --target . --work-id <WORK-ID> --phase <phase> --summary "<summary>" --milestone milestone-1.md --roadmap-note "<progress>" --next "<next command>"
 
 ## Lifecycle
 

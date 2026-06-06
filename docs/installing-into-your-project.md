@@ -25,6 +25,9 @@ This installs:
 - `spdd/tasks/`
 - `spdd/reviews/`
 - `spdd/sync/`
+- `ROADMAP.md`
+- `milestone-1.md` when no `milestone-*.md` exists
+- `session-notes/`
 - `agent-context/memory/`
 - `agent-context/playbooks/`
 - `agent-context/features/`
@@ -104,6 +107,8 @@ From the target app:
     test -d spdd/canvas
     test -d docs/sdlc-spdd
     test -d scripts/sdlc-spdd
+    test -f ROADMAP.md
+    test -d session-notes
     test -f agent-context/memory/project-memory.md
     test -f agent-context/playbooks/session-handoff-playbook.md
     test -f docs/sdlc-spdd/first-day-with-sdlc-spdd.md

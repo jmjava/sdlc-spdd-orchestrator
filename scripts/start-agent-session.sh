@@ -68,6 +68,9 @@ if [[ -n "${WORK_ID}" ]]; then
 fi
 session_file="${session_dir}/${session_name}.md"
 current_file="${session_dir}/current-session.md"
+roadmap_file="${TARGET}/ROADMAP.md"
+session_notes_dir="${TARGET}/session-notes"
+today_note="${session_notes_dir}/$(date -u +"%Y-%m-%d").md"
 
 feature_dir=""
 feature_canvas=""
@@ -159,6 +162,18 @@ if ((${#session_files[@]} > 0)); then
   latest_session="$(ls -t "${session_dir}"/*.md 2>/dev/null | head -n 1 || true)"
 fi
 
+milestone_list="- none found"
+shopt -s nullglob
+milestone_files=("${TARGET}"/milestone-*.md)
+shopt -u nullglob
+if ((${#milestone_files[@]} > 0)); then
+  milestone_list=""
+  for file in "${milestone_files[@]}"; do
+    milestone_list+="- ${file#${TARGET}/}"$'\n'
+  done
+  milestone_list="${milestone_list%$'\n'}"
+fi
+
 cat > "${session_file}" <<EOF
 # SDLC-SPDD Agent Session
 
@@ -189,8 +204,22 @@ cat > "${session_file}" <<EOF
 | Sync log | ${sync_log:-not applicable} | $(status_for "${sync_log}") |
 | Retro | ${retro_file:-not applicable} | $(status_for "${retro_file}") |
 
+## Roadmap and Milestone Context
+
+| Artifact | Path | Status |
+|----------|------|--------|
+| Roadmap | ROADMAP.md | $(status_for "${roadmap_file}") |
+| Today's session notes | session-notes/$(date -u +"%Y-%m-%d").md | $(status_for "${today_note}") |
+
+Milestone docs:
+
+${milestone_list}
+
 ## Persistent Memory To Read
 
+- ROADMAP.md
+- milestone-*.md
+- session-notes/
 - agent-context/memory/project-memory.md
 - agent-context/memory/session-history.md
 - agent-context/memory/architecture-decisions.md

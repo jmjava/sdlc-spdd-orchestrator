@@ -28,6 +28,7 @@ You can treat these five pages as the canonical onboarding path.
 |-------|-------------|
 | [Daily runbook](daily-runbook.md) | You need repeatable day-to-day actions for triage, planning, coding, review, retro, sync, and handoff |
 | [Initialization and invocation](initialization-and-invocation.md) | You need concrete examples for starting work and invoking each SDLC-SPDD skill |
+| [Roadmap, milestones, and session notes](roadmap-milestones-and-session-notes.md) | You use `ROADMAP.md`, `milestone-*.md`, and `session-notes/` to track project progress |
 | [Top useful concepts and commands](useful-concepts-and-commands.md) | You want a fast reference for common commands and prompt patterns |
 | [Cheat sheet](sdlc-spdd-cheat-sheet.md) | You want a one-page PDF-friendly quick reference |
 

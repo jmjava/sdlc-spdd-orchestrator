@@ -94,6 +94,19 @@ Important files:
 - `agent-context/memory/known-pitfalls.md`
 - `agent-context/memory/reusable-patterns.md`
 
+### Roadmap and Milestones
+
+Project-owned planning files that connect SDLC-SPDD work to larger delivery goals.
+
+Common files:
+
+- `ROADMAP.md`
+- `milestone-1.md`
+- `milestone-2.md`
+- `session-notes/YYYY-MM-DD.md`
+
+Use roadmap and milestone docs to give planning agents delivery context. Use REASONS Canvas files to govern each Work ID.
+
 ## Top Commands
 
 ### Install into a target project
@@ -159,6 +172,18 @@ or:
       --validation "<tests>" \
       --next "<next command>"
 
+### Capture milestone and roadmap progress
+
+    ./scripts/sdlc-spdd/capture-session-memory.sh \
+      --target . \
+      --work-id <WORK-ID> \
+      --phase <phase> \
+      --summary "<summary>" \
+      --validation "<tests>" \
+      --milestone milestone-1.md \
+      --roadmap-note "<roadmap-level progress>" \
+      --next "<next command>"
+
 ### Validate a canvas
 
     ./scripts/sdlc-spdd/validate-reasons-canvas.sh spdd/canvas/<WORK-ID>.md
@@ -198,5 +223,6 @@ or:
 
 - [First day with SDLC-SPDD](first-day-with-sdlc-spdd.md)
 - [Daily runbook](daily-runbook.md)
+- [Roadmap, milestones, and session notes](roadmap-milestones-and-session-notes.md)
 - [Agent session scripts](agent-session-scripts.md)
 - [SPDD compliance](spdd-compliance.md)

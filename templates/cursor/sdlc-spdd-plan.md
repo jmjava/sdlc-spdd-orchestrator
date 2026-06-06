@@ -14,6 +14,9 @@ The user may provide:
 - A path to a requirement document
 - A Jira issue key or URL
 - A GitHub issue
+- `ROADMAP.md`
+- `milestone-*.md`
+- `session-notes/`
 - A partial feature idea
 - A bug report
 - A refactor goal
@@ -27,10 +30,11 @@ If skill directives are provided, record included and excluded skills in the can
 1. Inspect the repository structure.
 2. Detect the stack.
 3. Identify relevant files and modules.
-4. Identify requested skill directives and relevant playbooks or memory.
-5. Create or update a feature folder under `agent-context/features/`.
-6. Create a REASONS Canvas under `spdd/canvas/`.
-7. Use the sections:
+4. Read roadmap, milestone, and recent session-note context when present.
+5. Identify requested skill directives and relevant playbooks or memory.
+6. Create or update a feature folder under `agent-context/features/`.
+7. Create a REASONS Canvas under `spdd/canvas/`.
+8. Use the sections:
    - Requirements
    - Entities
    - Approach
@@ -38,11 +42,12 @@ If skill directives are provided, record included and excluded skills in the can
    - Operations
    - Norms
    - Safeguards
-8. Break work into small implementation tasks.
-9. Do not modify source code.
-10. Do not invent requirements that were not requested.
-11. Ask for clarification only when absolutely necessary.
-12. If clarification is not essential, make reasonable assumptions and record them in the canvas.
+9. Break work into small implementation tasks.
+10. Link the Work ID to the relevant roadmap or milestone when known.
+11. Do not modify source code.
+12. Do not invent requirements that were not requested.
+13. Ask for clarification only when absolutely necessary.
+14. If clarification is not essential, make reasonable assumptions and record them in the canvas.
 
 ## Output
 

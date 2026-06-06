@@ -53,6 +53,9 @@ This is deliberately slower than asking an assistant to "just fix it." It is mea
 
 | Path | Purpose |
 |------|---------|
+| `ROADMAP.md` | project milestone progress and current focus |
+| `milestone-*.md` | milestone goals, scope, linked Work IDs, and summaries |
+| `session-notes/` | daily summaries of agent sessions |
 | `requirements/` | raw requirements, issue notes, acceptance criteria |
 | `spdd/canvas/` | canonical REASONS Canvas files |
 | `spdd/reviews/` | review outputs against the canvas |

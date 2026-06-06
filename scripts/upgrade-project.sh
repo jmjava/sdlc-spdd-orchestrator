@@ -16,6 +16,7 @@ The upgrade is framework-only:
   - updates SDLC-SPDD playbooks and harness files
   - updates target-local SDLC-SPDD documentation under docs/sdlc-spdd/
   - updates target-local SDLC-SPDD runtime scripts
+  - creates missing ROADMAP.md, milestone-1.md, and session-notes/
   - creates missing session and memory files
   - does not touch application source files
   - does not overwrite requirements, canvases, feature workspaces, reviews,
@@ -204,6 +205,7 @@ for dir in \
   spdd/tasks \
   spdd/reviews \
   spdd/sync \
+  session-notes \
   agent-context/memory \
   agent-context/playbooks \
   agent-context/features \
@@ -213,6 +215,38 @@ for dir in \
   scripts/sdlc-spdd; do
   ensure_gitkeep "${TARGET}/${dir}"
 done
+
+# Preserve project planning artifacts; create only if missing.
+create_missing_project_doc() {
+  local src="$1"
+  local dest="$2"
+  ensure_dir "$(dirname "${dest}")"
+  if [[ -f "${dest}" ]]; then
+    preserved+=("${dest}")
+    return
+  fi
+  if [[ "${DRY_RUN}" -eq 1 ]]; then
+    echo "[dry-run] would create missing project planning doc ${dest}"
+  else
+    cp "${src}" "${dest}"
+  fi
+  created+=("${dest}")
+}
+
+create_missing_project_doc \
+  "${REPO_ROOT}/templates/project-docs/ROADMAP.md" \
+  "${TARGET}/ROADMAP.md"
+
+shopt -s nullglob
+milestone_files=("${TARGET}"/milestone-*.md)
+shopt -u nullglob
+if ((${#milestone_files[@]} == 0)); then
+  create_missing_project_doc \
+    "${REPO_ROOT}/templates/project-docs/milestone-1.md" \
+    "${TARGET}/milestone-1.md"
+else
+  preserved+=("${TARGET}/milestone-*.md")
+fi
 
 # Preserve accumulated memory; create only missing memory files.
 for file in \
@@ -297,4 +331,4 @@ if [[ "${BACKUP}" -eq 1 ]]; then
   echo "Backups (${#backed_up[@]}):"
   printf '  %s\n' "${backed_up[@]:-none}"
 fi
-echo "Not touched: application source, requirements, canvases, feature workspaces, reviews, sync logs, existing memory content, or application docs outside docs/sdlc-spdd."
+echo "Not touched: application source, requirements, canvases, feature workspaces, reviews, sync logs, existing roadmap/milestones, existing memory content, or application docs outside docs/sdlc-spdd."
