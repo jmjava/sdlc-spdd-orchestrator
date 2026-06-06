@@ -39,6 +39,15 @@ This installs:
 - `.github/prompts/`
 - `scripts/sdlc-spdd/`
 
+The target-local `scripts/sdlc-spdd/` folder includes session scripts and mapping tools:
+
+- `start-agent-session.sh`
+- `resync-agent-session.sh`
+- `capture-session-memory.sh`
+- `create-work-from-milestone.sh`
+- `sync-roadmap-from-spdd.sh`
+- `summarize-session-notes.sh`
+
 ## Fresh Install for One Assistant
 
 Cursor:
@@ -109,6 +118,9 @@ From the target app:
     test -d scripts/sdlc-spdd
     test -f ROADMAP.md
     test -d session-notes
+    test -x scripts/sdlc-spdd/create-work-from-milestone.sh
+    test -x scripts/sdlc-spdd/sync-roadmap-from-spdd.sh
+    test -x scripts/sdlc-spdd/summarize-session-notes.sh
     test -f agent-context/memory/project-memory.md
     test -f agent-context/playbooks/session-handoff-playbook.md
     test -f docs/sdlc-spdd/first-day-with-sdlc-spdd.md

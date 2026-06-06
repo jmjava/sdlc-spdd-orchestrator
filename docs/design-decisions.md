@@ -8,7 +8,23 @@ The hybrid keeps these concerns separate:
 
 - SDLC Agents answer who acts, when they act, and which context they should load.
 - SPDD answers what artifact governs the work and how prompt/code drift is reconciled.
-- This scaffold answers how those practices are installed and invoked from Cursor or GitHub Copilot.
+- Roadmap, milestone, and session-note files answer where the project is going and what happened recently.
+- This scaffold answers how those practices are installed, mapped, and invoked from Cursor or GitHub Copilot.
+
+## Planning narrative stays separate from SPDD contracts
+
+`ROADMAP.md`, `milestone-*.md`, and `session-notes/` are intentionally preserved as human-readable planning and narrative artifacts. They inform SDLC-SPDD work, but they do not replace the REASONS Canvas.
+
+The flow is:
+
+    ROADMAP.md / milestone-*.md / session-notes/
+            -> inform and summarize
+    spdd/canvas/ + agent-context/
+            -> govern and remember
+    code / reviews / sync logs
+            -> execute and validate
+
+This avoids over-structuring project-level planning while still giving agents enough traceability to create Work IDs, canvases, memory, and reviews.
 
 ## Multi-assistant Markdown adapters
 

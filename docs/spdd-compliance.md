@@ -6,13 +6,24 @@ SPDD treats prompts as first-class delivery artifacts that are version controlle
 
 For the SDLC Agents side of the hybrid, see [hybrid-model.md](hybrid-model.md).
 
+Project-level planning documents are also supported:
+
+    ROADMAP.md / milestone-*.md / session-notes/
+            -> inform and summarize
+    spdd/canvas/ + agent-context/
+            -> govern and remember
+    code / reviews / sync logs
+            -> execute and validate
+
+These planning documents inform SPDD work, but they do not replace the REASONS Canvas. The canvas remains the governed prompt contract for each Work ID.
+
 ## Compliance Summary
 
 | SPDD expectation | How this scaffold satisfies it |
 |------------------|--------------------------------|
 | Prompts are first-class artifacts | Cursor commands, Copilot prompt files, REASONS Canvas files, and agent memory live in the repository |
 | Prompts are version controlled | Generated canvases and prompt assets are normal files committed with code |
-| Business intent is explicit before coding | `/sdlc-spdd-plan` creates Requirements, Entities, Approach, Structure, Operations, Norms, and Safeguards before implementation |
+| Business intent is explicit before coding | Roadmap/milestones/session notes inform `/sdlc-spdd-plan`, which creates Requirements, Entities, Approach, Structure, Operations, Norms, and Safeguards before implementation |
 | Abstraction comes before execution | `/sdlc-spdd-architect` hardens intent and architecture before `/sdlc-spdd-code` |
 | Code generation has boundaries | `/sdlc-spdd-code` implements exactly one approved operation from the canvas |
 | Review checks intent, not only code | `/sdlc-spdd-review` compares implementation against all REASONS sections |
@@ -42,7 +53,7 @@ Validate canvas structure with:
 Use this closed loop:
 
     Business input
-      -> Requirement or Jira issue
+      -> Roadmap, milestone, requirement, Jira issue, or session note
       -> REASONS Canvas
       -> Architecture hardening
       -> One operation of code
@@ -138,6 +149,7 @@ A work item is SPDD-compliant only when:
 
 - [ ] A Work ID exists.
 - [ ] Source issue is linked, or the lack of external tracking is explicit.
+- [ ] Roadmap and milestone metadata are linked when the work belongs to a milestone.
 - [ ] A REASONS Canvas exists in `spdd/canvas/`.
 - [ ] Canvas passes `validate-reasons-canvas.sh`.
 - [ ] Requirements include acceptance criteria and definition of done.
@@ -150,6 +162,7 @@ A work item is SPDD-compliant only when:
 - [ ] Behavior changes update canvas before code.
 - [ ] Refactors sync canvas after review.
 - [ ] Retro updates reusable memory.
+- [ ] Session notes or memory capture preserve useful session context.
 - [ ] Jira/GitHub issue status is synchronized from the artifact state.
 
 ## Known Boundaries

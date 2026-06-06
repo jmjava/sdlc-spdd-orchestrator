@@ -1,15 +1,29 @@
 # Architecture
 
-SDLC-SPDD Orchestrator combines four layers:
+SDLC-SPDD Orchestrator combines five layers:
 
-1. **SDLC Agents lifecycle** — role-separated phases, architecture-first handoffs, progressive context loading, and continual learning
-2. **SPDD REASONS Canvas** — explicit prompt/design contract for each unit of work
-3. **Assistant adapters** — Cursor commands and GitHub Copilot prompt files that invoke the same skills
-4. **Integration runbooks** — Jira, GitHub Pages, and daily-use guidance that keep external systems aligned
+1. **Planning narrative** — `ROADMAP.md`, `milestone-*.md`, and `session-notes/` explain where the project is going and what happened recently.
+2. **SDLC Agents lifecycle** — role-separated phases, architecture-first handoffs, progressive context loading, and continual learning.
+3. **SPDD REASONS Canvas** — explicit prompt/design contract for each unit of work.
+4. **Assistant adapters** — Cursor commands and GitHub Copilot prompt files that invoke the same skills.
+5. **Integration runbooks** — Jira, GitHub Pages, and daily-use guidance that keep external systems aligned.
+
+## Three-Layer Delivery Model
+
+    ROADMAP.md / milestone-*.md / session-notes/
+            -> inform and summarize
+    spdd/canvas/ + agent-context/
+            -> govern and remember
+    code / reviews / sync logs
+            -> execute and validate
+
+The planning narrative remains human-readable. SPDD artifacts provide governed execution. Code, reviews, and sync logs prove what actually changed.
 
 ## Workflow
 
-    Requirement
+    Roadmap / milestone / source issue
+      -> milestone-to-work mapping
+      -> Requirement
       -> /sdlc-spdd-plan
       -> /sdlc-spdd-architect
       -> /sdlc-spdd-code (one task)
@@ -20,6 +34,9 @@ SDLC-SPDD Orchestrator combines four layers:
 
 ## Artifact Model
 
+- Project roadmap: `ROADMAP.md`
+- Milestone docs: `milestone-*.md`
+- Daily session notes: `session-notes/YYYY-MM-DD.md`
 - Feature workspace: `agent-context/features/<WORK-ID>/`
 - Session handoffs: `agent-context/sessions/`
 - Durable session history: `agent-context/memory/session-history.md`
@@ -27,9 +44,17 @@ SDLC-SPDD Orchestrator combines four layers:
 - Reviews: `spdd/reviews/`
 - Sync logs: `spdd/sync/`
 
+## Mapping Scripts
+
+- `scripts/sdlc-spdd/create-work-from-milestone.sh` maps milestone checklist items into Work IDs, requirement stubs, feature workspaces, and draft canvases.
+- `scripts/sdlc-spdd/sync-roadmap-from-spdd.sh` refreshes a managed roadmap summary from canvas metadata.
+- `scripts/sdlc-spdd/summarize-session-notes.sh` imports existing daily session notes into durable memory.
+
 ## Design Principles
 
 - Markdown-first artifacts
+- Human planning docs stay human-readable
+- SPDD canvases govern work-item execution
 - No-code phases stay no-code
 - One approved operation per coding session
 - Explicit assumptions and safeguards
@@ -43,11 +68,11 @@ SDLC-SPDD Orchestrator combines four layers:
 | Responsibility | SDLC Agents influence | SPDD influence |
 |----------------|-----------------------|----------------|
 | Lifecycle | Initializer, Planning, Architect, Coding, Review, Retro, Curator-style responsibilities | Prompt assets move through plan, generate, review, update, and sync loops |
-| Context | Load only phase-relevant artifacts and skills | Anchor context in the REASONS Canvas |
+| Context | Load roadmap, milestone, session, and phase-relevant artifacts progressively | Anchor execution context in the REASONS Canvas |
 | Governance | Guardrails, handoffs, architecture-first review | Versioned structured prompts and prompt-first behavior changes |
-| Learning | Retro and memory prevent repeated mistakes | Reusable prompt contracts accumulate project knowledge |
+| Learning | Retro, session notes, and memory prevent repeated mistakes | Reusable prompt contracts accumulate project knowledge |
 
-See [hybrid-model.md](hybrid-model.md) for the full mapping.
+See [hybrid-model.md](hybrid-model.md) and [roadmap-milestones-and-session-notes.md](roadmap-milestones-and-session-notes.md) for the full mapping.
 
 ## Attribution
 

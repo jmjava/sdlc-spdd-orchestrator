@@ -2,6 +2,17 @@
 
 Use this hub to choose the right guide for your current task. If you are new, read the first section in order. If you are already operating a project, jump to the section that matches what you are doing.
 
+## Core Model
+
+    ROADMAP.md / milestone-*.md / session-notes/
+            -> inform and summarize
+    spdd/canvas/ + agent-context/
+            -> govern and remember
+    code / reviews / sync logs
+            -> execute and validate
+
+Use roadmap, milestone, and session-note files for project planning and narrative. Use SDLC-SPDD artifacts for governed execution and durable agent memory.
+
 ## If You Are New, Read These in Order
 
 1. [First day with SDLC-SPDD](first-day-with-sdlc-spdd.md) — a guided first-session path from install to memory capture.

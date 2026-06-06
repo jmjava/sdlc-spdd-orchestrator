@@ -33,6 +33,19 @@ SPDD provides the structured prompt contract through the REASONS Canvas and the 
 
 Together they create a practical workflow where AI agents do not just generate code; they operate in role-specific phases against an explicit, versioned design contract.
 
+## Operating Model
+
+SDLC-SPDD uses a three-layer flow:
+
+    ROADMAP.md / milestone-*.md / session-notes/
+            -> inform and summarize
+    spdd/canvas/ + agent-context/
+            -> govern and remember
+    code / reviews / sync logs
+            -> execute and validate
+
+Roadmap, milestone, and session-note files keep project planning human-readable. SPDD canvases and agent context govern each Work ID. Code, reviews, and sync logs provide implementation evidence.
+
 ## Quick Start
 
 If you are new to the project, start with [First day with SDLC-SPDD](docs/first-day-with-sdlc-spdd.md) and the [10,000-foot view](docs/ten-thousand-foot-view.md).

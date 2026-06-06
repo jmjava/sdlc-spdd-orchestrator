@@ -81,6 +81,10 @@ The session brief gives a new agent enough context to resume without relying on 
 
 ## 5. Plan the Work
 
+If work already exists as milestone checklist items, map it first:
+
+    ./scripts/sdlc-spdd/create-work-from-milestone.sh --target . --milestone milestone-1.md --all
+
 From a requirement file:
 
     /sdlc-spdd-plan @requirements/order-status-api.md

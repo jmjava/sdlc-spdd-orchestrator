@@ -32,6 +32,12 @@ It can update:
 - `docs/sdlc-spdd/*.md`
 - `scripts/sdlc-spdd/*.sh`
 
+This includes mapping tools:
+
+- `create-work-from-milestone.sh`
+- `sync-roadmap-from-spdd.sh`
+- `summarize-session-notes.sh`
+
 It can create when missing:
 
 - `ROADMAP.md`
