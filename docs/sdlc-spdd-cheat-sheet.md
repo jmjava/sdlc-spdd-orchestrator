@@ -8,6 +8,14 @@ Export options:
 - Publish `docs/` through GitHub Pages and print the page to PDF from a browser.
 - Use any Markdown-to-PDF converter approved by your team.
 
+Start here:
+
+- [First day with SDLC-SPDD](first-day-with-sdlc-spdd.md)
+- [10,000-foot view](ten-thousand-foot-view.md)
+- [Installing into your project](installing-into-your-project.md)
+- [Maintaining your project](maintaining-your-project.md)
+- [Top useful concepts and commands](useful-concepts-and-commands.md)
+
 ## Install
 
 Cursor:

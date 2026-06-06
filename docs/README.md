@@ -1,11 +1,16 @@
 # Documentation Hub
 
-Use these guides to install the scaffold, invoke the SDLC-SPDD commands, link work to external systems, and run daily delivery actions.
+Use these guides to understand, install, operate, and maintain SDLC-SPDD Orchestrator.
 
 ## Start Here
 
 | Guide | Use it for |
 |-------|------------|
+| [First day with SDLC-SPDD](first-day-with-sdlc-spdd.md) | A guided first-session path from install to memory capture |
+| [10,000-foot view](ten-thousand-foot-view.md) | The high-level model, artifacts, skills, and workflow |
+| [Installing into your project](installing-into-your-project.md) | Fresh install, upgrade path, verification, and troubleshooting |
+| [Maintaining your project](maintaining-your-project.md) | Upgrades, memory hygiene, canvas sync, links, and session maintenance |
+| [Top useful concepts and commands](useful-concepts-and-commands.md) | Fast reference for Work IDs, canvases, sessions, commands, and prompt patterns |
 | [Hybrid SDLC Agents + SPDD model](hybrid-model.md) | How SDLC Agents lifecycle patterns combine with SPDD/REASONS prompt governance |
 | [Agent session scripts](agent-session-scripts.md) | Runnable setup, session resume/resync, and memory capture commands |
 | [Framework upgrade](framework-upgrade.md) | Upgrade older target projects without overwriting implementation files or accumulated memory |
@@ -31,6 +36,14 @@ Use these guides to install the scaffold, invoke the SDLC-SPDD commands, link wo
 | [Roadmap](roadmap.md) | Planned future capabilities |
 
 ## Common Entry Points
+
+First day path:
+
+    Read docs/first-day-with-sdlc-spdd.md
+
+Understand the system:
+
+    Read docs/ten-thousand-foot-view.md
 
 Install the scaffold into a target application:
 

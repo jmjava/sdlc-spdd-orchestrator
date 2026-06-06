@@ -35,6 +35,8 @@ Together they create a practical workflow where AI agents do not just generate c
 
 ## Quick Start
 
+If you are new to the project, start with [First day with SDLC-SPDD](docs/first-day-with-sdlc-spdd.md) and the [10,000-foot view](docs/ten-thousand-foot-view.md).
+
 Clone this repo:
 
     git clone https://github.com/jmjava/sdlc-spdd-orchestrator.git
@@ -123,6 +125,11 @@ See [docs/java-spring-boot-usage.md](docs/java-spring-boot-usage.md) and [exampl
 ## Documentation
 
 - [Documentation hub](docs/README.md)
+- [First day with SDLC-SPDD](docs/first-day-with-sdlc-spdd.md)
+- [10,000-foot view](docs/ten-thousand-foot-view.md)
+- [Installing into your project](docs/installing-into-your-project.md)
+- [Maintaining your project](docs/maintaining-your-project.md)
+- [Top useful concepts and commands](docs/useful-concepts-and-commands.md)
 - [Architecture](docs/architecture.md)
 - [Hybrid SDLC Agents + SPDD model](docs/hybrid-model.md)
 - [Agent session scripts](docs/agent-session-scripts.md)

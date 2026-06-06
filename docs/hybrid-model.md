@@ -132,3 +132,9 @@ Current boundaries:
 - Cursor and Copilot are supported through Markdown prompt adapters.
 
 The hybrid contract is repository-based: role-separated lifecycle prompts from SDLC Agents plus versioned REASONS Canvas governance from SPDD.
+
+## Read Next
+
+- [First day with SDLC-SPDD](first-day-with-sdlc-spdd.md)
+- [10,000-foot view](ten-thousand-foot-view.md)
+- [Top useful concepts and commands](useful-concepts-and-commands.md)
