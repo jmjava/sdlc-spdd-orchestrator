@@ -18,6 +18,9 @@ They solve three operational needs:
 | `scripts/sdlc-spdd/start-agent-session.sh` | Target-local script that creates a session brief for a new agent |
 | `scripts/sdlc-spdd/resync-agent-session.sh` | Target-local script that checks or reconciles feature/canonical canvases, validates the canvas, and creates a session brief |
 | `scripts/sdlc-spdd/capture-session-memory.sh` | Target-local script that persists current session summary, validation, decisions, pitfalls, patterns, and next steps |
+| `scripts/sdlc-spdd/create-work-from-milestone.sh` | Target-local script that maps milestone checklist items into SDLC-SPDD work artifacts |
+| `scripts/sdlc-spdd/sync-roadmap-from-spdd.sh` | Target-local script that refreshes a managed roadmap summary from canvas metadata |
+| `scripts/sdlc-spdd/summarize-session-notes.sh` | Target-local script that imports existing session notes into durable memory |
 | `scripts/sdlc-spdd/sync-agent-context.sh` | Target-local low-level canvas copy synchronization |
 | `scripts/sdlc-spdd/validate-reasons-canvas.sh` | Target-local REASONS Canvas structure validation |
 
@@ -162,6 +165,18 @@ Review and sync:
 Capture memory:
 
     ./scripts/sdlc-spdd/capture-session-memory.sh --target . --work-id <WORK-ID> --phase <phase> --summary "<summary>" --validation "<tests>" --next "<next command>"
+
+Map milestone planning into SPDD work:
+
+    ./scripts/sdlc-spdd/create-work-from-milestone.sh --target . --milestone milestone-1.md --all
+
+Refresh roadmap from SPDD canvases:
+
+    ./scripts/sdlc-spdd/sync-roadmap-from-spdd.sh --target .
+
+Import existing session notes into memory:
+
+    ./scripts/sdlc-spdd/summarize-session-notes.sh --target . --all
 
 ## Hybrid Contract
 

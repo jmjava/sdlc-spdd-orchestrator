@@ -184,6 +184,18 @@ or:
       --roadmap-note "<roadmap-level progress>" \
       --next "<next command>"
 
+### Create work from milestone checklist items
+
+    ./scripts/sdlc-spdd/create-work-from-milestone.sh --target . --milestone milestone-1.md --all
+
+### Sync roadmap from SPDD canvases
+
+    ./scripts/sdlc-spdd/sync-roadmap-from-spdd.sh --target .
+
+### Import existing session notes into memory
+
+    ./scripts/sdlc-spdd/summarize-session-notes.sh --target . --all
+
 ### Validate a canvas
 
     ./scripts/sdlc-spdd/validate-reasons-canvas.sh spdd/canvas/<WORK-ID>.md

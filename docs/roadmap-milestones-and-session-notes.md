@@ -8,6 +8,19 @@ SDLC-SPDD supports a project planning pattern based on:
 
 These files are project planning artifacts, not framework-owned prompts. Install and upgrade scripts create missing scaffolding, but preserve existing roadmap and milestone content.
 
+## The Three-Layer Flow
+
+Use this mental model:
+
+    ROADMAP.md / milestone-*.md / session-notes/
+            -> inform and summarize
+    spdd/canvas/ + agent-context/
+            -> govern and remember
+    code / reviews / sync logs
+            -> execute and validate
+
+Do not migrate away from roadmap, milestone, and session-note files. Keep them as the human planning and narrative layer. Use SDLC-SPDD artifacts as the execution and governance layer.
+
 ## File Layout
 
 Recommended target-project layout:
@@ -32,6 +45,15 @@ Recommended target-project layout:
 | `agent-context/memory/session-history.md` | durable cross-session memory |
 
 The roadmap and milestones tell the agent why the work matters. The canvas tells the agent what to build and what not to change.
+
+## Mapping Scripts
+
+| Script | Direction | Purpose |
+|--------|-----------|---------|
+| `create-work-from-milestone.sh` | milestone -> SPDD | Create Work IDs, requirement stubs, feature workspace, and draft canvases from milestone checklist items |
+| `sync-roadmap-from-spdd.sh` | SPDD -> roadmap | Update a managed roadmap summary table from `spdd/canvas/*.md` metadata |
+| `summarize-session-notes.sh` | session notes -> memory | Import existing daily notes into durable agent memory |
+| `capture-session-memory.sh` | session -> all layers | Append to memory, progress log, daily notes, and optionally milestone/roadmap |
 
 ## Fresh Install Behavior
 
@@ -65,6 +87,35 @@ Canvas Metadata should include:
 
     - Roadmap: ROADMAP.md
     - Milestone: milestone-1.md
+
+## Create Work from a Milestone
+
+For a milestone checklist like:
+
+    - [ ] Add order status API
+    - [ ] Add order status tests
+
+Create draft SDLC-SPDD work artifacts:
+
+    ./scripts/sdlc-spdd/create-work-from-milestone.sh --target . --milestone milestone-1.md --all
+
+Create one item:
+
+    ./scripts/sdlc-spdd/create-work-from-milestone.sh --target . --milestone milestone-1.md --item "Add order status API" --type feature
+
+This creates:
+
+- `agent-context/features/<WORK-ID>/`
+- `agent-context/features/<WORK-ID>/requirement.md`
+- `agent-context/features/<WORK-ID>/reasons-canvas.md`
+- `agent-context/features/<WORK-ID>/progress-log.md`
+- `spdd/canvas/<WORK-ID>.md`
+- a generated work map entry in the milestone file
+
+The generated canvas is a draft. Continue with:
+
+    /sdlc-spdd-plan @agent-context/features/<WORK-ID>/requirement.md @milestone-1.md
+    /sdlc-spdd-architect @spdd/canvas/<WORK-ID>.md
 
 ## Starting a Session
 
@@ -124,6 +175,17 @@ Keep the roadmap high level:
 
 Use session notes for details and the roadmap for progress summaries.
 
+To refresh the roadmap from canvas metadata:
+
+    ./scripts/sdlc-spdd/sync-roadmap-from-spdd.sh --target .
+
+This updates only the managed section between:
+
+    <!-- SDLC-SPDD-ROADMAP-SUMMARY:START -->
+    <!-- SDLC-SPDD-ROADMAP-SUMMARY:END -->
+
+Your handwritten roadmap content outside those markers is preserved.
+
 ## Suggested Milestone Update Pattern
 
 Keep each milestone tied to Work IDs:
@@ -140,6 +202,21 @@ Then link each Work ID to:
 - REASONS Canvas
 - PR
 - current status
+
+## Import Existing Session Notes
+
+If your project already has `session-notes/` from earlier work, import them into durable memory:
+
+    ./scripts/sdlc-spdd/summarize-session-notes.sh --target . --all
+
+Import one file:
+
+    ./scripts/sdlc-spdd/summarize-session-notes.sh --target . --file session-notes/2026-06-06.md
+
+This preserves the original note and appends an import entry to:
+
+- `agent-context/memory/session-history.md`
+- `agent-context/memory/project-memory.md`
 
 ## Read Next
 

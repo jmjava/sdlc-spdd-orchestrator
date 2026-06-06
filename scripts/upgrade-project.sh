@@ -291,6 +291,9 @@ for file in \
   start-agent-session.sh \
   resync-agent-session.sh \
   capture-session-memory.sh \
+  create-work-from-milestone.sh \
+  sync-roadmap-from-spdd.sh \
+  summarize-session-notes.sh \
   sync-agent-context.sh \
   validate-reasons-canvas.sh; do
   copy_executable_framework_file \

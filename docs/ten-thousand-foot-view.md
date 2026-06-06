@@ -37,6 +37,19 @@ Together:
 
 ## The Core Loop
 
+The system has three layers:
+
+    ROADMAP.md / milestone-*.md / session-notes/
+            -> inform and summarize
+    spdd/canvas/ + agent-context/
+            -> govern and remember
+    code / reviews / sync logs
+            -> execute and validate
+
+Roadmap, milestone, and session-note files stay human-readable. SPDD canvases and agent memory provide the governed execution layer.
+
+## The Delivery Loop
+
     Initialize
       -> Plan
       -> Architect

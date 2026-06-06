@@ -44,6 +44,15 @@ Project planning:
     milestone-1.md
     session-notes/
 
+Layer model:
+
+    ROADMAP.md / milestone-*.md / session-notes/
+      -> inform and summarize
+    spdd/canvas/ + agent-context/
+      -> govern and remember
+    code / reviews / sync logs
+      -> execute and validate
+
 Upgrade older install:
 
     ./scripts/upgrade-project.sh --target /path/to/app --all
@@ -65,6 +74,14 @@ Capture memory:
 Capture milestone progress:
 
     ./scripts/sdlc-spdd/capture-session-memory.sh --target . --work-id <WORK-ID> --phase <phase> --summary "<summary>" --milestone milestone-1.md --roadmap-note "<progress>" --next "<next command>"
+
+Map milestone items:
+
+    ./scripts/sdlc-spdd/create-work-from-milestone.sh --target . --milestone milestone-1.md --all
+
+Refresh roadmap:
+
+    ./scripts/sdlc-spdd/sync-roadmap-from-spdd.sh --target .
 
 ## Lifecycle
 
