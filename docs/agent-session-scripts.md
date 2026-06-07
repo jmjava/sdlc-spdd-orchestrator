@@ -23,6 +23,7 @@ They solve three operational needs:
 | `scripts/sdlc-spdd/summarize-session-notes.sh` | Target-local script that imports existing session notes into durable memory |
 | `scripts/sdlc-spdd/sync-agent-context.sh` | Target-local low-level canvas copy synchronization |
 | `scripts/sdlc-spdd/validate-reasons-canvas.sh` | Target-local REASONS Canvas structure validation |
+| `scripts/sdlc-spdd/verify-project-install.sh` | Target-local three-part install verification (Planning, SPDD, SDLC) |
 
 ## 1. Set Up Prompts and Memory
 
@@ -36,7 +37,7 @@ Equivalent explicit setup:
 
 The target app receives:
 
-- `requirements/`
+- `requirements/` and `requirements/milestones/`
 - `spdd/canvas/`
 - `spdd/tasks/`
 - `spdd/reviews/`
@@ -74,6 +75,10 @@ Create a session brief before asking a new agent to continue work:
     cd /path/to/app
     ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id FEAT-001-order-status-api --phase code
 
+With an explicit milestone:
+
+    ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id FEAT-001-order-status-api --phase code --milestone milestone-1.md
+
 This writes:
 
     agent-context/sessions/<timestamp>-code-FEAT-001-order-status-api.md
@@ -83,6 +88,7 @@ The brief includes:
 
 - Work ID
 - phase
+- active milestone (explicit `--milestone` or auto-detected from milestone files)
 - recommended command
 - canvas sync state
 - roadmap and milestone status
@@ -90,31 +96,46 @@ The brief includes:
 - memory files to read
 - playbooks to consider
 - git status
-- copy/paste resume prompt
+- copy/paste resume prompt with SDLC, SPDD, and planning-layer `@` references
 
-Then invoke the assistant with:
-
-    For FEAT-001-order-status-api, read @agent-context/sessions/current-session.md and continue with the recommended command.
+Then paste the **Resume Prompt** from `current-session.md`. See [Session prompt standard](session-prompt-standard.md), [SPDD prompt standard](spdd-prompt-standard.md), and [Planning prompt standard](planning-prompt-standard.md).
 
 ## 3. Resync Previous Work
+
+### Script paths
+
+| Context | Path |
+|---------|------|
+| This orchestrator repository (development) | `./scripts/<script>.sh` |
+| Installed target application | `./scripts/sdlc-spdd/<script>.sh` |
+
+User-facing docs use the target path. When developing here, drop the `sdlc-spdd/` segment.
+
+### Check only (no session brief)
 
 Check whether the feature workspace canvas and canonical canvas match:
 
     ./scripts/sdlc-spdd/resync-agent-session.sh --target . --work-id FEAT-001-order-status-api --check-only
 
-If the canonical `spdd/canvas/` copy is authoritative:
+`--check-only` runs sync check and canvas validation, then stops. It does **not** create a session brief. Run `start-agent-session.sh` next.
+
+### Reconcile drift (creates session brief)
+
+If drift exists, reconcile and create a session brief in one step. **Default:** canonical `spdd/canvas/<WORK-ID>.md` is authoritative:
 
     ./scripts/sdlc-spdd/resync-agent-session.sh --target . --work-id FEAT-001-order-status-api --from-canvas --force --phase code
 
-If the feature workspace copy is authoritative:
+Use `--from-feature` only when the feature workspace canvas was intentionally edited:
 
     ./scripts/sdlc-spdd/resync-agent-session.sh --target . --work-id FEAT-001-order-status-api --from-feature --force --phase code
 
-The script:
+When reconciling with `--from-canvas` or `--from-feature`, you do **not** need a separate `start-agent-session.sh` call — resync creates the brief.
+
+The reconcile path:
 
 1. Runs `sync-agent-context.sh`.
 2. Validates the canonical canvas.
-3. Creates a fresh session brief for the requested phase.
+3. Creates a fresh session brief for the requested `--phase`.
 
 ## 4. Capture Current Session Memory
 
@@ -138,7 +159,7 @@ This updates:
 - `agent-context/memory/session-history.md`
 - `agent-context/features/<WORK-ID>/progress-log.md`
 - `session-notes/YYYY-MM-DD.md`
-- `milestone-*.md` when `--milestone` is provided
+- `milestone-*.md` when `--milestone` is provided or auto-detected from `milestone-*.md`
 - `ROADMAP.md` when `--roadmap-note` is provided
 - `agent-context/memory/project-memory.md`
 - `agent-context/memory/architecture-decisions.md` when `--decisions` is provided

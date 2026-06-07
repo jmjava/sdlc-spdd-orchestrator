@@ -2,29 +2,94 @@
 
 A multi-assistant scaffold for disciplined AI-assisted delivery.
 
-SDLC-SPDD Orchestrator combines:
+It is built from **three parts** that work together:
 
-- **SDLC Agents** ideas: role-separated lifecycle, architecture-first handoffs, progressive context loading, agent memory, and retros.
-- **SPDD / REASONS Canvas** ideas: versioned prompt contracts, prompt-first behavior changes, and closed-loop sync between prompt artifacts and code.
-- **Project planning artifacts**: `ROADMAP.md`, `milestone-*.md`, and `session-notes/` as the human-readable planning and progress layer.
+| Part | Answers | Artifacts |
+|------|---------|-----------|
+| **Planning** | *Why* the work matters | `ROADMAP.md`, `milestone-*.md`, `requirements/`, `session-notes/` |
+| **SPDD** | *What* to build (and what not to) | `spdd/canvas/<WORK-ID>.md` (REASONS Canvas) |
+| **SDLC** | *Who acts when* and how sessions hand off | phase commands, session briefs, `agent-context/` memory |
 
-## Start Here
+## The Adoption Path
 
-If you are new, read these in order:
+Five steps take you from install to confident daily use. Follow them in order — each step points to one doc.
 
-1. [First day with SDLC-SPDD](docs/first-day-with-sdlc-spdd.md)
-2. [10,000-foot view](docs/ten-thousand-foot-view.md)
-3. [Installing into your project](docs/installing-into-your-project.md)
-4. [Top useful concepts and commands](docs/useful-concepts-and-commands.md)
-5. [Maintaining your project](docs/maintaining-your-project.md)
+```mermaid
+flowchart TD
+    S1["1 - Install and verify<br/>(~5 min)"]
+    S2["2 - Run your first session<br/>hands-on walkthrough"]
+    S3["3 - Learn the model<br/>how the 3 parts connect"]
+    S4["4 - Work day to day<br/>copy-paste prompts and rhythm"]
+    S5["5 - Go deeper<br/>per-part value and prompts"]
+
+    S1 --> S2 --> S3 --> S4 --> S5
+
+    S1 -.-> D1["setup-agent-prompts.sh --all<br/>verify-project-install.sh"]
+    S2 -.-> D2["First day with SDLC-SPDD"]
+    S3 -.-> D3["Three-part operating path"]
+    S4 -.-> D4["Session prompt standard<br/>Daily runbook"]
+    S5 -.-> D5["What X brings + SPDD/Planning<br/>prompt standards"]
+
+    classDef step fill:#1f6feb,stroke:#0b3a8a,color:#ffffff;
+    classDef doc fill:#eef2f7,stroke:#9aa7b8,color:#1b2733;
+    class S1,S2,S3,S4,S5 step;
+    class D1,D2,D3,D4,D5 doc;
+```
+
+| Step | Do this | Read this |
+|------|---------|-----------|
+| 1. Install & verify | `setup-agent-prompts.sh --all` then `verify-project-install.sh` | [Installing into your project](docs/installing-into-your-project.md) |
+| 2. First session | `/sdlc-spdd-init`, then plan → architect → code → review one operation | [First day with SDLC-SPDD](docs/first-day-with-sdlc-spdd.md) |
+| 3. Learn the model | Understand how Planning, SPDD, and SDLC hand off | [Three-part operating path](docs/three-part-operating-path.md) |
+| 4. Work day to day | Use the default prompts and the start/capture rhythm | [Session prompt standard](docs/session-prompt-standard.md) · [Daily runbook](docs/daily-runbook.md) |
+| 5. Go deeper | Drill into one part when you need it | [Value guides](docs/README.md) · [Prompt standards](docs/session-prompt-standard.md#which-prompt-standard) |
+
+## Add It to Your Project (about 5 minutes)
+
+Run these from this orchestrator repo, pointing `--target` at your application:
+
+    git clone https://github.com/jmjava/sdlc-spdd-orchestrator.git
+    cd sdlc-spdd-orchestrator
+
+    # 1. Install all three parts into your project
+    ./scripts/setup-agent-prompts.sh --target /path/to/your/project --all
+
+    # 2. Confirm the install is complete
+    ./scripts/sdlc-spdd/verify-project-install.sh --target /path/to/your/project
+
+Then open your project in Cursor or a Copilot-enabled editor and run `/sdlc-spdd-init`.
+
+Next, follow the hands-on walkthrough: **[First day with SDLC-SPDD](docs/first-day-with-sdlc-spdd.md)**.
+
+## Start Here (read in order)
+
+These six pages are the canonical onboarding path. The same order appears in [docs/README.md](docs/README.md).
+
+1. [First day with SDLC-SPDD](docs/first-day-with-sdlc-spdd.md) — hands-on first session
+2. [Three-part operating path](docs/three-part-operating-path.md) — how Planning, SPDD, and SDLC work together
+3. [10,000-foot view](docs/ten-thousand-foot-view.md)
+4. [Installing into your project](docs/installing-into-your-project.md)
+5. [Top useful concepts and commands](docs/useful-concepts-and-commands.md)
+6. [Maintaining your project](docs/maintaining-your-project.md)
 
 For the full documentation map, see [docs/README.md](docs/README.md).
+
+Deeper references, one per part:
+
+| Part | Value guide (what it brings) | Prompt standard (how to prompt) |
+|------|------------------------------|---------------------------------|
+| Planning | [What planning brings](docs/what-planning-brings.md) | [Planning prompt standard](docs/planning-prompt-standard.md) |
+| SPDD | [What SPDD brings](docs/what-spdd-brings.md) | [SPDD prompt standard](docs/spdd-prompt-standard.md) |
+| SDLC | [What SDLC brings](docs/what-sdlc-brings.md) | [Session prompt standard](docs/session-prompt-standard.md) (**default**) |
+| All three | [Three-part operating path](docs/three-part-operating-path.md) | — |
+
+Not sure which prompt standard to use? See [Which prompt standard?](docs/session-prompt-standard.md#which-prompt-standard).
 
 ## The Operating Model
 
 The system uses a three-layer flow:
 
-    ROADMAP.md / milestone-*.md / session-notes/
+    Planning: ROADMAP.md, milestone-*.md, requirements/, requirements/milestones/, session-notes/
             -> inform and summarize
     spdd/canvas/ + agent-context/
             -> govern and remember
@@ -33,7 +98,7 @@ The system uses a three-layer flow:
 
 | Layer | Purpose | Examples |
 |-------|---------|----------|
-| Planning narrative | Human-readable roadmap, milestone, and daily session story | `ROADMAP.md`, `milestone-1.md`, `session-notes/2026-06-06.md` |
+| Planning narrative | Human-readable roadmap, milestone, milestone requirements, and daily session story | `ROADMAP.md`, `milestone-1.md`, `requirements/milestones/`, `session-notes/2026-06-06.md` |
 | Governed agent context | Work-item contract, memory, handoffs, and reusable context | `spdd/canvas/<WORK-ID>.md`, `agent-context/memory/`, `agent-context/sessions/` |
 | Implementation evidence | Code, review outputs, sync logs, and validation | source files, `spdd/reviews/`, `spdd/sync/`, tests |
 
@@ -135,13 +200,7 @@ Refresh the roadmap summary from SPDD canvases:
 
 ## Documentation Paths
 
-### New-user path
-
-1. [First day with SDLC-SPDD](docs/first-day-with-sdlc-spdd.md)
-2. [10,000-foot view](docs/ten-thousand-foot-view.md)
-3. [Installing into your project](docs/installing-into-your-project.md)
-4. [Top useful concepts and commands](docs/useful-concepts-and-commands.md)
-5. [Maintaining your project](docs/maintaining-your-project.md)
+New users should follow **Start Here** above. The lists below group the remaining docs by task.
 
 ### Daily operation
 
@@ -158,7 +217,15 @@ Refresh the roadmap summary from SPDD canvases:
 - [Cursor usage](docs/cursor-usage.md)
 - [GitHub Copilot usage](docs/copilot-usage.md)
 
-### Integrations and theory
+### What each part brings
+
+- [What planning brings](docs/what-planning-brings.md)
+- [What SPDD brings](docs/what-spdd-brings.md)
+- [What SDLC brings](docs/what-sdlc-brings.md)
+
+### Deep theory (read later)
+
+Read these after the value guides above. They explain historical context, compliance, and architecture — not first steps.
 
 - [Jira runbook](docs/jira-runbook.md)
 - [Integration linking](docs/integration-linking.md)

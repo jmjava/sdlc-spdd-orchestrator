@@ -4,25 +4,27 @@ Use this playbook whenever work crosses agent sessions.
 
 ## Start of Session
 
-1. Check canvas sync state:
+1. Check canvas sync state (does not create a session brief):
 
        ./scripts/sdlc-spdd/resync-agent-session.sh --target . --work-id <WORK-ID> --check-only
 
-2. If drift exists, choose the authoritative source:
+2. If drift exists, reconcile and create a session brief in one step. **Default:** canonical `spdd/canvas/<WORK-ID>.md` is authoritative:
 
        ./scripts/sdlc-spdd/resync-agent-session.sh --target . --work-id <WORK-ID> --from-canvas --force --phase <phase>
 
-   or:
+   Use `--from-feature` only when the feature workspace canvas was intentionally edited.
 
-       ./scripts/sdlc-spdd/resync-agent-session.sh --target . --work-id <WORK-ID> --from-feature --force --phase <phase>
-
-3. Create a session brief:
+3. If no drift, create a session brief:
 
        ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase>
 
-4. Ask the assistant:
+4. Paste the **Resume Prompt** from `agent-context/sessions/current-session.md`.
 
-       For <WORK-ID>, read @agent-context/sessions/current-session.md and continue with the recommended SDLC-SPDD command.
+   Optional explicit milestone:
+
+       ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase> --milestone milestone-1.md
+
+   See `docs/sdlc-spdd/session-prompt-standard.md` for the full prompt contract.
 
 ## During Session
 
@@ -46,7 +48,11 @@ Capture durable memory:
       --decisions "<decisions, if any>" \
       --pitfalls "<pitfalls, if any>" \
       --patterns "<patterns, if any>" \
+      --milestone milestone-1.md \
+      --roadmap-note "<roadmap-level progress, if applicable>" \
       --next "<next command>"
+
+`--milestone` is optional when the Work ID is already listed in a `milestone-*.md` file (auto-detected).
 
 Confirm memory was written to:
 

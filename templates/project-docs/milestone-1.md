@@ -12,9 +12,9 @@ Describe the outcome this milestone should deliver.
 
 ## Linked Work
 
-| Work ID | Source issue | Status | Notes |
-|---------|--------------|--------|-------|
-| TBD | TBD | Planned | TBD |
+| Work ID | Canvas | Requirement | Status | Notes |
+|---------|--------|-------------|--------|-------|
+| TBD | TBD | TBD | Planned | TBD |
 
 ## SDLC-SPDD Flow
 

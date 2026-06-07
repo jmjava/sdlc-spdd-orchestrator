@@ -4,6 +4,7 @@ SDLC-SPDD supports a project planning pattern based on:
 
 - root `ROADMAP.md`
 - root `milestone-1.md`, `milestone-2.md`, and later milestone files
+- `requirements/milestones/` with per-item requirement stubs from milestone checklists
 - root `session-notes/` with daily agent-session summaries
 
 These files are project planning artifacts, not framework-owned prompts. Install and upgrade scripts create missing scaffolding, but preserve existing roadmap and milestone content.
@@ -12,7 +13,7 @@ These files are project planning artifacts, not framework-owned prompts. Install
 
 Use this mental model:
 
-    ROADMAP.md / milestone-*.md / session-notes/
+    ROADMAP.md / milestone-*.md / requirements/milestones/ / session-notes/
             -> inform and summarize
     spdd/canvas/ + agent-context/
             -> govern and remember
@@ -28,6 +29,7 @@ Recommended target-project layout:
     ROADMAP.md
     milestone-1.md
     milestone-2.md
+    requirements/milestones/
     session-notes/
       2026-06-06.md
       2026-06-07.md
@@ -40,6 +42,7 @@ Recommended target-project layout:
 |----------|-------------------|
 | `ROADMAP.md` | milestone-level progress and current focus |
 | `milestone-*.md` | milestone goals, scope, linked Work IDs, and milestone summaries |
+| `requirements/milestones/<WORK-ID>.md` | milestone-derived requirement stub for plan prompts |
 | `session-notes/YYYY-MM-DD.md` | daily summary of agent sessions |
 | `spdd/canvas/<WORK-ID>.md` | SPDD design contract for a work item |
 | `agent-context/memory/session-history.md` | durable cross-session memory |
@@ -105,8 +108,8 @@ Create one item:
 
 This creates:
 
-- `agent-context/features/<WORK-ID>/`
-- `agent-context/features/<WORK-ID>/requirement.md`
+- `requirements/milestones/<WORK-ID>.md`
+- `agent-context/features/<WORK-ID>/` (feature workspace; `requirement.md` points to canonical milestone requirement)
 - `agent-context/features/<WORK-ID>/reasons-canvas.md`
 - `agent-context/features/<WORK-ID>/progress-log.md`
 - `spdd/canvas/<WORK-ID>.md`
@@ -114,7 +117,7 @@ This creates:
 
 The generated canvas is a draft. Continue with:
 
-    /sdlc-spdd-plan @agent-context/features/<WORK-ID>/requirement.md @milestone-1.md
+    /sdlc-spdd-plan @requirements/milestones/<WORK-ID>.md @ROADMAP.md @milestone-1.md
     /sdlc-spdd-architect @spdd/canvas/<WORK-ID>.md
 
 ## Starting a Session
@@ -123,9 +126,15 @@ The session-start script includes roadmap, milestone, and today's session-note s
 
     ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id FEAT-001-order-status-api --phase code
 
-Then ask:
+With an explicit milestone:
 
-    For FEAT-001-order-status-api, read @agent-context/sessions/current-session.md, @ROADMAP.md, and @milestone-1.md before continuing.
+    ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id FEAT-001-order-status-api --phase code --milestone milestone-1.md
+
+When `--milestone` is omitted, the script searches `milestone-*.md` files for the Work ID.
+
+The generated `current-session.md` includes a **Resume Prompt** that references the canvas, progress log, memory, roadmap, active milestone, and today's session note when those files exist. Paste that prompt at the start of the new agent session.
+
+See [Session prompt standard](session-prompt-standard.md) for the full prompt contract.
 
 ## Capturing Session Notes
 
@@ -150,7 +159,7 @@ This updates:
 - `agent-context/memory/session-history.md`
 - `agent-context/features/<WORK-ID>/progress-log.md`
 - `session-notes/YYYY-MM-DD.md`
-- `milestone-1.md` when `--milestone` is provided
+- `milestone-1.md` when `--milestone` is provided or auto-detected from `milestone-*.md`
 - `ROADMAP.md` when `--roadmap-note` is provided
 
 Skip the daily session note only when needed:
@@ -192,9 +201,9 @@ Keep each milestone tied to Work IDs:
 
     ## Linked Work
 
-    | Work ID | Source issue | Status | Notes |
-    |---------|--------------|--------|-------|
-    | FEAT-001-order-status-api | ABC-123 | In Review | T01 implemented |
+    | Work ID | Canvas | Requirement | Status | Notes |
+    |---------|--------|-------------|--------|-------|
+    | FEAT-001-order-status-api | spdd/canvas/FEAT-001-order-status-api.md | requirements/milestones/FEAT-001-order-status-api.md | In Review | T01 implemented |
 
 Then link each Work ID to:
 
@@ -220,6 +229,11 @@ This preserves the original note and appends an import entry to:
 
 ## Read Next
 
+- [What planning brings](what-planning-brings.md)
+- [Planning prompt standard](planning-prompt-standard.md)
+- [What SDLC brings](what-sdlc-brings.md)
+- [What SPDD brings](what-spdd-brings.md)
+- [Session prompt standard](session-prompt-standard.md)
 - [First day with SDLC-SPDD](first-day-with-sdlc-spdd.md)
 - [Maintaining your project](maintaining-your-project.md)
 - [Agent session scripts](agent-session-scripts.md)

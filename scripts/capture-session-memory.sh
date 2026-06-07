@@ -17,7 +17,8 @@ Options:
   --decisions <text>    Architecture or product decisions to append
   --pitfalls <text>     Pitfalls to remember
   --patterns <text>     Reusable patterns to remember
-  --milestone <path>    Milestone doc to append, such as milestone-1.md
+  --milestone <path>    Milestone doc to append, such as milestone-1.md. When
+                        omitted, searches milestone-*.md for the Work ID.
   --roadmap-note <text> Append a progress note to ROADMAP.md
   --no-session-note     Do not write session-notes/YYYY-MM-DD.md
   --next <text>         Next recommended command or action
@@ -160,14 +161,44 @@ progress_log="${feature_dir}/progress-log.md"
 current_session="${session_dir}/current-session.md"
 daily_session_note="${session_notes_dir}/${session_day}.md"
 roadmap_file="${TARGET}/ROADMAP.md"
-milestone_file=""
-if [[ -n "${MILESTONE}" ]]; then
-  milestone_file="${MILESTONE}"
-  if [[ "${milestone_file}" != *.md ]]; then
-    milestone_file="${milestone_file}.md"
+
+resolve_milestone() {
+  local candidate="${1:-}"
+  if [[ -n "${candidate}" ]]; then
+    if [[ "${candidate}" != *.md ]]; then
+      candidate="${candidate}.md"
+    fi
+    if [[ -f "${TARGET}/${candidate}" ]]; then
+      echo "${TARGET}/${candidate}"
+      return 0
+    fi
+    if [[ -f "${candidate}" ]]; then
+      echo "${candidate}"
+      return 0
+    fi
+    echo ""
+    return 1
   fi
-  if [[ "${milestone_file}" != /* ]]; then
-    milestone_file="${TARGET}/${milestone_file}"
+
+  shopt -s nullglob
+  local milestone_files=("${TARGET}"/milestone-*.md)
+  shopt -u nullglob
+  for file in "${milestone_files[@]}"; do
+    if grep -q "${WORK_ID}" "${file}" 2>/dev/null; then
+      echo "${file}"
+      return 0
+    fi
+  done
+  echo ""
+  return 1
+}
+
+milestone_file="$(resolve_milestone "${MILESTONE}" || true)"
+milestone_rel=""
+if [[ -n "${milestone_file}" ]]; then
+  milestone_rel="${milestone_file#${TARGET}/}"
+  if [[ -z "${MILESTONE}" ]]; then
+    MILESTONE="${milestone_rel}"
   fi
 fi
 
@@ -309,3 +340,18 @@ if [[ -n "${ROADMAP_NOTE}" ]]; then
   echo "  ${roadmap_file}"
 fi
 echo "Updated durable memory as applicable."
+echo
+echo "Planning capture prompt standard: docs/sdlc-spdd/planning-prompt-standard.md"
+if [[ -n "${milestone_rel}" ]]; then
+  echo "Active milestone: ${milestone_rel}"
+fi
+if [[ -z "${milestone_rel}" ]]; then
+  echo "No milestone linked. Add --milestone milestone-1.md when work belongs to a milestone."
+fi
+if [[ -z "${ROADMAP_NOTE}" ]]; then
+  echo "Tip: add --roadmap-note \"<progress>\" to update @ROADMAP.md Current Focus."
+else
+  echo
+  echo "Review roadmap focus:"
+  echo "  Read @ROADMAP.md. Does Current Focus match Work ID ${WORK_ID} and next step: ${NEXT_STEP:-Not recorded}?"
+fi

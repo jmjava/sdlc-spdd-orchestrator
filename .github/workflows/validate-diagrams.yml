@@ -1,0 +1,33 @@
+name: Validate Mermaid Diagrams
+
+on:
+  pull_request:
+    paths:
+      - 'README.md'
+      - 'docs/**'
+      - 'scripts/render-diagrams.sh'
+      - 'scripts/mermaid-config.json'
+      - 'scripts/mermaid-puppeteer.json'
+  push:
+    branches: [main]
+    paths:
+      - 'README.md'
+      - 'docs/**'
+      - 'scripts/render-diagrams.sh'
+      - 'scripts/mermaid-config.json'
+      - 'scripts/mermaid-puppeteer.json'
+
+jobs:
+  validate-diagrams:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - uses: browser-actions/setup-chrome@v1
+
+      - name: Validate Mermaid diagrams
+        run: ./scripts/render-diagrams.sh --check

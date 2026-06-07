@@ -53,6 +53,7 @@ If skill directives are provided, record included and excluded skills in the can
 
 Create:
 
+- `requirements/<topic>.md` for ad-hoc work, or use existing `requirements/milestones/<WORK-ID>.md` for milestone-derived work
 - `agent-context/features/<WORK-ID>/requirement.md`
 - `agent-context/features/<WORK-ID>/reasons-canvas.md`
 - `spdd/canvas/<WORK-ID>.md`

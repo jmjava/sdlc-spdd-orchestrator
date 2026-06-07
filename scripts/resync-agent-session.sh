@@ -14,7 +14,7 @@ Options:
   --work-id <WORK-ID> Work ID to resync (required)
   --from-canvas       Copy canonical spdd/canvas/<WORK-ID>.md to feature workspace
   --from-feature      Copy feature workspace canvas to canonical spdd/canvas/<WORK-ID>.md
-  --check-only        Check sync state without reconciling
+  --check-only        Check sync and validate canvas without creating a session brief
   --phase <phase>     Phase for the generated session brief (default: resume)
   --force             Allow overwriting the destination canvas
   --dry-run           Show sync action without writing
@@ -114,7 +114,9 @@ else
   exit 1
 fi
 
-if [[ "${DRY_RUN}" -eq 0 ]]; then
+if [[ "${CHECK_ONLY}" -eq 1 ]]; then
+  echo "Check complete. Run start-agent-session.sh to create a session brief."
+elif [[ "${DRY_RUN}" -eq 0 ]]; then
   "${SCRIPT_DIR}/start-agent-session.sh" --target "${TARGET}" --work-id "${WORK_ID}" --phase "${PHASE}"
 else
   echo "[dry-run] would create session brief for ${WORK_ID} phase ${PHASE}"

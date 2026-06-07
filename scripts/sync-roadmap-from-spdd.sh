@@ -139,3 +139,6 @@ fi
 
 rm -f "${tmp_summary}" "${tmp_roadmap}"
 echo "Updated roadmap summary: ${ROADMAP}"
+echo
+echo "Planning review prompt (see docs/sdlc-spdd/planning-prompt-standard.md):"
+echo "  Read @ROADMAP.md. Review the SDLC-SPDD Work Summary table. Does Current Focus match the active Work ID and phase?"

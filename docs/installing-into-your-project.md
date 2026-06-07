@@ -20,7 +20,7 @@ From the orchestrator repository:
 
 This installs:
 
-- `requirements/`
+- `requirements/` and `requirements/milestones/` (milestone-derived requirement stubs)
 - `spdd/canvas/`
 - `spdd/tasks/`
 - `spdd/reviews/`
@@ -33,7 +33,7 @@ This installs:
 - `agent-context/features/`
 - `agent-context/sessions/`
 - `agent-context/harness/`
-- `docs/sdlc-spdd/`
+- `docs/sdlc-spdd/` (start at `docs/sdlc-spdd/README.md` — lean hub for this project)
 - `.cursor/commands/`
 - `.github/copilot-instructions.md`
 - `.github/prompts/`
@@ -47,6 +47,7 @@ The target-local `scripts/sdlc-spdd/` folder includes session scripts and mappin
 - `create-work-from-milestone.sh`
 - `sync-roadmap-from-spdd.sh`
 - `summarize-session-notes.sh`
+- `verify-project-install.sh`
 
 ## Fresh Install for One Assistant
 
@@ -110,29 +111,31 @@ Then ask:
 
 ## Verify the Install
 
-From the target app:
+`init-project.sh` and `upgrade-project.sh` run verification automatically at the end of a successful install or upgrade.
 
-    test -d agent-context
-    test -d spdd/canvas
-    test -d docs/sdlc-spdd
-    test -d scripts/sdlc-spdd
-    test -f ROADMAP.md
-    test -d session-notes
-    test -x scripts/sdlc-spdd/create-work-from-milestone.sh
-    test -x scripts/sdlc-spdd/sync-roadmap-from-spdd.sh
-    test -x scripts/sdlc-spdd/summarize-session-notes.sh
-    test -f agent-context/memory/project-memory.md
-    test -f agent-context/playbooks/session-handoff-playbook.md
-    test -f docs/sdlc-spdd/first-day-with-sdlc-spdd.md
+From the target app (or orchestrator repo with `--target`):
 
-For Cursor:
+    ./scripts/sdlc-spdd/verify-project-install.sh --target .
 
-    test -f .cursor/commands/sdlc-spdd-plan.md
+With assistant adapters:
 
-For GitHub Copilot:
+    ./scripts/sdlc-spdd/verify-project-install.sh --target . --require-cursor
+    ./scripts/sdlc-spdd/verify-project-install.sh --target . --require-copilot
+    ./scripts/sdlc-spdd/verify-project-install.sh --target . --require-cursor --require-copilot
 
-    test -f .github/copilot-instructions.md
-    test -f .github/prompts/sdlc-spdd-plan.prompt.md
+From the orchestrator repository during development:
+
+    ./scripts/verify-project-install.sh --target /path/to/app
+
+The script asserts the **three-part scaffold**, with emphasis on Planning artifacts:
+
+| Part | Verified paths |
+|------|----------------|
+| **Planning** | `requirements/`, `requirements/milestones/`, `session-notes/`, `ROADMAP.md`, `milestone-*.md` |
+| **SPDD** | `spdd/canvas/`, `spdd/tasks/`, `spdd/reviews/`, `spdd/sync/` |
+| **SDLC** | `agent-context/memory/`, `sessions/`, `playbooks/`, harness, runtime scripts |
+
+Exit code `0` means the install is complete. Non-zero lists missing items and suggests re-running setup.
 
 ## What Not to Edit by Hand
 

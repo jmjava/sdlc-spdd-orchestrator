@@ -21,25 +21,29 @@ SDLC-SPDD moves that context into files:
 
 The result is a workflow where a new agent session can resume from repository artifacts instead of guessing from a partial conversation.
 
-## Two Influences
+## Three Parts
 
 This project is hybrid.
 
-| Influence | What it contributes |
-|-----------|---------------------|
-| SDLC Agents | role-separated lifecycle, architecture-first handoffs, focused agents, progressive context loading, retro learning |
+| Part | What it contributes |
+|------|---------------------|
+| Planning (`ROADMAP.md`, `milestone-*.md`, `session-notes/`) | delivery narrative — why work matters, progress summaries |
 | SPDD / REASONS Canvas | versioned prompt contracts, requirements-to-design-to-operations structure, prompt/code synchronization |
+| SDLC Agents | role-separated lifecycle, architecture-first handoffs, progressive context loading, retro learning |
 
 Together:
 
-    SDLC Agents decides who acts and when.
+    Planning informs and summarizes.
     SPDD decides what artifact governs the work.
+    SDLC Agents decides who acts and when.
+
+See [Three-part operating path](three-part-operating-path.md) for the end-to-end path.
 
 ## The Core Loop
 
 The system has three layers:
 
-    ROADMAP.md / milestone-*.md / session-notes/
+    ROADMAP.md / milestone-*.md / requirements/milestones/ / session-notes/
             -> inform and summarize
     spdd/canvas/ + agent-context/
             -> govern and remember
@@ -70,6 +74,7 @@ This is deliberately slower than asking an assistant to "just fix it." It is mea
 | `milestone-*.md` | milestone goals, scope, linked Work IDs, and summaries |
 | `session-notes/` | daily summaries of agent sessions |
 | `requirements/` | raw requirements, issue notes, acceptance criteria |
+| `requirements/milestones/` | milestone-derived requirement stubs (one per Work ID from checklist items) |
 | `spdd/canvas/` | canonical REASONS Canvas files |
 | `spdd/reviews/` | review outputs against the canvas |
 | `spdd/sync/` | implementation-to-canvas reconciliation logs |
@@ -107,7 +112,7 @@ This is deliberately slower than asking an assistant to "just fix it." It is mea
 ## How Work Flows Through the System
 
 1. A request arrives from a person, Jira, GitHub Issue, or requirements file.
-2. Planning creates a Work ID and REASONS Canvas.
+2. Triage (or `create-work-from-milestone.sh`) assigns a Work ID; `/sdlc-spdd-plan` creates the REASONS Canvas.
 3. Architecture review checks that the plan is safe and structured.
 4. Coding implements one operation from the canvas.
 5. Review compares code to the canvas.

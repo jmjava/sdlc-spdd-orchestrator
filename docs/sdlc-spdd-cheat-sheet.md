@@ -1,6 +1,6 @@
 # SDLC-SPDD Cheat Sheet
 
-PDF-friendly quick reference for daily use.
+**One-page command reference** for print/PDF or a second monitor. For concept definitions (what is a Work ID, operation, sync?), see [Top useful concepts and commands](useful-concepts-and-commands.md). For prompt wording, see [Session prompt standard](session-prompt-standard.md).
 
 Export options:
 
@@ -8,31 +8,26 @@ Export options:
 - Publish `docs/` through GitHub Pages and print the page to PDF from a browser.
 - Use any Markdown-to-PDF converter approved by your team.
 
-Start here:
+Start here (everything else is reference):
 
-- [First day with SDLC-SPDD](first-day-with-sdlc-spdd.md)
-- [10,000-foot view](ten-thousand-foot-view.md)
-- [Installing into your project](installing-into-your-project.md)
-- [Maintaining your project](maintaining-your-project.md)
-- [Top useful concepts and commands](useful-concepts-and-commands.md)
+- [First day with SDLC-SPDD](first-day-with-sdlc-spdd.md) — hands-on first session
+- [Three-part operating path](three-part-operating-path.md) — Planning → SPDD → SDLC loop
+- [Session prompt standard](session-prompt-standard.md) (default) — [Which one?](session-prompt-standard.md#which-prompt-standard)
 
 ## Install
 
-Cursor:
-
-    ./scripts/init-project.sh --target /path/to/app --cursor
-
-GitHub Copilot:
-
-    ./scripts/init-project.sh --target /path/to/app --copilot
-
-Both:
-
-    ./scripts/init-project.sh --target /path/to/app --cursor --copilot
-
-Integrated setup:
+Default (all three parts, both assistants):
 
     ./scripts/setup-agent-prompts.sh --target /path/to/app --all
+
+Verify three-part install:
+
+    ./scripts/sdlc-spdd/verify-project-install.sh --target .
+
+One assistant only (advanced):
+
+    ./scripts/init-project.sh --target /path/to/app --cursor
+    ./scripts/init-project.sh --target /path/to/app --copilot
 
 Target-local docs:
 
@@ -46,7 +41,7 @@ Project planning:
 
 Layer model:
 
-    ROADMAP.md / milestone-*.md / session-notes/
+    ROADMAP.md / milestone-*.md / requirements/milestones/ / session-notes/
       -> inform and summarize
     spdd/canvas/ + agent-context/
       -> govern and remember
@@ -61,7 +56,9 @@ Upgrade older install:
 
 Start or resume:
 
-    ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase>
+    ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase> [--milestone milestone-1.md]
+
+Paste the Resume Prompt from `agent-context/sessions/current-session.md`.
 
 Check previous work:
 
@@ -116,7 +113,7 @@ Bug:
 | Initialize repo context | `/sdlc-spdd-init` |
 | Turn requirement into canvas | `/sdlc-spdd-plan @requirements/file.md` |
 | Harden design before coding | `/sdlc-spdd-architect @spdd/canvas/WORK-ID.md` |
-| Implement one task | `/sdlc-spdd-code @spdd/canvas/WORK-ID.md operation T01` |
+| Implement one operation | `/sdlc-spdd-code @spdd/canvas/WORK-ID.md operation T01` |
 | Review implementation | `/sdlc-spdd-review @spdd/canvas/WORK-ID.md` |
 | Update changed intent | `/sdlc-spdd-prompt-update @spdd/canvas/WORK-ID.md` |
 | Capture learnings | `/sdlc-spdd-retro @spdd/canvas/WORK-ID.md` |
@@ -124,23 +121,7 @@ Bug:
 
 ## Ask Questions That Keep Context
 
-Use:
-
-    For <WORK-ID>, read @spdd/canvas/<WORK-ID>.md before answering. <question>
-
-Examples:
-
-    For FEAT-001, what operation should I do next?
-
-    For FEAT-001 T01, does the current diff stay inside the approved operation?
-
-    For BUG-003, what test is required before review?
-
-Avoid:
-
-    What now?
-    Continue.
-    Fix it.
+Prompt patterns: [During session](session-prompt-standard.md#during-session) and [Anti-patterns](session-prompt-standard.md#anti-patterns) in Session prompt standard.
 
 ## One-Operation Coding Loop
 

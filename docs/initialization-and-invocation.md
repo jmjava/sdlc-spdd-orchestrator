@@ -1,53 +1,22 @@
 # Initialization and Invocation
 
-This guide shows how to initialize an application, start work, ask context-preserving questions, and invoke SDLC-SPDD skills from Cursor or GitHub Copilot.
+This guide is for **Cursor and Copilot invocation**: slash commands, `#prompt:` fallbacks, and side-by-side examples per assistant. It does not duplicate install steps, session rhythm, or the canonical prompt library.
+
+| Need | Open |
+|------|------|
+| Install, upgrade, verify | [Installing into your project](installing-into-your-project.md) |
+| Copy-paste prompts | [Session prompt standard](session-prompt-standard.md) |
+| Script sequences and checklists | [Daily runbook](daily-runbook.md) |
+| **Cursor / Copilot command syntax** | **This page** |
 
 ## First-Time Application Setup
 
-From this scaffold repository, install SDLC-SPDD into the target application.
-
-Install the integrated combined system:
+Default install (from this orchestrator repo):
 
     ./scripts/setup-agent-prompts.sh --target /path/to/your/project --all
+    ./scripts/verify-project-install.sh --target /path/to/your/project
 
-Install for Cursor:
-
-    ./scripts/init-project.sh --target /path/to/your/project --cursor
-
-Install for GitHub Copilot:
-
-    ./scripts/init-project.sh --target /path/to/your/project --copilot
-
-Install both assistant integrations:
-
-    ./scripts/init-project.sh --target /path/to/your/project --cursor --copilot
-
-Preview changes without writing files:
-
-    ./scripts/init-project.sh --target /path/to/your/project --cursor --copilot --dry-run
-
-Upgrade an existing older installation without overwriting implementation files or accumulated memory:
-
-    ./scripts/upgrade-project.sh --target /path/to/your/project --all
-
-The target application receives:
-
-- `requirements/`
-- `spdd/canvas/`
-- `spdd/tasks/`
-- `spdd/reviews/`
-- `spdd/sync/`
-- `ROADMAP.md`
-- `milestone-1.md` when no `milestone-*.md` files exist
-- `session-notes/`
-- `agent-context/memory/`
-- `agent-context/features/`
-- `agent-context/sessions/`
-- `agent-context/playbooks/`
-- `agent-context/harness/`
-- `.cursor/commands/` when `--cursor` is used
-- `.github/copilot-instructions.md` and `.github/prompts/` when `--copilot` is used
-- `scripts/sdlc-spdd/` runtime session scripts
+Full install options, upgrade path, and what gets created: [Installing into your project](installing-into-your-project.md).
 
 ## Initialize Context Inside the Application
 
@@ -80,24 +49,26 @@ Expected result:
 
 ## Start or Resume an Agent Session
 
-Before asking a new agent to continue previous work, create a session brief:
+Script sequence and checklists: [Morning or Start-of-Session Check](daily-runbook.md#morning-or-start-of-session-check) in Daily runbook. Resume prompt wording: [Start of session](session-prompt-standard.md#start-of-session) in Session prompt standard.
 
-    cd /path/to/your/project
-    ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id FEAT-001-order-status-api --phase code
+Before asking a new agent to continue previous work:
 
-If the work may have drifted between the feature workspace and canonical canvas, resync first:
+1. Check canvas sync (optional, does not create a session brief):
 
-    ./scripts/sdlc-spdd/resync-agent-session.sh --target . --work-id FEAT-001-order-status-api --check-only
+       ./scripts/sdlc-spdd/resync-agent-session.sh --target . --work-id FEAT-001-order-status-api --check-only
 
-Then ask the assistant:
+2. Create a session brief:
 
-    For FEAT-001-order-status-api, read @agent-context/sessions/current-session.md and continue with the recommended SDLC-SPDD command.
+       cd /path/to/your/project
+       ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id FEAT-001-order-status-api --phase code
 
-If the work belongs to a milestone:
+3. **Paste the Resume Prompt** from `agent-context/sessions/current-session.md`. Do not paraphrase — the script generates canvas, memory, and planning references. See [Session prompt standard](session-prompt-standard.md).
 
-    For FEAT-001-order-status-api, also read @ROADMAP.md and @milestone-1.md before planning or resuming.
+To reconcile canvas drift before step 2, use `resync-agent-session.sh --from-canvas --force` or `--from-feature --force`. Default authority: canonical `spdd/canvas/<WORK-ID>.md`.
 
 ## How to Start Work
+
+Canonical prompt wording: [Session prompt standard](session-prompt-standard.md) and [Triage](session-prompt-standard.md#triage-no-work-id-yet). Below: **Cursor and Copilot invocation** examples for common entry points (plain language, files, Jira, GitHub, bugs).
 
 Use one Work ID for each unit of work. Good IDs include:
 
@@ -161,28 +132,15 @@ or:
 
 ## How to Ask Questions That Keep Context
 
-Always include the Work ID and point to the active artifacts. This helps the assistant answer from the design contract instead of from a disconnected chat memory.
+Always include the Work ID and point to the active artifacts. More examples and anti-patterns: [During session](session-prompt-standard.md#during-session) and [Anti-patterns](session-prompt-standard.md#anti-patterns) in Session prompt standard.
 
-Good context-preserving prompts:
+Good (Cursor or Copilot):
 
     For FEAT-001, read @spdd/canvas/FEAT-001-order-status-api.md and @agent-context/features/FEAT-001-order-status-api/progress-log.md. What should I do next?
 
-    For BUG-003, compare @spdd/canvas/BUG-003-null-discount-checkout.md with the current diff. Are we still inside the approved operation?
+Avoid:
 
-    Using @agent-context/memory/known-pitfalls.md and @spdd/canvas/FEAT-001-order-status-api.md, what risks should I check before coding T02?
-
-    For FEAT-001, summarize the current state in three bullets: completed operations, open risks, and next command.
-
-Avoid context-losing prompts:
-
-    What now?
-    Can you fix it?
-    Continue.
-    Is this okay?
-
-If you need to ask a quick question, still anchor it:
-
-    For FEAT-001, quick question: does T02 require a repository change or only a service-layer change?
+    What now? / Continue. / Can you fix it?
 
 ## Invoking the SDLC-SPDD Skills
 
@@ -199,7 +157,7 @@ If you need to ask a quick question, still anchor it:
 
 ## Daily Invocation Pattern
 
-For most work, use this sequence:
+Full step order and part ownership: [Workflow](workflow.md). Typical command sequence:
 
     /sdlc-spdd-plan @requirements/<topic>.md
     /sdlc-spdd-architect @spdd/canvas/<WORK-ID>.md

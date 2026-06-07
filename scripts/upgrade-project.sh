@@ -201,6 +201,7 @@ create_missing_memory_file() {
 # not touched; only missing directories and .gitkeep files are created.
 for dir in \
   requirements \
+  requirements/milestones \
   spdd/canvas \
   spdd/tasks \
   spdd/reviews \
@@ -248,6 +249,10 @@ else
   preserved+=("${TARGET}/milestone-*.md")
 fi
 
+create_missing_project_doc \
+  "${REPO_ROOT}/templates/requirements/milestones/README.md" \
+  "${TARGET}/requirements/milestones/README.md"
+
 # Preserve accumulated memory; create only missing memory files.
 for file in \
   project-memory.md \
@@ -280,11 +285,17 @@ for file in \
 done
 
 # User-facing docs are framework-owned when installed under docs/sdlc-spdd.
+# Skip docs/README.md — orchestrator hub only; targets use docs-sdlc-spdd-README.md.
 for file in "${REPO_ROOT}"/docs/*.md; do
+  [[ "$(basename "${file}")" == "README.md" ]] && continue
   copy_framework_file \
     "${file}" \
     "${TARGET}/docs/sdlc-spdd/$(basename "${file}")"
 done
+
+copy_framework_file \
+  "${REPO_ROOT}/templates/project-docs/docs-sdlc-spdd-README.md" \
+  "${TARGET}/docs/sdlc-spdd/README.md"
 
 # Target-local runtime scripts are framework-owned and safe to upgrade.
 for file in \
@@ -295,7 +306,8 @@ for file in \
   sync-roadmap-from-spdd.sh \
   summarize-session-notes.sh \
   sync-agent-context.sh \
-  validate-reasons-canvas.sh; do
+  validate-reasons-canvas.sh \
+  verify-project-install.sh; do
   copy_executable_framework_file \
     "${REPO_ROOT}/scripts/${file}" \
     "${TARGET}/scripts/sdlc-spdd/${file}"
@@ -335,3 +347,15 @@ if [[ "${BACKUP}" -eq 1 ]]; then
   printf '  %s\n' "${backed_up[@]:-none}"
 fi
 echo "Not touched: application source, requirements, canvases, feature workspaces, reviews, sync logs, existing roadmap/milestones, existing memory content, or application docs outside docs/sdlc-spdd."
+
+verify_args=(--target "${TARGET}")
+if [[ "${UPGRADE_CURSOR}" -eq 1 ]]; then
+  verify_args+=(--require-cursor)
+fi
+if [[ "${UPGRADE_COPILOT}" -eq 1 ]]; then
+  verify_args+=(--require-copilot)
+fi
+if [[ "${DRY_RUN}" -eq 0 ]]; then
+  echo "Running install verification..."
+  "${SCRIPT_DIR}/verify-project-install.sh" "${verify_args[@]}"
+fi

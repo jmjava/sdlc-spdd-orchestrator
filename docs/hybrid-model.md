@@ -1,10 +1,12 @@
 # Hybrid SDLC Agents + SPDD Model
 
-This project is intentionally hybrid. It combines the SDLC Agents lifecycle and context-engineering model with SPDD's REASONS Canvas and prompt-governance contract, then connects both to project-level planning documents.
+> Deep theory. For onboarding, read [Three-part operating path](three-part-operating-path.md) and the [What each part brings](README.md#what-each-part-brings-read-before-deep-theory) value guides first. This page explains the historical SDLC + SPDD influences and how Planning was added as a third part.
+
+This project is intentionally hybrid. It combines the SDLC Agents lifecycle and context-engineering model with SPDD's REASONS Canvas and prompt-governance contract, then connects both to the planning layer (`ROADMAP.md`, `milestone-*.md`, `requirements/`, `session-notes/`). These map to the three parts: SDLC, SPDD, and Planning.
 
 ## Three-Layer Operating Model
 
-    ROADMAP.md / milestone-*.md / session-notes/
+    ROADMAP.md / milestone-*.md / requirements/milestones/ / session-notes/
             -> inform and summarize
     spdd/canvas/ + agent-context/
             -> govern and remember
@@ -105,6 +107,8 @@ The hybrid model is operationalized with scripts:
 | Import session notes | `scripts/sdlc-spdd/summarize-session-notes.sh` | Converts existing narrative session notes into durable memory |
 
 Use these scripts around assistant invocations so context survives beyond chat history.
+
+Concept guides: [What SDLC brings](what-sdlc-brings.md), [What SPDD brings](what-spdd-brings.md), [What planning brings](what-planning-brings.md). Prompt standards: [Session](session-prompt-standard.md), [SPDD](spdd-prompt-standard.md), [Planning](planning-prompt-standard.md).
 
 ## Context Loading Rules
 

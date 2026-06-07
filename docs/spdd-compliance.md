@@ -1,14 +1,16 @@
 # SPDD Compliance
 
+> Deep theory. For onboarding, read [Three-part operating path](three-part-operating-path.md) and [What SPDD brings](what-spdd-brings.md) first. This page is for compliance verification and Fowler/SPDD contract detail.
+
 This project follows Structured Prompt-Driven Development (SPDD) as described in Martin Fowler's article, [Structured-Prompt-Driven Development](https://martinfowler.com/articles/structured-prompt-driven/), inside a hybrid lifecycle influenced by [SDLC Agents](https://github.com/dsilahcilar/sdlc-agents).
 
 SPDD treats prompts as first-class delivery artifacts that are version controlled, reviewed, reused, and improved over time. This scaffold implements that contract with REASONS Canvas files, lifecycle prompt templates, assistant command prompts, progress logs, review reports, sync logs, and reusable project memory.
 
-For the SDLC Agents side of the hybrid, see [hybrid-model.md](hybrid-model.md).
+For the SDLC Agents side of the hybrid, see [hybrid-model.md](hybrid-model.md). For copy-paste SPDD prompts, see [SPDD prompt standard](spdd-prompt-standard.md). For planning-layer prompts, see [Planning prompt standard](planning-prompt-standard.md).
 
 Project-level planning documents are also supported:
 
-    ROADMAP.md / milestone-*.md / session-notes/
+    ROADMAP.md / milestone-*.md / requirements/milestones/ / session-notes/
             -> inform and summarize
     spdd/canvas/ + agent-context/
             -> govern and remember
@@ -44,9 +46,9 @@ Every compliant canvas must contain these sections:
 | N - Norms | Reusable engineering standards and conventions |
 | S - Safeguards | Non-negotiable constraints, invariants, security rules, and performance limits |
 
-Validate canvas structure with:
+Validate canvas structure with (runtime scripts live under `scripts/sdlc-spdd/` in your project):
 
-    ./scripts/validate-reasons-canvas.sh spdd/canvas/
+    ./scripts/sdlc-spdd/validate-reasons-canvas.sh spdd/canvas/
 
 ## Workflow Contract
 

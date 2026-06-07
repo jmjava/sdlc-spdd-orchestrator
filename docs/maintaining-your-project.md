@@ -4,6 +4,8 @@ Use this guide after SDLC-SPDD is installed in an application repository.
 
 Maintenance means keeping the framework, prompts, memory, canvases, and external links useful over time.
 
+Runtime scripts in a target app live at `scripts/sdlc-spdd/`. When developing the orchestrator itself, the same scripts are at `scripts/` in this repository. See [CONTRIBUTING.md](../CONTRIBUTING.md).
+
 ## Maintenance Checklist
 
 Run these checks regularly:
@@ -37,15 +39,10 @@ Do not rely on chat history alone.
 
 From the target app:
 
+    ./scripts/sdlc-spdd/resync-agent-session.sh --target . --work-id <WORK-ID> --check-only
     ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase>
 
-Then ask:
-
-    For <WORK-ID>, read @agent-context/sessions/current-session.md before answering.
-
-When milestone planning is active, also include:
-
-    Read @ROADMAP.md and the active @milestone-*.md file before planning or resuming.
+Then **paste the Resume Prompt** from `agent-context/sessions/current-session.md`. See [Session prompt standard](session-prompt-standard.md).
 
 ## Check Canvas Sync
 
@@ -138,7 +135,7 @@ Import existing daily session notes into durable memory:
 
 Use this flow:
 
-    ROADMAP.md / milestone-*.md / session-notes/
+    ROADMAP.md / milestone-*.md / requirements/milestones/ / session-notes/
             -> inform and summarize
     spdd/canvas/ + agent-context/
             -> govern and remember

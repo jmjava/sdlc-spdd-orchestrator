@@ -1,6 +1,14 @@
 # Daily SDLC-SPDD Runbook
 
-Use this runbook when operating an initialized application day to day.
+Use this runbook for **operational rhythm**: rules, script sequences, phase checklists, and when to move between steps. It does not duplicate copy-paste prompts — those live in one place.
+
+| Need | Open |
+|------|------|
+| Copy-paste prompts (default) | [Session prompt standard](session-prompt-standard.md) |
+| Which of the three prompt standards? | [Which prompt standard?](session-prompt-standard.md#which-prompt-standard) |
+| Step order (1–13) | [Workflow](workflow.md) |
+| Planning → SPDD → SDLC loop | [Three-part operating path](three-part-operating-path.md) |
+| **Rules, scripts, checklists** | **This page** |
 
 ## Daily Operating Rules
 
@@ -17,24 +25,19 @@ Use this runbook when operating an initialized application day to day.
 
 Goal: recover context before asking the assistant to act.
 
-First resync and generate a session brief:
+1. Check canvas sync (no session brief yet):
 
-    ./scripts/sdlc-spdd/resync-agent-session.sh --target . --work-id <WORK-ID> --check-only
-    ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase>
+       ./scripts/sdlc-spdd/resync-agent-session.sh --target . --work-id <WORK-ID> --check-only
 
-Prompt:
+2. Create the session brief:
 
-    For <WORK-ID>, read @agent-context/sessions/current-session.md first.
+       ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase>
 
-    For <WORK-ID>, read @spdd/canvas/<WORK-ID>.md, @agent-context/features/<WORK-ID>/progress-log.md, and @agent-context/memory/known-pitfalls.md. Summarize:
-    - current status
-    - next approved operation
-    - open risks
-    - recommended SDLC-SPDD command
+3. **Paste the Resume Prompt** from `agent-context/sessions/current-session.md`. That generated prompt is the source of truth — it already includes canvas, memory, and planning `@` references when those files exist.
 
-If the work belongs to a milestone, include:
+Optional — ask for a status summary after pasting the resume prompt:
 
-    Also read @ROADMAP.md, the active @milestone-*.md file, and today's @session-notes/YYYY-MM-DD.md if it exists.
+    Summarize current status, next approved operation, open risks, and recommended SDLC-SPDD command.
 
 If no Work ID exists yet:
 
@@ -48,29 +51,13 @@ Then invoke:
 
 Use triage when a request arrives from chat, Jira, GitHub Issues, or a stakeholder.
 
-Prompt:
-
-    Triage this request before planning. Identify whether it is FEAT, BUG, REF, SPIKE, DOC, TEST, or CHORE; propose a Work ID; list missing information; and tell me whether we can safely run /sdlc-spdd-plan.
-
-If the request is ready:
-
-    /sdlc-spdd-plan <request details>
-
-If the request is not ready, ask a bounded question:
-
-    For <proposed WORK-ID>, what single clarification is required before planning?
+Prompts: [Triage (no Work ID yet)](session-prompt-standard.md#triage-no-work-id-yet) in Session prompt standard.
 
 ## Plan Work
 
 Goal: create the design contract without changing source code.
 
-Prompt examples:
-
-    /sdlc-spdd-plan @requirements/order-status-api.md
-
-    /sdlc-spdd-plan Jira ABC-123: create order status lookup. Link to https://jira.example.com/browse/ABC-123.
-
-    /sdlc-spdd-plan GitHub issue https://github.com/example/orders-api/issues/42. Use the issue as the external reference.
+Prompts: [Phase-specific prompts — Plan](session-prompt-standard.md#phase-specific-standard-prompts) and [During session — milestone-aware planning](session-prompt-standard.md#milestone-aware-planning) in Session prompt standard.
 
 Before leaving planning, check:
 
@@ -84,13 +71,7 @@ Before leaving planning, check:
 
 Goal: make the canvas safe to code.
 
-Prompt:
-
-    /sdlc-spdd-architect @spdd/canvas/<WORK-ID>.md
-
-Follow-up question:
-
-    For <WORK-ID>, what must change before this canvas is Ready For Coding?
+Prompts: [Phase-specific prompts — Architect](session-prompt-standard.md#phase-specific-standard-prompts) in Session prompt standard. Follow-up: ask what must change before the canvas is `Ready For Coding`.
 
 Only move to coding when readiness is `Ready For Coding`.
 
@@ -98,15 +79,7 @@ Only move to coding when readiness is `Ready For Coding`.
 
 Goal: implement one approved operation.
 
-Prompt:
-
-    /sdlc-spdd-code @spdd/canvas/<WORK-ID>.md operation T01
-
-Context-safe variants:
-
-    For <WORK-ID>, implement only operation T01. Do not start T02. Update the progress log and tests.
-
-    For <WORK-ID>, read the canvas and current diff first. If T01 is already complete, stop and recommend the next operation.
+Prompts: [Phase-specific prompts — Code](session-prompt-standard.md#phase-specific-standard-prompts) and [Check scope before coding](session-prompt-standard.md#check-scope-before-coding) in Session prompt standard.
 
 Before coding starts, verify:
 
@@ -117,31 +90,13 @@ Before coding starts, verify:
 
 ## Ask Questions During Coding
 
-Use questions to preserve context and prevent drift.
-
-Good prompts:
-
-    For <WORK-ID> T01, does this implementation still match the Approach section in @spdd/canvas/<WORK-ID>.md?
-
-    For <WORK-ID>, inspect the current diff and tell me whether any file changes are unrelated to T01.
-
-    For <WORK-ID>, what test should be added before this operation can be reviewed?
-
-    For <WORK-ID>, update no files. Explain the next smallest safe step for T01.
-
-Bad prompts:
-
-    Keep going.
-    Fix the tests.
-    What should I change?
+Use [Context-preserving question](session-prompt-standard.md#context-preserving-question) prompts from Session prompt standard. Avoid vague prompts (`Keep going.`, `Fix the tests.`) — see [Anti-patterns](session-prompt-standard.md#anti-patterns).
 
 ## Review the Operation
 
 Goal: compare implementation to the design contract.
 
-Prompt:
-
-    /sdlc-spdd-review @spdd/canvas/<WORK-ID>.md
+Prompts: [Phase-specific prompts — Review](session-prompt-standard.md#phase-specific-standard-prompts) and [Behavior change / drift](session-prompt-standard.md#behavior-change-spdd-rule) in Session prompt standard.
 
 Review must check:
 
@@ -156,25 +111,13 @@ Review must check:
 - Unrelated changes
 - Architecture drift
 
-If review requests changes:
-
-    For <WORK-ID>, implement only the required review fixes for operation T01.
-
-Then review again.
-
-If review finds that the intended behavior or acceptance criteria changed:
-
-    /sdlc-spdd-prompt-update @spdd/canvas/<WORK-ID>.md
-
-Then architect or code from the updated canvas.
+If review requests changes, implement only the required fixes for the operation, then review again. If acceptance criteria changed, run prompt-update before more code — see Session prompt standard.
 
 ## Sync Drift
 
 Use sync when implementation reality differs from the canvas, or after several reviewed operations.
 
-Prompt:
-
-    /sdlc-spdd-sync @spdd/canvas/<WORK-ID>.md
+Prompts: [Phase-specific prompts — Sync](session-prompt-standard.md#phase-specific-standard-prompts) and [Accepted implementation drift](session-prompt-standard.md#accepted-implementation-drift) in Session prompt standard.
 
 Use sync to record:
 
@@ -186,9 +129,7 @@ Use sync to record:
 
 Do not use sync to hide unreviewed changes.
 
-Do not use sync for a new behavior requirement. Update the source issue and canvas first:
-
-    /sdlc-spdd-prompt-update @spdd/canvas/<WORK-ID>.md
+Do not use sync for a new behavior requirement. Update the source issue and canvas first via prompt-update.
 
 ## Keep Jira Synchronized
 
@@ -210,9 +151,7 @@ Behavior change from Jira:
 
 Run retro when the feature, bugfix, refactor, or spike is complete.
 
-Prompt:
-
-    /sdlc-spdd-retro @spdd/canvas/<WORK-ID>.md
+Prompt: [Phase-specific prompts — Retro](session-prompt-standard.md#phase-specific-standard-prompts) in Session prompt standard.
 
 Retro updates:
 
@@ -223,24 +162,7 @@ Retro updates:
 
 ## End-of-Session Handoff
 
-Prompt:
-
-    For <WORK-ID>, create a handoff summary from @spdd/canvas/<WORK-ID>.md, @agent-context/features/<WORK-ID>/progress-log.md, and current git status. Include completed work, validation, open risks, and next command.
-
-Persist that handoff:
-
-    ./scripts/sdlc-spdd/capture-session-memory.sh \
-      --target . \
-      --work-id <WORK-ID> \
-      --phase <phase> \
-      --summary "<completed work>" \
-      --validation "<tests or checks>" \
-      --milestone milestone-1.md \
-      --roadmap-note "<milestone-level progress, if useful>" \
-      --decisions "<decisions, if any>" \
-      --pitfalls "<pitfalls, if any>" \
-      --patterns "<patterns, if any>" \
-      --next "<next command>"
+Prompts and script: [End of session](session-prompt-standard.md#end-of-session) in Session prompt standard.
 
 The handoff should include:
 
@@ -253,6 +175,8 @@ The handoff should include:
 - Next recommended command
 
 ## Common Daily Loops
+
+Quick command sequences. Full prompt wording: [Session prompt standard](session-prompt-standard.md).
 
 ### New feature
 
@@ -276,7 +200,4 @@ The handoff should include:
 
 ### Continue interrupted work
 
-    ./scripts/sdlc-spdd/resync-agent-session.sh --target . --work-id <WORK-ID> --check-only
-    ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase resume
-
-    For <WORK-ID>, read the canvas, progress log, review report, and current diff. Tell me whether to code, review, sync, or retro next.
+Script sequence: [Morning or Start-of-Session Check](#morning-or-start-of-session-check) above. Resume prompt and follow-up: [Continue interrupted work](session-prompt-standard.md#continue-interrupted-work) in Session prompt standard.

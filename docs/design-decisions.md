@@ -1,5 +1,7 @@
 # Design Decisions
 
+> Deep theory. For onboarding, read [Three-part operating path](three-part-operating-path.md) and the [What each part brings](README.md#what-each-part-brings-read-before-deep-theory) value guides first.
+
 ## SDLC Agents own lifecycle, SPDD owns prompt governance
 
 SDLC Agents patterns define the lifecycle phases, specialized responsibilities, progressive context loading, architecture-first handoffs, and retro learning loop. SPDD defines the governed prompt artifact model through REASONS Canvas, prompt-update, review, and sync.
@@ -13,11 +15,11 @@ The hybrid keeps these concerns separate:
 
 ## Planning narrative stays separate from SPDD contracts
 
-`ROADMAP.md`, `milestone-*.md`, and `session-notes/` are intentionally preserved as human-readable planning and narrative artifacts. They inform SDLC-SPDD work, but they do not replace the REASONS Canvas.
+`ROADMAP.md`, `milestone-*.md`, `requirements/milestones/`, and `session-notes/` are intentionally preserved as human-readable planning and narrative artifacts. Milestone checklist items map to requirement stubs under `requirements/milestones/<WORK-ID>.md`. They inform SDLC-SPDD work, but they do not replace the REASONS Canvas.
 
 The flow is:
 
-    ROADMAP.md / milestone-*.md / session-notes/
+    ROADMAP.md / milestone-*.md / requirements/milestones/ / session-notes/
             -> inform and summarize
     spdd/canvas/ + agent-context/
             -> govern and remember
@@ -37,6 +39,10 @@ Feature workspace and `spdd/canvas/` hold the same content in MVP. Sync tooling 
 ## Safe installation
 
 Scripts never overwrite existing files unless `--force` is passed. `--dry-run` is supported for init.
+
+## Agent overlays are orchestrator-only today
+
+`templates/agent-overlays/` defines per-role overlay prompts referenced in `STARTER-SPEC.md`, but install scripts do not copy them to target projects yet. Target projects use Cursor commands, Copilot prompts, and playbooks instead. Treat overlays as future/post-MVP material unless install support is added.
 
 ## Markdown as primary format
 
