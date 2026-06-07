@@ -10,6 +10,25 @@ It is built from **three parts** that work together:
 | **SPDD** | *What* to build (and what not to) | `spdd/canvas/<WORK-ID>.md` (REASONS Canvas) |
 | **SDLC** | *Who acts when* and how sessions hand off | phase commands, session briefs, `agent-context/` memory |
 
+## How Commands Work
+
+This repo uses **two kinds** of commands. They run in different places — do not mix them up.
+
+| Kind | Looks like | Where you run it |
+|------|------------|------------------|
+| **Assistant** (AI chat) | `/sdlc-spdd-init`, `/sdlc-spdd-plan @requirements/foo.md` | **Cursor Chat** or **Copilot Chat** in your target project |
+| **Shell — install** (once) | `./scripts/setup-agent-prompts.sh --target ...` | Terminal in the **orchestrator repo** clone |
+| **Shell — daily use** | `./scripts/sdlc-spdd/start-agent-session.sh --target . ...` | Terminal in your **installed target project** |
+
+Install/upgrade/verify from the orchestrator clone use `./scripts/<name>.sh`. After install, runtime scripts live in the target at `./scripts/sdlc-spdd/`. See [Script paths](CONTRIBUTING.md#script-paths-orchestrator-vs-target).
+
+**`/sdlc-spdd-*` is not a terminal command.** Open your target app in Cursor or Copilot, open **AI chat**, then:
+
+- **Cursor:** type `/sdlc-spdd-init` (or `/` → pick `sdlc-spdd-init`)
+- **Copilot:** type `/sdlc-spdd-init`, or `#prompt:sdlc-spdd-init` if slash commands are missing
+
+Full detail: [How to run assistant commands](docs/initialization-and-invocation.md#how-to-run-assistant-commands).
+
 ## The Adoption Path
 
 Five steps take you from install to confident daily use. Follow them in order — each step points to one doc.
@@ -38,7 +57,7 @@ flowchart TD
 
 | Step | Do this | Read this |
 |------|---------|-----------|
-| 1. Install & verify | `setup-agent-prompts.sh --all` then `verify-project-install.sh` | [Installing into your project](docs/installing-into-your-project.md) |
+| 1. Install & verify | From orchestrator clone: `setup-agent-prompts.sh --all` then `verify-project-install.sh` | [Installing into your project](docs/installing-into-your-project.md) |
 | 2. First session | `/sdlc-spdd-init`, then plan → architect → code → review one operation | [First day with SDLC-SPDD](docs/first-day-with-sdlc-spdd.md) |
 | 3. Learn the model | Understand how Planning, SPDD, and SDLC hand off | [Three-part operating path](docs/three-part-operating-path.md) |
 | 4. Work day to day | Use the default prompts and the start/capture rhythm | [Session prompt standard](docs/session-prompt-standard.md) · [Daily runbook](docs/daily-runbook.md) |
@@ -55,9 +74,9 @@ Run these from this orchestrator repo, pointing `--target` at your application:
     ./scripts/setup-agent-prompts.sh --target /path/to/your/project --all
 
     # 2. Confirm the install is complete
-    ./scripts/sdlc-spdd/verify-project-install.sh --target /path/to/your/project
+    ./scripts/verify-project-install.sh --target /path/to/your/project
 
-Then open your project in Cursor or a Copilot-enabled editor and run `/sdlc-spdd-init`.
+Then open the **target project** in Cursor or Copilot and run `/sdlc-spdd-init` in **AI chat** — see [How commands work](#how-commands-work) above.
 
 Next, follow the hands-on walkthrough: **[First day with SDLC-SPDD](docs/first-day-with-sdlc-spdd.md)**.
 

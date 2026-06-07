@@ -96,11 +96,15 @@ Backups of overwritten framework files are stored under:
 
 Open `/path/to/app` in Cursor or a Copilot-enabled editor.
 
-Then run:
+In **AI chat** (not the terminal), initialize project context. `/sdlc-spdd-init` is an assistant command, not a shell command — see [How to run assistant commands](initialization-and-invocation.md#how-to-run-assistant-commands).
+
+**Cursor:** Chat → `/sdlc-spdd-init`
+
+**Copilot:** Chat → `/sdlc-spdd-init` or `#prompt:sdlc-spdd-init`
 
     /sdlc-spdd-init
 
-Create a first session brief:
+Optional — create a first session brief from the **terminal**:
 
     cd /path/to/app
     ./scripts/sdlc-spdd/start-agent-session.sh --target . --phase init
@@ -113,7 +117,7 @@ Then ask:
 
 `init-project.sh` and `upgrade-project.sh` run verification automatically at the end of a successful install or upgrade.
 
-From the target app (or orchestrator repo with `--target`):
+From your **installed target project** (`cd` into the app):
 
     ./scripts/sdlc-spdd/verify-project-install.sh --target .
 

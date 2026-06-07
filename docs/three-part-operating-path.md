@@ -32,9 +32,11 @@ For *which prompt standard to open*, see [Which prompt standard?](session-prompt
 
 Install and upgrade scripts **create missing Planning scaffolding** and **never overwrite** existing `ROADMAP.md`, `milestone-*.md`, `requirements/milestones/`, or `session-notes/`.
 
-Verify after install:
+Verify after install (from your **installed target project**):
 
     ./scripts/sdlc-spdd/verify-project-install.sh --target .
+
+From the **orchestrator repo** during install: `./scripts/verify-project-install.sh --target /path/to/app`.
 
 `init-project.sh` and `upgrade-project.sh` run this automatically unless `--dry-run` is set.
 

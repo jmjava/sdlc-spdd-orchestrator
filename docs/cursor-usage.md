@@ -14,6 +14,10 @@ Commands are copied to `.cursor/commands/`.
 
 To install GitHub Copilot prompt files instead, see [copilot-usage.md](copilot-usage.md).
 
+## How to Invoke a Command
+
+Open the **target project** in Cursor. Open **Chat** or **Agent**. Type `/` and select a command (for example `sdlc-spdd-init`), or type `/sdlc-spdd-init` and send. These run in chat — not in the terminal. See [How to run assistant commands](initialization-and-invocation.md#how-to-run-assistant-commands).
+
 ## Available Commands
 
 | Command | Purpose |

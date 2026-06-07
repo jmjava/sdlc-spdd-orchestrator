@@ -24,9 +24,11 @@ The workflow is hybrid: SDLC Agents supplies the lifecycle; SPDD supplies the RE
 
 Set `--phase` on `start-agent-session.sh` to the phase you are about to run. Paste the **Resume Prompt** from `current-session.md` — see [Session prompt standard](session-prompt-standard.md).
 
+`/sdlc-spdd-*` steps are **assistant commands** (Cursor/Copilot chat). `./scripts/sdlc-spdd/*` steps are **shell commands** (terminal). [How to run assistant commands](initialization-and-invocation.md#how-to-run-assistant-commands).
+
 | Step | Part | Action |
 |------|------|--------|
-| 1 | SDLC | **Set up prompts and memory** — `./scripts/setup-agent-prompts.sh --target . --all` |
+| 1 | SDLC | **Set up prompts and memory** — from orchestrator repo: `./scripts/setup-agent-prompts.sh --target /path/to/app --all` |
 | 2 | SDLC | **Initialize** — `/sdlc-spdd-init` |
 | 3 | Planning → SPDD | **Map milestone work when needed** — `./scripts/sdlc-spdd/create-work-from-milestone.sh --target . --milestone milestone-1.md --all` |
 | 4 | SDLC | **Start session** — `./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase>` → paste Resume Prompt |

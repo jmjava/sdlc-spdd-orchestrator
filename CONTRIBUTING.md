@@ -14,12 +14,14 @@ Thanks for contributing to SDLC-SPDD Orchestrator.
 
 This repository and installed target applications use different script paths:
 
-| Context | Runtime scripts | Setup scripts |
-|---------|-----------------|---------------|
-| **This orchestrator repo** (development) | `./scripts/start-agent-session.sh`, etc. | `./scripts/init-project.sh`, `./scripts/setup-agent-prompts.sh` |
-| **Installed target application** | `./scripts/sdlc-spdd/*.sh` | Run from orchestrator repo against `--target` |
+| Context | Where you `cd` | Script path | Examples |
+|---------|----------------|-------------|----------|
+| **Orchestrator repo** | `sdlc-spdd-orchestrator/` | `./scripts/<name>.sh` | `setup-agent-prompts.sh`, `init-project.sh`, `upgrade-project.sh`, `verify-project-install.sh`, `render-diagrams.sh` |
+| **Installed target app** | your application root | `./scripts/sdlc-spdd/<name>.sh` | `start-agent-session.sh`, `capture-session-memory.sh`, `verify-project-install.sh` |
 
-`init-project.sh` copies eight runtime scripts into the target at `scripts/sdlc-spdd/`. User-facing docs use the target path. When developing or testing in this repo, use `./scripts/<name>.sh` directly.
+**Rule:** setup/install/upgrade always run from the **orchestrator clone** with `--target /path/to/app`. Daily session scripts run from the **target project** with `--target .` (or omit when already in the app root).
+
+`init-project.sh` copies runtime scripts (including `verify-project-install.sh`) into the target at `scripts/sdlc-spdd/`. Docs must label which context applies — do not use `./scripts/sdlc-spdd/...` in examples meant for the orchestrator repo.
 
 Doc paths follow the same pattern:
 
@@ -63,6 +65,8 @@ Before merging doc or script changes that touch the three-part model (Planning, 
 - [ ] **Diagrams** — if you changed a Mermaid diagram, `./scripts/render-diagrams.sh --check` passes; regenerate committed exports with `./scripts/render-diagrams.sh`
 - [ ] **Daily doc roles** — prompts stay in `session-prompt-standard.md`; step table in `workflow.md`; rules/checklists in `daily-runbook.md`; Cursor/Copilot syntax in `initialization-and-invocation.md`; concepts in `useful-concepts-and-commands.md`; commands in `sdlc-spdd-cheat-sheet.md` (link, do not duplicate)
 - [ ] **Target docs hub** — `docs/README.md` is orchestrator-only; installed projects use `templates/project-docs/docs-sdlc-spdd-README.md` → `docs/sdlc-spdd/README.md` (do not copy orchestrator `docs/README.md` to targets)
+- [ ] **Assistant vs shell** — `/sdlc-spdd-*` is chat (link [How to run assistant commands](docs/initialization-and-invocation.md#how-to-run-assistant-commands)); `./scripts/` is terminal
+- [ ] **Script paths** — install/setup from orchestrator `./scripts/`; daily/runtime in target `./scripts/sdlc-spdd/`; label which context in examples
 
 ## Diagrams
 

@@ -17,7 +17,10 @@ Options:
   --help                Print this help message
 
 Examples:
+  # From orchestrator repo clone:
   ./scripts/verify-project-install.sh --target /path/to/app
+  # From installed target project:
+  ./scripts/sdlc-spdd/verify-project-install.sh --target .
   ./scripts/sdlc-spdd/verify-project-install.sh --target . --require-cursor
 
 Exit 0 when all required checks pass; non-zero otherwise.

@@ -26,6 +26,8 @@ This installs:
 
 ## Invoke SDLC-SPDD Skills
 
+Run these in **Copilot Chat** — not in a terminal. See [How to run assistant commands](initialization-and-invocation.md#how-to-run-assistant-commands).
+
 In GitHub Copilot Chat, invoke prompt files with slash commands:
 
     /sdlc-spdd-init
