@@ -6,6 +6,8 @@ The Planning part is **not** optional. See the [Three-part design mandate](three
 
 The planning layer is the **human-readable narrative** for delivery. It is project-owned content — install and upgrade scripts create scaffolding but never overwrite your existing planning files.
 
+For file layout, milestone mapping scripts, and operational detail, see [Roadmap, milestones, and session notes](roadmap-milestones-and-session-notes.md).
+
 ## The Three Concepts, One Sentence Each
 
 | Concept | Role | Primary artifacts |

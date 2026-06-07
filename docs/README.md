@@ -112,45 +112,8 @@ Read these when you need historical context, compliance detail, or repository ar
 | [Tekton usage](tekton-usage.md) | You are applying SDLC-SPDD to Tekton pipelines |
 | [Roadmap](roadmap.md) | You want planned future capabilities |
 
-## Common Entry Points
+## Quick Start (one path)
 
-First day path:
+Follow the adoption path in the repository [README](../README.md#the-adoption-path): install → first day → three-part operating path → daily prompts.
 
-    Read first-day-with-sdlc-spdd.md
-
-Understand the system:
-
-    Read ten-thousand-foot-view.md
-
-Install the scaffold into a target application:
-
-    ./scripts/setup-agent-prompts.sh --target /path/to/your/project --all
-
-After install, target-local usage docs are available at:
-
-    /path/to/your/project/docs/sdlc-spdd/
-
-Initialize the application context in Cursor:
-
-    /sdlc-spdd-init
-
-Initialize the application context in GitHub Copilot Chat:
-
-    /sdlc-spdd-init
-
-Start new work from a requirement document:
-
-    /sdlc-spdd-plan @requirements/my-feature.md
-
-Start one approved implementation task:
-
-    /sdlc-spdd-code @spdd/canvas/FEAT-001-my-feature.md
-
-Capture session memory:
-
-    cd /path/to/your/project
-    ./scripts/sdlc-spdd/capture-session-memory.sh --target . --work-id FEAT-001-my-feature --phase code --summary "Completed T01" --validation "tests passed"
-
-Upgrade an older installation:
-
-    ./scripts/upgrade-project.sh --target /path/to/your/project --all
+After install, target-local copies of these docs live at `docs/sdlc-spdd/` in your application. Cursor/Copilot slash-command examples: [Initialization and invocation](initialization-and-invocation.md).
