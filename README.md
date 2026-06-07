@@ -10,6 +10,22 @@ It is built from **three parts** that work together:
 | **SPDD** | *What* to build (and what not to) | `spdd/canvas/<WORK-ID>.md` (REASONS Canvas) |
 | **SDLC** | *Who acts when* and how sessions hand off | phase commands, session briefs, `agent-context/` memory |
 
+## How Commands Work
+
+This repo uses **two kinds** of commands. They run in different places — do not mix them up.
+
+| Kind | Looks like | Where you run it |
+|------|------------|------------------|
+| **Assistant** (AI chat) | `/sdlc-spdd-init`, `/sdlc-spdd-plan @requirements/foo.md` | **Cursor Chat** or **Copilot Chat** in your target project |
+| **Shell** (terminal) | `./scripts/setup-agent-prompts.sh --target ...`, `./scripts/sdlc-spdd/start-agent-session.sh` | **Terminal** |
+
+**`/sdlc-spdd-*` is not a terminal command.** Open your target app in Cursor or Copilot, open **AI chat**, then:
+
+- **Cursor:** type `/sdlc-spdd-init` (or `/` → pick `sdlc-spdd-init`)
+- **Copilot:** type `/sdlc-spdd-init`, or `#prompt:sdlc-spdd-init` if slash commands are missing
+
+Full detail: [How to run assistant commands](docs/initialization-and-invocation.md#how-to-run-assistant-commands).
+
 ## The Adoption Path
 
 Five steps take you from install to confident daily use. Follow them in order — each step points to one doc.
@@ -55,13 +71,9 @@ Run these from this orchestrator repo, pointing `--target` at your application:
     ./scripts/setup-agent-prompts.sh --target /path/to/your/project --all
 
     # 2. Confirm the install is complete
-    ./scripts/sdlc-spdd/verify-project-install.sh --target /path/to/your/project
+    ./scripts/verify-project-install.sh --target /path/to/your/project
 
-Then open the **target project** in Cursor or a Copilot-enabled editor. In **AI chat** (not the terminal), run the assistant command:
-
-    /sdlc-spdd-init
-
-How: Cursor Chat → type `/` and choose `sdlc-spdd-init`. Copilot Chat → type `/sdlc-spdd-init`, or `#prompt:sdlc-spdd-init` if slash commands are missing. Full detail: [How to run assistant commands](docs/initialization-and-invocation.md#how-to-run-assistant-commands).
+Then open the **target project** in Cursor or Copilot and run `/sdlc-spdd-init` in **AI chat** — see [How commands work](#how-commands-work) above.
 
 Next, follow the hands-on walkthrough: **[First day with SDLC-SPDD](docs/first-day-with-sdlc-spdd.md)**.
 
