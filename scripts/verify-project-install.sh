@@ -149,6 +149,7 @@ run_part "SDLC (sessions, memory, playbooks)" \
 run_part "Runtime scripts and docs" \
   Runtime "runtime scripts directory" "scripts/sdlc-spdd" dir \
   Runtime "target-local docs" "docs/sdlc-spdd" dir \
+  Runtime "target docs hub" "docs/sdlc-spdd/README.md" file \
   Runtime "three-part operating path doc" "docs/sdlc-spdd/three-part-operating-path.md" file \
   Runtime "start session script" "scripts/sdlc-spdd/start-agent-session.sh" executable \
   Runtime "capture memory script" "scripts/sdlc-spdd/capture-session-memory.sh" executable \

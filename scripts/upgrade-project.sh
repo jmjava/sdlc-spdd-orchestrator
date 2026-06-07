@@ -285,11 +285,17 @@ for file in \
 done
 
 # User-facing docs are framework-owned when installed under docs/sdlc-spdd.
+# Skip docs/README.md — orchestrator hub only; targets use docs-sdlc-spdd-README.md.
 for file in "${REPO_ROOT}"/docs/*.md; do
+  [[ "$(basename "${file}")" == "README.md" ]] && continue
   copy_framework_file \
     "${file}" \
     "${TARGET}/docs/sdlc-spdd/$(basename "${file}")"
 done
+
+copy_framework_file \
+  "${REPO_ROOT}/templates/project-docs/docs-sdlc-spdd-README.md" \
+  "${TARGET}/docs/sdlc-spdd/README.md"
 
 # Target-local runtime scripts are framework-owned and safe to upgrade.
 for file in \

@@ -1,6 +1,6 @@
 # SDLC-SPDD Cheat Sheet
 
-PDF-friendly quick reference for daily use.
+**One-page command reference** for print/PDF or a second monitor. For concept definitions (what is a Work ID, operation, sync?), see [Top useful concepts and commands](useful-concepts-and-commands.md). For prompt wording, see [Session prompt standard](session-prompt-standard.md).
 
 Export options:
 
@@ -121,23 +121,7 @@ Bug:
 
 ## Ask Questions That Keep Context
 
-Use:
-
-    For <WORK-ID>, read @spdd/canvas/<WORK-ID>.md before answering. <question>
-
-Examples:
-
-    For FEAT-001, what operation should I do next?
-
-    For FEAT-001 T01, does the current diff stay inside the approved operation?
-
-    For BUG-003, what test is required before review?
-
-Avoid:
-
-    What now?
-    Continue.
-    Fix it.
+Prompt patterns: [During session](session-prompt-standard.md#during-session) and [Anti-patterns](session-prompt-standard.md#anti-patterns) in Session prompt standard.
 
 ## One-Operation Coding Loop
 

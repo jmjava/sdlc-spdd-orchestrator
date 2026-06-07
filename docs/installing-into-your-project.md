@@ -33,7 +33,7 @@ This installs:
 - `agent-context/features/`
 - `agent-context/sessions/`
 - `agent-context/harness/`
-- `docs/sdlc-spdd/`
+- `docs/sdlc-spdd/` (start at `docs/sdlc-spdd/README.md` — lean hub for this project)
 - `.cursor/commands/`
 - `.github/copilot-instructions.md`
 - `.github/prompts/`

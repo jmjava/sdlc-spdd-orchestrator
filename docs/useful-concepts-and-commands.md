@@ -1,6 +1,6 @@
 # Top Useful Concepts and Commands
 
-This is a quick reference for the SDLC-SPDD ideas and commands you will use most.
+This page explains **what things mean** (Work ID, canvas, operation, sync, memory). For a dense **command cheat sheet** to print or keep open, use [Cheat sheet](sdlc-spdd-cheat-sheet.md). For copy-paste prompts, use [Session prompt standard](session-prompt-standard.md).
 
 ## Top Concepts
 
@@ -107,122 +107,11 @@ Common files:
 
 Use roadmap and milestone docs to give planning agents delivery context. Use REASONS Canvas files to govern each Work ID.
 
-## Top Commands
+## Commands and Prompts
 
-### Install into a target project
+Command list (install, lifecycle, scripts): [Cheat sheet](sdlc-spdd-cheat-sheet.md).
 
-    ./scripts/setup-agent-prompts.sh --target /path/to/app --all
-
-### Upgrade an older install
-
-    ./scripts/upgrade-project.sh --target /path/to/app --all --dry-run
-    ./scripts/upgrade-project.sh --target /path/to/app --all
-
-### Initialize context
-
-    /sdlc-spdd-init
-
-### Start work
-
-    /sdlc-spdd-plan @requirements/<topic>.md
-
-or:
-
-    /sdlc-spdd-plan Jira ABC-123: <summary>. Link https://jira.example.com/browse/ABC-123.
-
-### Harden architecture
-
-    /sdlc-spdd-architect @spdd/canvas/<WORK-ID>.md
-
-### Code one operation
-
-    /sdlc-spdd-code @spdd/canvas/<WORK-ID>.md operation T01
-
-### Review
-
-    /sdlc-spdd-review @spdd/canvas/<WORK-ID>.md
-
-### Update changed intent
-
-    /sdlc-spdd-prompt-update @spdd/canvas/<WORK-ID>.md
-
-### Sync implementation drift
-
-    /sdlc-spdd-sync @spdd/canvas/<WORK-ID>.md
-
-### Capture retro
-
-    /sdlc-spdd-retro @spdd/canvas/<WORK-ID>.md
-
-### Start a new agent session
-
-    ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase>
-
-### Check previous work
-
-    ./scripts/sdlc-spdd/resync-agent-session.sh --target . --work-id <WORK-ID> --check-only
-
-### Capture session memory
-
-    ./scripts/sdlc-spdd/capture-session-memory.sh \
-      --target . \
-      --work-id <WORK-ID> \
-      --phase <phase> \
-      --summary "<summary>" \
-      --validation "<tests>" \
-      --next "<next command>"
-
-### Capture milestone and roadmap progress
-
-    ./scripts/sdlc-spdd/capture-session-memory.sh \
-      --target . \
-      --work-id <WORK-ID> \
-      --phase <phase> \
-      --summary "<summary>" \
-      --validation "<tests>" \
-      --milestone milestone-1.md \
-      --roadmap-note "<roadmap-level progress>" \
-      --next "<next command>"
-
-### Create work from milestone checklist items
-
-    ./scripts/sdlc-spdd/create-work-from-milestone.sh --target . --milestone milestone-1.md --all
-
-### Sync roadmap from SPDD canvases
-
-    ./scripts/sdlc-spdd/sync-roadmap-from-spdd.sh --target .
-
-### Import existing session notes into memory
-
-    ./scripts/sdlc-spdd/summarize-session-notes.sh --target . --all
-
-### Validate a canvas
-
-    ./scripts/sdlc-spdd/validate-reasons-canvas.sh spdd/canvas/<WORK-ID>.md
-
-## Useful Prompt Patterns
-
-For copy-paste prompts, start with [Session prompt standard](session-prompt-standard.md). Not sure which of the three standards to use? See [Which prompt standard?](session-prompt-standard.md#which-prompt-standard).
-
-### Ask a context-preserving question
-
-    For <WORK-ID>, read @spdd/canvas/<WORK-ID>.md and @agent-context/sessions/current-session.md before answering. <question>
-
-### Continue interrupted work
-
-    For <WORK-ID>, read the current session, canvas, progress log, review report, sync log, and current diff. Tell me the next SDLC-SPDD command.
-
-### Check scope before coding
-
-    For <WORK-ID> operation T01, inspect the canvas and current diff. Are any changes outside the approved operation?
-
-### Draft a Jira update
-
-    For <WORK-ID>, read the canvas, progress log, review report, and sync log. Draft a Jira update for <JIRA-KEY> with status, validation, risks, and next step.
-
-### Capture handoff
-
-    For <WORK-ID>, summarize completed work, tests, open risks, decisions, pitfalls, reusable patterns, and the next command.
+Copy-paste prompts: [Session prompt standard](session-prompt-standard.md) — see [Which prompt standard?](session-prompt-standard.md#which-prompt-standard) when drilling into SPDD or Planning.
 
 ## Common Mistakes to Avoid
 

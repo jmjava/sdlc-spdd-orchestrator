@@ -182,11 +182,17 @@ copy_if_missing \
   "${TARGET}/agent-context/harness/validation-rules.md"
 
 # Copy user-facing SDLC-SPDD docs into the target project.
+# Skip docs/README.md — orchestrator hub only; targets get a lean README template.
 for file in "${REPO_ROOT}"/docs/*.md; do
+  [[ "$(basename "${file}")" == "README.md" ]] && continue
   copy_if_missing \
     "${file}" \
     "${TARGET}/docs/sdlc-spdd/$(basename "${file}")"
 done
+
+copy_if_missing \
+  "${REPO_ROOT}/templates/project-docs/docs-sdlc-spdd-README.md" \
+  "${TARGET}/docs/sdlc-spdd/README.md"
 
 # Copy runtime session scripts into the target project for cross-session handoffs
 for file in \
@@ -233,7 +239,7 @@ printf '  %s\n' "${created[@]:-none}"
 echo "Skipped existing (${#skipped[@]}):"
 printf '  %s\n' "${skipped[@]:-none}"
 echo "Recommended next step: run /sdlc-spdd-init in Cursor or Copilot Chat, then /sdlc-spdd-plan"
-echo "Local SDLC-SPDD docs installed under: ${TARGET}/docs/sdlc-spdd"
+echo "Local SDLC-SPDD docs installed under: ${TARGET}/docs/sdlc-spdd (start at README.md)"
 echo "Session scripts installed under: ${TARGET}/scripts/sdlc-spdd"
 
 verify_args=(--target "${TARGET}")

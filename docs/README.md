@@ -1,5 +1,7 @@
 # Documentation
 
+**Orchestrator repo hub** — when SDLC-SPDD is installed into a target application, that project gets a leaner hub at `docs/sdlc-spdd/README.md` (same guides, clearer entry path).
+
 Use this hub to choose the right guide for your current task. If you are new, read the first section in order. If you are already operating a project, jump to the section that matches what you are doing.
 
 **Start with the six onboarding pages below.** They are the complete path from install to daily use. The other sections are task-specific reference — open one when its description matches what you are doing.
@@ -55,8 +57,8 @@ Also useful day to day:
 |-------|-------------|
 | [Initialization and invocation](initialization-and-invocation.md) | You need concrete examples for starting work and invoking each SDLC-SPDD skill |
 | [Roadmap, milestones, and session notes](roadmap-milestones-and-session-notes.md) | You use `ROADMAP.md`, `milestone-*.md`, and `session-notes/` to track project progress |
-| [Top useful concepts and commands](useful-concepts-and-commands.md) | You want a fast reference for common commands and prompt patterns |
-| [Cheat sheet](sdlc-spdd-cheat-sheet.md) | You want a one-page PDF-friendly quick reference |
+| [Top useful concepts and commands](useful-concepts-and-commands.md) | You want definitions for Work ID, canvas, sync, memory |
+| [Cheat sheet](sdlc-spdd-cheat-sheet.md) | You want a one-page PDF-friendly **command** reference |
 
 ## If You Are Integrating with Jira or GitHub
 
