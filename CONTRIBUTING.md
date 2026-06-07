@@ -63,6 +63,7 @@ Before merging doc or script changes that touch the three-part model (Planning, 
 - [ ] **Diagrams** — if you changed a Mermaid diagram, `./scripts/render-diagrams.sh --check` passes; regenerate committed exports with `./scripts/render-diagrams.sh`
 - [ ] **Daily doc roles** — prompts stay in `session-prompt-standard.md`; step table in `workflow.md`; rules/checklists in `daily-runbook.md`; Cursor/Copilot syntax in `initialization-and-invocation.md`; concepts in `useful-concepts-and-commands.md`; commands in `sdlc-spdd-cheat-sheet.md` (link, do not duplicate)
 - [ ] **Target docs hub** — `docs/README.md` is orchestrator-only; installed projects use `templates/project-docs/docs-sdlc-spdd-README.md` → `docs/sdlc-spdd/README.md` (do not copy orchestrator `docs/README.md` to targets)
+- [ ] **Assistant vs shell** — `/sdlc-spdd-*` is chat (link [How to run assistant commands](docs/initialization-and-invocation.md#how-to-run-assistant-commands)); `./scripts/` is terminal
 
 ## Diagrams
 

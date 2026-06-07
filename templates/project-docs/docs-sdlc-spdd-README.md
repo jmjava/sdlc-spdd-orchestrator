@@ -2,6 +2,10 @@
 
 These docs were installed by the SDLC-SPDD orchestrator. **Start with the six pages below** — the other `.md` files in this folder are task-specific reference.
 
+## Assistant commands vs terminal
+
+`/sdlc-spdd-init` and other `/sdlc-spdd-*` lines are **AI chat prompts**, not terminal commands. Run them in Cursor Chat or Copilot Chat. Shell scripts live under `scripts/sdlc-spdd/`. [How to run assistant commands](initialization-and-invocation.md#how-to-run-assistant-commands)
+
 ## Read in order
 
 1. [First day with SDLC-SPDD](first-day-with-sdlc-spdd.md) — hands-on first session

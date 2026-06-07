@@ -57,7 +57,11 @@ Run these from this orchestrator repo, pointing `--target` at your application:
     # 2. Confirm the install is complete
     ./scripts/sdlc-spdd/verify-project-install.sh --target /path/to/your/project
 
-Then open your project in Cursor or a Copilot-enabled editor and run `/sdlc-spdd-init`.
+Then open the **target project** in Cursor or a Copilot-enabled editor. In **AI chat** (not the terminal), run the assistant command:
+
+    /sdlc-spdd-init
+
+How: Cursor Chat → type `/` and choose `sdlc-spdd-init`. Copilot Chat → type `/sdlc-spdd-init`, or `#prompt:sdlc-spdd-init` if slash commands are missing. Full detail: [How to run assistant commands](docs/initialization-and-invocation.md#how-to-run-assistant-commands).
 
 Next, follow the hands-on walkthrough: **[First day with SDLC-SPDD](docs/first-day-with-sdlc-spdd.md)**.
 

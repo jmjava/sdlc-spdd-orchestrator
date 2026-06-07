@@ -2,6 +2,8 @@
 
 **One-page command reference** for print/PDF or a second monitor. For concept definitions (what is a Work ID, operation, sync?), see [Top useful concepts and commands](useful-concepts-and-commands.md). For prompt wording, see [Session prompt standard](session-prompt-standard.md).
 
+`/sdlc-spdd-*` rows below are **AI chat commands** (Cursor/Copilot), not terminal commands. `./scripts/...` rows are shell. [How to run assistant commands](initialization-and-invocation.md#how-to-run-assistant-commands).
+
 Export options:
 
 - Open this Markdown file in VS Code preview and print to PDF.

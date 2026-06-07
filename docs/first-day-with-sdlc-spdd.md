@@ -49,7 +49,11 @@ Then open the target application in Cursor or a Copilot-enabled editor.
 
 | Part | Action |
 |------|--------|
-| SDLC | In Cursor or GitHub Copilot Chat: |
+| SDLC | In **AI chat** (not the terminal) — see [How to run assistant commands](initialization-and-invocation.md#how-to-run-assistant-commands): |
+
+**Cursor:** Chat or Agent → type `/sdlc-spdd-init` (or pick `sdlc-spdd-init` from the `/` menu).
+
+**Copilot:** Chat → `/sdlc-spdd-init`, or `#prompt:sdlc-spdd-init` if slash commands are missing.
 
     /sdlc-spdd-init
 
