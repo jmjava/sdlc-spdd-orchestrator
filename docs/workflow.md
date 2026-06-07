@@ -6,9 +6,11 @@ This workflow is hybrid:
 - SPDD supplies the governed prompt artifact: the REASONS Canvas and prompt/code synchronization loop.
 - Roadmap, milestone, and session-note files supply the project narrative that informs planning and summarizes progress.
 
+For how the three parts connect step by step (including milestone vs ad-hoc entry), see [Three-part operating path](three-part-operating-path.md).
+
 ## Three-Layer Flow
 
-    ROADMAP.md / milestone-*.md / session-notes/
+    ROADMAP.md / milestone-*.md / requirements/milestones/ / session-notes/
             -> inform and summarize
     spdd/canvas/ + agent-context/
             -> govern and remember
@@ -17,19 +19,23 @@ This workflow is hybrid:
 
 ## Recommended Sequence
 
-1. **Set up prompts and memory** — `./scripts/setup-agent-prompts.sh --target . --all`
-2. **Initialize** — `/sdlc-spdd-init` or `./scripts/init-project.sh --target . --cursor --copilot`
-3. **Map milestone work when needed** — `./scripts/sdlc-spdd/create-work-from-milestone.sh --target . --milestone milestone-1.md --all`
-4. **Start session** — `./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase>`
-5. **Plan** — `/sdlc-spdd-plan @requirements/my-feature.md @ROADMAP.md @milestone-1.md`
-6. **Architect** — `/sdlc-spdd-architect @spdd/canvas/FEAT-001-my-feature.md`
-7. **Code** — `/sdlc-spdd-code` for one task at a time
-8. **Review** — `/sdlc-spdd-review @spdd/canvas/FEAT-001-my-feature.md`
-9. **Prompt update when intent changes** — `/sdlc-spdd-prompt-update @spdd/canvas/FEAT-001-my-feature.md`
-10. **Retro** — `/sdlc-spdd-retro @spdd/canvas/FEAT-001-my-feature.md`
-11. **Sync** — `/sdlc-spdd-sync @spdd/canvas/FEAT-001-my-feature.md`
-12. **Capture memory and session notes** — `./scripts/sdlc-spdd/capture-session-memory.sh --target . --work-id <WORK-ID> --phase <phase> --summary "<summary>"`
-13. **Refresh roadmap summary** — `./scripts/sdlc-spdd/sync-roadmap-from-spdd.sh --target .`
+Set `--phase` on `start-agent-session.sh` to the phase you are about to run. Paste the **Resume Prompt** from `current-session.md` — see [Session prompt standard](session-prompt-standard.md).
+
+| Step | Part | Action |
+|------|------|--------|
+| 1 | SDLC | **Set up prompts and memory** — `./scripts/setup-agent-prompts.sh --target . --all` |
+| 2 | SDLC | **Initialize** — `/sdlc-spdd-init` |
+| 3 | Planning → SPDD | **Map milestone work when needed** — `./scripts/sdlc-spdd/create-work-from-milestone.sh --target . --milestone milestone-1.md --all` |
+| 4 | SDLC | **Start session** — `./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase>` → paste Resume Prompt |
+| 5 | SPDD (+ Planning) | **Plan** — `/sdlc-spdd-plan @requirements/my-feature.md @ROADMAP.md @milestone-1.md` |
+| 6 | SPDD | **Architect** — `/sdlc-spdd-architect @spdd/canvas/<WORK-ID>.md` |
+| 7 | SDLC + SPDD | **Code** — `/sdlc-spdd-code @spdd/canvas/<WORK-ID>.md operation T01` (one operation at a time) |
+| 8 | SPDD | **Review** — `/sdlc-spdd-review @spdd/canvas/<WORK-ID>.md` |
+| 9 | SPDD | **Prompt update when intent changes** — `/sdlc-spdd-prompt-update @spdd/canvas/<WORK-ID>.md` |
+| 10 | SDLC | **Retro** — `/sdlc-spdd-retro @spdd/canvas/<WORK-ID>.md` |
+| 11 | SPDD | **Sync** — `/sdlc-spdd-sync @spdd/canvas/<WORK-ID>.md` |
+| 12 | SDLC + Planning | **Capture memory and session notes** — `capture-session-memory.sh` (milestone auto-detected when Work ID is in `milestone-*.md`) |
+| 13 | Planning ← SPDD | **Refresh roadmap summary** — `./scripts/sdlc-spdd/sync-roadmap-from-spdd.sh --target .` |
 
 ## Work IDs
 
@@ -43,7 +49,9 @@ See `agent-context/harness/quality-gates.md`.
 
 ## Validation
 
-    ./scripts/validate-reasons-canvas.sh spdd/canvas/
+In your installed project, runtime scripts live under `scripts/sdlc-spdd/`:
+
+    ./scripts/sdlc-spdd/validate-reasons-canvas.sh spdd/canvas/
 
 ## Daily Use
 

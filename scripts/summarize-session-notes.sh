@@ -141,3 +141,8 @@ done
 
 echo "Imported session notes: ${imported}"
 echo "Skipped existing imports: ${skipped}"
+if [[ "${imported}" -gt 0 ]]; then
+  echo
+  echo "Planning review prompt (see docs/sdlc-spdd/planning-prompt-standard.md):"
+  echo "  Read @agent-context/memory/session-history.md entries imported from session-notes. Summarize recurring themes, open risks, and Work IDs mentioned."
+fi

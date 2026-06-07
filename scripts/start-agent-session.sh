@@ -3,7 +3,7 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: start-agent-session.sh [--target <path>] [--work-id <WORK-ID>] [--phase <phase>]
+Usage: start-agent-session.sh [--target <path>] [--work-id <WORK-ID>] [--phase <phase>] [--milestone <file>]
 
 Create a durable SDLC-SPDD session brief that helps a new agent session resume
 previous work with the right SDLC phase, REASONS Canvas, memory, and handoff context.
@@ -11,8 +11,14 @@ previous work with the right SDLC phase, REASONS Canvas, memory, and handoff con
 Phases:
   init, plan, architect, code, review, prompt-update, retro, sync, resume
 
+Options:
+  --milestone <file>    Active milestone doc, such as milestone-1.md. When omitted
+                        and --work-id is set, the script searches milestone-*.md
+                        files for a matching Work ID.
+
 Examples:
   ./scripts/start-agent-session.sh --target /path/to/app --work-id FEAT-001-order-status-api --phase code
+  ./scripts/start-agent-session.sh --target . --work-id FEAT-001-order-status-api --phase code --milestone milestone-1.md
   ./scripts/start-agent-session.sh --target . --phase plan
 EOF
 }
@@ -20,6 +26,7 @@ EOF
 TARGET="."
 WORK_ID=""
 PHASE="resume"
+MILESTONE=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -33,6 +40,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --phase)
       PHASE="${2:-}"
+      shift 2
+      ;;
+    --milestone)
+      MILESTONE="${2:-}"
       shift 2
       ;;
     --help|-h)
@@ -174,6 +185,73 @@ if ((${#milestone_files[@]} > 0)); then
   milestone_list="${milestone_list%$'\n'}"
 fi
 
+resolve_milestone() {
+  local candidate="${1:-}"
+  if [[ -n "${candidate}" ]]; then
+    if [[ "${candidate}" != *.md ]]; then
+      candidate="${candidate}.md"
+    fi
+    if [[ -f "${TARGET}/${candidate}" ]]; then
+      echo "${candidate}"
+      return 0
+    fi
+    if [[ -f "${candidate}" ]]; then
+      echo "${candidate#${TARGET}/}"
+      return 0
+    fi
+    echo ""
+    return 1
+  fi
+
+  if [[ -z "${WORK_ID}" ]]; then
+    echo ""
+    return 1
+  fi
+
+  shopt -s nullglob
+  for file in "${milestone_files[@]}"; do
+    if grep -q "${WORK_ID}" "${file}" 2>/dev/null; then
+      echo "${file#${TARGET}/}"
+      shopt -u nullglob
+      return 0
+    fi
+  done
+  shopt -u nullglob
+  echo ""
+  return 1
+}
+
+active_milestone="$(resolve_milestone "${MILESTONE}" || true)"
+today_note_rel="session-notes/$(date -u +"%Y-%m-%d").md"
+
+resume_prompt="For ${WORK_ID:-<WORK-ID>}, read @agent-context/sessions/current-session.md first."
+if [[ -n "${WORK_ID}" ]]; then
+  resume_prompt+=$'\n\n'"For ${WORK_ID}, read @spdd/canvas/${WORK_ID}.md, @agent-context/features/${WORK_ID}/progress-log.md, and @agent-context/memory/known-pitfalls.md."
+else
+  resume_prompt+=$'\n\n'"Read @agent-context/memory/project-memory.md and @agent-context/memory/known-pitfalls.md."
+fi
+
+planning_refs=()
+if [[ -f "${roadmap_file}" ]]; then
+  planning_refs+=("@ROADMAP.md")
+fi
+if [[ -n "${active_milestone}" ]]; then
+  planning_refs+=("@${active_milestone}")
+fi
+if [[ -f "${today_note}" ]]; then
+  planning_refs+=("@${today_note_rel}")
+fi
+if ((${#planning_refs[@]} > 0)); then
+  planning_refs_joined="$(printf '%s, ' "${planning_refs[@]}")"
+  planning_refs_joined="${planning_refs_joined%, }"
+  resume_prompt+=$'\n\n'"Also read ${planning_refs_joined}."
+fi
+
+resume_prompt+=$'\n\n'"Continue in the ${PHASE} phase using the hybrid SDLC Agents + SPDD workflow."
+resume_prompt+=$'\n'"Recommended command: ${recommended_command}"
+
+resume_prompt_indented="$(printf '%s\n' "${resume_prompt}" | sed 's/^/    /')"
+
 cat > "${session_file}" <<EOF
 # SDLC-SPDD Agent Session
 
@@ -183,6 +261,7 @@ cat > "${session_file}" <<EOF
 - Target: ${TARGET}
 - Work ID: ${WORK_ID:-none}
 - Phase: ${PHASE}
+- Active milestone: ${active_milestone:-none}
 - Recommended command: ${recommended_command}
 - Canvas sync state: ${canvas_sync_state}
 - Previous session brief: ${latest_session}
@@ -242,9 +321,9 @@ ${milestone_list}
 
 ## Resume Prompt
 
-Use this prompt at the start of the new agent session:
+Use this prompt at the start of the new agent session. See docs/sdlc-spdd/session-prompt-standard.md for the full prompt contract.
 
-    For ${WORK_ID:-<WORK-ID>}, read @agent-context/sessions/current-session.md, the relevant canvas, progress log, memory files, and current git status. Continue in the ${PHASE} phase using the hybrid SDLC Agents + SPDD workflow. Recommended command: ${recommended_command}
+${resume_prompt_indented}
 
 ## Session Notes
 

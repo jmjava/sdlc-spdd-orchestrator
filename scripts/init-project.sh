@@ -117,6 +117,7 @@ ensure_gitkeep() {
 # Create folder structure
 for dir in \
   requirements \
+  requirements/milestones \
   spdd/canvas \
   spdd/tasks \
   spdd/reviews \
@@ -148,6 +149,10 @@ if ((${#milestone_files[@]} == 0)); then
 else
   skipped+=("${TARGET}/milestone-*.md")
 fi
+
+copy_if_missing \
+  "${REPO_ROOT}/templates/requirements/milestones/README.md" \
+  "${TARGET}/requirements/milestones/README.md"
 
 # Copy memory and harness templates
 for file in \
@@ -192,7 +197,8 @@ for file in \
   sync-roadmap-from-spdd.sh \
   summarize-session-notes.sh \
   sync-agent-context.sh \
-  validate-reasons-canvas.sh; do
+  validate-reasons-canvas.sh \
+  verify-project-install.sh; do
   copy_if_missing \
     "${REPO_ROOT}/scripts/${file}" \
     "${TARGET}/scripts/sdlc-spdd/${file}"
@@ -229,3 +235,15 @@ printf '  %s\n' "${skipped[@]:-none}"
 echo "Recommended next step: run /sdlc-spdd-init in Cursor or Copilot Chat, then /sdlc-spdd-plan"
 echo "Local SDLC-SPDD docs installed under: ${TARGET}/docs/sdlc-spdd"
 echo "Session scripts installed under: ${TARGET}/scripts/sdlc-spdd"
+
+verify_args=(--target "${TARGET}")
+if [[ "${INSTALL_CURSOR}" -eq 1 ]]; then
+  verify_args+=(--require-cursor)
+fi
+if [[ "${INSTALL_COPILOT}" -eq 1 ]]; then
+  verify_args+=(--require-copilot)
+fi
+if [[ "${DRY_RUN}" -eq 0 ]]; then
+  echo "Running install verification..."
+  "${SCRIPT_DIR}/verify-project-install.sh" "${verify_args[@]}"
+fi

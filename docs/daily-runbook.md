@@ -2,6 +2,8 @@
 
 Use this runbook when operating an initialized application day to day.
 
+For copy-paste prompt templates, start with [Session prompt standard](session-prompt-standard.md). Not sure which of the three prompt standards to use? See [Which prompt standard?](session-prompt-standard.md#which-prompt-standard).
+
 ## Daily Operating Rules
 
 1. Keep one active Work ID per unit of work.
@@ -17,24 +19,19 @@ Use this runbook when operating an initialized application day to day.
 
 Goal: recover context before asking the assistant to act.
 
-First resync and generate a session brief:
+1. Check canvas sync (no session brief yet):
 
-    ./scripts/sdlc-spdd/resync-agent-session.sh --target . --work-id <WORK-ID> --check-only
-    ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase>
+       ./scripts/sdlc-spdd/resync-agent-session.sh --target . --work-id <WORK-ID> --check-only
 
-Prompt:
+2. Create the session brief:
 
-    For <WORK-ID>, read @agent-context/sessions/current-session.md first.
+       ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase>
 
-    For <WORK-ID>, read @spdd/canvas/<WORK-ID>.md, @agent-context/features/<WORK-ID>/progress-log.md, and @agent-context/memory/known-pitfalls.md. Summarize:
-    - current status
-    - next approved operation
-    - open risks
-    - recommended SDLC-SPDD command
+3. **Paste the Resume Prompt** from `agent-context/sessions/current-session.md`. That generated prompt is the source of truth — it already includes canvas, memory, and planning `@` references when those files exist.
 
-If the work belongs to a milestone, include:
+Optional — ask for a status summary after pasting the resume prompt:
 
-    Also read @ROADMAP.md, the active @milestone-*.md file, and today's @session-notes/YYYY-MM-DD.md if it exists.
+    Summarize current status, next approved operation, open risks, and recommended SDLC-SPDD command.
 
 If no Work ID exists yet:
 
@@ -279,4 +276,6 @@ The handoff should include:
     ./scripts/sdlc-spdd/resync-agent-session.sh --target . --work-id <WORK-ID> --check-only
     ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase resume
 
-    For <WORK-ID>, read the canvas, progress log, review report, and current diff. Tell me whether to code, review, sync, or retro next.
+Paste the **Resume Prompt** from `current-session.md`, then optionally ask:
+
+    Tell me whether to code, review, sync, or retro next based on the canvas, progress log, review report, and current diff.

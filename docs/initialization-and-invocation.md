@@ -80,22 +80,20 @@ Expected result:
 
 ## Start or Resume an Agent Session
 
-Before asking a new agent to continue previous work, create a session brief:
+Before asking a new agent to continue previous work:
 
-    cd /path/to/your/project
-    ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id FEAT-001-order-status-api --phase code
+1. Check canvas sync (optional, does not create a session brief):
 
-If the work may have drifted between the feature workspace and canonical canvas, resync first:
+       ./scripts/sdlc-spdd/resync-agent-session.sh --target . --work-id FEAT-001-order-status-api --check-only
 
-    ./scripts/sdlc-spdd/resync-agent-session.sh --target . --work-id FEAT-001-order-status-api --check-only
+2. Create a session brief:
 
-Then ask the assistant:
+       cd /path/to/your/project
+       ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id FEAT-001-order-status-api --phase code
 
-    For FEAT-001-order-status-api, read @agent-context/sessions/current-session.md and continue with the recommended SDLC-SPDD command.
+3. **Paste the Resume Prompt** from `agent-context/sessions/current-session.md`. Do not paraphrase — the script generates canvas, memory, and planning references. See [Session prompt standard](session-prompt-standard.md).
 
-If the work belongs to a milestone:
-
-    For FEAT-001-order-status-api, also read @ROADMAP.md and @milestone-1.md before planning or resuming.
+To reconcile canvas drift before step 2, use `resync-agent-session.sh --from-canvas --force` or `--from-feature --force`. Default authority: canonical `spdd/canvas/<WORK-ID>.md`.
 
 ## How to Start Work
 

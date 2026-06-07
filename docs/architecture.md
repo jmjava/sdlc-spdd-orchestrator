@@ -1,16 +1,20 @@
 # Architecture
 
-SDLC-SPDD Orchestrator combines five layers:
+> Reference/theory. For onboarding and the day-to-day path, read [Three-part operating path](three-part-operating-path.md) first.
 
-1. **Planning narrative** — `ROADMAP.md`, `milestone-*.md`, and `session-notes/` explain where the project is going and what happened recently.
-2. **SDLC Agents lifecycle** — role-separated phases, architecture-first handoffs, progressive context loading, and continual learning.
-3. **SPDD REASONS Canvas** — explicit prompt/design contract for each unit of work.
-4. **Assistant adapters** — Cursor commands and GitHub Copilot prompt files that invoke the same skills.
+The system has **three parts**: Planning, SPDD, and SDLC (see [Three-part operating path](three-part-operating-path.md)). Architecturally, those three parts are delivered through five concerns:
+
+1. **Planning narrative** (Planning part) — `ROADMAP.md`, `milestone-*.md`, `requirements/`, and `session-notes/` explain where the project is going and what happened recently.
+2. **SDLC Agents lifecycle** (SDLC part) — role-separated phases, architecture-first handoffs, progressive context loading, and continual learning.
+3. **SPDD REASONS Canvas** (SPDD part) — explicit prompt/design contract for each unit of work.
+4. **Assistant adapters** — Cursor commands and GitHub Copilot prompt files that invoke the same skills across all three parts.
 5. **Integration runbooks** — Jira, GitHub Pages, and daily-use guidance that keep external systems aligned.
+
+Adapters and integrations are delivery mechanisms, not separate parts.
 
 ## Three-Layer Delivery Model
 
-    ROADMAP.md / milestone-*.md / session-notes/
+    ROADMAP.md / milestone-*.md / requirements/milestones/ / session-notes/
             -> inform and summarize
     spdd/canvas/ + agent-context/
             -> govern and remember

@@ -202,6 +202,8 @@ or:
 
 ## Useful Prompt Patterns
 
+For copy-paste prompts, start with [Session prompt standard](session-prompt-standard.md). Not sure which of the three standards to use? See [Which prompt standard?](session-prompt-standard.md#which-prompt-standard).
+
 ### Ask a context-preserving question
 
     For <WORK-ID>, read @spdd/canvas/<WORK-ID>.md and @agent-context/sessions/current-session.md before answering. <question>
@@ -233,6 +235,8 @@ or:
 
 ## Read Next
 
+- [What SDLC brings](what-sdlc-brings.md)
+- [Session prompt standard](session-prompt-standard.md)
 - [First day with SDLC-SPDD](first-day-with-sdlc-spdd.md)
 - [Daily runbook](daily-runbook.md)
 - [Roadmap, milestones, and session notes](roadmap-milestones-and-session-notes.md)

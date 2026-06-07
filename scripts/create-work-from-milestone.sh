@@ -154,10 +154,10 @@ append_milestone_map_header() {
   if [[ "${DRY_RUN}" -eq 1 ]]; then
     return
   fi
-  if ! grep -Fq "## SDLC-SPDD Work Map" "${MILESTONE}"; then
+  if ! grep -Fq "## Linked Work" "${MILESTONE}" && ! grep -Fq "## SDLC-SPDD Work Map" "${MILESTONE}"; then
     {
       echo
-      echo "## SDLC-SPDD Work Map"
+      echo "## Linked Work"
       echo
       echo "| Work ID | Canvas | Requirement | Status | Notes |"
       echo "|---------|--------|-------------|--------|-------|"
@@ -167,7 +167,8 @@ append_milestone_map_header() {
 
 create_work() {
   local title="$1"
-  local number slug work_id feature_dir canvas_path requirement_path progress_log status_date
+  local number slug work_id feature_dir canvas_path milestone_requirement_path
+  local feature_requirement_path progress_log status_date milestone_requirement_rel
   number="$(next_number)"
   slug="$(slugify "${title}")"
   if [[ -z "${slug}" ]]; then
@@ -176,15 +177,19 @@ create_work() {
   work_id="$(printf '%s-%03d-%s' "${PREFIX}" "${number}" "${slug}")"
   feature_dir="${TARGET}/agent-context/features/${work_id}"
   canvas_path="${TARGET}/spdd/canvas/${work_id}.md"
-  requirement_path="${feature_dir}/requirement.md"
+  milestone_requirement_path="${TARGET}/requirements/milestones/${work_id}.md"
+  milestone_requirement_rel="requirements/milestones/${work_id}.md"
+  feature_requirement_path="${feature_dir}/requirement.md"
   progress_log="${feature_dir}/progress-log.md"
   status_date="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 
   if [[ "${DRY_RUN}" -eq 1 ]]; then
     echo "[dry-run] would create ${work_id} from milestone item: ${title}"
     echo "[dry-run] would write ${canvas_path}"
-    echo "[dry-run] would write ${requirement_path}"
+    echo "[dry-run] would write ${milestone_requirement_path}"
+    echo "[dry-run] would write ${feature_requirement_path}"
     echo "[dry-run] would update ${milestone_rel}"
+    echo "${work_id}"
     return
   fi
 
@@ -360,7 +365,7 @@ EOF
 
   cp "${canvas_path}" "${feature_dir}/reasons-canvas.md"
 
-  cat > "${requirement_path}" <<EOF
+  cat > "${milestone_requirement_path}" <<EOF
 # Requirement: ${work_id}
 
 ## Summary
@@ -371,12 +376,36 @@ ${title}
 
 - Roadmap: ${roadmap_rel}
 - Milestone: ${milestone_rel}
+- Derived from milestone checklist item
+
+## Acceptance Criteria
+
+- [ ] Define acceptance criteria before coding.
 
 ## Next Step
 
 Run:
 
-    /sdlc-spdd-plan @${requirement_path#${TARGET}/} @${milestone_rel}
+    /sdlc-spdd-plan @${milestone_requirement_rel} @${roadmap_rel} @${milestone_rel}
+EOF
+
+  cat > "${feature_requirement_path}" <<EOF
+# Requirement: ${work_id}
+
+Canonical milestone-derived requirement:
+
+    @${milestone_requirement_rel}
+
+## Summary
+
+${title}
+
+## Source
+
+- Milestone: ${milestone_rel}
+- Canonical file: ${milestone_requirement_rel}
+
+Use the canonical file in \`/sdlc-spdd-plan\` prompts.
 EOF
 
   cat > "${progress_log}" <<EOF
@@ -388,13 +417,37 @@ EOF
 EOF
 
   append_milestone_map_header
-  echo "| ${work_id} | spdd/canvas/${work_id}.md | ${requirement_path#${TARGET}/} | Draft | Created from milestone item |" >> "${MILESTONE}"
+  echo "| ${work_id} | spdd/canvas/${work_id}.md | ${milestone_requirement_rel} | Draft | Created from milestone item |" >> "${MILESTONE}"
 
   echo "Created ${work_id}"
   echo "  ${canvas_path}"
-  echo "  ${requirement_path}"
+  echo "  ${milestone_requirement_path}"
+  echo "  ${feature_requirement_path}"
+  echo "${work_id}"
 }
 
+created_work_ids=()
 for item in "${items[@]}"; do
-  create_work "${item}"
+  while IFS= read -r line; do
+    if [[ "${line}" =~ ^[A-Z]+-[0-9]{3}- ]]; then
+      created_work_ids+=("${line}")
+    fi
+  done < <(create_work "${item}")
 done
+
+if ((${#created_work_ids[@]} > 0)); then
+  if [[ -f "${TARGET}/${roadmap_rel}" ]]; then
+    plan_refs="@requirements/milestones/<WORK-ID>.md @${roadmap_rel} @${milestone_rel}"
+  else
+    plan_refs="@requirements/milestones/<WORK-ID>.md @${milestone_rel}"
+  fi
+  echo
+  echo "Next SPDD prompts (see docs/sdlc-spdd/spdd-prompt-standard.md):"
+  for work_id in "${created_work_ids[@]}"; do
+    plan_cmd="${plan_refs//<WORK-ID>/${work_id}}"
+    echo
+    echo "  ${work_id}:"
+    echo "    /sdlc-spdd-plan ${plan_cmd}"
+    echo "    /sdlc-spdd-architect @spdd/canvas/${work_id}.md"
+  done
+fi
