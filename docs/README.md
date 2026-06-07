@@ -40,11 +40,19 @@ You can treat these six pages as the canonical onboarding path.
 
 ## If You Are Using This Daily
 
+Three docs work together — each has a distinct job; prompts are not duplicated across them:
+
+| Guide | Role |
+|-------|------|
+| [Session prompt standard](session-prompt-standard.md) | **Prompts** — copy-paste text for triage, phases, handoff |
+| [Daily runbook](daily-runbook.md) | **Rhythm** — rules, script sequences, phase checklists |
+| [Workflow](workflow.md) | **Sequence** — 13-step table and which part owns each step |
+| [Three-part operating path](three-part-operating-path.md) | **Loop** — how Planning → SPDD → SDLC connect for a work item |
+
+Also useful day to day:
+
 | Guide | Use it when |
 |-------|-------------|
-| [Three-part operating path](three-part-operating-path.md) | You need the canonical Planning → SPDD → SDLC loop for a session or work item |
-| [Session prompt standard](session-prompt-standard.md) | You need copy-paste prompts that bridge milestones, SPDD, and SDLC lifecycle |
-| [Daily runbook](daily-runbook.md) | You need repeatable day-to-day actions for triage, planning, coding, review, retro, sync, and handoff |
 | [Initialization and invocation](initialization-and-invocation.md) | You need concrete examples for starting work and invoking each SDLC-SPDD skill |
 | [Roadmap, milestones, and session notes](roadmap-milestones-and-session-notes.md) | You use `ROADMAP.md`, `milestone-*.md`, and `session-notes/` to track project progress |
 | [Top useful concepts and commands](useful-concepts-and-commands.md) | You want a fast reference for common commands and prompt patterns |
@@ -65,16 +73,25 @@ You can treat these six pages as the canonical onboarding path.
 | [CONTRIBUTING.md](../CONTRIBUTING.md) | You are changing scripts or documentation — includes orchestrator vs target paths and a consistency checklist |
 | [Design decisions](design-decisions.md) | You need rationale for major choices (including planned-but-not-installed features) |
 
-## If You Want the Architecture and Theory
+## What Each Part Brings (read before deep theory)
+
+Start here when you want to know **why** each part exists. One page per part:
+
+| Guide | Answers |
+|-------|---------|
+| [What planning brings](what-planning-brings.md) | Why roadmap, milestones, and session notes matter |
+| [What SPDD brings](what-spdd-brings.md) | Why the REASONS Canvas governs execution |
+| [What SDLC brings](what-sdlc-brings.md) | Why lifecycle phases and session handoffs matter |
+
+## Deep Theory (after value guides)
+
+Read these when you need historical context, compliance detail, or repository architecture — not for day-one onboarding:
 
 | Guide | Use it when |
 |-------|-------------|
-| [What SDLC brings](what-sdlc-brings.md) | You want a single-page answer for what SDLC lifecycle discipline contributes |
-| [What SPDD brings](what-spdd-brings.md) | You want a single-page answer for what REASONS Canvas governance contributes |
-| [What planning brings](what-planning-brings.md) | You want a single-page answer for what roadmap, milestones, and session notes contribute |
-| [Hybrid SDLC Agents + SPDD model](hybrid-model.md) | You want to understand how SDLC Agents lifecycle practices and SPDD prompt governance fit together |
-| [SPDD compliance](spdd-compliance.md) | You need to verify the workflow against Structured Prompt-Driven Development expectations |
-| [Architecture](architecture.md) | You want the repository architecture and artifact model |
+| [Hybrid SDLC Agents + SPDD model](hybrid-model.md) | You want the original two-influence story and how Planning was added |
+| [Architecture](architecture.md) | You want the five delivery concerns built on the three parts |
+| [SPDD compliance](spdd-compliance.md) | You need to verify against Structured Prompt-Driven Development expectations |
 | [Design decisions](design-decisions.md) | You want the rationale behind major choices |
 
 ## Prompt Standards by Concept

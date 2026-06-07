@@ -1,5 +1,7 @@
 # SPDD Compliance
 
+> Deep theory. For onboarding, read [Three-part operating path](three-part-operating-path.md) and [What SPDD brings](what-spdd-brings.md) first. This page is for compliance verification and Fowler/SPDD contract detail.
+
 This project follows Structured Prompt-Driven Development (SPDD) as described in Martin Fowler's article, [Structured-Prompt-Driven Development](https://martinfowler.com/articles/structured-prompt-driven/), inside a hybrid lifecycle influenced by [SDLC Agents](https://github.com/dsilahcilar/sdlc-agents).
 
 SPDD treats prompts as first-class delivery artifacts that are version controlled, reviewed, reused, and improved over time. This scaffold implements that contract with REASONS Canvas files, lifecycle prompt templates, assistant command prompts, progress logs, review reports, sync logs, and reusable project memory.

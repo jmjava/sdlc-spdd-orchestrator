@@ -1,12 +1,15 @@
 # Workflow
 
-This workflow is hybrid:
+This page is the **canonical step sequence** (13 steps, which part owns each). It is a reference table — not a daily runbook and not the prompt library.
 
-- SDLC Agents supplies the role-separated lifecycle: initialize, plan, architect, code, review, retro, and curator-style sync.
-- SPDD supplies the governed prompt artifact: the REASONS Canvas and prompt/code synchronization loop.
-- Roadmap, milestone, and session-note files supply the project narrative that informs planning and summarizes progress.
+| Need | Open |
+|------|------|
+| Step order and part ownership | **This page** |
+| Copy-paste prompts | [Session prompt standard](session-prompt-standard.md) |
+| Rules, scripts, phase checklists | [Daily runbook](daily-runbook.md) |
+| Planning → SPDD → SDLC entry paths | [Three-part operating path](three-part-operating-path.md) |
 
-For how the three parts connect step by step (including milestone vs ad-hoc entry), see [Three-part operating path](three-part-operating-path.md).
+The workflow is hybrid: SDLC Agents supplies the lifecycle; SPDD supplies the REASONS Canvas contract; Planning supplies roadmap, milestone, and session-note narrative.
 
 ## Three-Layer Flow
 
@@ -53,20 +56,10 @@ In your installed project, runtime scripts live under `scripts/sdlc-spdd/`:
 
     ./scripts/sdlc-spdd/validate-reasons-canvas.sh spdd/canvas/
 
-## Daily Use
+## Related Guides
 
-Use [initialization-and-invocation.md](initialization-and-invocation.md) for first-time setup, examples for starting work, context-preserving questions, and command invocation in Cursor or GitHub Copilot.
+For the full documentation map, see [docs/README.md](README.md). Daily essentials:
 
-Use [daily-runbook.md](daily-runbook.md) for repeatable daily actions across triage, planning, architecture, coding, review, retro, sync, and handoff.
-
-Use [integration-linking.md](integration-linking.md) to link canvases to Jira-based systems, GitHub issues, pull requests, and GitHub Pages documentation.
-
-Use [jira-runbook.md](jira-runbook.md) to create new Jira issues and keep Jira synchronized with canvas, progress, review, and sync artifacts.
-
-Use [spdd-compliance.md](spdd-compliance.md) to verify the workflow remains compliant with Structured Prompt-Driven Development.
-
-Use [hybrid-model.md](hybrid-model.md) to understand how SDLC Agents lifecycle practices and SPDD prompt governance fit together.
-
-Use [agent-session-scripts.md](agent-session-scripts.md) for runnable setup, resync, session handoff, and memory capture commands.
-
-Use [roadmap-milestones-and-session-notes.md](roadmap-milestones-and-session-notes.md) for the mapping between planning docs and SDLC-SPDD artifacts.
+- [Daily runbook](daily-runbook.md) — operational rhythm and checklists
+- [Session prompt standard](session-prompt-standard.md) — copy-paste prompts
+- [Agent session scripts](agent-session-scripts.md) — setup, resync, capture scripts

@@ -61,6 +61,7 @@ Before merging doc or script changes that touch the three-part model (Planning, 
 - [ ] **Prompt standards** — Session is default; SPDD and Planning are drill-downs; link [Which prompt standard?](docs/session-prompt-standard.md#which-prompt-standard)
 - [ ] **Script output** — if a script prints “next step” prompts, they align with the matching prompt standard doc
 - [ ] **Diagrams** — if you changed a Mermaid diagram, `./scripts/render-diagrams.sh --check` passes; regenerate committed exports with `./scripts/render-diagrams.sh`
+- [ ] **Daily doc roles** — prompts stay in `session-prompt-standard.md`; step table in `workflow.md`; rules/checklists in `daily-runbook.md` (link, do not duplicate prompt blocks)
 
 ## Diagrams
 

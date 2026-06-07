@@ -217,9 +217,15 @@ New users should follow **Start Here** above. The lists below group the remainin
 - [Cursor usage](docs/cursor-usage.md)
 - [GitHub Copilot usage](docs/copilot-usage.md)
 
-### Reference and theory (read later)
+### What each part brings
 
-Read these after you are comfortable with the three-part path. They explain rationale and integrations, not first steps.
+- [What planning brings](docs/what-planning-brings.md)
+- [What SPDD brings](docs/what-spdd-brings.md)
+- [What SDLC brings](docs/what-sdlc-brings.md)
+
+### Deep theory (read later)
+
+Read these after the value guides above. They explain historical context, compliance, and architecture — not first steps.
 
 - [Jira runbook](docs/jira-runbook.md)
 - [Integration linking](docs/integration-linking.md)

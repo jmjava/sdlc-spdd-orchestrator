@@ -1,6 +1,6 @@
 # Architecture
 
-> Reference/theory. For onboarding and the day-to-day path, read [Three-part operating path](three-part-operating-path.md) first.
+> Deep theory. For onboarding, read [Three-part operating path](three-part-operating-path.md) and the [What each part brings](README.md#what-each-part-brings-read-before-deep-theory) value guides first.
 
 The system has **three parts**: Planning, SPDD, and SDLC (see [Three-part operating path](three-part-operating-path.md)). Architecturally, those three parts are delivered through five concerns:
 

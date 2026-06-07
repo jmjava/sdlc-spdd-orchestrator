@@ -1,6 +1,6 @@
 # Hybrid SDLC Agents + SPDD Model
 
-> Reference/theory. For onboarding and the day-to-day path, read [Three-part operating path](three-part-operating-path.md) first. This page explains the historical influences behind the three parts (Planning, SPDD, SDLC).
+> Deep theory. For onboarding, read [Three-part operating path](three-part-operating-path.md) and the [What each part brings](README.md#what-each-part-brings-read-before-deep-theory) value guides first. This page explains the historical SDLC + SPDD influences and how Planning was added as a third part.
 
 This project is intentionally hybrid. It combines the SDLC Agents lifecycle and context-engineering model with SPDD's REASONS Canvas and prompt-governance contract, then connects both to the planning layer (`ROADMAP.md`, `milestone-*.md`, `requirements/`, `session-notes/`). These map to the three parts: SDLC, SPDD, and Planning.
 

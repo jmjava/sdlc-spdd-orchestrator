@@ -1,5 +1,7 @@
 # Design Decisions
 
+> Deep theory. For onboarding, read [Three-part operating path](three-part-operating-path.md) and the [What each part brings](README.md#what-each-part-brings-read-before-deep-theory) value guides first.
+
 ## SDLC Agents own lifecycle, SPDD owns prompt governance
 
 SDLC Agents patterns define the lifecycle phases, specialized responsibilities, progressive context loading, architecture-first handoffs, and retro learning loop. SPDD defines the governed prompt artifact model through REASONS Canvas, prompt-update, review, and sync.
