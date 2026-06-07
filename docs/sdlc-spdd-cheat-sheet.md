@@ -18,11 +18,12 @@ Start here (everything else is reference):
 
 ## Install
 
-Default (all three parts, both assistants):
+From the **orchestrator repo** clone (not your app folder):
 
     ./scripts/setup-agent-prompts.sh --target /path/to/app --all
+    ./scripts/verify-project-install.sh --target /path/to/app
 
-Verify three-part install:
+After install, from your **target app** folder:
 
     ./scripts/sdlc-spdd/verify-project-install.sh --target .
 

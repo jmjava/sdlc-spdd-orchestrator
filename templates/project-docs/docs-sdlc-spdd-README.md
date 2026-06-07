@@ -4,7 +4,11 @@ These docs were installed by the SDLC-SPDD orchestrator. **Start with the six pa
 
 ## Assistant commands vs terminal
 
-`/sdlc-spdd-init` and other `/sdlc-spdd-*` lines are **AI chat prompts**, not terminal commands. Run them in Cursor Chat or Copilot Chat. Shell scripts live under `scripts/sdlc-spdd/`. [How to run assistant commands](initialization-and-invocation.md#how-to-run-assistant-commands)
+`/sdlc-spdd-init` and other `/sdlc-spdd-*` lines are **AI chat prompts**, not terminal commands. Run them in Cursor Chat or Copilot Chat.
+
+**Shell scripts in this project** live under `scripts/sdlc-spdd/` (for example `start-agent-session.sh`). Install/upgrade run once from the orchestrator repo (`./scripts/setup-agent-prompts.sh --target ...`), not from here.
+
+[How to run assistant commands](initialization-and-invocation.md#how-to-run-assistant-commands)
 
 ## Read in order
 

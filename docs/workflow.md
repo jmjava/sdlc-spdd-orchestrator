@@ -28,7 +28,7 @@ Set `--phase` on `start-agent-session.sh` to the phase you are about to run. Pas
 
 | Step | Part | Action |
 |------|------|--------|
-| 1 | SDLC | **Set up prompts and memory** — `./scripts/setup-agent-prompts.sh --target . --all` |
+| 1 | SDLC | **Set up prompts and memory** — from orchestrator repo: `./scripts/setup-agent-prompts.sh --target /path/to/app --all` |
 | 2 | SDLC | **Initialize** — `/sdlc-spdd-init` |
 | 3 | Planning → SPDD | **Map milestone work when needed** — `./scripts/sdlc-spdd/create-work-from-milestone.sh --target . --milestone milestone-1.md --all` |
 | 4 | SDLC | **Start session** — `./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase>` → paste Resume Prompt |

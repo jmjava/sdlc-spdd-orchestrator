@@ -117,7 +117,7 @@ Then ask:
 
 `init-project.sh` and `upgrade-project.sh` run verification automatically at the end of a successful install or upgrade.
 
-From the target app (or orchestrator repo with `--target`):
+From your **installed target project** (`cd` into the app):
 
     ./scripts/sdlc-spdd/verify-project-install.sh --target .
 

@@ -39,9 +39,9 @@ If the project was initialized by an older version:
     ./scripts/upgrade-project.sh --target /path/to/app --all --dry-run
     ./scripts/upgrade-project.sh --target /path/to/app --all
 
-Confirm the three-part scaffold is complete (install and upgrade also run this automatically):
+Confirm the three-part scaffold is complete (install and upgrade also run this automatically). Still from the **orchestrator repo**:
 
-    ./scripts/sdlc-spdd/verify-project-install.sh --target /path/to/app
+    ./scripts/verify-project-install.sh --target /path/to/app
 
 Then open the target application in Cursor or a Copilot-enabled editor.
 

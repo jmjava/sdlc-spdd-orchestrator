@@ -17,7 +17,10 @@ This repo uses **two kinds** of commands. They run in different places — do no
 | Kind | Looks like | Where you run it |
 |------|------------|------------------|
 | **Assistant** (AI chat) | `/sdlc-spdd-init`, `/sdlc-spdd-plan @requirements/foo.md` | **Cursor Chat** or **Copilot Chat** in your target project |
-| **Shell** (terminal) | `./scripts/setup-agent-prompts.sh --target ...`, `./scripts/sdlc-spdd/start-agent-session.sh` | **Terminal** |
+| **Shell — install** (once) | `./scripts/setup-agent-prompts.sh --target ...` | Terminal in the **orchestrator repo** clone |
+| **Shell — daily use** | `./scripts/sdlc-spdd/start-agent-session.sh --target . ...` | Terminal in your **installed target project** |
+
+Install/upgrade/verify from the orchestrator clone use `./scripts/<name>.sh`. After install, runtime scripts live in the target at `./scripts/sdlc-spdd/`. See [Script paths](CONTRIBUTING.md#script-paths-orchestrator-vs-target).
 
 **`/sdlc-spdd-*` is not a terminal command.** Open your target app in Cursor or Copilot, open **AI chat**, then:
 
@@ -54,7 +57,7 @@ flowchart TD
 
 | Step | Do this | Read this |
 |------|---------|-----------|
-| 1. Install & verify | `setup-agent-prompts.sh --all` then `verify-project-install.sh` | [Installing into your project](docs/installing-into-your-project.md) |
+| 1. Install & verify | From orchestrator clone: `setup-agent-prompts.sh --all` then `verify-project-install.sh` | [Installing into your project](docs/installing-into-your-project.md) |
 | 2. First session | `/sdlc-spdd-init`, then plan → architect → code → review one operation | [First day with SDLC-SPDD](docs/first-day-with-sdlc-spdd.md) |
 | 3. Learn the model | Understand how Planning, SPDD, and SDLC hand off | [Three-part operating path](docs/three-part-operating-path.md) |
 | 4. Work day to day | Use the default prompts and the start/capture rhythm | [Session prompt standard](docs/session-prompt-standard.md) · [Daily runbook](docs/daily-runbook.md) |
