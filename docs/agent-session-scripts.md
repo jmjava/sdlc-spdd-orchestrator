@@ -22,6 +22,8 @@ They solve three operational needs:
 | `scripts/sdlc-spdd/sync-roadmap-from-spdd.sh` | Target-local script that refreshes a managed roadmap summary from canvas metadata |
 | `scripts/sdlc-spdd/summarize-session-notes.sh` | Target-local script that imports existing session notes into durable memory |
 | `scripts/sdlc-spdd/sync-agent-context.sh` | Target-local low-level canvas copy synchronization |
+| `scripts/sdlc-spdd/validate-command-adapters.sh` | Target-local checker that validates Cursor/Copilot command-pack parity in the installed project |
+| `scripts/sdlc-spdd/verify-agent-command-effects.sh` | Target-local verifier for deterministic artifact side-effects after `/sdlc-spdd-*` command invocations and post-capture planning sync |
 | `scripts/sdlc-spdd/validate-reasons-canvas.sh` | Target-local REASONS Canvas structure validation |
 | `scripts/sdlc-spdd/verify-project-install.sh` | Target-local three-part install verification (Planning, SPDD, SDLC) |
 
@@ -43,6 +45,7 @@ The target app receives:
 - `spdd/reviews/`
 - `spdd/sync/`
 - `ROADMAP.md`
+- `.github/workflows/validate-sdlc-spdd-adapters.yml` when both Cursor and Copilot adapters are installed
 - `milestone-1.md` when no `milestone-*.md` exists
 - `session-notes/`
 - `agent-context/memory/`
@@ -207,3 +210,8 @@ The scripts enforce the combined system:
 - SPDD side: REASONS Canvas validation, prompt-first behavior changes, canvas sync, and reviewable artifacts.
 
 Use `capture-session-memory.sh` after meaningful work so future agents do not rely on chat history.
+
+You can verify both command effects and planning sync:
+
+    ./scripts/sdlc-spdd/verify-agent-command-effects.sh --target . --work-id <WORK-ID> --step review
+    ./scripts/sdlc-spdd/verify-agent-command-effects.sh --target . --work-id <WORK-ID> --step capture --milestone milestone-1.md --require-roadmap

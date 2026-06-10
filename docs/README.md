@@ -67,12 +67,14 @@ Also useful day to day:
 | [Jira runbook](jira-runbook.md) | You need to create Jira issues or keep Jira synchronized with SDLC-SPDD artifacts |
 | [Integration linking](integration-linking.md) | You need to link canvases to Jira, GitHub issues, pull requests, or GitHub Pages |
 | [GitHub project setup](github-project-setup.md) | You need labels, milestones, and issue template conventions |
+| [Installing into your project](installing-into-your-project.md) | You need target-project CI checks (adapter parity workflow and script validation) |
 
 ## If You Are Contributing or Editing Docs
 
 | Guide | Use it when |
 |-------|-------------|
 | [CONTRIBUTING.md](../CONTRIBUTING.md) | You are changing scripts or documentation — includes orchestrator vs target paths and a consistency checklist |
+| [TESTING.md](../TESTING.md) | You need the command-testing confidence stack (CI gates, local smoke, planning-sync verification) |
 | [Design decisions](design-decisions.md) | You need rationale for major choices (including planned-but-not-installed features) |
 
 ## What Each Part Brings (read before deep theory)

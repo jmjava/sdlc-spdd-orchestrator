@@ -37,6 +37,7 @@ This installs:
 - `.cursor/commands/`
 - `.github/copilot-instructions.md`
 - `.github/prompts/`
+- `.github/workflows/validate-sdlc-spdd-adapters.yml` (when both Cursor and Copilot adapters are installed)
 - `scripts/sdlc-spdd/`
 
 The target-local `scripts/sdlc-spdd/` folder includes session scripts and mapping tools:
@@ -47,6 +48,8 @@ The target-local `scripts/sdlc-spdd/` folder includes session scripts and mappin
 - `create-work-from-milestone.sh`
 - `sync-roadmap-from-spdd.sh`
 - `summarize-session-notes.sh`
+- `validate-command-adapters.sh`
+- `verify-agent-command-effects.sh`
 - `verify-project-install.sh`
 
 ## Fresh Install for One Assistant

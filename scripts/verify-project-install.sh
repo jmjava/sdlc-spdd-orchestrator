@@ -159,8 +159,15 @@ run_part "Runtime scripts and docs" \
   Runtime "create work from milestone script" "scripts/sdlc-spdd/create-work-from-milestone.sh" executable \
   Runtime "sync roadmap script" "scripts/sdlc-spdd/sync-roadmap-from-spdd.sh" executable \
   Runtime "summarize session notes script" "scripts/sdlc-spdd/summarize-session-notes.sh" executable \
+  Runtime "validate command adapters script" "scripts/sdlc-spdd/validate-command-adapters.sh" executable \
+  Runtime "verify command effects script" "scripts/sdlc-spdd/verify-agent-command-effects.sh" executable \
   Runtime "validate canvas script" "scripts/sdlc-spdd/validate-reasons-canvas.sh" executable \
   Runtime "verify install script" "scripts/sdlc-spdd/verify-project-install.sh" executable
+
+if [[ "${REQUIRE_CURSOR}" -eq 1 && "${REQUIRE_COPILOT}" -eq 1 ]]; then
+  run_part "Adapter parity workflow" \
+    Runtime "target adapter workflow" ".github/workflows/validate-sdlc-spdd-adapters.yml" file
+fi
 
 if [[ "${REQUIRE_CURSOR}" -eq 1 ]]; then
   run_part "Cursor adapter" \
