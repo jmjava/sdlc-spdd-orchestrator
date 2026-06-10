@@ -99,8 +99,16 @@ require_contains() {
 }
 
 count_required_steps() {
+  # Count numbered list items only within the "## Required Behavior" section,
+  # stopping at the next "## " heading. Counting the whole file would let
+  # numbered lists elsewhere (e.g. "## Output") inflate or mask divergence.
   local path="$1"
-  grep -nE '^[0-9]+\.' "${path}" | wc -l | tr -d ' '
+  awk '
+    /^## Required Behavior[[:space:]]*$/ { in_section = 1; next }
+    /^## / { in_section = 0 }
+    in_section && /^[0-9]+\./ { count++ }
+    END { print count + 0 }
+  ' "${path}"
 }
 
 detect_roots

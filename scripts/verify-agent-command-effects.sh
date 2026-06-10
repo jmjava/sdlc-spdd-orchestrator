@@ -166,7 +166,7 @@ if [[ "${STEP}" == "architect" ]]; then
 fi
 
 if [[ "${STEP}" == "code" ]]; then
-  check_contains_regex "progress log operation evidence" "${FEATURE_DIR}/progress-log.md" "${OPERATION}|operation|implemented|completed"
+  check_contains_regex "progress log operation evidence" "${FEATURE_DIR}/progress-log.md" "${OPERATION}|[Ii]mplement|[Cc]omplete|[Ff]iles changed"
 fi
 
 if [[ "${STEP}" == "review" ]]; then
@@ -189,7 +189,9 @@ fi
 if [[ "${STEP}" == "capture" ]]; then
   check_exists "session history memory" "${TARGET}/agent-context/memory/session-history.md"
   check_any_session_note_contains_work_id "${TARGET}/session-notes"
-  check_contains_regex "progress log mention work-id" "${FEATURE_DIR}/progress-log.md" "${WORK_ID}|operation|summary|next"
+  # capture-session-memory.sh always appends a "### <ts> - <WORK-ID> - <phase>"
+  # header to the progress log, so the Work ID is a deterministic anchor here.
+  check_contains_regex "progress log mention work-id" "${FEATURE_DIR}/progress-log.md" "${WORK_ID}"
 
   if [[ -n "${MILESTONE}" ]]; then
     check_contains_regex "milestone mention work-id" "${TARGET}/${MILESTONE}" "${WORK_ID}"
