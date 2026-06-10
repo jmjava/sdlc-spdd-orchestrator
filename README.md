@@ -165,6 +165,13 @@ Plan, architect, code, and review one operation:
     /sdlc-spdd-code @spdd/canvas/FEAT-001-my-feature.md operation T01
     /sdlc-spdd-review @spdd/canvas/FEAT-001-my-feature.md
 
+Verify deterministic side-effects after each command (best-effort command invocation evidence):
+
+    ./scripts/sdlc-spdd/verify-agent-command-effects.sh --target . --work-id FEAT-001-my-feature --step plan
+    ./scripts/sdlc-spdd/verify-agent-command-effects.sh --target . --work-id FEAT-001-my-feature --step architect
+    ./scripts/sdlc-spdd/verify-agent-command-effects.sh --target . --work-id FEAT-001-my-feature --step code --operation T01
+    ./scripts/sdlc-spdd/verify-agent-command-effects.sh --target . --work-id FEAT-001-my-feature --step review
+
 Capture session memory and milestone progress:
 
     ./scripts/sdlc-spdd/capture-session-memory.sh \

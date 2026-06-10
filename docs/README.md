@@ -67,6 +67,7 @@ Also useful day to day:
 | [Jira runbook](jira-runbook.md) | You need to create Jira issues or keep Jira synchronized with SDLC-SPDD artifacts |
 | [Integration linking](integration-linking.md) | You need to link canvases to Jira, GitHub issues, pull requests, or GitHub Pages |
 | [GitHub project setup](github-project-setup.md) | You need labels, milestones, and issue template conventions |
+| [Installing into your project](installing-into-your-project.md) | You need target-project CI checks (adapter parity workflow and script validation) |
 
 ## If You Are Contributing or Editing Docs
 

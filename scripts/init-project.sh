@@ -194,6 +194,12 @@ copy_if_missing \
   "${REPO_ROOT}/templates/project-docs/docs-sdlc-spdd-README.md" \
   "${TARGET}/docs/sdlc-spdd/README.md"
 
+if [[ "${INSTALL_CURSOR}" -eq 1 && "${INSTALL_COPILOT}" -eq 1 ]]; then
+  copy_if_missing \
+    "${REPO_ROOT}/templates/project-github-workflows/validate-sdlc-spdd-adapters.yml" \
+    "${TARGET}/.github/workflows/validate-sdlc-spdd-adapters.yml"
+fi
+
 # Copy runtime session scripts into the target project for cross-session handoffs
 for file in \
   start-agent-session.sh \
@@ -203,6 +209,8 @@ for file in \
   sync-roadmap-from-spdd.sh \
   summarize-session-notes.sh \
   sync-agent-context.sh \
+  validate-command-adapters.sh \
+  verify-agent-command-effects.sh \
   validate-reasons-canvas.sh \
   verify-project-install.sh; do
   copy_if_missing \

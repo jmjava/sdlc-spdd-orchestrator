@@ -1,0 +1,25 @@
+name: Validate SDLC-SPDD Command Adapters
+
+on:
+  pull_request:
+    paths:
+      - '.cursor/commands/sdlc-spdd-*.md'
+      - '.github/prompts/sdlc-spdd-*.prompt.md'
+      - 'scripts/sdlc-spdd/validate-command-adapters.sh'
+      - '.github/workflows/validate-sdlc-spdd-adapters.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.cursor/commands/sdlc-spdd-*.md'
+      - '.github/prompts/sdlc-spdd-*.prompt.md'
+      - 'scripts/sdlc-spdd/validate-command-adapters.sh'
+      - '.github/workflows/validate-sdlc-spdd-adapters.yml'
+
+jobs:
+  validate-command-adapters:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate Cursor + Copilot command-pack parity
+        run: ./scripts/sdlc-spdd/validate-command-adapters.sh --target .

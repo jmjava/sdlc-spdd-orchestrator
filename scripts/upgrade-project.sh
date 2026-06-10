@@ -297,6 +297,17 @@ copy_framework_file \
   "${REPO_ROOT}/templates/project-docs/docs-sdlc-spdd-README.md" \
   "${TARGET}/docs/sdlc-spdd/README.md"
 
+if [[ "${UPGRADE_CURSOR}" -eq 1 && "${UPGRADE_COPILOT}" -eq 1 ]]; then
+  # Create if missing: target project CI workflow for command adapter parity.
+  if [[ ! -f "${TARGET}/.github/workflows/validate-sdlc-spdd-adapters.yml" ]]; then
+    copy_framework_file \
+      "${REPO_ROOT}/templates/project-github-workflows/validate-sdlc-spdd-adapters.yml" \
+      "${TARGET}/.github/workflows/validate-sdlc-spdd-adapters.yml"
+  else
+    preserved+=("${TARGET}/.github/workflows/validate-sdlc-spdd-adapters.yml")
+  fi
+fi
+
 # Target-local runtime scripts are framework-owned and safe to upgrade.
 for file in \
   start-agent-session.sh \
@@ -306,6 +317,8 @@ for file in \
   sync-roadmap-from-spdd.sh \
   summarize-session-notes.sh \
   sync-agent-context.sh \
+  validate-command-adapters.sh \
+  verify-agent-command-effects.sh \
   validate-reasons-canvas.sh \
   verify-project-install.sh; do
   copy_executable_framework_file \

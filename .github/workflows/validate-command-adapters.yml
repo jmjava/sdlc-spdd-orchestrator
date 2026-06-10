@@ -1,0 +1,25 @@
+name: Validate Command Adapters
+
+on:
+  pull_request:
+    paths:
+      - 'templates/cursor/sdlc-spdd-*.md'
+      - 'templates/copilot/prompts/sdlc-spdd-*.prompt.md'
+      - 'scripts/validate-command-adapters.sh'
+      - '.github/workflows/validate-command-adapters.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'templates/cursor/sdlc-spdd-*.md'
+      - 'templates/copilot/prompts/sdlc-spdd-*.prompt.md'
+      - 'scripts/validate-command-adapters.sh'
+      - '.github/workflows/validate-command-adapters.yml'
+
+jobs:
+  validate-command-adapters:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate Cursor + Copilot template parity
+        run: ./scripts/validate-command-adapters.sh
