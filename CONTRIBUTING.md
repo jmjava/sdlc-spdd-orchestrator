@@ -92,6 +92,7 @@ CI: `.github/workflows/validate-diagrams.yml` runs `./scripts/render-diagrams.sh
 4. Test scripts with `--dry-run` when adding file-writing behavior
 5. Test runtime scripts from `./scripts/` in this repo; confirm `init-project.sh` still copies them to `scripts/sdlc-spdd/` in targets
 6. Run `./scripts/verify-project-install.sh --target <test-app>` after init changes; Planning checks must include `requirements/milestones/`
+7. Follow the confidence stack in `TESTING.md` (CI gates + local smoke + planning sync checks) for command/prompt/script changes
 
 ## Pull Requests
 

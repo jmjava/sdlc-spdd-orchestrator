@@ -74,6 +74,7 @@ Also useful day to day:
 | Guide | Use it when |
 |-------|-------------|
 | [CONTRIBUTING.md](../CONTRIBUTING.md) | You are changing scripts or documentation — includes orchestrator vs target paths and a consistency checklist |
+| [TESTING.md](../TESTING.md) | You need the command-testing confidence stack (CI gates, local smoke, planning-sync verification) |
 | [Design decisions](design-decisions.md) | You need rationale for major choices (including planned-but-not-installed features) |
 
 ## What Each Part Brings (read before deep theory)
