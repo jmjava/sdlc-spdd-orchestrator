@@ -3,7 +3,7 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: verify-agent-command-effects.sh --target <path> --work-id <WORK-ID> --step <step> [--operation <Txx>]
+Usage: verify-agent-command-effects.sh --target <path> --work-id <WORK-ID> --step <step> [--operation <Txx>] [--milestone <file>] [--require-roadmap]
 
 Best-effort verification that an assistant command was invoked and produced
 expected repository artifacts. This checks deterministic side-effects only.
@@ -17,10 +17,12 @@ Steps:
   prompt-update  Verify canvas + progress artifacts for updated intent
   sync           Verify sync artifacts
   retro          Verify retro + durable memory artifacts
+  capture        Verify session-memory + planning sync artifacts after capture-session-memory.sh
 
 Examples:
   ./scripts/verify-agent-command-effects.sh --target . --work-id FEAT-001-foo --step plan
   ./scripts/verify-agent-command-effects.sh --target . --work-id FEAT-001-foo --step code --operation T01
+  ./scripts/verify-agent-command-effects.sh --target . --work-id FEAT-001-foo --step capture --milestone milestone-1.md --require-roadmap
 EOF
 }
 
@@ -28,6 +30,8 @@ TARGET="."
 WORK_ID=""
 STEP=""
 OPERATION="T01"
+MILESTONE=""
+REQUIRE_ROADMAP=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -46,6 +50,14 @@ while [[ $# -gt 0 ]]; do
     --operation)
       OPERATION="${2:-}"
       shift 2
+      ;;
+    --milestone)
+      MILESTONE="${2:-}"
+      shift 2
+      ;;
+    --require-roadmap)
+      REQUIRE_ROADMAP=1
+      shift
       ;;
     --help|-h)
       usage
@@ -66,7 +78,7 @@ if [[ -z "${WORK_ID}" || -z "${STEP}" ]]; then
 fi
 
 case "${STEP}" in
-  init|plan|architect|code|review|prompt-update|sync|retro) ;;
+  init|plan|architect|code|review|prompt-update|sync|retro|capture) ;;
   *)
     echo "Unsupported --step '${STEP}'" >&2
     usage >&2
@@ -108,6 +120,21 @@ check_contains_regex() {
   fi
 }
 
+check_any_session_note_contains_work_id() {
+  local notes_dir="$1"
+  if [[ ! -d "${notes_dir}" ]]; then
+    echo "  FAIL session-notes directory: ${notes_dir}" >&2
+    failures=$((failures + 1))
+    return
+  fi
+  if grep -Rqs "${WORK_ID}" "${notes_dir}"; then
+    echo "  ok  session-notes mention work-id: ${WORK_ID}"
+  else
+    echo "  FAIL session-notes mention work-id: ${WORK_ID} (run capture-session-memory.sh with --summary/--milestone)" >&2
+    failures=$((failures + 1))
+  fi
+}
+
 echo "Verifying command effects"
 echo "  target: ${TARGET}"
 echo "  work-id: ${WORK_ID}"
@@ -122,7 +149,7 @@ if [[ "${STEP}" == "init" ]]; then
   check_exists "quality gates" "${TARGET}/agent-context/harness/quality-gates.md"
 fi
 
-if [[ "${STEP}" == "plan" || "${STEP}" == "architect" || "${STEP}" == "code" || "${STEP}" == "review" || "${STEP}" == "prompt-update" || "${STEP}" == "sync" || "${STEP}" == "retro" ]]; then
+if [[ "${STEP}" == "plan" || "${STEP}" == "architect" || "${STEP}" == "code" || "${STEP}" == "review" || "${STEP}" == "prompt-update" || "${STEP}" == "sync" || "${STEP}" == "retro" || "${STEP}" == "capture" ]]; then
   check_exists "canvas" "${CANVAS}"
   check_exists "feature dir" "${FEATURE_DIR}"
   check_exists "feature requirement" "${FEATURE_DIR}/requirement.md"
@@ -157,6 +184,19 @@ if [[ "${STEP}" == "retro" ]]; then
   check_exists "feature retro" "${FEATURE_DIR}/retro.md"
   check_exists "known pitfalls memory" "${TARGET}/agent-context/memory/known-pitfalls.md"
   check_exists "reusable patterns memory" "${TARGET}/agent-context/memory/reusable-patterns.md"
+fi
+
+if [[ "${STEP}" == "capture" ]]; then
+  check_exists "session history memory" "${TARGET}/agent-context/memory/session-history.md"
+  check_any_session_note_contains_work_id "${TARGET}/session-notes"
+  check_contains_regex "progress log mention work-id" "${FEATURE_DIR}/progress-log.md" "${WORK_ID}|operation|summary|next"
+
+  if [[ -n "${MILESTONE}" ]]; then
+    check_contains_regex "milestone mention work-id" "${TARGET}/${MILESTONE}" "${WORK_ID}"
+  fi
+  if [[ "${REQUIRE_ROADMAP}" -eq 1 ]]; then
+    check_contains_regex "roadmap mention work-id" "${TARGET}/ROADMAP.md" "${WORK_ID}"
+  fi
 fi
 
 echo

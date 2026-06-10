@@ -184,6 +184,12 @@ Capture session memory and milestone progress:
       --roadmap-note "FEAT-001 completed first implementation operation." \
       --next "/sdlc-spdd-review @spdd/canvas/FEAT-001-my-feature.md"
 
+Verify planning sync was captured (session-notes + milestone, optionally roadmap):
+
+    ./scripts/sdlc-spdd/verify-agent-command-effects.sh --target . --work-id FEAT-001-my-feature --step capture --milestone milestone-1.md --require-roadmap
+
+Milestone/session-notes sync is a required part of the flow, not a temporary check.
+
 Refresh the roadmap summary from SPDD canvases:
 
     ./scripts/sdlc-spdd/sync-roadmap-from-spdd.sh --target .
