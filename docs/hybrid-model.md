@@ -68,6 +68,8 @@ SPDD reference:
 
 ## Hybrid Command Mapping
 
+`/sdlc-spdd-*` skills run in **AI chat** (Cursor/Copilot), not a terminal. [How to run assistant commands](initialization-and-invocation.md#how-to-run-assistant-commands).
+
 | Hybrid skill | SDLC Agents role | SPDD role | Primary artifacts |
 |--------------|------------------|-----------|-------------------|
 | `/sdlc-spdd-init` | Initializer | Establish prompt/artifact workspace | `requirements/`, `spdd/`, `agent-context/` |

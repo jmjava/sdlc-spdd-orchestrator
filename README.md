@@ -196,6 +196,8 @@ Refresh the roadmap summary from SPDD canvases:
 
 ## Core Assistant Commands
 
+`/sdlc-spdd-*` commands run in **AI chat** (Cursor/Copilot), not a terminal — see [How commands work](#how-commands-work) and [How to run assistant commands](docs/initialization-and-invocation.md#how-to-run-assistant-commands).
+
 | Command | Use it for |
 |---------|------------|
 | `/sdlc-spdd-init` | Initialize project context |

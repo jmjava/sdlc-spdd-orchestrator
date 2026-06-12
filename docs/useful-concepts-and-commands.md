@@ -109,6 +109,8 @@ Use roadmap and milestone docs to give planning agents delivery context. Use REA
 
 ## Commands and Prompts
 
+`/sdlc-spdd-*` commands run in **AI chat** (Cursor/Copilot), not a terminal. [How to run assistant commands](initialization-and-invocation.md#how-to-run-assistant-commands).
+
 Command list (install, lifecycle, scripts): [Cheat sheet](sdlc-spdd-cheat-sheet.md).
 
 Copy-paste prompts: [Session prompt standard](session-prompt-standard.md) — see [Which prompt standard?](session-prompt-standard.md#which-prompt-standard) when drilling into SPDD or Planning.
