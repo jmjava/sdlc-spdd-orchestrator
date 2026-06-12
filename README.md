@@ -146,7 +146,9 @@ Upgrade an existing target project without overwriting application source, canva
 
 ## Day-One Flow
 
-In the target project:
+Below, `/sdlc-spdd-*` lines run in **AI chat** (Cursor/Copilot); `./scripts/...` lines run in a **terminal**. Do not paste `/sdlc-spdd-*` into a shell — see [How commands work](#how-commands-work).
+
+In the target project, open **AI chat** (Cursor Chat or Copilot Chat) and run:
 
     /sdlc-spdd-init
 
