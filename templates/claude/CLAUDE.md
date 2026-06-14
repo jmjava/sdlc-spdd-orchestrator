@@ -1,3 +1,4 @@
+<!-- BEGIN SDLC-SPDD MANAGED CLAUDE GROUNDING -->
 # SDLC-SPDD Claude Code Instructions
 
 Use these instructions for every Claude Code request in this workspace.
@@ -31,6 +32,7 @@ Preserve context by reading relevant artifacts before answering:
 - `ROADMAP.md`
 - `milestone-*.md`
 - `session-notes/`
+- `agent-context/sessions/`
 - `agent-context/memory/`
 - `agent-context/features/`
 - `agent-context/harness/`
@@ -62,3 +64,4 @@ Good question patterns:
     For BUG-003, compare @agent-context/features/BUG-003/progress-log.md with the current diff. What context am I missing before coding?
 
     Using the current canvas and @agent-context/memory/known-pitfalls.md, what risks should I check before review?
+<!-- END SDLC-SPDD MANAGED CLAUDE GROUNDING -->

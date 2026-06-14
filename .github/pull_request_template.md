@@ -14,7 +14,7 @@
 - [ ] Tests added or updated
 - [ ] Review completed
 - [ ] Safeguards respected
-- [ ] CI gates pass (`validate-command-adapters`, `validate-canvas`, `validate-diagrams`)
+- [ ] CI gates pass (`validate-command-adapters`, `test-adapter-install`, `validate-canvas`, `validate-diagrams`)
 - [ ] If command/prompt adapter files changed, ran adapter parity validation
 
 ## Manual Smoke (Required for high-risk changes)

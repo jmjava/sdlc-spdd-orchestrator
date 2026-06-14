@@ -13,6 +13,10 @@ Use this guide to install SDLC-SPDD Orchestrator into an application repository.
 | Claude Code only | `init-project.sh --claude` |
 | Cursor, Copilot, and Claude Code | `setup-agent-prompts.sh --all` |
 
+For backward compatibility, omitting assistant flags installs or upgrades Cursor
+and GitHub Copilot only. Use `--all` or `--claude` when you want Claude Code
+files.
+
 ## Fresh Install
 
 From the orchestrator repository:
@@ -98,6 +102,9 @@ The upgrade script updates framework-owned files and preserves:
 - reviews.
 - sync logs.
 - existing memory content.
+- existing root `CLAUDE.md` content; SDLC-SPDD only adds or refreshes its
+  marked managed grounding block.
+- existing `.github/workflows/validate-sdlc-spdd-adapters.yml` customizations.
 
 Backups of overwritten framework files are stored under:
 

@@ -30,17 +30,29 @@ Copilot, Claude Code) into throwaway target directories and asserts:
 
 - Single-assistant installs (`--cursor`, `--copilot`, `--claude`) produce only
   that assistant's files and no others.
+- No-flag setup/upgrade keeps the legacy Cursor + Copilot default; Claude Code
+  is installed only with `--claude` or `--all`.
 - `--all` and `upgrade --all` install all three; Cursor and Copilot files stay
   byte-identical to their templates.
+- Upgrade preserves project-owned files such as an existing root `CLAUDE.md`
+  and target-local adapter workflow customizations; only the managed
+  SDLC-SPDD grounding block inside `CLAUDE.md` is added or refreshed.
+- Repeated upgrades do not duplicate the managed `CLAUDE.md` grounding block,
+  and `--dry-run` paths do not mutate target files.
+- Installed target adapter workflows watch command files, always-on grounding
+  files, and the target-local validator script.
 - `verify-project-install.sh` passes for every install combination.
-- `validate-command-adapters.sh` still **fails** when a Cursor/Copilot guardrail
+- `validate-command-adapters.sh` still **fails** when an adapter guardrail
   is removed, a Required-Behavior step count diverges, or a command file is
   missing (negative tests).
 - every assistant's always-on grounding file exists and covers the whole
   ecosystem; validation **fails** if Planning (`session-notes/`), SPDD
-  (`spdd/canvas/`), or the Cursor grounding rule is dropped (negative tests).
+  (`spdd/canvas/`), SDLC session context (`agent-context/sessions/`), or an
+  assistant grounding file is dropped (negative tests).
 
 Run it locally before changing any install/upgrade script or command template.
+The CI workflow also runs `bash -n` over shell scripts before executing the
+regression harness.
 
 ### Whole-ecosystem grounding norm (enforced)
 
@@ -54,9 +66,11 @@ every interaction (not only when a `/sdlc-spdd-*` command runs):
 `validate-command-adapters.sh` asserts each present grounding file contains the
 shared operating-model anchors (the lifecycle line, `## Operating Model`,
 `## Work Rules`) and the Planning + SPDD + SDLC artifacts (`ROADMAP.md`,
-`milestone-*.md`, `session-notes/`, `spdd/canvas/`, `agent-context/memory/`).
+`milestone-*.md`, `session-notes/`, `spdd/canvas/`,
+`agent-context/sessions/`, `agent-context/memory/`).
 This makes whole-ecosystem awareness the norm for all work across every assistant
-— and runs in CI both here and inside installed target projects.
+— and runs in CI both here and inside installed target projects when the target
+adapter workflow is installed.
 
 In installed target projects (when both Cursor + Copilot adapters are installed):
 
@@ -89,7 +103,7 @@ Use one canonical Work ID and one operation.
 
 Before release or major merge, require:
 
-- [ ] CI gates green (adapters + canvas + diagrams)
+- [ ] CI gates green (adapter parity + adapter install/upgrade + canvas + diagrams)
 - [ ] One manual smoke run completed in Cursor, Copilot, or Claude Code
 - [ ] `verify-agent-command-effects.sh` passes for `plan`, `architect`, `code`, `review`, `capture`
 - [ ] Milestone/session-notes sync confirmed for the tested Work ID

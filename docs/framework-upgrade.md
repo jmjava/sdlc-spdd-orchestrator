@@ -27,7 +27,6 @@ It can update:
 - `.cursor/rules/sdlc-spdd.mdc`
 - `.github/copilot-instructions.md`
 - `.github/prompts/sdlc-spdd-*.prompt.md`
-- `CLAUDE.md`
 - `.claude/commands/sdlc-spdd-*.md`
 - `agent-context/playbooks/*.md`
 - `agent-context/harness/*.md`
@@ -46,14 +45,26 @@ It can create when missing:
 - `ROADMAP.md`
 - `milestone-1.md`
 - `session-notes/`
+- `CLAUDE.md`
+- `.github/workflows/validate-sdlc-spdd-adapters.yml`
 
-Existing framework files are backed up before replacement by default.
+Existing framework files are backed up before replacement by default. Existing
+root `CLAUDE.md` content and target workflow customizations are preserved. When
+Claude Code is installed or upgraded, SDLC-SPDD adds or refreshes only the
+managed grounding block inside `CLAUDE.md`:
+
+    <!-- BEGIN SDLC-SPDD MANAGED CLAUDE GROUNDING -->
+    ...
+    <!-- END SDLC-SPDD MANAGED CLAUDE GROUNDING -->
 
 ## Upgrade Command
 
 Run from the SDLC-SPDD orchestrator repository:
 
     ./scripts/upgrade-project.sh --target /path/to/app --all
+
+For backward compatibility, omitting assistant flags upgrades Cursor and GitHub
+Copilot only. Use `--all` or `--claude` when you want Claude Code files.
 
 Upgrade only Cursor prompts:
 
@@ -108,7 +119,7 @@ After upgrade, review:
 
 - assistant prompts if your team customized `.cursor/commands/`, `.github/prompts/`, or `.claude/commands/`
 - `.github/copilot-instructions.md` if your project had custom Copilot rules
-- `CLAUDE.md` if your project had custom Claude Code rules
+- `CLAUDE.md` if the upgrade created it for the first time
 - playbooks if your team edited `agent-context/playbooks/`
 - SDLC-SPDD docs if your team edited `docs/sdlc-spdd/`
 - backup folder for any local framework changes worth reapplying

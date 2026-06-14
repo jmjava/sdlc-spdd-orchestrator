@@ -153,7 +153,7 @@ Use these boundaries:
 | `.github/prompts/` | framework-owned Copilot prompts; update through upgrade script |
 | `.github/copilot-instructions.md` | framework-owned Copilot instructions; update through upgrade script |
 | `.claude/commands/` | framework-owned Claude Code commands; update through upgrade script |
-| `CLAUDE.md` | framework-owned Claude Code project memory; update through upgrade script |
+| `CLAUDE.md` | project-owned Claude Code memory; SDLC-SPDD manages only the marked grounding block |
 | `scripts/sdlc-spdd/` | framework-owned runtime scripts; update through upgrade script |
 | `agent-context/playbooks/` | team workflow guidance; safe place for team process notes |
 | `agent-context/memory/` | durable project knowledge; preserve and append |

@@ -22,7 +22,8 @@ Options:
   --dry-run         Show actions without writing files
   --help            Print this help message
 
-If no assistant flag is provided, --all is assumed.
+If no assistant flag is provided, Cursor and Copilot are installed for backward
+compatibility. Use --all to include Claude Code.
 EOF
 }
 
@@ -86,7 +87,6 @@ fi
 if [[ "${INSTALL_CURSOR}" -eq 0 && "${INSTALL_COPILOT}" -eq 0 && "${INSTALL_CLAUDE}" -eq 0 ]]; then
   INSTALL_CURSOR=1
   INSTALL_COPILOT=1
-  INSTALL_CLAUDE=1
 fi
 
 init_args=(--target "${TARGET}")

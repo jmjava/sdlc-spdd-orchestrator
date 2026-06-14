@@ -35,7 +35,10 @@ Run this from the SDLC-SPDD orchestrator repository:
 
 Equivalent explicit setup:
 
-    ./scripts/init-project.sh --target /path/to/app --cursor --copilot
+    ./scripts/init-project.sh --target /path/to/app --cursor --copilot --claude
+
+For backward compatibility, omitting assistant flags installs Cursor and
+GitHub Copilot only. Use `--all` or `--claude` to include Claude Code.
 
 The target app receives:
 
@@ -57,6 +60,8 @@ The target app receives:
 - `.cursor/commands/`
 - `.github/copilot-instructions.md`
 - `.github/prompts/`
+- `CLAUDE.md` when missing
+- `.claude/commands/`
 - `scripts/sdlc-spdd/` runtime session scripts
 
 ## Upgrade an Older Installation
@@ -69,7 +74,7 @@ Preview first:
 
     ./scripts/upgrade-project.sh --target /path/to/app --all --dry-run
 
-The upgrade updates framework-owned prompts, playbooks, harness files, target-local docs under `docs/sdlc-spdd/`, and target-local runtime scripts. It preserves application source, application docs outside `docs/sdlc-spdd/`, requirements, canvases, feature workspaces, reviews, sync logs, and existing memory content.
+The upgrade updates framework-owned prompts, playbooks, harness files, target-local docs under `docs/sdlc-spdd/`, and target-local runtime scripts. It preserves application source, application docs outside `docs/sdlc-spdd/`, requirements, canvases, feature workspaces, reviews, sync logs, existing memory content, existing root `CLAUDE.md`, and target workflow customizations.
 
 ## 2. Start a New Agent Session
 

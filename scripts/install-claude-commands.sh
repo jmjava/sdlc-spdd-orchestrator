@@ -48,7 +48,11 @@ COMMANDS_DEST="${TARGET}/.claude/commands"
 MEMORY_DEST="${TARGET}/CLAUDE.md"
 
 installed=()
+updated=()
 skipped=()
+
+CLAUDE_BEGIN="<!-- BEGIN SDLC-SPDD MANAGED CLAUDE GROUNDING -->"
+CLAUDE_END="<!-- END SDLC-SPDD MANAGED CLAUDE GROUNDING -->"
 
 copy_if_missing() {
   local src="$1"
@@ -62,7 +66,56 @@ copy_if_missing() {
   installed+=("${dest}")
 }
 
-copy_if_missing \
+upsert_claude_memory() {
+  local src="$1"
+  local dest="$2"
+  mkdir -p "$(dirname "${dest}")"
+  if [[ ! -f "${dest}" || "${FORCE}" -eq 1 ]]; then
+    cp "${src}" "${dest}"
+    installed+=("${dest}")
+    return
+  fi
+
+  local tmp
+  tmp="$(mktemp)"
+  awk -v begin="${CLAUDE_BEGIN}" -v end="${CLAUDE_END}" -v src="${src}" '
+    BEGIN {
+      while ((getline line < src) > 0) {
+        block = block line ORS
+      }
+      close(src)
+    }
+    $0 == begin {
+      printf "%s", block
+      in_block = 1
+      replaced = 1
+      next
+    }
+    $0 == end {
+      in_block = 0
+      next
+    }
+    !in_block { print }
+    END {
+      if (!replaced) {
+        if (NR > 0) {
+          print ""
+        }
+        printf "%s", block
+      }
+    }
+  ' "${dest}" > "${tmp}"
+
+  if cmp -s "${tmp}" "${dest}"; then
+    rm -f "${tmp}"
+    skipped+=("${dest}")
+    return
+  fi
+  mv "${tmp}" "${dest}"
+  updated+=("${dest}")
+}
+
+upsert_claude_memory \
   "${REPO_ROOT}/templates/claude/CLAUDE.md" \
   "${MEMORY_DEST}"
 
@@ -74,5 +127,7 @@ done
 
 echo "Installed Claude Code files (${#installed[@]}):"
 printf '  %s\n' "${installed[@]:-none}"
+echo "Updated Claude Code files (${#updated[@]}):"
+printf '  %s\n' "${updated[@]:-none}"
 echo "Skipped existing (${#skipped[@]}):"
 printf '  %s\n' "${skipped[@]:-none}"

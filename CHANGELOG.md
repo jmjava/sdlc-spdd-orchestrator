@@ -16,7 +16,9 @@ All notable changes to this project will be documented in this file.
 - Whole-ecosystem grounding norm enforced in CI: `validate-command-adapters.sh`
   asserts every assistant's always-on grounding file covers Planning + SPDD + SDLC
 - Adapter install/upgrade regression harness (`tests/test-adapter-install.sh`) and
-  `test-adapter-install` CI workflow proving Cursor/Copilot are not regressed
+  `test-adapter-install` CI workflow proving Cursor/Copilot are not regressed,
+  no-flag defaults remain backward compatible, and existing `CLAUDE.md` content
+  is preserved on upgrade
 - Initial repository structure per STARTER-SPEC.md
 - REASONS Canvas templates (feature, bugfix, refactor, spike)
 - Eight Cursor command templates for SDLC-SPDD lifecycle

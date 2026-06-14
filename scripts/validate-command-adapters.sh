@@ -187,7 +187,7 @@ grounding_path_for() {
 # Shared anchors every grounding file must contain so all assistants understand
 # the full ecosystem: the lifecycle, the operating model + work rules sections,
 # and the Planning (roadmap/milestones/session-notes), SPDD (canvas), and SDLC
-# (memory) artifacts.
+# (session briefs and memory) artifacts.
 grounding_anchors=(
   "Initialize -> Plan -> Architect -> Code -> Review -> Retro -> Sync"
   "## Operating Model"
@@ -196,6 +196,7 @@ grounding_anchors=(
   "milestone-*.md"
   "session-notes/"
   "spdd/canvas/"
+  "agent-context/sessions/"
   "agent-context/memory/"
 )
 

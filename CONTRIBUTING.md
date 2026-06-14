@@ -59,8 +59,9 @@ not just `/sdlc-spdd-*` command runs — is grounded in the full ecosystem
 When you add a new assistant or edit these files, keep the shared operating-model
 anchors (lifecycle line, `## Operating Model`, `## Work Rules`) and the Planning
 (`ROADMAP.md`, `milestone-*.md`, `session-notes/`), SPDD (`spdd/canvas/`), and
-SDLC (`agent-context/memory/`) artifacts. `validate-command-adapters.sh` enforces
-this in CI; run `./tests/test-adapter-install.sh` before pushing.
+SDLC (`agent-context/sessions/`, `agent-context/memory/`) artifacts.
+`validate-command-adapters.sh` enforces this in CI; run
+`./tests/test-adapter-install.sh` before pushing.
 
 ## Documentation Consistency Checklist
 

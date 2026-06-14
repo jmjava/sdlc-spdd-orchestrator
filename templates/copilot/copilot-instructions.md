@@ -20,6 +20,7 @@ Preserve context by reading relevant artifacts before answering:
 - `ROADMAP.md`
 - `milestone-*.md`
 - `session-notes/`
+- `agent-context/sessions/`
 - `agent-context/memory/`
 - `agent-context/features/`
 - `agent-context/harness/`

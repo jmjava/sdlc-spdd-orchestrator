@@ -7,6 +7,7 @@ on:
       - 'templates/cursor/**'
       - 'templates/copilot/**'
       - 'templates/claude/**'
+      - 'templates/project-github-workflows/validate-sdlc-spdd-adapters.yml'
       - 'tests/test-adapter-install.sh'
       - '.github/workflows/test-adapter-install.yml'
   push:
@@ -16,6 +17,7 @@ on:
       - 'templates/cursor/**'
       - 'templates/copilot/**'
       - 'templates/claude/**'
+      - 'templates/project-github-workflows/validate-sdlc-spdd-adapters.yml'
       - 'tests/test-adapter-install.sh'
       - '.github/workflows/test-adapter-install.yml'
 
@@ -24,6 +26,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Check shell syntax
+        run: bash -n scripts/*.sh tests/test-adapter-install.sh
 
       - name: Run adapter install/upgrade/validation regression tests
         run: ./tests/test-adapter-install.sh

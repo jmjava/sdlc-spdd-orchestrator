@@ -32,7 +32,8 @@ Options:
   --no-backup       Do not back up overwritten framework files
   --help            Print this help message
 
-If no assistant flag is provided, --all is assumed.
+If no assistant flag is provided, Cursor and Copilot are upgraded for backward
+compatibility. Use --all to include Claude Code.
 EOF
 }
 
@@ -96,7 +97,6 @@ fi
 if [[ "${UPGRADE_CURSOR}" -eq 0 && "${UPGRADE_COPILOT}" -eq 0 && "${UPGRADE_CLAUDE}" -eq 0 ]]; then
   UPGRADE_CURSOR=1
   UPGRADE_COPILOT=1
-  UPGRADE_CLAUDE=1
 fi
 
 TARGET="$(cd "${TARGET}" && pwd)"
@@ -108,6 +108,9 @@ updated=()
 unchanged=()
 backed_up=()
 preserved=()
+
+CLAUDE_BEGIN="<!-- BEGIN SDLC-SPDD MANAGED CLAUDE GROUNDING -->"
+CLAUDE_END="<!-- END SDLC-SPDD MANAGED CLAUDE GROUNDING -->"
 
 ensure_dir() {
   local dir="$1"
@@ -203,6 +206,83 @@ create_missing_memory_file() {
     cp "${src}" "${dest}"
   fi
   created+=("${dest}")
+}
+
+create_missing_framework_file() {
+  local src="$1"
+  local dest="$2"
+  local label="$3"
+  ensure_dir "$(dirname "${dest}")"
+  if [[ -f "${dest}" ]]; then
+    preserved+=("${dest}")
+    return
+  fi
+  if [[ "${DRY_RUN}" -eq 1 ]]; then
+    echo "[dry-run] would create missing ${label} ${dest}"
+  else
+    cp "${src}" "${dest}"
+  fi
+  created+=("${dest}")
+}
+
+upsert_claude_memory() {
+  local src="$1"
+  local dest="$2"
+  ensure_dir "$(dirname "${dest}")"
+  if [[ ! -f "${dest}" ]]; then
+    if [[ "${DRY_RUN}" -eq 1 ]]; then
+      echo "[dry-run] would create missing Claude Code memory file ${dest}"
+    else
+      cp "${src}" "${dest}"
+    fi
+    created+=("${dest}")
+    return
+  fi
+
+  local tmp
+  tmp="$(mktemp)"
+  awk -v begin="${CLAUDE_BEGIN}" -v end="${CLAUDE_END}" -v src="${src}" '
+    BEGIN {
+      while ((getline line < src) > 0) {
+        block = block line ORS
+      }
+      close(src)
+    }
+    $0 == begin {
+      printf "%s", block
+      in_block = 1
+      replaced = 1
+      next
+    }
+    $0 == end {
+      in_block = 0
+      next
+    }
+    !in_block { print }
+    END {
+      if (!replaced) {
+        if (NR > 0) {
+          print ""
+        }
+        printf "%s", block
+      }
+    }
+  ' "${dest}" > "${tmp}"
+
+  if cmp -s "${tmp}" "${dest}"; then
+    rm -f "${tmp}"
+    unchanged+=("${dest}")
+    return
+  fi
+
+  backup_existing "${dest}"
+  if [[ "${DRY_RUN}" -eq 1 ]]; then
+    echo "[dry-run] would update managed SDLC-SPDD Claude grounding block in ${dest}"
+    rm -f "${tmp}"
+  else
+    mv "${tmp}" "${dest}"
+  fi
+  updated+=("${dest}")
 }
 
 # Directories required by the current framework. Existing application files are
@@ -306,12 +386,12 @@ copy_framework_file \
   "${TARGET}/docs/sdlc-spdd/README.md"
 
 if [[ "${UPGRADE_CURSOR}" -eq 1 && "${UPGRADE_COPILOT}" -eq 1 ]]; then
-  # Framework-owned target CI workflow for command adapter parity. Refresh it
-  # (with backup) like other framework files so upgraded targets pick up new
-  # path triggers, e.g. when Claude Code command paths are added.
-  copy_framework_file \
+  # Preserve target CI customizations; create the framework workflow only when
+  # it is missing.
+  create_missing_framework_file \
     "${REPO_ROOT}/templates/project-github-workflows/validate-sdlc-spdd-adapters.yml" \
-    "${TARGET}/.github/workflows/validate-sdlc-spdd-adapters.yml"
+    "${TARGET}/.github/workflows/validate-sdlc-spdd-adapters.yml" \
+    "adapter parity workflow"
 fi
 
 # Target-local runtime scripts are framework-owned and safe to upgrade.
@@ -359,7 +439,7 @@ if [[ "${UPGRADE_COPILOT}" -eq 1 ]]; then
 fi
 
 if [[ "${UPGRADE_CLAUDE}" -eq 1 ]]; then
-  copy_framework_file \
+  upsert_claude_memory \
     "${REPO_ROOT}/templates/claude/CLAUDE.md" \
     "${TARGET}/CLAUDE.md"
 
@@ -368,6 +448,29 @@ if [[ "${UPGRADE_CLAUDE}" -eq 1 ]]; then
       "${src}" \
       "${TARGET}/.claude/commands/$(basename "${src}")"
   done
+fi
+
+# The target-local adapter validator is upgraded with runtime scripts above.
+# Create any missing always-on grounding file for adapter packs already present
+# so partial upgrades do not strand existing clients with a stricter validator.
+if [[ "${UPGRADE_CURSOR}" -eq 0 && -d "${TARGET}/.cursor/commands" ]]; then
+  create_missing_framework_file \
+    "${REPO_ROOT}/templates/cursor/rules/sdlc-spdd.mdc" \
+    "${TARGET}/.cursor/rules/sdlc-spdd.mdc" \
+    "Cursor operating-model rule"
+fi
+
+if [[ "${UPGRADE_COPILOT}" -eq 0 && -d "${TARGET}/.github/prompts" ]]; then
+  create_missing_framework_file \
+    "${REPO_ROOT}/templates/copilot/copilot-instructions.md" \
+    "${TARGET}/.github/copilot-instructions.md" \
+    "GitHub Copilot instructions"
+fi
+
+if [[ "${UPGRADE_CLAUDE}" -eq 0 && -d "${TARGET}/.claude/commands" ]]; then
+  upsert_claude_memory \
+    "${REPO_ROOT}/templates/claude/CLAUDE.md" \
+    "${TARGET}/CLAUDE.md"
 fi
 
 echo "SDLC-SPDD framework upgrade complete for: ${TARGET}"
