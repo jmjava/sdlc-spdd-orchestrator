@@ -338,6 +338,12 @@ if [[ "${UPGRADE_CURSOR}" -eq 1 ]]; then
       "${src}" \
       "${TARGET}/.cursor/commands/$(basename "${src}")"
   done
+
+  for src in "${REPO_ROOT}"/templates/cursor/rules/*.mdc; do
+    copy_framework_file \
+      "${src}" \
+      "${TARGET}/.cursor/rules/$(basename "${src}")"
+  done
 fi
 
 if [[ "${UPGRADE_COPILOT}" -eq 1 ]]; then

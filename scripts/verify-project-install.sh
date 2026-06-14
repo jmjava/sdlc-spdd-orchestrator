@@ -178,7 +178,8 @@ fi
 if [[ "${REQUIRE_CURSOR}" -eq 1 ]]; then
   run_part "Cursor adapter" \
     Cursor "plan command" ".cursor/commands/sdlc-spdd-plan.md" file \
-    Cursor "init command" ".cursor/commands/sdlc-spdd-init.md" file
+    Cursor "init command" ".cursor/commands/sdlc-spdd-init.md" file \
+    Cursor "operating-model rule" ".cursor/rules/sdlc-spdd.mdc" file
 fi
 
 if [[ "${REQUIRE_COPILOT}" -eq 1 ]]; then

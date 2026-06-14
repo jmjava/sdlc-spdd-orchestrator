@@ -8,7 +8,8 @@ usage() {
   cat <<'EOF'
 Usage: install-cursor-commands.sh --target <path> [--force]
 
-Install SDLC-SPDD Cursor command templates into .cursor/commands/.
+Install SDLC-SPDD Cursor command templates into .cursor/commands/ and the
+always-on operating-model rule into .cursor/rules/.
 EOF
 }
 
@@ -44,7 +45,9 @@ fi
 
 TARGET="$(cd "${TARGET}" && pwd)"
 DEST="${TARGET}/.cursor/commands"
+RULES_DEST="${TARGET}/.cursor/rules"
 mkdir -p "${DEST}"
+mkdir -p "${RULES_DEST}"
 
 installed=()
 skipped=()
@@ -60,7 +63,18 @@ for src in "${REPO_ROOT}"/templates/cursor/*.md; do
   installed+=("${out}")
 done
 
-echo "Installed Cursor commands (${#installed[@]}):"
+for src in "${REPO_ROOT}"/templates/cursor/rules/*.mdc; do
+  base="$(basename "${src}")"
+  out="${RULES_DEST}/${base}"
+  if [[ -f "${out}" && "${FORCE}" -eq 0 ]]; then
+    skipped+=("${out}")
+    continue
+  fi
+  cp "${src}" "${out}"
+  installed+=("${out}")
+done
+
+echo "Installed Cursor commands and rules (${#installed[@]}):"
 printf '  %s\n' "${installed[@]:-none}"
 echo "Skipped (${#skipped[@]}):"
 printf '  %s\n' "${skipped[@]:-none}"
