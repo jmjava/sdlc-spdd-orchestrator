@@ -36,8 +36,27 @@ Copilot, Claude Code) into throwaway target directories and asserts:
 - `validate-command-adapters.sh` still **fails** when a Cursor/Copilot guardrail
   is removed, a Required-Behavior step count diverges, or a command file is
   missing (negative tests).
+- every assistant's always-on grounding file exists and covers the whole
+  ecosystem; validation **fails** if Planning (`session-notes/`), SPDD
+  (`spdd/canvas/`), or the Cursor grounding rule is dropped (negative tests).
 
 Run it locally before changing any install/upgrade script or command template.
+
+### Whole-ecosystem grounding norm (enforced)
+
+Every supported assistant must ship an **always-on grounding file** that loads on
+every interaction (not only when a `/sdlc-spdd-*` command runs):
+
+- Cursor: `.cursor/rules/sdlc-spdd.mdc` (`alwaysApply: true`)
+- GitHub Copilot: `.github/copilot-instructions.md`
+- Claude Code: `CLAUDE.md`
+
+`validate-command-adapters.sh` asserts each present grounding file contains the
+shared operating-model anchors (the lifecycle line, `## Operating Model`,
+`## Work Rules`) and the Planning + SPDD + SDLC artifacts (`ROADMAP.md`,
+`milestone-*.md`, `session-notes/`, `spdd/canvas/`, `agent-context/memory/`).
+This makes whole-ecosystem awareness the norm for all work across every assistant
+— and runs in CI both here and inside installed target projects.
 
 In installed target projects (when both Cursor + Copilot adapters are installed):
 

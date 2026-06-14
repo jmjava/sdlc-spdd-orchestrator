@@ -163,6 +163,52 @@ check_pack() {
   fi
 }
 
+# Always-on grounding file for each assistant: the file an assistant loads on
+# every interaction (not just when a command runs). This is what guarantees the
+# whole-ecosystem norm — Planning + SPDD + SDLC — for all work, regardless of
+# which command (if any) is invoked.
+grounding_path_for() {
+  local asst="$1"
+  if [[ "${MODE}" == "orchestrator-templates" ]]; then
+    case "${asst}" in
+      cursor)  echo "${TARGET}/templates/cursor/rules/sdlc-spdd.mdc" ;;
+      copilot) echo "${TARGET}/templates/copilot/copilot-instructions.md" ;;
+      claude)  echo "${TARGET}/templates/claude/CLAUDE.md" ;;
+    esac
+  else
+    case "${asst}" in
+      cursor)  echo "${TARGET}/.cursor/rules/sdlc-spdd.mdc" ;;
+      copilot) echo "${TARGET}/.github/copilot-instructions.md" ;;
+      claude)  echo "${TARGET}/CLAUDE.md" ;;
+    esac
+  fi
+}
+
+# Shared anchors every grounding file must contain so all assistants understand
+# the full ecosystem: the lifecycle, the operating model + work rules sections,
+# and the Planning (roadmap/milestones/session-notes), SPDD (canvas), and SDLC
+# (memory) artifacts.
+grounding_anchors=(
+  "Initialize -> Plan -> Architect -> Code -> Review -> Retro -> Sync"
+  "## Operating Model"
+  "## Work Rules"
+  "ROADMAP.md"
+  "milestone-*.md"
+  "session-notes/"
+  "spdd/canvas/"
+  "agent-context/memory/"
+)
+
+check_grounding() {
+  local asst="$1"
+  local path="$2"
+  require_file "${path}" || return 0
+  local anchor
+  for anchor in "${grounding_anchors[@]}"; do
+    require_contains "${path}" "${anchor}" "${asst} grounding anchor '${anchor}'"
+  done
+}
+
 for cmd in "${commands[@]}"; do
   # Build the list of present adapter packs for this command. Each pack is
   # required only when its root exists, and cross-pack parity is compared over
@@ -206,6 +252,11 @@ for cmd in "${commands[@]}"; do
     failures=$((failures + 1))
   fi
 done
+
+echo "Validating always-on grounding files (whole-ecosystem norm)..."
+if [[ "${HAS_CURSOR}" -eq 1 ]];  then check_grounding cursor  "$(grounding_path_for cursor)";  fi
+if [[ "${HAS_COPILOT}" -eq 1 ]]; then check_grounding copilot "$(grounding_path_for copilot)"; fi
+if [[ "${HAS_CLAUDE}" -eq 1 ]];  then check_grounding claude  "$(grounding_path_for claude)";  fi
 
 if [[ "${failures}" -gt 0 ]]; then
   echo

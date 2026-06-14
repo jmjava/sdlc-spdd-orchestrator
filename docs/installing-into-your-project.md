@@ -36,6 +36,7 @@ This installs:
 - `agent-context/harness/`
 - `docs/sdlc-spdd/` (start at `docs/sdlc-spdd/README.md` — lean hub for this project)
 - `.cursor/commands/`
+- `.cursor/rules/sdlc-spdd.mdc` (always-on Cursor operating-model rule)
 - `.github/copilot-instructions.md`
 - `.github/prompts/`
 - `CLAUDE.md`
@@ -159,7 +160,9 @@ Exit code `0` means the install is complete. Non-zero lists missing items and su
 Avoid hand-editing generated framework prompt files unless you intend to keep local customizations:
 
 - `.cursor/commands/sdlc-spdd-*.md`
+- `.cursor/rules/sdlc-spdd.mdc`
 - `.github/prompts/sdlc-spdd-*.prompt.md`
+- `.github/copilot-instructions.md`
 - `.claude/commands/sdlc-spdd-*.md`
 - `CLAUDE.md`
 - `scripts/sdlc-spdd/*.sh`

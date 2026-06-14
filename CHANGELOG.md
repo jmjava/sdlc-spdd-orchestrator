@@ -10,6 +10,13 @@ All notable changes to this project will be documented in this file.
   and `CLAUDE.md`, `scripts/install-claude-commands.sh`, `--claude` flags on
   setup/init/upgrade, `--require-claude` install verification, Claude command-pack
   parity validation, CI path coverage, and `docs/claude-usage.md`
+- Always-on Cursor operating-model rule (`templates/cursor/rules/sdlc-spdd.mdc`,
+  installed to `.cursor/rules/`) giving Cursor the same whole-ecosystem grounding
+  as Copilot's `copilot-instructions.md` and Claude's `CLAUDE.md`
+- Whole-ecosystem grounding norm enforced in CI: `validate-command-adapters.sh`
+  asserts every assistant's always-on grounding file covers Planning + SPDD + SDLC
+- Adapter install/upgrade regression harness (`tests/test-adapter-install.sh`) and
+  `test-adapter-install` CI workflow proving Cursor/Copilot are not regressed
 - Initial repository structure per STARTER-SPEC.md
 - REASONS Canvas templates (feature, bugfix, refactor, spike)
 - Eight Cursor command templates for SDLC-SPDD lifecycle

@@ -136,6 +136,7 @@ Install the complete system into a target project:
 This installs:
 
 - Cursor commands, GitHub Copilot prompt files, and Claude Code commands.
+- Always-on operating-model grounding for each assistant: `.cursor/rules/sdlc-spdd.mdc`, `.github/copilot-instructions.md`, and `CLAUDE.md`.
 - target-local runtime scripts under `scripts/sdlc-spdd/`.
 - local SDLC-SPDD docs under `docs/sdlc-spdd/`.
 - planning scaffolding: `ROADMAP.md`, `milestone-1.md`, and `session-notes/` when missing.

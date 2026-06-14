@@ -24,6 +24,7 @@ It does not overwrite:
 It can update:
 
 - `.cursor/commands/sdlc-spdd-*.md`
+- `.cursor/rules/sdlc-spdd.mdc`
 - `.github/copilot-instructions.md`
 - `.github/prompts/sdlc-spdd-*.prompt.md`
 - `CLAUDE.md`

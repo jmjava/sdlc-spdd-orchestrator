@@ -62,6 +62,9 @@ assert_cursor_pack() {
     assert_file "${t}/.cursor/commands/sdlc-spdd-${c}.md"
     assert_same "${t}/.cursor/commands/sdlc-spdd-${c}.md" "${CURSOR_TPL}/sdlc-spdd-${c}.md"
   done
+  # Always-on operating-model rule (whole-ecosystem grounding).
+  assert_file "${t}/.cursor/rules/sdlc-spdd.mdc"
+  assert_same "${t}/.cursor/rules/sdlc-spdd.mdc" "${CURSOR_TPL}/rules/sdlc-spdd.mdc"
 }
 
 assert_copilot_pack() {
@@ -183,6 +186,32 @@ mv "${WORK}/clsync.bak" "${T}/.claude/commands/sdlc-spdd-sync.md"
 
 # 7f: confirm restored state validates again
 expect_pass "validate after restore" "${VALIDATE}" --target "${T}"
+
+# ---------------------------------------------------------------------------
+echo "== Test 8: Grounding files enforce the whole-ecosystem norm =="
+T="${WORK}/grd"; mkdir -p "${T}"
+"${SETUP}" --target "${T}" --all >/dev/null 2>&1
+expect_pass "baseline validate (grounding present)" "${VALIDATE}" --target "${T}"
+
+# 8a: strip the Planning (session-notes) artifact from the Claude grounding file
+cp "${T}/CLAUDE.md" "${WORK}/claude-md.bak"
+grep -Fv 'session-notes/' "${WORK}/claude-md.bak" > "${T}/CLAUDE.md"
+expect_fail "validate after dropping session-notes from CLAUDE.md" "${VALIDATE}" --target "${T}"
+cp "${WORK}/claude-md.bak" "${T}/CLAUDE.md"
+
+# 8b: strip the SPDD (canvas) artifact from the Copilot grounding file
+cp "${T}/.github/copilot-instructions.md" "${WORK}/copilot-inst.bak"
+grep -Fv 'spdd/canvas/' "${WORK}/copilot-inst.bak" > "${T}/.github/copilot-instructions.md"
+expect_fail "validate after dropping spdd/canvas from copilot-instructions.md" "${VALIDATE}" --target "${T}"
+cp "${WORK}/copilot-inst.bak" "${T}/.github/copilot-instructions.md"
+
+# 8c: remove the Cursor grounding rule entirely
+mv "${T}/.cursor/rules/sdlc-spdd.mdc" "${WORK}/cursor-rule.bak"
+expect_fail "validate after removing Cursor grounding rule" "${VALIDATE}" --target "${T}"
+mv "${WORK}/cursor-rule.bak" "${T}/.cursor/rules/sdlc-spdd.mdc"
+
+# 8d: confirm restored state validates again
+expect_pass "validate after grounding restore" "${VALIDATE}" --target "${T}"
 
 # ---------------------------------------------------------------------------
 echo

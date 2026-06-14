@@ -149,6 +149,7 @@ Use these boundaries:
 | Path | Maintenance rule |
 |------|------------------|
 | `.cursor/commands/` | framework-owned Cursor prompts; update through upgrade script |
+| `.cursor/rules/sdlc-spdd.mdc` | framework-owned always-on Cursor operating-model rule; update through upgrade script |
 | `.github/prompts/` | framework-owned Copilot prompts; update through upgrade script |
 | `.github/copilot-instructions.md` | framework-owned Copilot instructions; update through upgrade script |
 | `.claude/commands/` | framework-owned Claude Code commands; update through upgrade script |
