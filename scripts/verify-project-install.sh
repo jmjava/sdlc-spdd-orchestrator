@@ -3,7 +3,7 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: verify-project-install.sh [--target <path>] [--require-cursor] [--require-copilot]
+Usage: verify-project-install.sh [--target <path>] [--require-cursor] [--require-copilot] [--require-claude]
 
 Verify that a target project has the SDLC-SPDD three-part scaffold installed.
 
@@ -14,6 +14,7 @@ Options:
   --target <path>       Target project path (default: .)
   --require-cursor      Fail if Cursor commands are missing
   --require-copilot     Fail if GitHub Copilot prompt files are missing
+  --require-claude      Fail if Claude Code commands are missing
   --help                Print this help message
 
 Examples:
@@ -30,6 +31,7 @@ EOF
 TARGET="."
 REQUIRE_CURSOR=0
 REQUIRE_COPILOT=0
+REQUIRE_CLAUDE=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -43,6 +45,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --require-copilot)
       REQUIRE_COPILOT=1
+      shift
+      ;;
+    --require-claude)
+      REQUIRE_CLAUDE=1
       shift
       ;;
     --help|-h)
@@ -179,6 +185,13 @@ if [[ "${REQUIRE_COPILOT}" -eq 1 ]]; then
   run_part "GitHub Copilot adapter" \
     Copilot "copilot instructions" ".github/copilot-instructions.md" file \
     Copilot "plan prompt" ".github/prompts/sdlc-spdd-plan.prompt.md" file
+fi
+
+if [[ "${REQUIRE_CLAUDE}" -eq 1 ]]; then
+  run_part "Claude Code adapter" \
+    Claude "claude memory" "CLAUDE.md" file \
+    Claude "init command" ".claude/commands/sdlc-spdd-init.md" file \
+    Claude "plan command" ".claude/commands/sdlc-spdd-plan.md" file
 fi
 
 echo "Summary: $((checks - failures))/${checks} checks passed"

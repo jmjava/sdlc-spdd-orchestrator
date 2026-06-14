@@ -6,7 +6,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 usage() {
   cat <<'EOF'
-Usage: upgrade-project.sh --target <path> [--cursor] [--copilot] [--all] [--dry-run] [--no-backup]
+Usage: upgrade-project.sh --target <path> [--cursor] [--copilot] [--claude] [--all] [--dry-run] [--no-backup]
 
 Upgrade SDLC-SPDD framework files in a target project that was initialized by
 an earlier version of this scaffold.
@@ -26,6 +26,7 @@ Options:
   --target <path>   Target project path (required)
   --cursor          Upgrade Cursor command prompts
   --copilot         Upgrade GitHub Copilot instructions and prompt files
+  --claude          Upgrade Claude Code commands and CLAUDE.md
   --all             Upgrade all supported assistant prompt adapters
   --dry-run         Show actions without writing files
   --no-backup       Do not back up overwritten framework files
@@ -38,6 +39,7 @@ EOF
 TARGET=""
 UPGRADE_CURSOR=0
 UPGRADE_COPILOT=0
+UPGRADE_CLAUDE=0
 DRY_RUN=0
 BACKUP=1
 
@@ -55,9 +57,14 @@ while [[ $# -gt 0 ]]; do
       UPGRADE_COPILOT=1
       shift
       ;;
+    --claude)
+      UPGRADE_CLAUDE=1
+      shift
+      ;;
     --all)
       UPGRADE_CURSOR=1
       UPGRADE_COPILOT=1
+      UPGRADE_CLAUDE=1
       shift
       ;;
     --dry-run)
@@ -86,9 +93,10 @@ if [[ -z "${TARGET}" ]]; then
   exit 1
 fi
 
-if [[ "${UPGRADE_CURSOR}" -eq 0 && "${UPGRADE_COPILOT}" -eq 0 ]]; then
+if [[ "${UPGRADE_CURSOR}" -eq 0 && "${UPGRADE_COPILOT}" -eq 0 && "${UPGRADE_CLAUDE}" -eq 0 ]]; then
   UPGRADE_CURSOR=1
   UPGRADE_COPILOT=1
+  UPGRADE_CLAUDE=1
 fi
 
 TARGET="$(cd "${TARGET}" && pwd)"
@@ -346,6 +354,18 @@ if [[ "${UPGRADE_COPILOT}" -eq 1 ]]; then
   done
 fi
 
+if [[ "${UPGRADE_CLAUDE}" -eq 1 ]]; then
+  copy_framework_file \
+    "${REPO_ROOT}/templates/claude/CLAUDE.md" \
+    "${TARGET}/CLAUDE.md"
+
+  for src in "${REPO_ROOT}"/templates/claude/commands/*.md; do
+    copy_framework_file \
+      "${src}" \
+      "${TARGET}/.claude/commands/$(basename "${src}")"
+  done
+fi
+
 echo "SDLC-SPDD framework upgrade complete for: ${TARGET}"
 echo "Created (${#created[@]}):"
 printf '  %s\n' "${created[@]:-none}"
@@ -367,6 +387,9 @@ if [[ "${UPGRADE_CURSOR}" -eq 1 ]]; then
 fi
 if [[ "${UPGRADE_COPILOT}" -eq 1 ]]; then
   verify_args+=(--require-copilot)
+fi
+if [[ "${UPGRADE_CLAUDE}" -eq 1 ]]; then
+  verify_args+=(--require-claude)
 fi
 if [[ "${DRY_RUN}" -eq 0 ]]; then
   echo "Running install verification..."

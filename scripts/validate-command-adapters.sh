@@ -5,11 +5,15 @@ usage() {
   cat <<'EOF'
 Usage: validate-command-adapters.sh [--target <path>]
 
-Validate Cursor + Copilot command-pack parity.
+Validate Cursor + Copilot + Claude command-pack parity.
+
+The Claude pack is validated when present (always in the orchestrator repo, and
+in installed targets that opted into Claude Code).
 
 Works in two contexts:
   1) Orchestrator repo (default): compares templates under templates/
-  2) Installed target app: compares .cursor/commands and .github/prompts
+  2) Installed target app: compares .cursor/commands, .github/prompts, and
+     .claude/commands
 
 Examples:
   ./scripts/validate-command-adapters.sh
@@ -56,15 +60,23 @@ detect_roots() {
   if [[ -d "${TARGET}/templates/cursor" && -d "${TARGET}/templates/copilot/prompts" ]]; then
     CURSOR_ROOT="${TARGET}/templates/cursor"
     COPILOT_ROOT="${TARGET}/templates/copilot/prompts"
+    CLAUDE_ROOT="${TARGET}/templates/claude/commands"
     MODE="orchestrator-templates"
   elif [[ -d "${TARGET}/.cursor/commands" && -d "${TARGET}/.github/prompts" ]]; then
     CURSOR_ROOT="${TARGET}/.cursor/commands"
     COPILOT_ROOT="${TARGET}/.github/prompts"
+    CLAUDE_ROOT="${TARGET}/.claude/commands"
     MODE="installed-target"
   else
     echo "Could not find command packs in ${TARGET}." >&2
     echo "Need either templates/ (orchestrator) or .cursor/.github prompt dirs (target)." >&2
     exit 1
+  fi
+
+  # The Claude pack is optional in installed targets; validate it only when present.
+  HAS_CLAUDE=0
+  if [[ -d "${CLAUDE_ROOT}" ]]; then
+    HAS_CLAUDE=1
   fi
 }
 
@@ -76,6 +88,11 @@ cursor_path_for() {
 copilot_path_for() {
   local cmd="$1"
   echo "${COPILOT_ROOT}/sdlc-spdd-${cmd}.prompt.md"
+}
+
+claude_path_for() {
+  local cmd="$1"
+  echo "${CLAUDE_ROOT}/sdlc-spdd-${cmd}.md"
 }
 
 require_file() {
@@ -112,43 +129,55 @@ count_required_steps() {
 }
 
 detect_roots
-echo "Validating adapter command packs (Cursor + Copilot)..."
+if [[ "${HAS_CLAUDE}" -eq 1 ]]; then
+  echo "Validating adapter command packs (Cursor + Copilot + Claude)..."
+else
+  echo "Validating adapter command packs (Cursor + Copilot)..."
+fi
 echo "Mode: ${MODE}"
 echo "Cursor root: ${CURSOR_ROOT}"
 echo "Copilot root: ${COPILOT_ROOT}"
+if [[ "${HAS_CLAUDE}" -eq 1 ]]; then
+  echo "Claude root: ${CLAUDE_ROOT}"
+fi
+
+check_pack() {
+  # Verify required sections and the per-command guardrail in one pack file.
+  local cmd="$1"
+  local path="$2"
+
+  require_contains "${path}" "## Required Behavior" "Required Behavior section"
+  require_contains "${path}" "## Output" "Output section"
+
+  if [[ "${cmd}" == "init" || "${cmd}" == "prompt-update" ]]; then
+    require_contains "${path}" "Do not modify application source code." "source-code guardrail"
+  elif [[ "${cmd}" == "code" ]]; then
+    require_contains "${path}" "Implement only that task." "single-operation scope guardrail"
+  elif [[ "${cmd}" == "review" ]]; then
+    require_contains "${path}" "Do not make code changes unless explicitly asked." "review guardrail"
+  elif [[ "${cmd}" == "sync" ]]; then
+    require_contains "${path}" "Do not implement code unless explicitly asked." "sync guardrail"
+  else
+    require_contains "${path}" "Do not implement code" "no-code guardrail"
+  fi
+}
 
 for cmd in "${commands[@]}"; do
   cursor="$(cursor_path_for "${cmd}")"
   copilot="$(copilot_path_for "${cmd}")"
+  claude="$(claude_path_for "${cmd}")"
 
   require_file "${cursor}" || true
   require_file "${copilot}" || true
+  if [[ "${HAS_CLAUDE}" -eq 1 ]]; then
+    require_file "${claude}" || true
+  fi
 
   [[ -f "${cursor}" ]] || continue
   [[ -f "${copilot}" ]] || continue
 
-  require_contains "${cursor}" "## Required Behavior" "Required Behavior section"
-  require_contains "${copilot}" "## Required Behavior" "Required Behavior section"
-  require_contains "${cursor}" "## Output" "Output section"
-  require_contains "${copilot}" "## Output" "Output section"
-
-  # Guardrail presence (both packs should include equivalent risk controls).
-  if [[ "${cmd}" == "init" || "${cmd}" == "prompt-update" ]]; then
-    require_contains "${cursor}" "Do not modify application source code." "source-code guardrail"
-    require_contains "${copilot}" "Do not modify application source code." "source-code guardrail"
-  elif [[ "${cmd}" == "code" ]]; then
-    require_contains "${cursor}" "Implement only that task." "single-operation scope guardrail"
-    require_contains "${copilot}" "Implement only that task." "single-operation scope guardrail"
-  elif [[ "${cmd}" == "review" ]]; then
-    require_contains "${cursor}" "Do not make code changes unless explicitly asked." "review guardrail"
-    require_contains "${copilot}" "Do not make code changes unless explicitly asked." "review guardrail"
-  elif [[ "${cmd}" == "sync" ]]; then
-    require_contains "${cursor}" "Do not implement code unless explicitly asked." "sync guardrail"
-    require_contains "${copilot}" "Do not implement code unless explicitly asked." "sync guardrail"
-  else
-    require_contains "${cursor}" "Do not implement code" "no-code guardrail"
-    require_contains "${copilot}" "Do not implement code" "no-code guardrail"
-  fi
+  check_pack "${cmd}" "${cursor}"
+  check_pack "${cmd}" "${copilot}"
 
   c_steps="$(count_required_steps "${cursor}")"
   p_steps="$(count_required_steps "${copilot}")"
@@ -156,6 +185,16 @@ for cmd in "${commands[@]}"; do
   if (( diff > 1 )); then
     echo "Required Behavior step count diverges for '${cmd}': cursor=${c_steps}, copilot=${p_steps}" >&2
     failures=$((failures + 1))
+  fi
+
+  if [[ "${HAS_CLAUDE}" -eq 1 && -f "${claude}" ]]; then
+    check_pack "${cmd}" "${claude}"
+    cl_steps="$(count_required_steps "${claude}")"
+    diff_cl=$(( c_steps > cl_steps ? c_steps - cl_steps : cl_steps - c_steps ))
+    if (( diff_cl > 1 )); then
+      echo "Required Behavior step count diverges for '${cmd}': cursor=${c_steps}, claude=${cl_steps}" >&2
+      failures=$((failures + 1))
+    fi
   fi
 done
 

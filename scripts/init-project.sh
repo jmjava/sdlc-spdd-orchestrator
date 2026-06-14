@@ -6,7 +6,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 usage() {
   cat <<'EOF'
-Usage: init-project.sh --target <path> [--cursor] [--copilot] [--force] [--dry-run]
+Usage: init-project.sh --target <path> [--cursor] [--copilot] [--claude] [--force] [--dry-run]
 
 Initialize a target project with SDLC-SPDD scaffold files.
 
@@ -14,6 +14,7 @@ Options:
   --target <path>   Target project path (required)
   --cursor          Install Cursor command templates
   --copilot         Install GitHub Copilot instructions and prompt files
+  --claude          Install Claude Code commands and CLAUDE.md
   --force           Overwrite existing generated files
   --dry-run         Show actions without writing files
   --help            Print this help message
@@ -23,6 +24,7 @@ EOF
 TARGET=""
 INSTALL_CURSOR=0
 INSTALL_COPILOT=0
+INSTALL_CLAUDE=0
 FORCE=0
 DRY_RUN=0
 
@@ -38,6 +40,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --copilot)
       INSTALL_COPILOT=1
+      shift
+      ;;
+    --claude)
+      INSTALL_CLAUDE=1
       shift
       ;;
     --force)
@@ -237,6 +243,14 @@ if [[ "${INSTALL_COPILOT}" -eq 1 ]]; then
   fi
 fi
 
+if [[ "${INSTALL_CLAUDE}" -eq 1 ]]; then
+  if [[ "${DRY_RUN}" -eq 1 ]]; then
+    echo "[dry-run] would install Claude Code commands via install-claude-commands.sh"
+  else
+    "${SCRIPT_DIR}/install-claude-commands.sh" --target "${TARGET}" $([[ "${FORCE}" -eq 1 ]] && echo --force)
+  fi
+fi
+
 if [[ "${DRY_RUN}" -eq 0 ]]; then
   "${SCRIPT_DIR}/detect-stack.sh" --target "${TARGET}" || true
 fi
@@ -256,6 +270,9 @@ if [[ "${INSTALL_CURSOR}" -eq 1 ]]; then
 fi
 if [[ "${INSTALL_COPILOT}" -eq 1 ]]; then
   verify_args+=(--require-copilot)
+fi
+if [[ "${INSTALL_CLAUDE}" -eq 1 ]]; then
+  verify_args+=(--require-claude)
 fi
 if [[ "${DRY_RUN}" -eq 0 ]]; then
   echo "Running install verification..."
