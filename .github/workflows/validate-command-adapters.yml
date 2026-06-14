@@ -5,6 +5,7 @@ on:
     paths:
       - 'templates/cursor/sdlc-spdd-*.md'
       - 'templates/copilot/prompts/sdlc-spdd-*.prompt.md'
+      - 'templates/claude/commands/sdlc-spdd-*.md'
       - 'scripts/validate-command-adapters.sh'
       - '.github/workflows/validate-command-adapters.yml'
   push:
@@ -12,6 +13,7 @@ on:
     paths:
       - 'templates/cursor/sdlc-spdd-*.md'
       - 'templates/copilot/prompts/sdlc-spdd-*.prompt.md'
+      - 'templates/claude/commands/sdlc-spdd-*.md'
       - 'scripts/validate-command-adapters.sh'
       - '.github/workflows/validate-command-adapters.yml'
 
@@ -21,5 +23,5 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Validate Cursor + Copilot template parity
+      - name: Validate Cursor + Copilot + Claude template parity
         run: ./scripts/validate-command-adapters.sh
