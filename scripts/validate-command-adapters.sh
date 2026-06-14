@@ -57,27 +57,30 @@ commands=(
 failures=0
 
 detect_roots() {
-  if [[ -d "${TARGET}/templates/cursor" && -d "${TARGET}/templates/copilot/prompts" ]]; then
+  if [[ -d "${TARGET}/templates/cursor" || -d "${TARGET}/templates/copilot/prompts" || -d "${TARGET}/templates/claude/commands" ]]; then
     CURSOR_ROOT="${TARGET}/templates/cursor"
     COPILOT_ROOT="${TARGET}/templates/copilot/prompts"
     CLAUDE_ROOT="${TARGET}/templates/claude/commands"
     MODE="orchestrator-templates"
-  elif [[ -d "${TARGET}/.cursor/commands" && -d "${TARGET}/.github/prompts" ]]; then
+  elif [[ -d "${TARGET}/.cursor/commands" || -d "${TARGET}/.github/prompts" || -d "${TARGET}/.claude/commands" ]]; then
     CURSOR_ROOT="${TARGET}/.cursor/commands"
     COPILOT_ROOT="${TARGET}/.github/prompts"
     CLAUDE_ROOT="${TARGET}/.claude/commands"
     MODE="installed-target"
   else
     echo "Could not find command packs in ${TARGET}." >&2
-    echo "Need either templates/ (orchestrator) or .cursor/.github prompt dirs (target)." >&2
+    echo "Need templates/ (orchestrator) or .cursor/.github/.claude command dirs (target)." >&2
     exit 1
   fi
 
-  # The Claude pack is optional in installed targets; validate it only when present.
+  # Each adapter pack is validated only when present, so single-assistant
+  # installs (e.g. Claude only) validate cleanly instead of erroring.
+  HAS_CURSOR=0
+  HAS_COPILOT=0
   HAS_CLAUDE=0
-  if [[ -d "${CLAUDE_ROOT}" ]]; then
-    HAS_CLAUDE=1
-  fi
+  if [[ -d "${CURSOR_ROOT}" ]]; then HAS_CURSOR=1; fi
+  if [[ -d "${COPILOT_ROOT}" ]]; then HAS_COPILOT=1; fi
+  if [[ -d "${CLAUDE_ROOT}" ]]; then HAS_CLAUDE=1; fi
 }
 
 cursor_path_for() {
@@ -129,17 +132,15 @@ count_required_steps() {
 }
 
 detect_roots
-if [[ "${HAS_CLAUDE}" -eq 1 ]]; then
-  echo "Validating adapter command packs (Cursor + Copilot + Claude)..."
-else
-  echo "Validating adapter command packs (Cursor + Copilot)..."
-fi
+present_packs=()
+if [[ "${HAS_CURSOR}" -eq 1 ]]; then present_packs+=("Cursor"); fi
+if [[ "${HAS_COPILOT}" -eq 1 ]]; then present_packs+=("Copilot"); fi
+if [[ "${HAS_CLAUDE}" -eq 1 ]]; then present_packs+=("Claude"); fi
+echo "Validating adapter command packs ($(IFS='+'; echo "${present_packs[*]}"))..."
 echo "Mode: ${MODE}"
-echo "Cursor root: ${CURSOR_ROOT}"
-echo "Copilot root: ${COPILOT_ROOT}"
-if [[ "${HAS_CLAUDE}" -eq 1 ]]; then
-  echo "Claude root: ${CLAUDE_ROOT}"
-fi
+if [[ "${HAS_CURSOR}" -eq 1 ]]; then echo "Cursor root: ${CURSOR_ROOT}"; fi
+if [[ "${HAS_COPILOT}" -eq 1 ]]; then echo "Copilot root: ${COPILOT_ROOT}"; fi
+if [[ "${HAS_CLAUDE}" -eq 1 ]]; then echo "Claude root: ${CLAUDE_ROOT}"; fi
 
 check_pack() {
   # Verify required sections and the per-command guardrail in one pack file.
@@ -163,38 +164,46 @@ check_pack() {
 }
 
 for cmd in "${commands[@]}"; do
-  cursor="$(cursor_path_for "${cmd}")"
-  copilot="$(copilot_path_for "${cmd}")"
-  claude="$(claude_path_for "${cmd}")"
+  # Build the list of present adapter packs for this command. Each pack is
+  # required only when its root exists, and cross-pack parity is compared over
+  # whichever packs are present (1, 2, or 3).
+  pack_names=()
+  pack_paths=()
 
-  require_file "${cursor}" || true
-  require_file "${copilot}" || true
+  if [[ "${HAS_CURSOR}" -eq 1 ]]; then
+    p="$(cursor_path_for "${cmd}")"
+    require_file "${p}" || true
+    if [[ -f "${p}" ]]; then pack_names+=("cursor"); pack_paths+=("${p}"); fi
+  fi
+  if [[ "${HAS_COPILOT}" -eq 1 ]]; then
+    p="$(copilot_path_for "${cmd}")"
+    require_file "${p}" || true
+    if [[ -f "${p}" ]]; then pack_names+=("copilot"); pack_paths+=("${p}"); fi
+  fi
   if [[ "${HAS_CLAUDE}" -eq 1 ]]; then
-    require_file "${claude}" || true
+    p="$(claude_path_for "${cmd}")"
+    require_file "${p}" || true
+    if [[ -f "${p}" ]]; then pack_names+=("claude"); pack_paths+=("${p}"); fi
   fi
 
-  [[ -f "${cursor}" ]] || continue
-  [[ -f "${copilot}" ]] || continue
+  (( ${#pack_paths[@]} > 0 )) || continue
 
-  check_pack "${cmd}" "${cursor}"
-  check_pack "${cmd}" "${copilot}"
+  min_steps=-1
+  max_steps=-1
+  steps_summary=""
+  for i in "${!pack_paths[@]}"; do
+    path="${pack_paths[$i]}"
+    name="${pack_names[$i]}"
+    check_pack "${cmd}" "${path}"
+    s="$(count_required_steps "${path}")"
+    steps_summary+="${name}=${s} "
+    if (( min_steps < 0 || s < min_steps )); then min_steps=${s}; fi
+    if (( max_steps < 0 || s > max_steps )); then max_steps=${s}; fi
+  done
 
-  c_steps="$(count_required_steps "${cursor}")"
-  p_steps="$(count_required_steps "${copilot}")"
-  diff=$(( c_steps > p_steps ? c_steps - p_steps : p_steps - c_steps ))
-  if (( diff > 1 )); then
-    echo "Required Behavior step count diverges for '${cmd}': cursor=${c_steps}, copilot=${p_steps}" >&2
+  if (( max_steps - min_steps > 1 )); then
+    echo "Required Behavior step count diverges for '${cmd}': ${steps_summary}" >&2
     failures=$((failures + 1))
-  fi
-
-  if [[ "${HAS_CLAUDE}" -eq 1 && -f "${claude}" ]]; then
-    check_pack "${cmd}" "${claude}"
-    cl_steps="$(count_required_steps "${claude}")"
-    diff_cl=$(( c_steps > cl_steps ? c_steps - cl_steps : cl_steps - c_steps ))
-    if (( diff_cl > 1 )); then
-      echo "Required Behavior step count diverges for '${cmd}': cursor=${c_steps}, claude=${cl_steps}" >&2
-      failures=$((failures + 1))
-    fi
   fi
 done
 
