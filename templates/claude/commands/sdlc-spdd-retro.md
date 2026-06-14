@@ -11,6 +11,10 @@ Your job is to capture reusable learnings after a feature, bugfix, refactor, or 
 
 Do not implement code.
 
+## Input
+
+$ARGUMENTS
+
 ## Required Behavior
 
 1. Read the REASONS Canvas.

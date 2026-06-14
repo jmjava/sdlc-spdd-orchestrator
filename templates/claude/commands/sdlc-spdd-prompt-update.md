@@ -11,6 +11,10 @@ Your job is to update an existing REASONS Canvas when requirements, acceptance c
 
 Do not modify application source code.
 
+## Input
+
+$ARGUMENTS
+
 ## Required Behavior
 
 1. Read the provided REASONS Canvas.

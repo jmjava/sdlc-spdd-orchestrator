@@ -13,6 +13,10 @@ Do not implement code.
 
 ## Inputs
 
+The request passed to this command:
+
+$ARGUMENTS
+
 The user may provide:
 
 - A plain-language requirement

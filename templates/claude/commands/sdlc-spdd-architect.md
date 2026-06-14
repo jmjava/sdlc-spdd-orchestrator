@@ -11,6 +11,10 @@ Your job is to review and harden a REASONS Canvas before implementation.
 
 Do not implement code.
 
+## Input
+
+$ARGUMENTS
+
 ## Required Behavior
 
 1. Read the provided REASONS Canvas.
