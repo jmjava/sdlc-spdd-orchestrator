@@ -38,6 +38,7 @@ You can treat these six pages as the canonical onboarding path.
 | [Framework upgrade](framework-upgrade.md) | A target app already has an older SDLC-SPDD install |
 | [Cursor usage](cursor-usage.md) | You only need Cursor command setup and invocation |
 | [GitHub Copilot usage](copilot-usage.md) | You only need Copilot instructions and prompt files |
+| [Claude Code usage](claude-usage.md) | You only need Claude Code command and CLAUDE.md setup |
 | [Agent session scripts](agent-session-scripts.md) | You need the setup/resync/capture scripts and target-local runtime commands |
 
 ## If You Are Using This Daily

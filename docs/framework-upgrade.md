@@ -60,6 +60,10 @@ Upgrade only GitHub Copilot prompts:
 
     ./scripts/upgrade-project.sh --target /path/to/app --copilot
 
+Upgrade only Claude Code commands:
+
+    ./scripts/upgrade-project.sh --target /path/to/app --claude
+
 Preview first:
 
     ./scripts/upgrade-project.sh --target /path/to/app --all --dry-run

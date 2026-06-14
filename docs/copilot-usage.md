@@ -2,6 +2,8 @@
 
 SDLC-SPDD can be used from GitHub Copilot Chat with workspace instructions and reusable prompt files.
 
+To install Cursor commands or Claude Code commands instead, see [cursor-usage.md](cursor-usage.md) and [claude-usage.md](claude-usage.md).
+
 ## Install Copilot Customizations
 
 From this repository:

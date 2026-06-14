@@ -107,4 +107,4 @@ When borrowing ideas from SDLC Agents or OpenSPDD, preserve attribution and avoi
 
 ## Planned / Not Installed
 
-`templates/agent-overlays/` exists for future per-role overlays but is **not** copied by install scripts today. Target projects use Cursor commands, Copilot prompts, and playbooks. See [design-decisions.md](docs/design-decisions.md).
+`templates/agent-overlays/` exists for future per-role overlays but is **not** copied by install scripts today. Target projects use Cursor commands, Copilot prompts, Claude Code commands, and playbooks. See [design-decisions.md](docs/design-decisions.md).

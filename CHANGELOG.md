@@ -6,6 +6,10 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- Claude Code support as a third assistant adapter: `templates/claude/` command pack
+  and `CLAUDE.md`, `scripts/install-claude-commands.sh`, `--claude` flags on
+  setup/init/upgrade, `--require-claude` install verification, Claude command-pack
+  parity validation, CI path coverage, and `docs/claude-usage.md`
 - Initial repository structure per STARTER-SPEC.md
 - REASONS Canvas templates (feature, bugfix, refactor, spike)
 - Seven Cursor command templates for SDLC-SPDD lifecycle

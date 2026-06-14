@@ -12,7 +12,7 @@ Or install commands only:
 
 Commands are copied to `.cursor/commands/`.
 
-To install GitHub Copilot prompt files instead, see [copilot-usage.md](copilot-usage.md).
+To install GitHub Copilot prompt files instead, see [copilot-usage.md](copilot-usage.md). To install Claude Code commands, see [claude-usage.md](claude-usage.md).
 
 ## How to Invoke a Command
 

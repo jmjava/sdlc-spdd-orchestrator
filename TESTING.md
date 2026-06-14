@@ -3,8 +3,8 @@
 This project treats `/sdlc-spdd-*` command validation as a **confidence stack**, not
 100% deterministic automation.
 
-Cursor/Copilot chat runtime is nondeterministic and UI-driven. We verify what can be
-proven automatically, then run a short manual smoke for the rest.
+Cursor/Copilot/Claude Code chat runtime is nondeterministic and UI-driven. We verify
+what can be proven automatically, then run a short manual smoke for the rest.
 
 ## Confidence Stack
 
@@ -12,7 +12,7 @@ proven automatically, then run a short manual smoke for the rest.
 |------|------|---------------------|-----|
 | 1. Deterministic CI | Prevent adapter/config drift | Yes | GitHub Actions + validator scripts |
 | 2. Post-invocation effects | Prove command side-effects happened | Mostly | `verify-agent-command-effects.sh` |
-| 3. Manual chat smoke | Validate real chat invocation path | No | Short guided run in Cursor/Copilot |
+| 3. Manual chat smoke | Validate real chat invocation path | No | Short guided run in Cursor/Copilot/Claude Code |
 
 ## Always-On CI Gates
 
@@ -54,12 +54,12 @@ Use one canonical Work ID and one operation.
 Before release or major merge, require:
 
 - [ ] CI gates green (adapters + canvas + diagrams)
-- [ ] One manual smoke run completed in either Cursor or Copilot
+- [ ] One manual smoke run completed in Cursor, Copilot, or Claude Code
 - [ ] `verify-agent-command-effects.sh` passes for `plan`, `architect`, `code`, `review`, `capture`
 - [ ] Milestone/session-notes sync confirmed for the tested Work ID
 
 ## Known Blind Spots (Expected)
 
-- CI cannot execute Cursor/Copilot chat UI itself.
+- CI cannot execute Cursor/Copilot/Claude Code chat UI itself.
 - LLM wording is nondeterministic; we validate artifacts/invariants instead.
 - Adapter parity checks enforce structure and guardrails, not semantic quality of every response.
