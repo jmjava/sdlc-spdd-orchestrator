@@ -306,14 +306,12 @@ copy_framework_file \
   "${TARGET}/docs/sdlc-spdd/README.md"
 
 if [[ "${UPGRADE_CURSOR}" -eq 1 && "${UPGRADE_COPILOT}" -eq 1 ]]; then
-  # Create if missing: target project CI workflow for command adapter parity.
-  if [[ ! -f "${TARGET}/.github/workflows/validate-sdlc-spdd-adapters.yml" ]]; then
-    copy_framework_file \
-      "${REPO_ROOT}/templates/project-github-workflows/validate-sdlc-spdd-adapters.yml" \
-      "${TARGET}/.github/workflows/validate-sdlc-spdd-adapters.yml"
-  else
-    preserved+=("${TARGET}/.github/workflows/validate-sdlc-spdd-adapters.yml")
-  fi
+  # Framework-owned target CI workflow for command adapter parity. Refresh it
+  # (with backup) like other framework files so upgraded targets pick up new
+  # path triggers, e.g. when Claude Code command paths are added.
+  copy_framework_file \
+    "${REPO_ROOT}/templates/project-github-workflows/validate-sdlc-spdd-adapters.yml" \
+    "${TARGET}/.github/workflows/validate-sdlc-spdd-adapters.yml"
 fi
 
 # Target-local runtime scripts are framework-owned and safe to upgrade.

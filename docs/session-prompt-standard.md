@@ -6,7 +6,7 @@ This is the unified prompt contract for SDLC-SPDD sessions. It bridges all three
 - **SPDD** — governed design contract (`spdd/canvas/<WORK-ID>.md`)
 - **SDLC** — lifecycle discipline (phase commands, session briefs, memory)
 
-Use this page when you need copy-paste prompts that stay consistent across team members, Cursor, and Copilot.
+Use this page when you need copy-paste prompts that stay consistent across team members, Cursor, Copilot, and Claude Code.
 
 **Default here.** For day-to-day agent work, start with this page. Use the concept-specific standards below only when you need deeper prompts for that layer.
 
@@ -282,6 +282,7 @@ Avoid these — they lose context across all three layers:
 | `summarize-session-notes.sh` | Memory review prompt after import |
 | `templates/cursor/sdlc-spdd-*.md` | Cursor phase command behavior |
 | `templates/copilot/prompts/sdlc-spdd-*.prompt.md` | Copilot phase command behavior |
+| `templates/claude/commands/sdlc-spdd-*.md` | Claude Code phase command behavior |
 | `agent-context/playbooks/session-handoff-playbook.md` | Start/during/end protocol |
 | `docs/daily-runbook.md` | Day-to-day operational prompts |
 

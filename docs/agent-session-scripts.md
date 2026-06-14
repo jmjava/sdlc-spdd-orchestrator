@@ -13,7 +13,7 @@ They solve three operational needs:
 
 | Script | Purpose |
 |--------|---------|
-| `scripts/setup-agent-prompts.sh` | Integrated setup for folders, memory, sessions, playbooks, Cursor prompts, and Copilot prompts |
+| `scripts/setup-agent-prompts.sh` | Integrated setup for folders, memory, sessions, playbooks, Cursor prompts, Copilot prompts, and Claude Code commands |
 | `scripts/upgrade-project.sh` | Framework-only upgrade for older initialized projects without overwriting implementation files or existing memory |
 | `scripts/sdlc-spdd/start-agent-session.sh` | Target-local script that creates a session brief for a new agent |
 | `scripts/sdlc-spdd/resync-agent-session.sh` | Target-local script that checks or reconciles feature/canonical canvases, validates the canvas, and creates a session brief |

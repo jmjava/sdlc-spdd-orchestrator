@@ -27,7 +27,7 @@ SDLC Agents and SPDD solve related but different problems:
 | Avoid ad hoc prompt drift | Agent handoffs and memory | REASONS Canvas as contract | Work moves through canvas, progress log, review, sync, and retro artifacts |
 | Keep context focused | Progressive disclosure | Canvas references and scoped operations | Prompts load only the relevant files, Work ID, memory, and operation |
 | Learn across tasks | Retro and curator patterns | Reusable prompt assets | Session notes, retro, and memory accumulate reusable learning |
-| Support multiple assistants | Tool adapters for Copilot, Cursor, and others | Prompt files as portable Markdown | Cursor commands and Copilot prompt files share the same lifecycle semantics |
+| Support multiple assistants | Tool adapters for Copilot, Cursor, and others | Prompt files as portable Markdown | Cursor commands, Copilot prompt files, and Claude Code commands share the same lifecycle semantics |
 
 ## What Comes from SDLC Agents
 
@@ -39,7 +39,7 @@ This scaffold adopts these SDLC Agents ideas:
 - **Context engineering**: each phase should read only the artifacts relevant to the current Work ID and operation.
 - **Continual learning**: retros capture lessons into durable memory.
 - **Guardrails**: no-code phases, operation boundaries, review gates, and safeguards are explicit.
-- **Multi-assistant adapters**: the same lifecycle can be invoked from Cursor or GitHub Copilot.
+- **Multi-assistant adapters**: the same lifecycle can be invoked from Cursor, GitHub Copilot, or Claude Code.
 
 SDLC Agents reference:
 

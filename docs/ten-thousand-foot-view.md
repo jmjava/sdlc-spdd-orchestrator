@@ -127,7 +127,7 @@ This is deliberately slower than asking an assistant to "just fix it." It is mea
 SDLC-SPDD Orchestrator is not:
 
 - a compiled agent runtime.
-- a replacement for Cursor or GitHub Copilot.
+- a replacement for Cursor, GitHub Copilot, or Claude Code.
 - a replacement for Jira or GitHub Issues.
 - a full clone of SDLC Agents.
 - a drop-in replacement for the upstream OpenSPDD CLI.

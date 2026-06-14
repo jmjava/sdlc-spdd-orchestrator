@@ -7,7 +7,7 @@ The system has **three parts**: Planning, SPDD, and SDLC (see [Three-part operat
 1. **Planning narrative** (Planning part) — `ROADMAP.md`, `milestone-*.md`, `requirements/`, and `session-notes/` explain where the project is going and what happened recently.
 2. **SDLC Agents lifecycle** (SDLC part) — role-separated phases, architecture-first handoffs, progressive context loading, and continual learning.
 3. **SPDD REASONS Canvas** (SPDD part) — explicit prompt/design contract for each unit of work.
-4. **Assistant adapters** — Cursor commands and GitHub Copilot prompt files that invoke the same skills across all three parts.
+4. **Assistant adapters** — Cursor commands, GitHub Copilot prompt files, and Claude Code commands that invoke the same skills across all three parts.
 5. **Integration runbooks** — Jira, GitHub Pages, and daily-use guidance that keep external systems aligned.
 
 Adapters and integrations are delivery mechanisms, not separate parts.

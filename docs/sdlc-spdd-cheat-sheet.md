@@ -31,6 +31,7 @@ One assistant only (advanced):
 
     ./scripts/init-project.sh --target /path/to/app --cursor
     ./scripts/init-project.sh --target /path/to/app --copilot
+    ./scripts/init-project.sh --target /path/to/app --claude
 
 Target-local docs:
 

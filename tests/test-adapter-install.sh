@@ -21,6 +21,7 @@ VALIDATE="${REPO_ROOT}/scripts/validate-command-adapters.sh"
 
 CURSOR_TPL="${REPO_ROOT}/templates/cursor"
 COPILOT_TPL="${REPO_ROOT}/templates/copilot"
+CLAUDE_TPL="${REPO_ROOT}/templates/claude"
 
 WORK="$(mktemp -d)"
 trap 'rm -rf "${WORK}"' EXIT
@@ -73,6 +74,17 @@ assert_copilot_pack() {
   done
 }
 
+assert_claude_pack() {
+  local t="$1"
+  assert_dir "${t}/.claude/commands"
+  assert_file "${t}/CLAUDE.md"
+  assert_same "${t}/CLAUDE.md" "${CLAUDE_TPL}/CLAUDE.md"
+  for c in "${commands[@]}"; do
+    assert_file "${t}/.claude/commands/sdlc-spdd-${c}.md"
+    assert_same "${t}/.claude/commands/sdlc-spdd-${c}.md" "${CLAUDE_TPL}/commands/sdlc-spdd-${c}.md"
+  done
+}
+
 assert_no_cursor()  { local t="$1"; assert_absent "${t}/.cursor"; }
 assert_no_copilot() { local t="$1"; assert_absent "${t}/.github/prompts"; assert_absent "${t}/.github/copilot-instructions.md"; }
 assert_no_claude()  { local t="$1"; assert_absent "${t}/.claude"; assert_absent "${t}/CLAUDE.md"; }
@@ -93,8 +105,7 @@ T="${WORK}/all"; mkdir -p "${T}"
 "${SETUP}" --target "${T}" --all >/dev/null 2>&1
 assert_cursor_pack "${T}"
 assert_copilot_pack "${T}"
-assert_dir "${T}/.claude/commands"
-assert_file "${T}/CLAUDE.md"
+assert_claude_pack "${T}"
 expect_pass "verify all three" "${VERIFY}" --target "${T}" --require-cursor --require-copilot --require-claude
 expect_pass "validate (3 packs)" "${VALIDATE}" --target "${T}"
 
@@ -120,8 +131,7 @@ expect_pass "verify --require-copilot" "${VERIFY}" --target "${T}" --require-cop
 echo "== Test 5: Claude only (no Cursor/Copilot side effects) =="
 T="${WORK}/cla"; mkdir -p "${T}"
 "${INIT}" --target "${T}" --claude >/dev/null 2>&1
-assert_dir "${T}/.claude/commands"
-assert_file "${T}/CLAUDE.md"
+assert_claude_pack "${T}"
 assert_no_cursor "${T}"
 assert_no_copilot "${T}"
 expect_pass "verify --require-claude" "${VERIFY}" --target "${T}" --require-claude
@@ -133,8 +143,7 @@ T="${WORK}/upg"; mkdir -p "${T}"
 "${UPGRADE}" --target "${T}" --all >/dev/null 2>&1
 assert_cursor_pack "${T}"
 assert_copilot_pack "${T}"
-assert_dir "${T}/.claude/commands"
-assert_file "${T}/CLAUDE.md"
+assert_claude_pack "${T}"
 expect_pass "verify all three after upgrade" "${VERIFY}" --target "${T}" --require-cursor --require-copilot --require-claude
 
 # ---------------------------------------------------------------------------
@@ -145,7 +154,7 @@ expect_pass "baseline validate" "${VALIDATE}" --target "${T}"
 
 # 7a: remove a Cursor guardrail
 cp "${T}/.cursor/commands/sdlc-spdd-code.md" "${WORK}/code.bak"
-grep -v 'Implement only that task.' "${WORK}/code.bak" > "${T}/.cursor/commands/sdlc-spdd-code.md"
+grep -Fv 'Implement only that task.' "${WORK}/code.bak" > "${T}/.cursor/commands/sdlc-spdd-code.md"
 expect_fail "validate after removing Cursor guardrail" "${VALIDATE}" --target "${T}"
 cp "${WORK}/code.bak" "${T}/.cursor/commands/sdlc-spdd-code.md"
 
@@ -161,7 +170,18 @@ mv "${T}/.cursor/commands/sdlc-spdd-review.md" "${WORK}/review.bak"
 expect_fail "validate after deleting Cursor command file" "${VALIDATE}" --target "${T}"
 mv "${WORK}/review.bak" "${T}/.cursor/commands/sdlc-spdd-review.md"
 
-# 7d: confirm restored state validates again
+# 7d: remove a Claude guardrail
+cp "${T}/.claude/commands/sdlc-spdd-review.md" "${WORK}/clreview.bak"
+grep -Fv 'Do not make code changes unless explicitly asked.' "${WORK}/clreview.bak" > "${T}/.claude/commands/sdlc-spdd-review.md"
+expect_fail "validate after removing Claude guardrail" "${VALIDATE}" --target "${T}"
+cp "${WORK}/clreview.bak" "${T}/.claude/commands/sdlc-spdd-review.md"
+
+# 7e: delete a Claude command file (dir still present)
+mv "${T}/.claude/commands/sdlc-spdd-sync.md" "${WORK}/clsync.bak"
+expect_fail "validate after deleting Claude command file" "${VALIDATE}" --target "${T}"
+mv "${WORK}/clsync.bak" "${T}/.claude/commands/sdlc-spdd-sync.md"
+
+# 7f: confirm restored state validates again
 expect_pass "validate after restore" "${VALIDATE}" --target "${T}"
 
 # ---------------------------------------------------------------------------

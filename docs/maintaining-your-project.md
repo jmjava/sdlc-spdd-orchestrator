@@ -148,8 +148,11 @@ Use these boundaries:
 
 | Path | Maintenance rule |
 |------|------------------|
-| `.cursor/commands/` | framework-owned prompts; update through upgrade script |
+| `.cursor/commands/` | framework-owned Cursor prompts; update through upgrade script |
 | `.github/prompts/` | framework-owned Copilot prompts; update through upgrade script |
+| `.github/copilot-instructions.md` | framework-owned Copilot instructions; update through upgrade script |
+| `.claude/commands/` | framework-owned Claude Code commands; update through upgrade script |
+| `CLAUDE.md` | framework-owned Claude Code project memory; update through upgrade script |
 | `scripts/sdlc-spdd/` | framework-owned runtime scripts; update through upgrade script |
 | `agent-context/playbooks/` | team workflow guidance; safe place for team process notes |
 | `agent-context/memory/` | durable project knowledge; preserve and append |

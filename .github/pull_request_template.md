@@ -21,7 +21,7 @@
 
 Check this section when your PR changes command templates, prompt files, session scripts, install/upgrade logic, or docs that define invocation flow.
 
-- [ ] Manual chat smoke executed in Cursor **or** Copilot (`plan -> architect -> code -> review`)
+- [ ] Manual chat smoke executed in Cursor, Copilot, **or** Claude Code (`plan -> architect -> code -> review`)
 - [ ] `verify-agent-command-effects.sh` passed for `plan`, `architect`, `code`, `review`, and `capture`
 - [ ] Milestone/session-notes sync verified for tested Work ID (and roadmap when expected)
 

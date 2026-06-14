@@ -131,6 +131,10 @@ Copilot Chat:
 
     /sdlc-spdd-plan Create an endpoint that returns the current status for an order by ID.
 
+Claude Code:
+
+    /sdlc-spdd-plan Create an endpoint that returns the current status for an order by ID.
+
 ### Start from a requirement file
 
 Create a requirement document first:
