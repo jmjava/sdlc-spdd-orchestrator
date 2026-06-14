@@ -63,7 +63,7 @@ Use this closed loop:
       -> Sync prompt artifacts with reality
       -> Retro into reusable memory
 
-Required commands (run `/sdlc-spdd-*` in **AI chat** — Cursor/Copilot, not a terminal — see [How to run assistant commands](initialization-and-invocation.md#how-to-run-assistant-commands)):
+Required commands (run `/sdlc-spdd-*` in **AI chat** — Cursor/Copilot/Claude Code, not a terminal — see [How to run assistant commands](initialization-and-invocation.md#how-to-run-assistant-commands)):
 
 | Phase | Command |
 |-------|---------|

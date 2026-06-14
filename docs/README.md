@@ -121,4 +121,4 @@ Read these when you need historical context, compliance detail, or repository ar
 
 Follow the adoption path in the repository [README](../README.md#the-adoption-path): install → first day → three-part operating path → daily prompts.
 
-After install, target-local copies of these docs live at `docs/sdlc-spdd/` in your application. Cursor/Copilot slash-command examples: [Initialization and invocation](initialization-and-invocation.md).
+After install, target-local copies of these docs live at `docs/sdlc-spdd/` in your application. Cursor/Copilot/Claude Code slash-command examples: [Initialization and invocation](initialization-and-invocation.md).

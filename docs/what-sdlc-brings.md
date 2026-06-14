@@ -39,7 +39,7 @@ Work moves through specialized phases instead of one undifferentiated "fix it" c
 
     Init -> Plan -> Architect -> Code -> Review -> Prompt-update -> Retro -> Sync
 
-Each phase has a dedicated command. Run `/sdlc-spdd-*` in **AI chat** (Cursor/Copilot), not a terminal — see [How to run assistant commands](initialization-and-invocation.md#how-to-run-assistant-commands):
+Each phase has a dedicated command. Run `/sdlc-spdd-*` in **AI chat** (Cursor/Copilot/Claude Code), not a terminal — see [How to run assistant commands](initialization-and-invocation.md#how-to-run-assistant-commands):
 
 | Phase | Command |
 |-------|---------|

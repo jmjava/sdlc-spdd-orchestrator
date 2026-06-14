@@ -87,7 +87,7 @@ This is deliberately slower than asking an assistant to "just fix it." It is mea
 
 ## Main Assistant Skills
 
-`/sdlc-spdd-*` skills run in **AI chat** (Cursor/Copilot), not a terminal. [How to run assistant commands](initialization-and-invocation.md#how-to-run-assistant-commands).
+`/sdlc-spdd-*` skills run in **AI chat** (Cursor/Copilot/Claude Code), not a terminal. [How to run assistant commands](initialization-and-invocation.md#how-to-run-assistant-commands).
 
 | Skill | Role |
 |-------|------|

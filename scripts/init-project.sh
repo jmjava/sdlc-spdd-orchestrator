@@ -260,7 +260,7 @@ echo "Created or updated (${#created[@]}):"
 printf '  %s\n' "${created[@]:-none}"
 echo "Skipped existing (${#skipped[@]}):"
 printf '  %s\n' "${skipped[@]:-none}"
-echo "Recommended next step: run /sdlc-spdd-init in Cursor or Copilot Chat, then /sdlc-spdd-plan"
+echo "Recommended next step: run /sdlc-spdd-init in Cursor, Copilot Chat, or Claude Code, then /sdlc-spdd-plan"
 echo "Local SDLC-SPDD docs installed under: ${TARGET}/docs/sdlc-spdd (start at README.md)"
 echo "Session scripts installed under: ${TARGET}/scripts/sdlc-spdd"
 

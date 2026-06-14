@@ -223,7 +223,7 @@ This updates:
 
 ## Phase-Specific Standard Prompts
 
-`/sdlc-spdd-*` invocations run in **AI chat** (Cursor/Copilot), not a terminal. [How to run assistant commands](initialization-and-invocation.md#how-to-run-assistant-commands).
+`/sdlc-spdd-*` invocations run in **AI chat** (Cursor/Copilot/Claude Code), not a terminal. [How to run assistant commands](initialization-and-invocation.md#how-to-run-assistant-commands).
 
 | Phase | Standard invocation |
 |-------|---------------------|

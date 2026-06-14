@@ -26,6 +26,8 @@ It can update:
 - `.cursor/commands/sdlc-spdd-*.md`
 - `.github/copilot-instructions.md`
 - `.github/prompts/sdlc-spdd-*.prompt.md`
+- `CLAUDE.md`
+- `.claude/commands/sdlc-spdd-*.md`
 - `agent-context/playbooks/*.md`
 - `agent-context/harness/*.md`
 - `agent-context/README.md`
@@ -103,8 +105,9 @@ For existing work:
 
 After upgrade, review:
 
-- assistant prompts if your team customized `.cursor/commands/` or `.github/prompts/`
+- assistant prompts if your team customized `.cursor/commands/`, `.github/prompts/`, or `.claude/commands/`
 - `.github/copilot-instructions.md` if your project had custom Copilot rules
+- `CLAUDE.md` if your project had custom Claude Code rules
 - playbooks if your team edited `agent-context/playbooks/`
 - SDLC-SPDD docs if your team edited `docs/sdlc-spdd/`
 - backup folder for any local framework changes worth reapplying

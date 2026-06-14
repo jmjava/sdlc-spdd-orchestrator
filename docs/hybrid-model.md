@@ -68,7 +68,7 @@ SPDD reference:
 
 ## Hybrid Command Mapping
 
-`/sdlc-spdd-*` skills run in **AI chat** (Cursor/Copilot), not a terminal. [How to run assistant commands](initialization-and-invocation.md#how-to-run-assistant-commands).
+`/sdlc-spdd-*` skills run in **AI chat** (Cursor/Copilot/Claude Code), not a terminal. [How to run assistant commands](initialization-and-invocation.md#how-to-run-assistant-commands).
 
 | Hybrid skill | SDLC Agents role | SPDD role | Primary artifacts |
 |--------------|------------------|-----------|-------------------|
@@ -153,7 +153,7 @@ Current boundaries:
 - No automatic dynamic skill loader yet.
 - No automatic Jira service synchronization.
 - No mandatory dependency on the upstream `openspdd` CLI.
-- Cursor and Copilot are supported through Markdown prompt adapters.
+- Cursor, Copilot, and Claude Code are supported through Markdown prompt adapters.
 
 The hybrid contract is repository-based: role-separated lifecycle prompts from SDLC Agents plus versioned REASONS Canvas governance from SPDD.
 
