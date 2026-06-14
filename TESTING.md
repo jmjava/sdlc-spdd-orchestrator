@@ -19,8 +19,25 @@ what can be proven automatically, then run a short manual smoke for the rest.
 In orchestrator repo:
 
 - `validate-command-adapters` (`.github/workflows/validate-command-adapters.yml`)
+- `test-adapter-install` (`.github/workflows/test-adapter-install.yml`)
 - `validate-canvas` (`.github/workflows/validate-canvas.yml`)
 - `validate-diagrams` (`.github/workflows/validate-diagrams.yml`)
+
+### Adapter install regression harness
+
+`./tests/test-adapter-install.sh` installs each assistant adapter (Cursor,
+Copilot, Claude Code) into throwaway target directories and asserts:
+
+- Single-assistant installs (`--cursor`, `--copilot`, `--claude`) produce only
+  that assistant's files and no others.
+- `--all` and `upgrade --all` install all three; Cursor and Copilot files stay
+  byte-identical to their templates.
+- `verify-project-install.sh` passes for every install combination.
+- `validate-command-adapters.sh` still **fails** when a Cursor/Copilot guardrail
+  is removed, a Required-Behavior step count diverges, or a command file is
+  missing (negative tests).
+
+Run it locally before changing any install/upgrade script or command template.
 
 In installed target projects (when both Cursor + Copilot adapters are installed):
 
