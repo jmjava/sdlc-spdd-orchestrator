@@ -62,11 +62,18 @@ regression harness.
 retrieval model:
 
 - Per-session entry files are written under `agent-context/memory/sessions/`, and
-  the recorded `--areas` appear in the entry.
+  recorded areas appear in the entry.
+- `agent-context/memory/code-areas.md` is the canonical category list: capture parses
+  session documents (summary, `session-notes/`, `current-session.md`, the full latest
+  timestamped session brief, canvas, progress log) for path/package tokens, matches
+  known categories, and appends new ones. Covered sources include daily session notes
+  and the latest timestamped session brief.
 - `session-index.md` is created with an `Areas` column and is ordered newest-first.
-- `code-area-index.md` is a reverse index (area → work/sessions); two unrelated
+- `context-index.md` is a reverse index (area → sessions, decisions, pitfalls, patterns); two unrelated
   Work IDs that touch the same area are both discoverable under that area, and
-  `--areas` values are de-duplicated.
+  `--areas` values are de-duplicated. Decisions/pitfalls/patterns without resolved
+  areas are written to memory files but not indexed.
+- `agent-context/memory/phase-index.md` maps SDLC phase → static playbooks and harness files.
 - `session-history.md` rotates: with `--history-limit`, the recent window is
   bounded and older entries move to `agent-context/memory/archive/`;
   `--no-history-rotate` keeps it append-only with no archive.
@@ -74,8 +81,11 @@ retrieval model:
 - The `start-agent-session.sh` brief opens with a Framework Orientation section
   (framework bootstrap) and does not parse canvas file lists.
 
-Code areas are supplied by the agent (which maps the prose REASONS Canvas to the
-code) via `--areas`; the script records them but does not parse the canvas.
+Code areas are parsed from session documents at capture (summary, `session-notes/`,
+`current-session.md`, the full latest timestamped session brief, canvas, progress
+log, capture flags): known categories are matched, path/package tokens create new
+categories. Optional `--areas` overrides or supplements parsing. The script never
+narrows to `current-session.md`-only parsing.
 
 ### Whole-ecosystem grounding norm (enforced)
 

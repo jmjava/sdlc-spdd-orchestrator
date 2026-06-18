@@ -67,60 +67,160 @@ instruction, not an enforced mechanism. Pressure points as a project grows:
 
 | Artifact | Growth | Risk | Mitigation |
 |----------|--------|------|------------|
-| `agent-context/memory/session-history.md` | Bounded recent window (rotates) | Low — `capture-session-memory.sh` keeps the most recent `--history-limit` entries inline and moves older ones to `agent-context/memory/archive/` | Retrieve via the indexes below, not by reading this file |
+| `agent-context/memory/session-history.md` | Bounded recent window (rotates) | Low — `capture-session-memory.sh` keeps the most recent `--history-limit` entries inline and moves older ones to `agent-context/memory/archive/` | Retrieve via [bootstrap indexes](#bootstrap-and-index-based-loading), not by reading this file |
 | `agent-context/sessions/` | One brief per session (unbounded count) | Low if agents read only `current-session.md` | Treat `current-session.md` as the single entry point |
 | `agent-context/features/`, `spdd/canvas/`, `spdd/reviews/`, `spdd/sync/` | One set per Work ID | Low when scoped to one Work ID; listings grow | Scope reads to the active Work ID subtree |
 | `session-notes/` | One file per day (unbounded count) | Low — only recent notes matter | Read only the current and recent dates |
 
-## Bootstrapping the framework each session
+## Bootstrap and index-based loading
 
-So the agent knows how to operate *within the framework* from the start of every
-session — not just what work to do — two things load up front:
+Bootstrap and indexing work together: **bootstrap** orients a new agent (operating
+model, where things live, how to load selectively); **indexes** make on-demand
+loading scale by relevance instead of recency or directory scans.
 
-- The **always-on grounding file** (Tier 1) carries the operating model and the
-  context-loading rules on every request.
-- The **session brief** (`agent-context/sessions/current-session.md`, written by
-  `start-agent-session.sh`) opens with a **Framework Orientation** section that
-  points new agents at how the framework works (operating model, three-part path,
-  session and context-loading rules) before any work begins.
+A new agent with no chat history should never read `session-history.md`
+top-to-bottom or list whole directories. Bootstrap layers load the rules; indexes
+point at the few artifacts that matter for the current Work ID, phase, or code area.
 
-## Practical loading rules
+### Bootstrap layers
 
-To keep context small and relevant regardless of project size:
+| Layer | When | What loads |
+|-------|------|------------|
+| **1 — Install** | Once (`setup-agent-prompts.sh` / `init-project.sh`) | Tier 1 grounding files, memory seeds, `phase-index.md`, runtime scripts under `scripts/sdlc-spdd/`, framework docs under `docs/sdlc-spdd/` |
+| **2 — Every request** | Automatic (no script) | Tier 1 grounding injects operating model, artifact locations, and index-based loading rules on **every** chat request |
+| **3 — Every session** | `start-agent-session.sh` before work | `agent-context/sessions/current-session.md` — Framework Orientation, artifact status, **Resume Prompt** (paste verbatim into chat) |
+| **4 — Cold start** | Chat opened without a fresh brief | Tier 2 still applies; read existing `current-session.md` or re-run `start-agent-session.sh` — do not guess Work ID or scan directories |
+| **Close the loop** | `capture-session-memory.sh` at session end | Indexes grow (`context-index`, `session-index`, `code-areas`) so the next bootstrap into the same area finds prior context immediately |
 
-1. **Start at `agent-context/sessions/current-session.md`.** Read its Framework
-   Orientation, then follow its pointers instead of scanning directories.
-2. **Scope to one Work ID.** A Work ID's own history is its
-   `agent-context/features/<WORK-ID>/progress-log.md` and `spdd/canvas/<WORK-ID>.md`.
-   Read those, not the global history.
-3. **Retrieve by relevance, not recency** (see indexes below). Sessions for
-   unrelated work are interleaved in time, so never read history top-to-bottom.
-4. **`@`-mention deliberately.** Naming specific files is cheaper and more precise
-   than asking the agent to discover them.
+**Layer 3 detail** — before meaningful work in a new chat:
 
-## Retrieval indexes (relevance, not recency)
+    ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase>
+
+The brief opens with **Framework Orientation** (pointers to grounding, framework
+docs, and all retrieval indexes below), then work-specific artifact status and the
+Resume Prompt. Paste the Resume Prompt so Layer 2 (rules) and Layer 3 (work
+context) combine.
+
+```mermaid
+flowchart TD
+  Install["setup-agent-prompts.sh (once)"] --> Grounding["Tier 1 grounding\n(every request)"]
+  Grounding --> SessionStart["start-agent-session.sh\n(each new chat)"]
+  SessionStart --> Brief["current-session.md\nFramework Orientation + Resume Prompt"]
+  Brief --> Indexes["Load via indexes\n(not directory scans)"]
+  Indexes --> Work["Work ID canvas + matched context"]
+  Work --> Capture["capture-session-memory.sh"]
+  Capture --> Grow["context-index, session-index,\ncode-areas grow"]
+  Grow --> SessionStart
+```
+
+### Loading rules
+
+1. **Start at `agent-context/sessions/current-session.md`.** Read Framework
+   Orientation, then follow its pointers — not directory listings.
+2. **Scope to one Work ID.** Load `agent-context/features/<WORK-ID>/progress-log.md`
+   and `spdd/canvas/<WORK-ID>.md` for the active work item.
+3. **Retrieve by area or phase via indexes** (catalog below). Unrelated sessions
+   are interleaved in time — never read global history top-to-bottom.
+4. **`@`-mention deliberately.** Naming a specific file is cheaper and more precise
+   than asking the agent to discover it.
+
+### Index catalog
 
 The REASONS Canvas is **prose**. The agent determines which **code areas** a piece
 of work matches (a Java package, or a directory for everything else) by reading
-that prose against the codebase — this is not derived by parsing the canvas. Two
-indexes turn those areas into fast, relevant retrieval:
+that prose against the codebase — not by parsing the canvas.
 
 | Index | Keyed by | Use it to |
 |-------|----------|-----------|
-| `agent-context/memory/code-area-index.md` | Code area → work/sessions | Find all prior work in an area you are about to touch, across any Work ID or date |
-| `agent-context/memory/session-index.md` | Session (newest first), with Work ID + Areas columns | Filter by Work ID or Area to find related sessions; full detail in `agent-context/memory/sessions/<entry>` |
+| `agent-context/memory/code-areas.md` | Canonical category name | Known code areas; read **first at capture** to match session content |
+| `agent-context/memory/context-index.md` | Code area → context (Kind: session, decision, pitfall, pattern) | Find prior work **and** durable memory for an area, across any Work ID or date |
+| `agent-context/memory/session-index.md` | Session (newest first), Work ID + Areas | Session-only view; full detail in `agent-context/memory/sessions/<entry>` |
+| `agent-context/memory/phase-index.md` | SDLC phase → static files | Playbooks, harness, planning docs when you know the phase (not area-specific) |
 
-The agent records the areas it matched at capture time:
+Supporting artifacts (not indexes — indexes point here):
+
+| Artifact | Role |
+|----------|------|
+| `agent-context/memory/sessions/<entry>.md` | Immutable per-session detail |
+| `agent-context/memory/session-history.md` | Recent chronological window; older entries in `agent-context/memory/archive/` |
+| `agent-context/features/<WORK-ID>/progress-log.md` | Work-ID-scoped timeline; load for active Work ID only |
+
+### What is a code area?
+
+A **code area** is the unit of relevance for retrieval:
+
+- **Java:** package name (for example `com.acme.billing`)
+- **Everything else:** directory bucket (for example `src/billing`, `scripts/sdlc-spdd`)
+
+Areas are **categories**, not file paths. The agent maps canvas prose to categories;
+`capture-session-memory.sh` normalizes spelling and keeps one canonical name in
+`code-areas.md`.
+
+### Retrieve context for an area
+
+Example: you are about to change `src/billing`.
+
+1. Open `agent-context/memory/context-index.md`; filter rows where **Area** =
+   `src/billing`.
+2. Read matches **newest first**. Use **Kind** to pick what you need:
+   - `session` → `agent-context/memory/sessions/<entry>`
+   - `decision` → `architecture-decisions.md` at the **Entry** heading
+   - `pitfall` → `known-pitfalls.md` at the **Entry** heading
+   - `pattern` → `reusable-patterns.md` at the **Entry** heading
+3. Optionally filter `session-index.md` by the same area for a session-only view.
+4. Load `spdd/canvas/<WORK-ID>.md` for any matched row.
+
+When you know the **phase** but not yet the area, use `phase-index.md` instead.
+
+Recency only orders matches *within* an area or Work ID; it is never the primary key.
+
+### Capture grows the indexes
+
+At session end, `capture-session-memory.sh` runs a **session-driven category flow**:
+
+1. Load `code-areas.md` (known categories).
+2. Collect session documents/content: `--summary`, `session-notes/`,
+   `current-session.md`, the full latest timestamped session brief under
+   `agent-context/sessions/`, canvas, progress log, and capture flags
+   (`--decisions`, `--pitfalls`, etc.).
+3. Match session text against known categories (normalized substring match).
+4. **Parse** session text for path and package tokens; create new categories and
+   append them to `code-areas.md` (Java: `src/main/java/...` → package; else: first
+   two path segments as a directory bucket, e.g. `scripts/sdlc-spdd`).
+5. Optional `--areas` to override or supplement parsed categories.
+6. Write index rows:
+   - `session-index` + `context-index` (Kind: `session`) — one row per area
+   - additional `context-index` rows when `--decisions`, `--pitfalls`, or
+     `--patterns` are provided (Kinds: `decision`, `pitfall`, `pattern`)
+   - memory entries without resolved areas are written but **not** indexed
+
+> **Guardrail — read the whole last session document.** Parsing covers the full
+> latest timestamped session brief in `agent-context/sessions/`, plus
+> `current-session.md` and `session-notes/`, by default. Do **not** narrow capture
+> to `current-session.md`-only parsing unless the user explicitly asks for it.
+
+**Typical capture** — name paths or packages in the summary/session docs; the
+script parses them, matches known categories, and registers new ones automatically:
 
     ./scripts/sdlc-spdd/capture-session-memory.sh --target . --work-id <WORK-ID> \
-      --phase code --summary "<summary>" --areas "src/billing, com.acme.billing"
+      --phase code \
+      --summary "Implemented billing retry in src/billing" \
+      --decisions "Retry uses exponential backoff" \
+      --pitfalls "Legacy orders omit tax field"
 
-Recency only orders matches *within* an area or Work ID; it is never the primary
-key.
+**Optional `--areas`** — override or supplement when parsing missed something:
+
+    ./scripts/sdlc-spdd/capture-session-memory.sh --target . --work-id <WORK-ID> \
+      --phase code \
+      --summary "Refactored checkout flow" \
+      --areas "src/payments"
+
+See [Agent session scripts](agent-session-scripts.md) for the full capture workflow.
 
 ## Per-phase context budget
 
-A practical default for which artifacts each phase should load:
+Use with `phase-index.md` for static files and `context-index.md` when you know
+the code area. A practical default:
 
 | Phase | Load |
 |-------|------|

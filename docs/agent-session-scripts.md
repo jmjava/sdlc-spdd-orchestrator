@@ -78,7 +78,11 @@ The upgrade updates framework-owned prompts, playbooks, harness files, target-lo
 
 ## 2. Start a New Agent Session
 
-Create a session brief before asking a new agent to continue work:
+Create a session brief before asking a new agent to continue work. This is the
+**session bootstrap**: it combines automatic Tier 1 grounding (already loaded on
+every request) with work-specific context and Framework Orientation pointers.
+
+See [Bootstrap and index-based loading](context-loading-and-scaling.md#bootstrap-and-index-based-loading).
 
     cd /path/to/app
     ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id FEAT-001-order-status-api --phase code
@@ -94,6 +98,7 @@ This writes:
 
 The brief includes:
 
+- **Framework Orientation** — how to operate within SDLC-SPDD (grounding, docs, indexes)
 - Work ID
 - phase
 - active milestone (explicit `--milestone` or auto-detected from milestone files)
@@ -147,13 +152,17 @@ The reconcile path:
 
 ## 4. Capture Current Session Memory
 
-At the end of a session, persist what happened:
+At the end of a session, persist what happened. The script **parses session
+content** (summary, `session-notes/`, brief, canvas, progress log, and capture
+flags) for path and package tokens, matches known categories in `code-areas.md`,
+and registers new categories automatically. Use `--areas` only to override or
+supplement parsed areas.
 
     ./scripts/sdlc-spdd/capture-session-memory.sh \
       --target . \
       --work-id FEAT-001-order-status-api \
       --phase code \
-      --summary "Implemented operation T01 for order status lookup." \
+      --summary "Implemented T01 in com.acme.order: order status lookup in OrderStatusService." \
       --validation "mvn test" \
       --milestone milestone-1.md \
       --roadmap-note "FEAT-001 completed its first implementation operation." \
@@ -164,7 +173,11 @@ At the end of a session, persist what happened:
 
 This updates:
 
-- `agent-context/memory/session-history.md`
+- `agent-context/memory/session-history.md` (recent window; older entries archive)
+- `agent-context/memory/sessions/<entry>.md` (immutable per-session detail)
+- `agent-context/memory/session-index.md` (newest-first, with Areas column)
+- `agent-context/memory/context-index.md` (area → session/decision/pitfall/pattern rows)
+- `agent-context/memory/code-areas.md` (appends genuinely new categories)
 - `agent-context/features/<WORK-ID>/progress-log.md`
 - `session-notes/YYYY-MM-DD.md`
 - `milestone-*.md` when `--milestone` is provided or auto-detected from `milestone-*.md`
@@ -174,6 +187,9 @@ This updates:
 - `agent-context/memory/known-pitfalls.md` when `--pitfalls` is provided
 - `agent-context/memory/reusable-patterns.md` when `--patterns` is provided
 - `agent-context/sessions/current-session.md` when present
+
+Decisions, pitfalls, and patterns are indexed in `context-index.md` **only when
+areas are resolved** for the session. See [Context loading and scaling](context-loading-and-scaling.md).
 
 ## Recommended Daily Loop
 

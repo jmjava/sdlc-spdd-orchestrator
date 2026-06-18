@@ -15,7 +15,7 @@ Run these checks regularly:
 - [ ] daily session notes are captured under `session-notes/`.
 - [ ] `agent-context/sessions/current-session.md` reflects the active work.
 - [ ] feature workspace canvas and canonical canvas are in sync.
-- [ ] memory captures recent decisions, pitfalls, and patterns.
+- [ ] memory captures recent decisions, pitfalls, and patterns with **areas in session content** (summary/session-notes, parsed at capture) so `context-index.md` stays useful.
 - [ ] Jira or GitHub issue links are current.
 - [ ] review and sync logs exist for completed work.
 - [ ] old session files are kept or archived according to team policy.
@@ -65,13 +65,15 @@ Use sync carefully:
 
 ## Capture Session Memory
 
-At the end of meaningful work:
+At the end of meaningful work, capture - the script parses session content
+(summary/session-notes + current artifacts) for code areas and grows
+`code-areas.md` automatically:
 
     ./scripts/sdlc-spdd/capture-session-memory.sh \
       --target . \
       --work-id <WORK-ID> \
       --phase <phase> \
-      --summary "<what changed>" \
+      --summary "<what changed; include paths like src/billing or com.acme.order>" \
       --validation "<tests or checks>" \
       --decisions "<decisions, if any>" \
       --pitfalls "<pitfalls, if any>" \
@@ -80,13 +82,18 @@ At the end of meaningful work:
 
 Memory is stored in:
 
+- `agent-context/memory/sessions/<entry>.md` (per-session detail)
+- `agent-context/memory/session-index.md`, `context-index.md`, `code-areas.md` (retrieval indexes)
 - `session-notes/YYYY-MM-DD.md`
-- `agent-context/memory/session-history.md`
+- `agent-context/memory/session-history.md` (recent window; archive for older entries)
 - `agent-context/memory/project-memory.md`
 - `agent-context/memory/architecture-decisions.md`
 - `agent-context/memory/known-pitfalls.md`
 - `agent-context/memory/reusable-patterns.md`
 - `agent-context/features/<WORK-ID>/progress-log.md`
+
+Retrieve by area via `context-index.md` — do not read memory files top-to-bottom.
+See [Bootstrap and index-based loading](context-loading-and-scaling.md#bootstrap-and-index-based-loading).
 
 To tie a session to roadmap and milestone progress:
 

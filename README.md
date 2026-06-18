@@ -119,7 +119,7 @@ The system uses a three-layer flow:
 | Layer | Purpose | Examples |
 |-------|---------|----------|
 | Planning narrative | Human-readable roadmap, milestone, milestone requirements, and daily session story | `ROADMAP.md`, `milestone-1.md`, `requirements/milestones/`, `session-notes/2026-06-06.md` |
-| Governed agent context | Work-item contract, memory, handoffs, and reusable context | `spdd/canvas/<WORK-ID>.md`, `agent-context/memory/`, `agent-context/sessions/` |
+| Governed agent context | Work-item contract, memory, handoffs, and reusable context | `spdd/canvas/<WORK-ID>.md`, `agent-context/memory/` (indexes: `context-index.md`, `session-index.md`, `code-areas.md`), `agent-context/sessions/` |
 | Implementation evidence | Code, review outputs, sync logs, and validation | source files, `spdd/reviews/`, `spdd/sync/`, tests |
 
 ## Install into an Application
@@ -271,6 +271,7 @@ Read these after the value guides above. They explain historical context, compli
 - [Hybrid SDLC Agents + SPDD model](docs/hybrid-model.md)
 - [SPDD compliance](docs/spdd-compliance.md)
 - [Architecture](docs/architecture.md)
+- [Context loading, indexing, and bootstrap](docs/context-loading-and-scaling.md) — tiers, [bootstrap and index-based loading](docs/context-loading-and-scaling.md#bootstrap-and-index-based-loading), scaling
 - [Design decisions](docs/design-decisions.md)
 
 ## What This Is Not

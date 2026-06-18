@@ -166,7 +166,8 @@ for file in \
   architecture-decisions.md \
   known-pitfalls.md \
   reusable-patterns.md \
-  session-history.md; do
+  session-history.md \
+  phase-index.md; do
   copy_if_missing \
     "${REPO_ROOT}/agent-context/memory/${file}" \
     "${TARGET}/agent-context/memory/${file}"

@@ -347,7 +347,8 @@ for file in \
   architecture-decisions.md \
   known-pitfalls.md \
   reusable-patterns.md \
-  session-history.md; do
+  session-history.md \
+  phase-index.md; do
   create_missing_memory_file \
     "${REPO_ROOT}/agent-context/memory/${file}" \
     "${TARGET}/agent-context/memory/${file}"

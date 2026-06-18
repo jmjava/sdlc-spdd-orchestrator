@@ -133,6 +133,12 @@ assert_claude_grounded() {
   assert_count "${t}/CLAUDE.md" "END SDLC-SPDD MANAGED CLAUDE GROUNDING" 1 "Claude managed grounding end markers"
 }
 
+assert_memory_seed_files() {
+  local t="$1"
+  assert_file "${t}/agent-context/memory/phase-index.md"
+  assert_same "${t}/agent-context/memory/phase-index.md" "${REPO_ROOT}/agent-context/memory/phase-index.md"
+}
+
 assert_no_cursor()  { local t="$1"; assert_absent "${t}/.cursor"; }
 assert_no_copilot() { local t="$1"; assert_absent "${t}/.github/prompts"; assert_absent "${t}/.github/copilot-instructions.md"; }
 assert_no_claude()  { local t="$1"; assert_absent "${t}/.claude"; assert_absent "${t}/CLAUDE.md"; }
@@ -175,6 +181,7 @@ T="${WORK}/all"; mkdir -p "${T}"
 assert_cursor_pack "${T}"
 assert_copilot_pack "${T}"
 assert_claude_pack "${T}"
+assert_memory_seed_files "${T}"
 assert_target_adapter_workflow "${T}"
 expect_pass "verify all three" "${VERIFY}" --target "${T}" --require-cursor --require-copilot --require-claude
 expect_pass "validate (3 packs)" "${VALIDATE}" --target "${T}"
