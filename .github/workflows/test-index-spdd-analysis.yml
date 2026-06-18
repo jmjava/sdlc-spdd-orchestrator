@@ -1,0 +1,28 @@
+name: Test Index SPDD Analysis
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/index-spdd-analysis.sh'
+      - 'agent-context/memory/domain-index.md'
+      - 'tests/test-index-spdd-analysis.sh'
+      - '.github/workflows/test-index-spdd-analysis.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/index-spdd-analysis.sh'
+      - 'agent-context/memory/domain-index.md'
+      - 'tests/test-index-spdd-analysis.sh'
+      - '.github/workflows/test-index-spdd-analysis.yml'
+
+jobs:
+  test-index-spdd-analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check shell syntax
+        run: bash -n scripts/index-spdd-analysis.sh tests/test-index-spdd-analysis.sh
+
+      - name: Run index-spdd-analysis regression tests
+        run: ./tests/test-index-spdd-analysis.sh

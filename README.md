@@ -205,9 +205,11 @@ Refresh the roadmap summary from SPDD canvases:
 | Command | Use it for |
 |---------|------------|
 | `/sdlc-spdd-init` | Initialize project context |
-| `/sdlc-spdd-plan` | Convert a requirement, issue, or milestone item into a REASONS Canvas |
+| `/sdlc-spdd-analysis` | Fowler Step 3: domain keywords, scoped code scan, analysis artifact |
+| `/sdlc-spdd-plan` | Create REASONS Canvas from accepted analysis |
 | `/sdlc-spdd-architect` | Harden the canvas before coding |
 | `/sdlc-spdd-code` | Implement one approved operation |
+| `/sdlc-spdd-api-test` | Generate cURL API test script (Fowler Step 5 verification) |
 | `/sdlc-spdd-review` | Compare implementation to the canvas |
 | `/sdlc-spdd-prompt-update` | Update the canvas first when behavior or acceptance criteria change |
 | `/sdlc-spdd-retro` | Capture reusable learnings |
@@ -222,6 +224,7 @@ Refresh the roadmap summary from SPDD canvases:
 | `scripts/sdlc-spdd/start-agent-session.sh` | Create a current-session handoff for a new agent |
 | `scripts/sdlc-spdd/resync-agent-session.sh` | Check or reconcile feature/canonical canvas drift |
 | `scripts/sdlc-spdd/capture-session-memory.sh` | Persist session summary, validation, decisions, pitfalls, patterns, and next steps |
+| `scripts/sdlc-spdd/index-spdd-analysis.sh` | Index analysis domain keywords and code areas into decision-memory indexes |
 | `scripts/sdlc-spdd/create-work-from-milestone.sh` | Map milestone checklist items to Work IDs, requirements, feature workspaces, and draft canvases |
 | `scripts/sdlc-spdd/sync-roadmap-from-spdd.sh` | Refresh a managed roadmap summary from SPDD canvas metadata |
 | `scripts/sdlc-spdd/summarize-session-notes.sh` | Import existing daily session notes into durable memory |

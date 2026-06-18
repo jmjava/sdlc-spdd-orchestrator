@@ -45,9 +45,11 @@ TARGET="$(cd "${TARGET}" && pwd)"
 
 commands=(
   init
+  analysis
   plan
   architect
   code
+  api-test
   review
   prompt-update
   retro
@@ -189,15 +191,17 @@ grounding_path_for() {
 # and the Planning (roadmap/milestones/session-notes), SPDD (canvas), and SDLC
 # (session briefs and memory) artifacts.
 grounding_anchors=(
-  "Initialize -> Plan -> Architect -> Code -> Review -> Retro -> Sync"
+  "Initialize -> Analysis -> Plan -> Architect -> Code -> API Test -> Review -> Retro -> Sync"
   "## Operating Model"
   "## Work Rules"
   "ROADMAP.md"
   "milestone-*.md"
   "session-notes/"
+  "spdd/analysis/"
   "spdd/canvas/"
   "agent-context/sessions/"
   "agent-context/memory/"
+  "/sdlc-spdd-analysis"
 )
 
 check_grounding() {

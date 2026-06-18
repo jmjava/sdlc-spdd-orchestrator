@@ -18,6 +18,7 @@ They solve three operational needs:
 | `scripts/sdlc-spdd/start-agent-session.sh` | Target-local script that creates a session brief for a new agent |
 | `scripts/sdlc-spdd/resync-agent-session.sh` | Target-local script that checks or reconciles feature/canonical canvases, validates the canvas, and creates a session brief |
 | `scripts/sdlc-spdd/capture-session-memory.sh` | Target-local script that persists current session summary, validation, decisions, pitfalls, patterns, and next steps |
+| `scripts/sdlc-spdd/index-spdd-analysis.sh` | Index Fowler analysis artifacts into `domain-index.md` and `context-index.md` |
 | `scripts/sdlc-spdd/create-work-from-milestone.sh` | Target-local script that maps milestone checklist items into SDLC-SPDD work artifacts |
 | `scripts/sdlc-spdd/sync-roadmap-from-spdd.sh` | Target-local script that refreshes a managed roadmap summary from canvas metadata |
 | `scripts/sdlc-spdd/summarize-session-notes.sh` | Target-local script that imports existing session notes into durable memory |
@@ -222,6 +223,16 @@ Refresh roadmap from SPDD canvases:
 Import existing session notes into memory:
 
     ./scripts/sdlc-spdd/summarize-session-notes.sh --target . --all
+
+## 5. Index Analysis Context (Fowler Step 3)
+
+After `/sdlc-spdd-analysis` writes `spdd/analysis/<WORK-ID>-analysis.md`, index
+domain keywords and code areas:
+
+    ./scripts/sdlc-spdd/index-spdd-analysis.sh --target . --work-id <WORK-ID>
+
+Updates `domain-index.md`, `context-index.md` (Kind: `analysis`), and
+`code-areas.md`. See [Chelsea Troy and the framework](chelsea-troy-and-the-framework.md).
 
 ## Hybrid Contract
 

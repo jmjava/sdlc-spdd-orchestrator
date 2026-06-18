@@ -349,8 +349,9 @@ prepend_context_index_rows() {
 # Context Index
 
 Maps code areas to indexed project context. Filter by Area to find prior sessions,
-architecture decisions, known pitfalls, and reusable patterns for the code you are
-about to touch — across any Work ID or date. Newest first.
+analysis artifacts, architecture decisions, known pitfalls, and reusable patterns
+for the code you are about to touch — across any Work ID or date. Newest first.
+Kinds: analysis, session, decision, pitfall, pattern.
 
 | Area | Kind | Work ID | Phase | Timestamp | Source | Entry |
 |------|------|---------|-------|-----------|--------|-------|
@@ -458,6 +459,13 @@ collect_session_content() {
   fi
   if [[ -f "${progress_log}" ]]; then
     _parts+="$(tail -n 80 "${progress_log}" 2>/dev/null || true)"$'\n'
+  fi
+  local _analysis="${TARGET}/spdd/analysis/${WORK_ID}-analysis.md"
+  local _feature_analysis="${feature_dir}/analysis-context.md"
+  if [[ -f "${_analysis}" ]]; then
+    _parts+="$(<"${_analysis}")"$'\n'
+  elif [[ -f "${_feature_analysis}" ]]; then
+    _parts+="$(<"${_feature_analysis}")"$'\n'
   fi
   if [[ -n "${VALIDATION}" ]]; then
     _parts+="${VALIDATION}"$'\n'

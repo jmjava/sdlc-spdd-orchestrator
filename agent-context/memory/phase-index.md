@@ -9,12 +9,15 @@ know the phase but not yet which code areas apply. Dynamic, area-keyed context
 | plan | `ROADMAP.md` | Current focus and milestone map |
 | plan | `milestone-*.md` | Active milestone scope |
 | plan | `requirements/milestones/` | Requirement sources |
+| analysis | `spdd/analysis/` | Fowler Step 3 analysis context (index with `index-spdd-analysis.sh`) |
+| analysis | `agent-context/memory/domain-index.md` | Domain keyword → area → artifact lookup |
 | architect | `agent-context/harness/validation-rules.md` | Canvas and structure checks |
 | architect | `agent-context/memory/architecture-decisions.md` | Prior decisions (also in `context-index.md` by area) |
 | code | `agent-context/playbooks/java-feature-playbook.md` | Java feature workflow |
 | code | `agent-context/playbooks/bugfix-playbook.md` | Bugfix workflow |
 | code | `agent-context/playbooks/refactor-playbook.md` | Refactor workflow |
 | code | `agent-context/memory/known-pitfalls.md` | Pitfalls (also in `context-index.md` by area) |
+| api-test | `spdd/tasks/` | Fowler Step 5 API verification scripts |
 | review | `agent-context/playbooks/pr-review-playbook.md` | PR review checklist |
 | review | `agent-context/harness/quality-gates.md` | Review quality gates |
 | retro / sync | `agent-context/playbooks/session-handoff-playbook.md` | Session handoff |

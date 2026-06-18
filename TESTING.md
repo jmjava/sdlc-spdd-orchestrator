@@ -21,6 +21,7 @@ In orchestrator repo:
 - `validate-command-adapters` (`.github/workflows/validate-command-adapters.yml`)
 - `test-adapter-install` (`.github/workflows/test-adapter-install.yml`)
 - `test-session-memory` (`.github/workflows/test-session-memory.yml`)
+- `test-index-spdd-analysis` (`.github/workflows/test-index-spdd-analysis.yml`)
 - `validate-canvas` (`.github/workflows/validate-canvas.yml`)
 - `validate-diagrams` (`.github/workflows/validate-diagrams.yml`)
 
@@ -69,7 +70,7 @@ retrieval model:
   known categories, and appends new ones. Covered sources include daily session notes
   and the latest timestamped session brief.
 - `session-index.md` is created with an `Areas` column and is ordered newest-first.
-- `context-index.md` is a reverse index (area → sessions, decisions, pitfalls, patterns); two unrelated
+- `context-index.md` is a reverse index (area → sessions, decisions, pitfalls, patterns, analysis); two unrelated
   Work IDs that touch the same area are both discoverable under that area, and
   `--areas` values are de-duplicated. Decisions/pitfalls/patterns without resolved
   areas are written to memory files but not indexed.
@@ -87,6 +88,18 @@ log, capture flags): known categories are matched, path/package tokens create ne
 categories. Optional `--areas` overrides or supplements parsing. The script never
 narrows to `current-session.md`-only parsing.
 
+### Index SPDD analysis harness
+
+`./tests/test-index-spdd-analysis.sh` runs `index-spdd-analysis.sh` against
+throwaway targets and asserts:
+
+- `domain-index.md` rows for Domain Keywords and Code Areas from the analysis artifact
+- `context-index.md` rows with Kind `analysis`
+- new code areas appended to `code-areas.md`
+- `--dry-run` writes nothing; missing analysis file exits non-zero
+
+Run locally after changing `index-spdd-analysis.sh` or `domain-index.md`.
+
 ### Whole-ecosystem grounding norm (enforced)
 
 Every supported assistant must ship an **always-on grounding file** that loads on
@@ -99,8 +112,8 @@ every interaction (not only when a `/sdlc-spdd-*` command runs):
 `validate-command-adapters.sh` asserts each present grounding file contains the
 shared operating-model anchors (the lifecycle line, `## Operating Model`,
 `## Work Rules`) and the Planning + SPDD + SDLC artifacts (`ROADMAP.md`,
-`milestone-*.md`, `session-notes/`, `spdd/canvas/`,
-`agent-context/sessions/`, `agent-context/memory/`).
+`milestone-*.md`, `session-notes/`, `spdd/analysis/`, `spdd/canvas/`,
+`agent-context/sessions/`, `agent-context/memory/`, `/sdlc-spdd-analysis`).
 This makes whole-ecosystem awareness the norm for all work across every assistant
 — and runs in CI both here and inside installed target projects when the target
 adapter workflow is installed.

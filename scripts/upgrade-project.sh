@@ -291,6 +291,7 @@ for dir in \
   requirements \
   requirements/milestones \
   spdd/canvas \
+  spdd/analysis \
   spdd/tasks \
   spdd/reviews \
   spdd/sync \
@@ -348,7 +349,8 @@ for file in \
   known-pitfalls.md \
   reusable-patterns.md \
   session-history.md \
-  phase-index.md; do
+  phase-index.md \
+  domain-index.md; do
   create_missing_memory_file \
     "${REPO_ROOT}/agent-context/memory/${file}" \
     "${TARGET}/agent-context/memory/${file}"
@@ -400,6 +402,7 @@ for file in \
   start-agent-session.sh \
   resync-agent-session.sh \
   capture-session-memory.sh \
+  index-spdd-analysis.sh \
   create-work-from-milestone.sh \
   sync-roadmap-from-spdd.sh \
   summarize-session-notes.sh \
