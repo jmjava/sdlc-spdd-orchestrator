@@ -62,7 +62,7 @@ The planning narrative remains human-readable. SPDD artifacts provide governed e
 - No-code phases stay no-code
 - One approved operation per coding session
 - Explicit assumptions and safeguards
-- Progressive context loading by Work ID and phase
+- Progressive context loading by Work ID and phase (see [Context loading and scaling](context-loading-and-scaling.md))
 - Architecture validation before implementation
 - Retro learning captured into durable memory
 - Safe defaults: no overwrite without `--force`

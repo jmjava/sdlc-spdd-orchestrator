@@ -27,6 +27,22 @@ Preserve context by reading relevant artifacts before answering:
 
 Use progressive disclosure: load only the artifacts relevant to the current Work ID, phase, and operation.
 
+## Context Loading
+
+Load context by index, not by scanning. Keep working context small and relevant regardless of project size. See `docs/sdlc-spdd/context-loading-and-scaling.md`.
+
+1. Start at `agent-context/sessions/current-session.md` to resume the active Work ID and phase. If it is missing, read the most recent brief in `agent-context/sessions/` or the indexes in `agent-context/memory/`.
+2. Retrieve by relevance, not recency. A Work ID's own history is its `agent-context/features/<WORK-ID>/progress-log.md` and `spdd/canvas/<WORK-ID>.md` — read those, not the global history. Sessions for unrelated work are interleaved in time, so never read history top-to-bottom.
+3. Discover related work by code area, not by scanning. The REASONS Canvas is prose; determine which code areas the work matches (a Java package or a directory). To find prior work in the same area across other Work IDs, filter `agent-context/memory/code-area-index.md` (and `agent-context/memory/session-index.md`) by that area; read matched entries newest-first and stop once you have enough. Full per-session detail is in `agent-context/memory/sessions/`. `session-history.md` is only a recent chronological overview (older entries archived under `agent-context/memory/archive/`). Do not read whole directories. When capturing, record the areas you matched via `capture-session-memory.sh --areas`.
+
+Per-phase context budget:
+
+- plan: the requirement, `ROADMAP.md`, active `milestone-*.md`
+- architect: the Work ID canvas, `agent-context/memory/architecture-decisions.md`, `agent-context/harness/`
+- code: the Work ID canvas, that feature's `progress-log.md`, `agent-context/memory/known-pitfalls.md`
+- review: the Work ID canvas, the diff, `agent-context/harness/quality-gates.md`
+- retro / sync: the Work ID canvas, that feature's progress log, the memory file being updated
+
 ## Work Rules
 
 - Use a Work ID for each unit of work, such as `FEAT-001-order-status-api`.

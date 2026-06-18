@@ -266,6 +266,14 @@ cat > "${session_file}" <<EOF
 - Canvas sync state: ${canvas_sync_state}
 - Previous session brief: ${latest_session}
 
+## Framework Orientation
+
+New agents: load these first so you know how to operate within the SDLC-SPDD framework before doing any work.
+
+- Operating model + work rules: the always-on grounding file (.cursor/rules/sdlc-spdd.mdc, .github/copilot-instructions.md, or CLAUDE.md) is loaded on every request.
+- How the framework works: docs/sdlc-spdd/three-part-operating-path.md, docs/sdlc-spdd/ten-thousand-foot-view.md.
+- Session + context-loading rules: docs/sdlc-spdd/session-prompt-standard.md, docs/sdlc-spdd/context-loading-and-scaling.md.
+
 ## Hybrid Operating Model
 
 - SDLC Agents side: use the phase-specific role, load only relevant context, preserve handoffs, and capture learning.

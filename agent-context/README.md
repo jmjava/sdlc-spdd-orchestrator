@@ -4,11 +4,28 @@ This folder holds project memory, feature workspaces, playbooks, and quality har
 
 ## Layout
 
-- `memory/` — durable project context
+- `memory/` — durable project context and retrieval indexes
 - `playbooks/` — repeatable workflows by work type
 - `features/` — per-work workspaces
 - `sessions/` — generated session briefs and current-session handoffs
 - `harness/` — validation rules and quality gates
+
+### Memory and indexes
+
+- `memory/project-memory.md`, `architecture-decisions.md`, `known-pitfalls.md`,
+  `reusable-patterns.md` — durable knowledge.
+- `memory/session-history.md` — recent session window (rotated; older entries in
+  `memory/archive/`).
+- `memory/sessions/` — one immutable file per captured session (full detail).
+- `memory/session-index.md` — newest-first session index (Work ID + Areas columns).
+- `memory/code-area-index.md` — reverse index: code area → work/sessions, for
+  relevance-based retrieval. The agent determines a session's code areas by
+  matching the prose REASONS Canvas to the code, and records them with
+  `capture-session-memory.sh --areas`.
+
+Retrieve by relevance, not recency: start at `sessions/current-session.md`, scope
+to one Work ID, and filter the indexes by code area. See
+`docs/context-loading-and-scaling.md` (installed at `docs/sdlc-spdd/`).
 
 ## Canonical Copies
 

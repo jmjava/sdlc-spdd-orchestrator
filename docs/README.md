@@ -96,6 +96,7 @@ Read these when you need historical context, compliance detail, or repository ar
 |-------|-------------|
 | [Hybrid SDLC Agents + SPDD model](hybrid-model.md) | You want the original two-influence story and how Planning was added |
 | [Architecture](architecture.md) | You want the five delivery concerns built on the three parts |
+| [Context loading and scaling](context-loading-and-scaling.md) | You want to know what context loads automatically, what loads on demand, and how it scales |
 | [SPDD compliance](spdd-compliance.md) | You need to verify against Structured Prompt-Driven Development expectations |
 | [Design decisions](design-decisions.md) | You want the rationale behind major choices |
 

@@ -20,6 +20,7 @@ In orchestrator repo:
 
 - `validate-command-adapters` (`.github/workflows/validate-command-adapters.yml`)
 - `test-adapter-install` (`.github/workflows/test-adapter-install.yml`)
+- `test-session-memory` (`.github/workflows/test-session-memory.yml`)
 - `validate-canvas` (`.github/workflows/validate-canvas.yml`)
 - `validate-diagrams` (`.github/workflows/validate-diagrams.yml`)
 
@@ -53,6 +54,28 @@ Copilot, Claude Code) into throwaway target directories and asserts:
 Run it locally before changing any install/upgrade script or command template.
 The CI workflow also runs `bash -n` over shell scripts before executing the
 regression harness.
+
+### Session memory index + rotation harness
+
+`./tests/test-session-memory-index.sh` runs `capture-session-memory.sh` and
+`start-agent-session.sh` against throwaway targets and asserts the relevance-based
+retrieval model:
+
+- Per-session entry files are written under `agent-context/memory/sessions/`, and
+  the recorded `--areas` appear in the entry.
+- `session-index.md` is created with an `Areas` column and is ordered newest-first.
+- `code-area-index.md` is a reverse index (area → work/sessions); two unrelated
+  Work IDs that touch the same area are both discoverable under that area, and
+  `--areas` values are de-duplicated.
+- `session-history.md` rotates: with `--history-limit`, the recent window is
+  bounded and older entries move to `agent-context/memory/archive/`;
+  `--no-history-rotate` keeps it append-only with no archive.
+- `--dry-run` writes nothing.
+- The `start-agent-session.sh` brief opens with a Framework Orientation section
+  (framework bootstrap) and does not parse canvas file lists.
+
+Code areas are supplied by the agent (which maps the prose REASONS Canvas to the
+code) via `--areas`; the script records them but does not parse the canvas.
 
 ### Whole-ecosystem grounding norm (enforced)
 
