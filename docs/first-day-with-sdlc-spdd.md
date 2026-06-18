@@ -6,7 +6,7 @@ For the full Planning → SPDD → SDLC path beyond day one, see [Three-part ope
 
 The goal for day one is not to automate everything. The goal is to create a small, reviewable loop:
 
-    Install -> Initialize -> Plan -> Architect -> Code one operation -> Review -> Capture memory
+    Install -> Initialize -> Analysis -> Plan -> Architect -> Code one operation -> API Test -> Review -> Capture memory
 
 ## Before You Start
 
@@ -101,9 +101,9 @@ Skip this step for ad-hoc requirements — go to step 5.
 
 | Part | Action |
 |------|--------|
-| SDLC | In the target application, set `--phase` to the phase you are about to run. On day one that is usually `plan`: |
+| SDLC | In the target application, set `--phase` to the phase you are about to run. On day one that is usually `analysis`: |
 
-    ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id FEAT-001-order-status-api --phase plan
+    ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id FEAT-001-order-status-api --phase analysis
 
 Then **paste the Resume Prompt** from `agent-context/sessions/current-session.md` — do not paraphrase it. The script generates the authoritative prompt with canvas, memory, and planning references.
 
@@ -111,21 +111,33 @@ This first-day walkthrough uses the **ad-hoc entry** (you have a requirement but
 
 See [Session prompt standard](session-prompt-standard.md). Source of truth: the generated **Resume Prompt** section in `current-session.md`.
 
-## 6. Plan the Work
+## 6. Analyze the Requirement
 
 | Part | Action |
 |------|--------|
-| SPDD (+ Planning) | From a requirement file: |
+| SPDD (+ Planning) | Run Fowler Step 3 analysis first. It extracts domain keywords, scans only the relevant code areas, and writes `spdd/analysis/<WORK-ID>-analysis.md`. From a requirement file: |
 
-    /sdlc-spdd-plan @requirements/order-status-api.md @ROADMAP.md @milestone-1.md
+    /sdlc-spdd-analysis @requirements/order-status-api.md @ROADMAP.md @milestone-1.md
 
 From plain language:
 
-    /sdlc-spdd-plan Create an endpoint that returns current order status by ID. Use FEAT-001-order-status-api.
+    /sdlc-spdd-analysis Create an endpoint that returns current order status by ID. Use FEAT-001-order-status-api.
 
 From Jira:
 
-    /sdlc-spdd-plan Jira ABC-123: add order status lookup. Link https://jira.example.com/browse/ABC-123 and use the acceptance criteria below.
+    /sdlc-spdd-analysis Jira ABC-123: add order status lookup. Link https://jira.example.com/browse/ABC-123 and use the acceptance criteria below.
+
+Then index the analysis so its keywords and code areas feed decision memory:
+
+    ./scripts/sdlc-spdd/index-spdd-analysis.sh --target . --work-id FEAT-001-order-status-api
+
+## 7. Plan the Work
+
+| Part | Action |
+|------|--------|
+| SPDD (+ Planning) | Plan from the analysis artifact. `/sdlc-spdd-plan` requires it and stops if it is missing: |
+
+    /sdlc-spdd-plan @spdd/analysis/FEAT-001-order-status-api-analysis.md
 
 Planning should create a REASONS Canvas under:
 
@@ -136,7 +148,7 @@ If this work belongs to a milestone, include that in the canvas Metadata:
     - Roadmap: ROADMAP.md
     - Milestone: milestone-1.md
 
-## 7. Harden Architecture Before Coding
+## 8. Harden Architecture Before Coding
 
 | Part | Action |
 |------|--------|
@@ -150,7 +162,7 @@ Do not code until readiness is:
 
 If readiness is blocked or unclear, update the canvas first.
 
-## 8. Code One Operation
+## 9. Code One Operation
 
 | Part | Action |
 |------|--------|
@@ -167,7 +179,15 @@ The coding agent should:
 - update the progress log.
 - stop before starting T02.
 
-## 9. Review Against the Canvas
+## 10. Verify with API Tests
+
+| Part | Action |
+|------|--------|
+| SPDD | Generate cURL-based API tests (Fowler Step 5) covering normal, boundary, and error cases from the canvas acceptance criteria: |
+
+    /sdlc-spdd-api-test @spdd/canvas/FEAT-001-order-status-api.md
+
+## 11. Review Against the Canvas
 
 | Part | Action |
 |------|--------|
@@ -186,7 +206,7 @@ Review checks whether the implementation matches:
 - Safeguards
 - tests
 
-## 10. Persist Memory Before You Stop
+## 12. Persist Memory Before You Stop
 
 | Part | Action |
 |------|--------|
@@ -211,9 +231,11 @@ Review checks whether the implementation matches:
 - [ ] Work ID chosen.
 - [ ] Milestone work mapped (if applicable).
 - [ ] Session brief created; Resume Prompt pasted.
-- [ ] Requirement planned into a REASONS Canvas.
+- [ ] Requirement analyzed into `spdd/analysis/<WORK-ID>-analysis.md` and indexed.
+- [ ] Analysis planned into a REASONS Canvas.
 - [ ] Architecture reviewed.
 - [ ] One operation implemented.
+- [ ] API tests generated.
 - [ ] Review run.
 - [ ] Memory captured.
 

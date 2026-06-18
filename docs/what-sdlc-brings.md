@@ -37,16 +37,18 @@ These are the SDLC capabilities this scaffold adopts.
 
 Work moves through specialized phases instead of one undifferentiated "fix it" chat:
 
-    Init -> Plan -> Architect -> Code -> Review -> Prompt-update -> Retro -> Sync
+    Init -> Analysis -> Plan -> Architect -> Code -> API Test -> Review -> Prompt-update -> Retro -> Sync
 
 Each phase has a dedicated command. Run `/sdlc-spdd-*` in **AI chat** (Cursor/Copilot/Claude Code), not a terminal — see [How to run assistant commands](initialization-and-invocation.md#how-to-run-assistant-commands):
 
 | Phase | Command |
 |-------|---------|
 | Initialize | `/sdlc-spdd-init` |
+| Analysis | `/sdlc-spdd-analysis` |
 | Plan | `/sdlc-spdd-plan` |
 | Architect | `/sdlc-spdd-architect` |
 | Code | `/sdlc-spdd-code` |
+| API test | `/sdlc-spdd-api-test` |
 | Review | `/sdlc-spdd-review` |
 | Prompt update | `/sdlc-spdd-prompt-update` |
 | Retro | `/sdlc-spdd-retro` |

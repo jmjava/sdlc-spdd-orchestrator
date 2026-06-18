@@ -49,7 +49,7 @@ Three docs work together — each has a distinct job; prompts are not duplicated
 |-------|------|
 | [Session prompt standard](session-prompt-standard.md) | **Prompts** — copy-paste text for triage, phases, handoff |
 | [Daily runbook](daily-runbook.md) | **Rhythm** — rules, script sequences, phase checklists |
-| [Workflow](workflow.md) | **Sequence** — 13-step table and which part owns each step |
+| [Workflow](workflow.md) | **Sequence** — 15-step table and which part owns each step |
 | [Three-part operating path](three-part-operating-path.md) | **Loop** — how Planning → SPDD → SDLC connect for a work item |
 
 Also useful day to day:

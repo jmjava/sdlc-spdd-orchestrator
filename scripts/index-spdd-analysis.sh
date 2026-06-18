@@ -175,8 +175,9 @@ domain_header="$(cat <<'DOM'
 # Domain Index
 
 Maps Fowler SPDD **domain keywords** to code areas and governed artifacts. Filter
-by Keyword before scanning code or loading prior analysis/canvas context. Newest
-first within each keyword group.
+by Keyword before scanning code or loading prior analysis/canvas context. Populated
+by `index-spdd-analysis.sh` after `/sdlc-spdd-analysis`. Newest first within each
+keyword group.
 
 | Keyword | Area | Kind | Work ID | Timestamp | Entry |
 |---------|------|------|---------|-----------|-------|
@@ -195,13 +196,25 @@ for _kw in "${keywords[@]}"; do
 done
 domain_rows="${domain_rows%$'\n'}"
 
+# Drop prior analysis rows for this Work ID so re-runs refresh instead of
+# duplicating. Kind is column 4, Work ID column 5 (leading "| " gives empty $1).
 existing_domain=""
 if [[ -f "${domain_index}" ]]; then
-  existing_domain="$(awk '/^\| / && $0 !~ /^\| Keyword/' "${domain_index}")"
+  existing_domain="$(awk -F'|' -v work="${WORK_ID}" '
+    /^\| / && $0 !~ /^\| Keyword/ {
+      kind = $4; id = $5
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", kind)
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", id)
+      if (kind == "analysis" && id == work) next
+      print
+    }
+  ' "${domain_index}")"
 fi
 {
   printf '%s\n' "${domain_header}"
-  printf '%s\n' "${domain_rows}"
+  if [[ -n "${domain_rows}" ]]; then
+    printf '%s\n' "${domain_rows}"
+  fi
   if [[ -n "${existing_domain}" ]]; then
     printf '%s\n' "${existing_domain}"
   fi
@@ -229,13 +242,25 @@ else
 fi
 context_rows="${context_rows%$'\n'}"
 
+# Drop prior analysis rows for this Work ID so re-runs refresh instead of
+# duplicating. Kind is column 3, Work ID column 4 (leading "| " gives empty $1).
 existing_context=""
 if [[ -f "${context_index}" ]]; then
-  existing_context="$(awk '/^\| / && $0 !~ /^\| Area/' "${context_index}")"
+  existing_context="$(awk -F'|' -v work="${WORK_ID}" '
+    /^\| / && $0 !~ /^\| Area/ {
+      kind = $3; id = $4
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", kind)
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", id)
+      if (kind == "analysis" && id == work) next
+      print
+    }
+  ' "${context_index}")"
 fi
 {
   printf '%s\n' "${context_header}"
-  printf '%s\n' "${context_rows}"
+  if [[ -n "${context_rows}" ]]; then
+    printf '%s\n' "${context_rows}"
+  fi
   if [[ -n "${existing_context}" ]]; then
     printf '%s\n' "${existing_context}"
   fi

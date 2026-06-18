@@ -160,13 +160,16 @@ If you already have milestone checklist items, map them into SDLC-SPDD work:
 
 Start or resume an agent session:
 
-    ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id FEAT-001-my-feature --phase plan
+    ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id FEAT-001-my-feature --phase analysis
 
-Plan, architect, code, and review one operation:
+Analyze, plan, architect, code, test, and review one operation:
 
-    /sdlc-spdd-plan @requirements/my-feature.md @ROADMAP.md @milestone-1.md
+    /sdlc-spdd-analysis @requirements/my-feature.md @ROADMAP.md @milestone-1.md
+    ./scripts/sdlc-spdd/index-spdd-analysis.sh --target . --work-id FEAT-001-my-feature
+    /sdlc-spdd-plan @spdd/analysis/FEAT-001-my-feature-analysis.md
     /sdlc-spdd-architect @spdd/canvas/FEAT-001-my-feature.md
     /sdlc-spdd-code @spdd/canvas/FEAT-001-my-feature.md operation T01
+    /sdlc-spdd-api-test @spdd/canvas/FEAT-001-my-feature.md
     /sdlc-spdd-review @spdd/canvas/FEAT-001-my-feature.md
 
 Verify deterministic side-effects after each command (best-effort command invocation evidence):

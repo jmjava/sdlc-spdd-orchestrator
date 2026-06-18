@@ -43,9 +43,11 @@ If no Work ID exists yet:
 
     We are starting new work for <short requirement>. Create a Work ID, plan the work, and link any external issue I provide.
 
-Then invoke:
+Then invoke analysis first (Fowler Step 3), index it, and plan from the artifact:
 
-    /sdlc-spdd-plan <requirement, Jira issue, GitHub issue, or @requirements/file.md>
+    /sdlc-spdd-analysis <requirement, Jira issue, GitHub issue, or @requirements/file.md>
+    ./scripts/sdlc-spdd/index-spdd-analysis.sh --target . --work-id <WORK-ID>
+    /sdlc-spdd-plan @spdd/analysis/<WORK-ID>-analysis.md
 
 ## Triage New Work
 
@@ -180,17 +182,23 @@ Quick command sequences. Full prompt wording: [Session prompt standard](session-
 
 ### New feature
 
-    /sdlc-spdd-plan @requirements/<feature>.md
+    /sdlc-spdd-analysis @requirements/<feature>.md
+    ./scripts/sdlc-spdd/index-spdd-analysis.sh --target . --work-id <WORK-ID>
+    /sdlc-spdd-plan @spdd/analysis/<WORK-ID>-analysis.md
     /sdlc-spdd-architect @spdd/canvas/<WORK-ID>.md
     /sdlc-spdd-code @spdd/canvas/<WORK-ID>.md operation T01
+    /sdlc-spdd-api-test @spdd/canvas/<WORK-ID>.md
     /sdlc-spdd-review @spdd/canvas/<WORK-ID>.md
     /sdlc-spdd-sync @spdd/canvas/<WORK-ID>.md
 
 ### Bugfix
 
-    /sdlc-spdd-plan BUG: <bug summary and reproduction>
+    /sdlc-spdd-analysis BUG: <bug summary and reproduction>
+    ./scripts/sdlc-spdd/index-spdd-analysis.sh --target . --work-id <WORK-ID>
+    /sdlc-spdd-plan @spdd/analysis/<WORK-ID>-analysis.md
     /sdlc-spdd-architect @spdd/canvas/<WORK-ID>.md
     /sdlc-spdd-code @spdd/canvas/<WORK-ID>.md operation T01
+    /sdlc-spdd-api-test @spdd/canvas/<WORK-ID>.md
     /sdlc-spdd-review @spdd/canvas/<WORK-ID>.md
     /sdlc-spdd-retro @spdd/canvas/<WORK-ID>.md
 
