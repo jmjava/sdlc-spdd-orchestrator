@@ -11,7 +11,7 @@ The hybrid keeps these concerns separate:
 - SDLC Agents answer who acts, when they act, and which context they should load.
 - SPDD answers what artifact governs the work and how prompt/code drift is reconciled.
 - Roadmap, milestone, and session-note files answer where the project is going and what happened recently.
-- This scaffold answers how those practices are installed, mapped, and invoked from Cursor or GitHub Copilot.
+- This scaffold answers how those practices are installed, mapped, and invoked from Cursor, GitHub Copilot, or Claude Code.
 
 ## Planning narrative stays separate from SPDD contracts
 
@@ -30,7 +30,7 @@ This avoids over-structuring project-level planning while still giving agents en
 
 ## Multi-assistant Markdown adapters
 
-The first version is templates and scripts, not a compiled CLI or agent runtime. Cursor commands and GitHub Copilot prompt files are adapters over the same lifecycle semantics.
+The first version is templates and scripts, not a compiled CLI or agent runtime. Cursor commands, GitHub Copilot prompt files, and Claude Code commands are adapters over the same lifecycle semantics.
 
 ## Duplicate canvas copies
 
@@ -42,7 +42,7 @@ Scripts never overwrite existing files unless `--force` is passed. `--dry-run` i
 
 ## Agent overlays are orchestrator-only today
 
-`templates/agent-overlays/` defines per-role overlay prompts referenced in `STARTER-SPEC.md`, but install scripts do not copy them to target projects yet. Target projects use Cursor commands, Copilot prompts, and playbooks instead. Treat overlays as future/post-MVP material unless install support is added.
+`templates/agent-overlays/` defines per-role overlay prompts referenced in `STARTER-SPEC.md`, but install scripts do not copy them to target projects yet. Target projects use Cursor commands, Copilot prompts, Claude Code commands, and playbooks instead. Treat overlays as future/post-MVP material unless install support is added.
 
 ## Markdown as primary format
 

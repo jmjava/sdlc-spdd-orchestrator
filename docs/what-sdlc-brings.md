@@ -39,7 +39,7 @@ Work moves through specialized phases instead of one undifferentiated "fix it" c
 
     Init -> Plan -> Architect -> Code -> Review -> Prompt-update -> Retro -> Sync
 
-Each phase has a dedicated command. Run `/sdlc-spdd-*` in **AI chat** (Cursor/Copilot), not a terminal — see [How to run assistant commands](initialization-and-invocation.md#how-to-run-assistant-commands):
+Each phase has a dedicated command. Run `/sdlc-spdd-*` in **AI chat** (Cursor/Copilot/Claude Code), not a terminal — see [How to run assistant commands](initialization-and-invocation.md#how-to-run-assistant-commands):
 
 | Phase | Command |
 |-------|---------|
@@ -98,7 +98,7 @@ Output: `agent-context/sessions/current-session.md` with artifact status, planni
 
 ### 8. Multi-assistant adapters
 
-The same lifecycle semantics work in Cursor (`/sdlc-spdd-*` commands) and GitHub Copilot (`.github/prompts/sdlc-spdd-*.prompt.md`).
+The same lifecycle semantics work in Cursor (`/sdlc-spdd-*` commands), GitHub Copilot (`.github/prompts/sdlc-spdd-*.prompt.md`), and Claude Code (`.claude/commands/sdlc-spdd-*.md` with `CLAUDE.md`).
 
 ## What SPDD Contributes (for contrast)
 
@@ -155,7 +155,7 @@ The generated resume prompt includes SDLC phase context, SPDD canvas references,
 ## What SDLC-SPDD Is Not
 
 - Not a compiled multi-agent runtime.
-- Not a replacement for Cursor, Copilot, Jira, or OpenSPDD CLI.
+- Not a replacement for Cursor, Copilot, Claude Code, Jira, or OpenSPDD CLI.
 - Not an official extension of upstream SDLC Agents or SPDD projects.
 - Not a single source of truth that replaces all three layers — each layer has a distinct job.
 

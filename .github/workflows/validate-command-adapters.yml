@@ -4,14 +4,22 @@ on:
   pull_request:
     paths:
       - 'templates/cursor/sdlc-spdd-*.md'
+      - 'templates/cursor/rules/sdlc-spdd.mdc'
       - 'templates/copilot/prompts/sdlc-spdd-*.prompt.md'
+      - 'templates/copilot/copilot-instructions.md'
+      - 'templates/claude/commands/sdlc-spdd-*.md'
+      - 'templates/claude/CLAUDE.md'
       - 'scripts/validate-command-adapters.sh'
       - '.github/workflows/validate-command-adapters.yml'
   push:
     branches: [main]
     paths:
       - 'templates/cursor/sdlc-spdd-*.md'
+      - 'templates/cursor/rules/sdlc-spdd.mdc'
       - 'templates/copilot/prompts/sdlc-spdd-*.prompt.md'
+      - 'templates/copilot/copilot-instructions.md'
+      - 'templates/claude/commands/sdlc-spdd-*.md'
+      - 'templates/claude/CLAUDE.md'
       - 'scripts/validate-command-adapters.sh'
       - '.github/workflows/validate-command-adapters.yml'
 
@@ -21,5 +29,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Validate Cursor + Copilot template parity
+      - name: Check validator shell syntax
+        run: bash -n ./scripts/validate-command-adapters.sh
+
+      - name: Validate Cursor + Copilot + Claude template parity
         run: ./scripts/validate-command-adapters.sh

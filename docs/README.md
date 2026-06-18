@@ -38,6 +38,7 @@ You can treat these six pages as the canonical onboarding path.
 | [Framework upgrade](framework-upgrade.md) | A target app already has an older SDLC-SPDD install |
 | [Cursor usage](cursor-usage.md) | You only need Cursor command setup and invocation |
 | [GitHub Copilot usage](copilot-usage.md) | You only need Copilot instructions and prompt files |
+| [Claude Code usage](claude-usage.md) | You only need Claude Code command and CLAUDE.md setup |
 | [Agent session scripts](agent-session-scripts.md) | You need the setup/resync/capture scripts and target-local runtime commands |
 
 ## If You Are Using This Daily
@@ -95,6 +96,7 @@ Read these when you need historical context, compliance detail, or repository ar
 |-------|-------------|
 | [Hybrid SDLC Agents + SPDD model](hybrid-model.md) | You want the original two-influence story and how Planning was added |
 | [Architecture](architecture.md) | You want the five delivery concerns built on the three parts |
+| [Context loading and scaling](context-loading-and-scaling.md) | Tiers, scaling, and [bootstrap + index-based loading](context-loading-and-scaling.md#bootstrap-and-index-based-loading) |
 | [SPDD compliance](spdd-compliance.md) | You need to verify against Structured Prompt-Driven Development expectations |
 | [Design decisions](design-decisions.md) | You want the rationale behind major choices |
 
@@ -120,4 +122,4 @@ Read these when you need historical context, compliance detail, or repository ar
 
 Follow the adoption path in the repository [README](../README.md#the-adoption-path): install → first day → three-part operating path → daily prompts.
 
-After install, target-local copies of these docs live at `docs/sdlc-spdd/` in your application. Cursor/Copilot slash-command examples: [Initialization and invocation](initialization-and-invocation.md).
+After install, target-local copies of these docs live at `docs/sdlc-spdd/` in your application. Cursor/Copilot/Claude Code slash-command examples: [Initialization and invocation](initialization-and-invocation.md).

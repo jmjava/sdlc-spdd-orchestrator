@@ -10,7 +10,12 @@ Use this guide to install SDLC-SPDD Orchestrator into an application repository.
 | Existing project initialized by an older orchestrator version | `upgrade-project.sh --all` |
 | Cursor only | `init-project.sh --cursor` |
 | GitHub Copilot only | `init-project.sh --copilot` |
-| Both Cursor and Copilot | `setup-agent-prompts.sh --all` |
+| Claude Code only | `init-project.sh --claude` |
+| Cursor, Copilot, and Claude Code | `setup-agent-prompts.sh --all` |
+
+For backward compatibility, omitting assistant flags installs or upgrades Cursor
+and GitHub Copilot only. Use `--all` or `--claude` when you want Claude Code
+files.
 
 ## Fresh Install
 
@@ -35,8 +40,11 @@ This installs:
 - `agent-context/harness/`
 - `docs/sdlc-spdd/` (start at `docs/sdlc-spdd/README.md` — lean hub for this project)
 - `.cursor/commands/`
+- `.cursor/rules/sdlc-spdd.mdc` (always-on Cursor operating-model rule)
 - `.github/copilot-instructions.md`
 - `.github/prompts/`
+- `CLAUDE.md`
+- `.claude/commands/`
 - `.github/workflows/validate-sdlc-spdd-adapters.yml` (when both Cursor and Copilot adapters are installed)
 - `scripts/sdlc-spdd/`
 
@@ -62,13 +70,17 @@ GitHub Copilot:
 
     ./scripts/init-project.sh --target /path/to/app --copilot
 
-Both:
+Claude Code:
 
-    ./scripts/init-project.sh --target /path/to/app --cursor --copilot
+    ./scripts/init-project.sh --target /path/to/app --claude
+
+All three:
+
+    ./scripts/init-project.sh --target /path/to/app --cursor --copilot --claude
 
 ## Preview Before Installing
 
-    ./scripts/init-project.sh --target /path/to/app --cursor --copilot --dry-run
+    ./scripts/init-project.sh --target /path/to/app --cursor --copilot --claude --dry-run
 
 or:
 
@@ -90,6 +102,9 @@ The upgrade script updates framework-owned files and preserves:
 - reviews.
 - sync logs.
 - existing memory content.
+- existing root `CLAUDE.md` content; SDLC-SPDD only adds or refreshes its
+  marked managed grounding block.
+- existing `.github/workflows/validate-sdlc-spdd-adapters.yml` customizations.
 
 Backups of overwritten framework files are stored under:
 
@@ -97,13 +112,15 @@ Backups of overwritten framework files are stored under:
 
 ## After Install
 
-Open `/path/to/app` in Cursor or a Copilot-enabled editor.
+Open `/path/to/app` in Cursor, a Copilot-enabled editor, or Claude Code.
 
 In **AI chat** (not the terminal), initialize project context. `/sdlc-spdd-init` is an assistant command, not a shell command — see [How to run assistant commands](initialization-and-invocation.md#how-to-run-assistant-commands).
 
 **Cursor:** Chat → `/sdlc-spdd-init`
 
 **Copilot:** Chat → `/sdlc-spdd-init` or `#prompt:sdlc-spdd-init`
+
+**Claude Code:** `/sdlc-spdd-init`
 
     /sdlc-spdd-init
 
@@ -128,7 +145,8 @@ With assistant adapters:
 
     ./scripts/sdlc-spdd/verify-project-install.sh --target . --require-cursor
     ./scripts/sdlc-spdd/verify-project-install.sh --target . --require-copilot
-    ./scripts/sdlc-spdd/verify-project-install.sh --target . --require-cursor --require-copilot
+    ./scripts/sdlc-spdd/verify-project-install.sh --target . --require-claude
+    ./scripts/sdlc-spdd/verify-project-install.sh --target . --require-cursor --require-copilot --require-claude
 
 From the orchestrator repository during development:
 
@@ -149,7 +167,11 @@ Exit code `0` means the install is complete. Non-zero lists missing items and su
 Avoid hand-editing generated framework prompt files unless you intend to keep local customizations:
 
 - `.cursor/commands/sdlc-spdd-*.md`
+- `.cursor/rules/sdlc-spdd.mdc`
 - `.github/prompts/sdlc-spdd-*.prompt.md`
+- `.github/copilot-instructions.md`
+- `.claude/commands/sdlc-spdd-*.md`
+- `CLAUDE.md`
 - `scripts/sdlc-spdd/*.sh`
 - `docs/sdlc-spdd/*.md`
 

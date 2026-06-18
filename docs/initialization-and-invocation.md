@@ -1,17 +1,17 @@
 # Initialization and Invocation
 
-This guide is for **Cursor and Copilot invocation**: slash commands, `#prompt:` fallbacks, and side-by-side examples per assistant. It does not duplicate install steps, session rhythm, or the canonical prompt library.
+This guide is for **Cursor, Copilot, and Claude Code invocation**: slash commands, `#prompt:` fallbacks, and side-by-side examples per assistant. It does not duplicate install steps, session rhythm, or the canonical prompt library.
 
 | Need | Open |
 |------|------|
 | Install, upgrade, verify | [Installing into your project](installing-into-your-project.md) |
 | Copy-paste prompts | [Session prompt standard](session-prompt-standard.md) |
 | Script sequences and checklists | [Daily runbook](daily-runbook.md) |
-| **Cursor / Copilot command syntax** | **This page** |
+| **Cursor / Copilot / Claude Code command syntax** | **This page** |
 
 ## How to Run Assistant Commands
 
-Lines like `/sdlc-spdd-init` are **not shell commands**. Do not paste them into a terminal. They are **prompts you send in the AI chat** inside your editor (Cursor Chat/Agent or GitHub Copilot Chat).
+Lines like `/sdlc-spdd-init` are **not shell commands**. Do not paste them into a terminal. They are **prompts you send in the AI chat** inside your editor (Cursor Chat/Agent, GitHub Copilot Chat, or Claude Code).
 
 ### Cursor
 
@@ -33,12 +33,19 @@ If slash commands do not appear:
 
 Or: **Command Palette** → **Chat: Run Prompt** → choose `sdlc-spdd-init`.
 
+### Claude Code
+
+1. Open the **target application** folder in Claude Code.
+2. Type `/` and pick `sdlc-spdd-init` from the list, **or** type `/sdlc-spdd-init` and press Enter.
+
+The command runs as a chat message. Claude Code reads `.claude/commands/sdlc-spdd-init.md` and follows that skill, with `CLAUDE.md` loaded automatically as project memory.
+
 ### Shell commands vs assistant commands
 
 | Kind | Example | Where you run it |
 |------|---------|------------------|
 | **Shell** (terminal) | `./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id FEAT-001 --phase plan` | Terminal in the target project |
-| **Assistant** (chat) | `/sdlc-spdd-init`, `/sdlc-spdd-plan @requirements/foo.md` | Cursor or Copilot **chat** input |
+| **Assistant** (chat) | `/sdlc-spdd-init`, `/sdlc-spdd-plan @requirements/foo.md` | Cursor, Copilot, or Claude Code **chat** input |
 
 All `/sdlc-spdd-*` lines in the docs are **assistant commands** unless they start with `./` or `cd`.
 
@@ -73,6 +80,10 @@ or open the Command Palette and run:
 
 Then choose `sdlc-spdd-init`.
 
+Claude Code:
+
+    /sdlc-spdd-init
+
 Expected result:
 
 - Stack markers are detected.
@@ -101,7 +112,7 @@ To reconcile canvas drift before step 2, use `resync-agent-session.sh --from-can
 
 ## How to Start Work
 
-Canonical prompt wording: [Session prompt standard](session-prompt-standard.md) and [Triage](session-prompt-standard.md#triage-no-work-id-yet). Below: **Cursor and Copilot invocation** examples for common entry points (plain language, files, Jira, GitHub, bugs).
+Canonical prompt wording: [Session prompt standard](session-prompt-standard.md) and [Triage](session-prompt-standard.md#triage-no-work-id-yet). Below: **Cursor, Copilot, and Claude Code invocation** examples for common entry points (plain language, files, Jira, GitHub, bugs). The slash-command syntax (`/sdlc-spdd-* @file`) is identical across all three assistants.
 
 Use one Work ID for each unit of work. Good IDs include:
 
@@ -117,6 +128,10 @@ Cursor:
     /sdlc-spdd-plan Create an endpoint that returns the current status for an order by ID.
 
 Copilot Chat:
+
+    /sdlc-spdd-plan Create an endpoint that returns the current status for an order by ID.
+
+Claude Code:
 
     /sdlc-spdd-plan Create an endpoint that returns the current status for an order by ID.
 
@@ -167,7 +182,7 @@ or:
 
 Always include the Work ID and point to the active artifacts. More examples and anti-patterns: [During session](session-prompt-standard.md#during-session) and [Anti-patterns](session-prompt-standard.md#anti-patterns) in Session prompt standard.
 
-Good (Cursor or Copilot):
+Good (Cursor, Copilot, or Claude Code):
 
     For FEAT-001, read @spdd/canvas/FEAT-001-order-status-api.md and @agent-context/features/FEAT-001-order-status-api/progress-log.md. What should I do next?
 
@@ -177,16 +192,18 @@ Avoid:
 
 ## Invoking the SDLC-SPDD Skills
 
-| Skill | Cursor invocation | Copilot invocation | Use when |
-|-------|-------------------|--------------------|----------|
-| Initialize | `/sdlc-spdd-init` | `/sdlc-spdd-init` | First time in a target application |
-| Plan | `/sdlc-spdd-plan @requirements/file.md` | `/sdlc-spdd-plan @requirements/file.md` | Convert requirement, Jira issue, or GitHub issue into a canvas |
-| Architect | `/sdlc-spdd-architect @spdd/canvas/WORK-ID.md` | `/sdlc-spdd-architect @spdd/canvas/WORK-ID.md` | Harden the canvas before coding |
-| Code | `/sdlc-spdd-code @spdd/canvas/WORK-ID.md operation T01` | `/sdlc-spdd-code @spdd/canvas/WORK-ID.md operation T01` | Implement one approved operation |
-| Review | `/sdlc-spdd-review @spdd/canvas/WORK-ID.md` | `/sdlc-spdd-review @spdd/canvas/WORK-ID.md` | Review changes against the canvas |
-| Prompt update | `/sdlc-spdd-prompt-update @spdd/canvas/WORK-ID.md` | `/sdlc-spdd-prompt-update @spdd/canvas/WORK-ID.md` | Update the canvas first when requirements, acceptance criteria, or behavior intent change |
-| Retro | `/sdlc-spdd-retro @spdd/canvas/WORK-ID.md` | `/sdlc-spdd-retro @spdd/canvas/WORK-ID.md` | Capture reusable learnings |
-| Sync | `/sdlc-spdd-sync @spdd/canvas/WORK-ID.md` | `/sdlc-spdd-sync @spdd/canvas/WORK-ID.md` | Reconcile implementation reality with the canvas |
+The same `/sdlc-spdd-*` syntax works in Cursor, Copilot, and Claude Code.
+
+| Skill | Invocation (Cursor / Copilot / Claude Code) | Use when |
+|-------|---------------------------------------------|----------|
+| Initialize | `/sdlc-spdd-init` | First time in a target application |
+| Plan | `/sdlc-spdd-plan @requirements/file.md` | Convert requirement, Jira issue, or GitHub issue into a canvas |
+| Architect | `/sdlc-spdd-architect @spdd/canvas/WORK-ID.md` | Harden the canvas before coding |
+| Code | `/sdlc-spdd-code @spdd/canvas/WORK-ID.md operation T01` | Implement one approved operation |
+| Review | `/sdlc-spdd-review @spdd/canvas/WORK-ID.md` | Review changes against the canvas |
+| Prompt update | `/sdlc-spdd-prompt-update @spdd/canvas/WORK-ID.md` | Update the canvas first when requirements, acceptance criteria, or behavior intent change |
+| Retro | `/sdlc-spdd-retro @spdd/canvas/WORK-ID.md` | Capture reusable learnings |
+| Sync | `/sdlc-spdd-sync @spdd/canvas/WORK-ID.md` | Reconcile implementation reality with the canvas |
 
 ## Daily Invocation Pattern
 

@@ -4,11 +4,46 @@ This folder holds project memory, feature workspaces, playbooks, and quality har
 
 ## Layout
 
-- `memory/` — durable project context
+- `memory/` — durable project context and retrieval indexes
 - `playbooks/` — repeatable workflows by work type
 - `features/` — per-work workspaces
 - `sessions/` — generated session briefs and current-session handoffs
 - `harness/` — validation rules and quality gates
+
+### Memory and indexes
+
+**Durable knowledge** (append-only, area-tagged at capture when areas are known):
+
+- `memory/project-memory.md`, `architecture-decisions.md`, `known-pitfalls.md`,
+  `reusable-patterns.md`
+
+### Bootstrap and index-based loading
+
+Bootstrap orients the agent; indexes make selective loading scale. Together they
+replace directory scans and chronological history reads.
+
+| Step | Action |
+|------|--------|
+| Install | `setup-agent-prompts.sh` — grounding, memory seeds, `phase-index.md`, scripts |
+| Every request | Tier 1 grounding loads automatically (operating model + index rules) |
+| Every session | `start-agent-session.sh` → read `sessions/current-session.md` (Framework Orientation + Resume Prompt) |
+| Before coding in an area | Filter `memory/context-index.md` by Area |
+| Phase known, area not yet | Use `memory/phase-index.md` |
+| At capture | Script parses session content (`summary`, `session-notes/`, current artifacts) for categories; optional `--areas` to override |
+
+**Indexes** (read these instead of scanning directories):
+
+| File | When to use |
+|------|-------------|
+| `memory/code-areas.md` | At capture — known categories; match session content here first |
+| `memory/context-index.md` | Before touching code — filter by Area; Kinds: session, decision, pitfall, pattern |
+| `memory/session-index.md` | Session-only view — filter by Work ID or Area, newest first |
+| `memory/phase-index.md` | Phase-known — playbooks, harness, planning files by SDLC phase |
+
+**Supporting artifacts:** `memory/sessions/` (per-session detail),
+`memory/session-history.md` (recent window only; archive for older entries).
+
+Full detail: [Bootstrap and index-based loading](context-loading-and-scaling.md#bootstrap-and-index-based-loading) in `docs/sdlc-spdd/`.
 
 ## Canonical Copies
 

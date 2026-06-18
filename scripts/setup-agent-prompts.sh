@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 usage() {
   cat <<'EOF'
-Usage: setup-agent-prompts.sh --target <path> [--cursor] [--copilot] [--all] [--force] [--dry-run]
+Usage: setup-agent-prompts.sh --target <path> [--cursor] [--copilot] [--claude] [--all] [--force] [--dry-run]
 
 Set up the integrated SDLC Agents + SPDD prompt system in a target project.
 
@@ -16,18 +16,21 @@ Options:
   --target <path>   Target project path (required)
   --cursor          Install Cursor command prompts
   --copilot         Install GitHub Copilot instructions and prompt files
+  --claude          Install Claude Code commands and CLAUDE.md
   --all             Install all supported assistant prompt adapters
   --force           Overwrite existing generated files
   --dry-run         Show actions without writing files
   --help            Print this help message
 
-If no assistant flag is provided, --all is assumed.
+If no assistant flag is provided, Cursor and Copilot are installed for backward
+compatibility. Use --all to include Claude Code.
 EOF
 }
 
 TARGET=""
 INSTALL_CURSOR=0
 INSTALL_COPILOT=0
+INSTALL_CLAUDE=0
 FORCE=0
 DRY_RUN=0
 
@@ -45,9 +48,14 @@ while [[ $# -gt 0 ]]; do
       INSTALL_COPILOT=1
       shift
       ;;
+    --claude)
+      INSTALL_CLAUDE=1
+      shift
+      ;;
     --all)
       INSTALL_CURSOR=1
       INSTALL_COPILOT=1
+      INSTALL_CLAUDE=1
       shift
       ;;
     --force)
@@ -76,7 +84,7 @@ if [[ -z "${TARGET}" ]]; then
   exit 1
 fi
 
-if [[ "${INSTALL_CURSOR}" -eq 0 && "${INSTALL_COPILOT}" -eq 0 ]]; then
+if [[ "${INSTALL_CURSOR}" -eq 0 && "${INSTALL_COPILOT}" -eq 0 && "${INSTALL_CLAUDE}" -eq 0 ]]; then
   INSTALL_CURSOR=1
   INSTALL_COPILOT=1
 fi
@@ -87,6 +95,9 @@ if [[ "${INSTALL_CURSOR}" -eq 1 ]]; then
 fi
 if [[ "${INSTALL_COPILOT}" -eq 1 ]]; then
   init_args+=(--copilot)
+fi
+if [[ "${INSTALL_CLAUDE}" -eq 1 ]]; then
+  init_args+=(--claude)
 fi
 if [[ "${FORCE}" -eq 1 ]]; then
   init_args+=(--force)
@@ -100,7 +111,7 @@ fi
 echo
 echo "Integrated SDLC-SPDD prompt setup complete."
 echo "Next steps:"
-echo "  1. Open the target project in Cursor or GitHub Copilot."
+echo "  1. Open the target project in Cursor, GitHub Copilot, or Claude Code."
 echo "  2. Start or resume context:"
 echo "     ${TARGET}/scripts/sdlc-spdd/start-agent-session.sh --target ${TARGET} --phase init"
 echo "  3. Invoke:"

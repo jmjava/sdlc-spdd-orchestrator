@@ -46,6 +46,23 @@ Before removing folders, skipping install steps, or consolidating docs:
 
 `requirements/milestones/` is Planning (milestone → plan bridge). `requirements/` is Planning (ad-hoc). Both stay.
 
+### Whole-ecosystem grounding is the norm for every assistant
+
+Every supported assistant **must** ship an always-on grounding file so all work —
+not just `/sdlc-spdd-*` command runs — is grounded in the full ecosystem
+(Planning + SPDD + SDLC):
+
+- Cursor: `templates/cursor/rules/sdlc-spdd.mdc` (`alwaysApply: true`) → `.cursor/rules/`
+- GitHub Copilot: `templates/copilot/copilot-instructions.md` → `.github/copilot-instructions.md`
+- Claude Code: `templates/claude/CLAUDE.md` → `CLAUDE.md`
+
+When you add a new assistant or edit these files, keep the shared operating-model
+anchors (lifecycle line, `## Operating Model`, `## Work Rules`) and the Planning
+(`ROADMAP.md`, `milestone-*.md`, `session-notes/`), SPDD (`spdd/canvas/`), and
+SDLC (`agent-context/sessions/`, `agent-context/memory/`) artifacts.
+`validate-command-adapters.sh` enforces this in CI; run
+`./tests/test-adapter-install.sh` before pushing.
+
 ## Documentation Consistency Checklist
 
 Before merging doc or script changes that touch the three-part model (Planning, SPDD, SDLC), verify:
@@ -63,7 +80,7 @@ Before merging doc or script changes that touch the three-part model (Planning, 
 - [ ] **Prompt standards** — Session is default; SPDD and Planning are drill-downs; link [Which prompt standard?](docs/session-prompt-standard.md#which-prompt-standard)
 - [ ] **Script output** — if a script prints “next step” prompts, they align with the matching prompt standard doc
 - [ ] **Diagrams** — if you changed a Mermaid diagram, `./scripts/render-diagrams.sh --check` passes; regenerate committed exports with `./scripts/render-diagrams.sh`
-- [ ] **Daily doc roles** — prompts stay in `session-prompt-standard.md`; step table in `workflow.md`; rules/checklists in `daily-runbook.md`; Cursor/Copilot syntax in `initialization-and-invocation.md`; concepts in `useful-concepts-and-commands.md`; commands in `sdlc-spdd-cheat-sheet.md` (link, do not duplicate)
+- [ ] **Daily doc roles** — prompts stay in `session-prompt-standard.md`; step table in `workflow.md`; rules/checklists in `daily-runbook.md`; Cursor/Copilot/Claude Code syntax in `initialization-and-invocation.md`; concepts in `useful-concepts-and-commands.md`; commands in `sdlc-spdd-cheat-sheet.md` (link, do not duplicate)
 - [ ] **Target docs hub** — `docs/README.md` is orchestrator-only; installed projects use `templates/project-docs/docs-sdlc-spdd-README.md` → `docs/sdlc-spdd/README.md` (do not copy orchestrator `docs/README.md` to targets)
 - [ ] **Assistant vs shell** — `/sdlc-spdd-*` is chat (link [How to run assistant commands](docs/initialization-and-invocation.md#how-to-run-assistant-commands)); `./scripts/` is terminal
 - [ ] **Script paths** — install/setup from orchestrator `./scripts/`; daily/runtime in target `./scripts/sdlc-spdd/`; label which context in examples
@@ -107,4 +124,4 @@ When borrowing ideas from SDLC Agents or OpenSPDD, preserve attribution and avoi
 
 ## Planned / Not Installed
 
-`templates/agent-overlays/` exists for future per-role overlays but is **not** copied by install scripts today. Target projects use Cursor commands, Copilot prompts, and playbooks. See [design-decisions.md](docs/design-decisions.md).
+`templates/agent-overlays/` exists for future per-role overlays but is **not** copied by install scripts today. Target projects use Cursor commands, Copilot prompts, Claude Code commands, and playbooks. See [design-decisions.md](docs/design-decisions.md).

@@ -40,7 +40,7 @@ Design contracts live in the repository alongside code:
 - `spdd/canvas/<WORK-ID>.md` — canonical REASONS Canvas
 - `spdd/reviews/<WORK-ID>-review.md` — review against canvas
 - `spdd/sync/<WORK-ID>-sync.md` — implementation-to-canvas reconciliation
-- Cursor commands and Copilot prompt files — phase-specific assistant behavior
+- Cursor commands, Copilot prompt files, and Claude Code commands — phase-specific assistant behavior
 
 Prompts are version controlled, reviewable, and reusable.
 

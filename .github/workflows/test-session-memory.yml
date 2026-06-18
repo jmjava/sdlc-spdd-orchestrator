@@ -1,0 +1,28 @@
+name: Test Session Memory Index
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/capture-session-memory.sh'
+      - 'scripts/start-agent-session.sh'
+      - 'tests/test-session-memory-index.sh'
+      - '.github/workflows/test-session-memory.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/capture-session-memory.sh'
+      - 'scripts/start-agent-session.sh'
+      - 'tests/test-session-memory-index.sh'
+      - '.github/workflows/test-session-memory.yml'
+
+jobs:
+  test-session-memory:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check shell syntax
+        run: bash -n scripts/capture-session-memory.sh scripts/start-agent-session.sh tests/test-session-memory-index.sh
+
+      - name: Run session memory index + rotation regression tests
+        run: ./tests/test-session-memory-index.sh

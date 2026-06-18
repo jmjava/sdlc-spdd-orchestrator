@@ -10,9 +10,11 @@ Or install commands only:
 
     ./scripts/install-cursor-commands.sh --target /path/to/your/project
 
-Commands are copied to `.cursor/commands/`.
+Commands are copied to `.cursor/commands/`, and an always-on operating-model rule is installed to `.cursor/rules/sdlc-spdd.mdc`.
 
-To install GitHub Copilot prompt files instead, see [copilot-usage.md](copilot-usage.md).
+The rule (`alwaysApply: true`) gives Cursor persistent grounding in the whole ecosystem — Planning (`ROADMAP.md`, `milestone-*.md`, `session-notes/`), SPDD (`spdd/canvas/`), and SDLC (`agent-context/sessions/`, `agent-context/memory/`) — on every chat, not only when a `/sdlc-spdd-*` command runs. This mirrors GitHub Copilot's `.github/copilot-instructions.md` and Claude Code's `CLAUDE.md`.
+
+To install GitHub Copilot prompt files instead, see [copilot-usage.md](copilot-usage.md). To install Claude Code commands, see [claude-usage.md](claude-usage.md).
 
 ## How to Invoke a Command
 

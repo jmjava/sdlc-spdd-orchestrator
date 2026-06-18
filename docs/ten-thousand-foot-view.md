@@ -87,7 +87,7 @@ This is deliberately slower than asking an assistant to "just fix it." It is mea
 
 ## Main Assistant Skills
 
-`/sdlc-spdd-*` skills run in **AI chat** (Cursor/Copilot), not a terminal. [How to run assistant commands](initialization-and-invocation.md#how-to-run-assistant-commands).
+`/sdlc-spdd-*` skills run in **AI chat** (Cursor/Copilot/Claude Code), not a terminal. [How to run assistant commands](initialization-and-invocation.md#how-to-run-assistant-commands).
 
 | Skill | Role |
 |-------|------|
@@ -127,7 +127,7 @@ This is deliberately slower than asking an assistant to "just fix it." It is mea
 SDLC-SPDD Orchestrator is not:
 
 - a compiled agent runtime.
-- a replacement for Cursor or GitHub Copilot.
+- a replacement for Cursor, GitHub Copilot, or Claude Code.
 - a replacement for Jira or GitHub Issues.
 - a full clone of SDLC Agents.
 - a drop-in replacement for the upstream OpenSPDD CLI.

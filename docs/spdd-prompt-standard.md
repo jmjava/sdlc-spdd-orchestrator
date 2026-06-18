@@ -172,6 +172,7 @@ Ensure canvas Metadata includes:
 | This page | Free-form SPDD governance prompts |
 | `templates/cursor/sdlc-spdd-plan.md` through `sdlc-spdd-sync.md` | Cursor phase commands |
 | `templates/copilot/prompts/sdlc-spdd-*.prompt.md` | Copilot phase commands |
+| `templates/claude/commands/sdlc-spdd-*.md` | Claude Code phase commands |
 | `docs/spdd-compliance.md` | Compliance matrix and three core skills |
 | `.github/workflows/validate-canvas.yml` | CI canvas structure validation |
 

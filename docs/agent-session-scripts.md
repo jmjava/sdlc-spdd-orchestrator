@@ -13,7 +13,7 @@ They solve three operational needs:
 
 | Script | Purpose |
 |--------|---------|
-| `scripts/setup-agent-prompts.sh` | Integrated setup for folders, memory, sessions, playbooks, Cursor prompts, and Copilot prompts |
+| `scripts/setup-agent-prompts.sh` | Integrated setup for folders, memory, sessions, playbooks, Cursor prompts, Copilot prompts, and Claude Code commands |
 | `scripts/upgrade-project.sh` | Framework-only upgrade for older initialized projects without overwriting implementation files or existing memory |
 | `scripts/sdlc-spdd/start-agent-session.sh` | Target-local script that creates a session brief for a new agent |
 | `scripts/sdlc-spdd/resync-agent-session.sh` | Target-local script that checks or reconciles feature/canonical canvases, validates the canvas, and creates a session brief |
@@ -22,7 +22,7 @@ They solve three operational needs:
 | `scripts/sdlc-spdd/sync-roadmap-from-spdd.sh` | Target-local script that refreshes a managed roadmap summary from canvas metadata |
 | `scripts/sdlc-spdd/summarize-session-notes.sh` | Target-local script that imports existing session notes into durable memory |
 | `scripts/sdlc-spdd/sync-agent-context.sh` | Target-local low-level canvas copy synchronization |
-| `scripts/sdlc-spdd/validate-command-adapters.sh` | Target-local checker that validates Cursor/Copilot command-pack parity in the installed project |
+| `scripts/sdlc-spdd/validate-command-adapters.sh` | Target-local checker that validates Cursor/Copilot/Claude Code command-pack parity in the installed project |
 | `scripts/sdlc-spdd/verify-agent-command-effects.sh` | Target-local verifier for deterministic artifact side-effects after `/sdlc-spdd-*` command invocations and post-capture planning sync |
 | `scripts/sdlc-spdd/validate-reasons-canvas.sh` | Target-local REASONS Canvas structure validation |
 | `scripts/sdlc-spdd/verify-project-install.sh` | Target-local three-part install verification (Planning, SPDD, SDLC) |
@@ -35,7 +35,10 @@ Run this from the SDLC-SPDD orchestrator repository:
 
 Equivalent explicit setup:
 
-    ./scripts/init-project.sh --target /path/to/app --cursor --copilot
+    ./scripts/init-project.sh --target /path/to/app --cursor --copilot --claude
+
+For backward compatibility, omitting assistant flags installs Cursor and
+GitHub Copilot only. Use `--all` or `--claude` to include Claude Code.
 
 The target app receives:
 
@@ -57,6 +60,8 @@ The target app receives:
 - `.cursor/commands/`
 - `.github/copilot-instructions.md`
 - `.github/prompts/`
+- `CLAUDE.md` when missing
+- `.claude/commands/`
 - `scripts/sdlc-spdd/` runtime session scripts
 
 ## Upgrade an Older Installation
@@ -69,11 +74,15 @@ Preview first:
 
     ./scripts/upgrade-project.sh --target /path/to/app --all --dry-run
 
-The upgrade updates framework-owned prompts, playbooks, harness files, target-local docs under `docs/sdlc-spdd/`, and target-local runtime scripts. It preserves application source, application docs outside `docs/sdlc-spdd/`, requirements, canvases, feature workspaces, reviews, sync logs, and existing memory content.
+The upgrade updates framework-owned prompts, playbooks, harness files, target-local docs under `docs/sdlc-spdd/`, and target-local runtime scripts. It preserves application source, application docs outside `docs/sdlc-spdd/`, requirements, canvases, feature workspaces, reviews, sync logs, existing memory content, existing root `CLAUDE.md`, and target workflow customizations.
 
 ## 2. Start a New Agent Session
 
-Create a session brief before asking a new agent to continue work:
+Create a session brief before asking a new agent to continue work. This is the
+**session bootstrap**: it combines automatic Tier 1 grounding (already loaded on
+every request) with work-specific context and Framework Orientation pointers.
+
+See [Bootstrap and index-based loading](context-loading-and-scaling.md#bootstrap-and-index-based-loading).
 
     cd /path/to/app
     ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id FEAT-001-order-status-api --phase code
@@ -89,6 +98,7 @@ This writes:
 
 The brief includes:
 
+- **Framework Orientation** — how to operate within SDLC-SPDD (grounding, docs, indexes)
 - Work ID
 - phase
 - active milestone (explicit `--milestone` or auto-detected from milestone files)
@@ -142,13 +152,17 @@ The reconcile path:
 
 ## 4. Capture Current Session Memory
 
-At the end of a session, persist what happened:
+At the end of a session, persist what happened. The script **parses session
+content** (summary, `session-notes/`, brief, canvas, progress log, and capture
+flags) for path and package tokens, matches known categories in `code-areas.md`,
+and registers new categories automatically. Use `--areas` only to override or
+supplement parsed areas.
 
     ./scripts/sdlc-spdd/capture-session-memory.sh \
       --target . \
       --work-id FEAT-001-order-status-api \
       --phase code \
-      --summary "Implemented operation T01 for order status lookup." \
+      --summary "Implemented T01 in com.acme.order: order status lookup in OrderStatusService." \
       --validation "mvn test" \
       --milestone milestone-1.md \
       --roadmap-note "FEAT-001 completed its first implementation operation." \
@@ -159,7 +173,11 @@ At the end of a session, persist what happened:
 
 This updates:
 
-- `agent-context/memory/session-history.md`
+- `agent-context/memory/session-history.md` (recent window; older entries archive)
+- `agent-context/memory/sessions/<entry>.md` (immutable per-session detail)
+- `agent-context/memory/session-index.md` (newest-first, with Areas column)
+- `agent-context/memory/context-index.md` (area → session/decision/pitfall/pattern rows)
+- `agent-context/memory/code-areas.md` (appends genuinely new categories)
 - `agent-context/features/<WORK-ID>/progress-log.md`
 - `session-notes/YYYY-MM-DD.md`
 - `milestone-*.md` when `--milestone` is provided or auto-detected from `milestone-*.md`
@@ -169,6 +187,9 @@ This updates:
 - `agent-context/memory/known-pitfalls.md` when `--pitfalls` is provided
 - `agent-context/memory/reusable-patterns.md` when `--patterns` is provided
 - `agent-context/sessions/current-session.md` when present
+
+Decisions, pitfalls, and patterns are indexed in `context-index.md` **only when
+areas are resolved** for the session. See [Context loading and scaling](context-loading-and-scaling.md).
 
 ## Recommended Daily Loop
 

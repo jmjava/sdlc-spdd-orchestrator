@@ -23,7 +23,7 @@ These planning documents inform SPDD work, but they do not replace the REASONS C
 
 | SPDD expectation | How this scaffold satisfies it |
 |------------------|--------------------------------|
-| Prompts are first-class artifacts | Cursor commands, Copilot prompt files, REASONS Canvas files, and agent memory live in the repository |
+| Prompts are first-class artifacts | Cursor commands, Copilot prompt files, Claude Code commands, REASONS Canvas files, and agent memory live in the repository |
 | Prompts are version controlled | Generated canvases and prompt assets are normal files committed with code |
 | Business intent is explicit before coding | Roadmap/milestones/session notes inform `/sdlc-spdd-plan`, which creates Requirements, Entities, Approach, Structure, Operations, Norms, and Safeguards before implementation |
 | Abstraction comes before execution | `/sdlc-spdd-architect` hardens intent and architecture before `/sdlc-spdd-code` |
@@ -63,7 +63,7 @@ Use this closed loop:
       -> Sync prompt artifacts with reality
       -> Retro into reusable memory
 
-Required commands (run `/sdlc-spdd-*` in **AI chat** — Cursor/Copilot, not a terminal — see [How to run assistant commands](initialization-and-invocation.md#how-to-run-assistant-commands)):
+Required commands (run `/sdlc-spdd-*` in **AI chat** — Cursor/Copilot/Claude Code, not a terminal — see [How to run assistant commands](initialization-and-invocation.md#how-to-run-assistant-commands)):
 
 | Phase | Command |
 |-------|---------|
@@ -76,7 +76,7 @@ Required commands (run `/sdlc-spdd-*` in **AI chat** — Cursor/Copilot, not a t
 | Retro | `/sdlc-spdd-retro` |
 | Sync | `/sdlc-spdd-sync` |
 
-This scaffold does not require the upstream `openspdd` CLI. It implements the same workflow shape through repository templates and assistant prompt files for Cursor and GitHub Copilot.
+This scaffold does not require the upstream `openspdd` CLI. It implements the same workflow shape through repository templates and assistant prompt files for Cursor, GitHub Copilot, and Claude Code.
 
 ## Three Core Skills
 

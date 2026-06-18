@@ -109,7 +109,7 @@ Use roadmap and milestone docs to give planning agents delivery context. Use REA
 
 ## Commands and Prompts
 
-`/sdlc-spdd-*` commands run in **AI chat** (Cursor/Copilot), not a terminal. [How to run assistant commands](initialization-and-invocation.md#how-to-run-assistant-commands).
+`/sdlc-spdd-*` commands run in **AI chat** (Cursor/Copilot/Claude Code), not a terminal. [How to run assistant commands](initialization-and-invocation.md#how-to-run-assistant-commands).
 
 Command list (install, lifecycle, scripts): [Cheat sheet](sdlc-spdd-cheat-sheet.md).
 

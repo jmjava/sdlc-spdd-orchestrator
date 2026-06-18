@@ -266,6 +266,14 @@ cat > "${session_file}" <<EOF
 - Canvas sync state: ${canvas_sync_state}
 - Previous session brief: ${latest_session}
 
+## Framework Orientation
+
+New agents: load these first so you know how to operate within the SDLC-SPDD framework before doing any work.
+
+- Operating model + work rules: the always-on grounding file (.cursor/rules/sdlc-spdd.mdc, .github/copilot-instructions.md, or CLAUDE.md) is loaded on every request.
+- How the framework works: docs/sdlc-spdd/three-part-operating-path.md, docs/sdlc-spdd/ten-thousand-foot-view.md.
+- Session + context-loading rules: docs/sdlc-spdd/context-loading-and-scaling.md#bootstrap-and-index-based-loading (bootstrap layers, index catalog, retrieval, capture).
+
 ## Hybrid Operating Model
 
 - SDLC Agents side: use the phase-specific role, load only relevant context, preserve handoffs, and capture learning.
@@ -296,14 +304,17 @@ ${milestone_list}
 
 ## Persistent Memory To Read
 
-- ROADMAP.md
-- milestone-*.md
-- session-notes/
-- agent-context/memory/project-memory.md
-- agent-context/memory/session-history.md
-- agent-context/memory/architecture-decisions.md
-- agent-context/memory/known-pitfalls.md
-- agent-context/memory/reusable-patterns.md
+Use indexes for retrieval — do not scan directories or read session-history top-to-bottom.
+
+- agent-context/memory/code-areas.md — known code-area categories
+- agent-context/memory/context-index.md — filter by Area before touching code
+- agent-context/memory/session-index.md — session-only view (newest first)
+- agent-context/memory/phase-index.md — playbooks and harness by SDLC phase
+- agent-context/memory/architecture-decisions.md — full decision log
+- agent-context/memory/known-pitfalls.md — full pitfalls log
+- agent-context/memory/reusable-patterns.md — full patterns log
+- agent-context/memory/project-memory.md — project-wide notes
+- ROADMAP.md, milestone-*.md, session-notes/
 - agent-context/harness/quality-gates.md
 - agent-context/harness/validation-rules.md
 

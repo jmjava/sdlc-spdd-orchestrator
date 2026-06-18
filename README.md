@@ -16,16 +16,17 @@ This repo uses **two kinds** of commands. They run in different places — do no
 
 | Kind | Looks like | Where you run it |
 |------|------------|------------------|
-| **Assistant** (AI chat) | `/sdlc-spdd-init`, `/sdlc-spdd-plan @requirements/foo.md` | **Cursor Chat** or **Copilot Chat** in your target project |
+| **Assistant** (AI chat) | `/sdlc-spdd-init`, `/sdlc-spdd-plan @requirements/foo.md` | **Cursor Chat**, **Copilot Chat**, or **Claude Code** in your target project |
 | **Shell — install** (once) | `./scripts/setup-agent-prompts.sh --target ...` | Terminal in the **orchestrator repo** clone |
 | **Shell — daily use** | `./scripts/sdlc-spdd/start-agent-session.sh --target . ...` | Terminal in your **installed target project** |
 
 Install/upgrade/verify from the orchestrator clone use `./scripts/<name>.sh`. After install, runtime scripts live in the target at `./scripts/sdlc-spdd/`. See [Script paths](CONTRIBUTING.md#script-paths-orchestrator-vs-target).
 
-**`/sdlc-spdd-*` is not a terminal command.** Open your target app in Cursor or Copilot, open **AI chat**, then:
+**`/sdlc-spdd-*` is not a terminal command.** Open your target app in Cursor, Copilot, or Claude Code, open **AI chat**, then:
 
 - **Cursor:** type `/sdlc-spdd-init` (or `/` → pick `sdlc-spdd-init`)
 - **Copilot:** type `/sdlc-spdd-init`, or `#prompt:sdlc-spdd-init` if slash commands are missing
+- **Claude Code:** type `/sdlc-spdd-init` (or `/` → pick `sdlc-spdd-init`)
 
 Full detail: [How to run assistant commands](docs/initialization-and-invocation.md#how-to-run-assistant-commands).
 
@@ -76,7 +77,7 @@ Run these from this orchestrator repo, pointing `--target` at your application:
     # 2. Confirm the install is complete
     ./scripts/verify-project-install.sh --target /path/to/your/project
 
-Then open the **target project** in Cursor or Copilot and run `/sdlc-spdd-init` in **AI chat** — see [How commands work](#how-commands-work) above.
+Then open the **target project** in Cursor, Copilot, or Claude Code and run `/sdlc-spdd-init` in **AI chat** — see [How commands work](#how-commands-work) above.
 
 Next, follow the hands-on walkthrough: **[First day with SDLC-SPDD](docs/first-day-with-sdlc-spdd.md)**.
 
@@ -118,7 +119,7 @@ The system uses a three-layer flow:
 | Layer | Purpose | Examples |
 |-------|---------|----------|
 | Planning narrative | Human-readable roadmap, milestone, milestone requirements, and daily session story | `ROADMAP.md`, `milestone-1.md`, `requirements/milestones/`, `session-notes/2026-06-06.md` |
-| Governed agent context | Work-item contract, memory, handoffs, and reusable context | `spdd/canvas/<WORK-ID>.md`, `agent-context/memory/`, `agent-context/sessions/` |
+| Governed agent context | Work-item contract, memory, handoffs, and reusable context | `spdd/canvas/<WORK-ID>.md`, `agent-context/memory/` (indexes: `context-index.md`, `session-index.md`, `code-areas.md`), `agent-context/sessions/` |
 | Implementation evidence | Code, review outputs, sync logs, and validation | source files, `spdd/reviews/`, `spdd/sync/`, tests |
 
 ## Install into an Application
@@ -134,7 +135,8 @@ Install the complete system into a target project:
 
 This installs:
 
-- Cursor commands and GitHub Copilot prompt files.
+- Cursor commands, GitHub Copilot prompt files, and Claude Code commands.
+- Always-on operating-model grounding for each assistant: `.cursor/rules/sdlc-spdd.mdc`, `.github/copilot-instructions.md`, and `CLAUDE.md`.
 - target-local runtime scripts under `scripts/sdlc-spdd/`.
 - local SDLC-SPDD docs under `docs/sdlc-spdd/`.
 - planning scaffolding: `ROADMAP.md`, `milestone-1.md`, and `session-notes/` when missing.
@@ -146,9 +148,9 @@ Upgrade an existing target project without overwriting application source, canva
 
 ## Day-One Flow
 
-Below, `/sdlc-spdd-*` lines run in **AI chat** (Cursor/Copilot); `./scripts/...` lines run in a **terminal**. Do not paste `/sdlc-spdd-*` into a shell — see [How commands work](#how-commands-work).
+Below, `/sdlc-spdd-*` lines run in **AI chat** (Cursor/Copilot/Claude Code); `./scripts/...` lines run in a **terminal**. Do not paste `/sdlc-spdd-*` into a shell — see [How commands work](#how-commands-work).
 
-In the target project, open **AI chat** (Cursor Chat or Copilot Chat) and run:
+In the target project, open **AI chat** (Cursor Chat, Copilot Chat, or Claude Code) and run:
 
     /sdlc-spdd-init
 
@@ -198,7 +200,7 @@ Refresh the roadmap summary from SPDD canvases:
 
 ## Core Assistant Commands
 
-`/sdlc-spdd-*` commands run in **AI chat** (Cursor/Copilot), not a terminal — see [How commands work](#how-commands-work) and [How to run assistant commands](docs/initialization-and-invocation.md#how-to-run-assistant-commands).
+`/sdlc-spdd-*` commands run in **AI chat** (Cursor/Copilot/Claude Code), not a terminal — see [How commands work](#how-commands-work) and [How to run assistant commands](docs/initialization-and-invocation.md#how-to-run-assistant-commands).
 
 | Command | Use it for |
 |---------|------------|
@@ -230,7 +232,7 @@ Refresh the roadmap summary from SPDD canvases:
 |------|---------|
 | `docs/` | User guides, onboarding path, runbooks, and reference docs |
 | `scripts/` | Install, upgrade, validation, and target-local runtime script templates |
-| `templates/` | REASONS Canvas templates, Cursor commands, Copilot prompts, stack rules, project-doc templates |
+| `templates/` | REASONS Canvas templates, Cursor commands, Copilot prompts, Claude Code commands, stack rules, project-doc templates |
 | `agent-context/` | Memory, playbooks, harness files, and framework-owned context templates |
 | `examples/` | Reference workflows and sample projects |
 
@@ -252,6 +254,7 @@ New users should follow **Start Here** above. The lists below group the remainin
 - [Framework upgrade](docs/framework-upgrade.md)
 - [Cursor usage](docs/cursor-usage.md)
 - [GitHub Copilot usage](docs/copilot-usage.md)
+- [Claude Code usage](docs/claude-usage.md)
 
 ### What each part brings
 
@@ -268,11 +271,12 @@ Read these after the value guides above. They explain historical context, compli
 - [Hybrid SDLC Agents + SPDD model](docs/hybrid-model.md)
 - [SPDD compliance](docs/spdd-compliance.md)
 - [Architecture](docs/architecture.md)
+- [Context loading, indexing, and bootstrap](docs/context-loading-and-scaling.md) — tiers, [bootstrap and index-based loading](docs/context-loading-and-scaling.md#bootstrap-and-index-based-loading), scaling
 - [Design decisions](docs/design-decisions.md)
 
 ## What This Is Not
 
-This is not a compiled multi-agent runtime and not a replacement for Cursor, GitHub Copilot, Jira, SDLC Agents, or OpenSPDD.
+This is not a compiled multi-agent runtime and not a replacement for Cursor, GitHub Copilot, Claude Code, Jira, SDLC Agents, or OpenSPDD.
 
 It is a repository-based operating model that makes AI-assisted work more governable, reviewable, and reusable.
 

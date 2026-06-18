@@ -1,6 +1,7 @@
-# SDLC-SPDD Copilot Instructions
+<!-- BEGIN SDLC-SPDD MANAGED CLAUDE GROUNDING -->
+# SDLC-SPDD Claude Code Instructions
 
-Use these instructions for every GitHub Copilot Chat request in this workspace.
+Use these instructions for every Claude Code request in this workspace.
 
 ## Operating Model
 
@@ -9,6 +10,17 @@ This repository uses SDLC-SPDD: SDLC Agents-style lifecycle roles backed by SPDD
 Default lifecycle:
 
     Initialize -> Plan -> Architect -> Code -> Review -> Retro -> Sync
+
+The matching slash commands live in `.claude/commands/`:
+
+    /sdlc-spdd-init
+    /sdlc-spdd-plan
+    /sdlc-spdd-architect
+    /sdlc-spdd-code
+    /sdlc-spdd-review
+    /sdlc-spdd-prompt-update
+    /sdlc-spdd-retro
+    /sdlc-spdd-sync
 
 Preserve context by reading relevant artifacts before answering:
 
@@ -68,3 +80,4 @@ Good question patterns:
     For BUG-003, compare @agent-context/features/BUG-003/progress-log.md with the current diff. What context am I missing before coding?
 
     Using the current canvas and @agent-context/memory/known-pitfalls.md, what risks should I check before review?
+<!-- END SDLC-SPDD MANAGED CLAUDE GROUNDING -->

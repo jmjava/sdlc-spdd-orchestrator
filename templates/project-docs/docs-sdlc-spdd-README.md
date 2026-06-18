@@ -4,7 +4,7 @@ These docs were installed by the SDLC-SPDD orchestrator. **Start with the six pa
 
 ## Assistant commands vs terminal
 
-`/sdlc-spdd-init` and other `/sdlc-spdd-*` lines are **AI chat prompts**, not terminal commands. Run them in Cursor Chat or Copilot Chat.
+`/sdlc-spdd-init` and other `/sdlc-spdd-*` lines are **AI chat prompts**, not terminal commands. Run them in Cursor Chat, Copilot Chat, or Claude Code.
 
 **Shell scripts in this project** live under `scripts/sdlc-spdd/` (for example `start-agent-session.sh`). Install/upgrade run once from the orchestrator repo (`./scripts/setup-agent-prompts.sh --target ...`), not from here.
 
@@ -25,7 +25,7 @@ These docs were installed by the SDLC-SPDD orchestrator. **Start with the six pa
 |------|------|
 | One-page command sheet (print/PDF) | [Cheat sheet](sdlc-spdd-cheat-sheet.md) |
 | Concept definitions (Work ID, canvas, sync…) | [Top useful concepts and commands](useful-concepts-and-commands.md) |
-| Cursor / Copilot slash commands | [Initialization and invocation](initialization-and-invocation.md) |
+| Cursor / Copilot / Claude Code slash commands | [Initialization and invocation](initialization-and-invocation.md) |
 | Runtime scripts | [Agent session scripts](agent-session-scripts.md) |
 
 ## What each part brings

@@ -13,7 +13,7 @@ The goal for day one is not to automate everything. The goal is to create a smal
 You need:
 
 - A target application repository.
-- Cursor or GitHub Copilot Chat.
+- Cursor, GitHub Copilot Chat, or Claude Code.
 - A small requirement, bug, refactor, or spike to practice with.
 - This orchestrator repository cloned locally.
 
@@ -43,7 +43,7 @@ Confirm the three-part scaffold is complete (install and upgrade also run this a
 
     ./scripts/verify-project-install.sh --target /path/to/app
 
-Then open the target application in Cursor or a Copilot-enabled editor.
+Then open the target application in Cursor, a Copilot-enabled editor, or Claude Code.
 
 ## 2. Initialize Project Context
 
@@ -54,6 +54,8 @@ Then open the target application in Cursor or a Copilot-enabled editor.
 **Cursor:** Chat or Agent → type `/sdlc-spdd-init` (or pick `sdlc-spdd-init` from the `/` menu).
 
 **Copilot:** Chat → `/sdlc-spdd-init`, or `#prompt:sdlc-spdd-init` if slash commands are missing.
+
+**Claude Code:** type `/sdlc-spdd-init` (or pick `sdlc-spdd-init` from the `/` menu).
 
     /sdlc-spdd-init
 

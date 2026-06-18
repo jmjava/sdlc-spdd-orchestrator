@@ -1,6 +1,12 @@
-# SDLC-SPDD Copilot Instructions
+---
+description: SDLC-SPDD operating model and ecosystem context for every Cursor request in this workspace.
+globs:
+alwaysApply: true
+---
 
-Use these instructions for every GitHub Copilot Chat request in this workspace.
+# SDLC-SPDD Cursor Rules
+
+Apply these rules to every Cursor Chat and Agent request in this workspace.
 
 ## Operating Model
 
@@ -9,6 +15,17 @@ This repository uses SDLC-SPDD: SDLC Agents-style lifecycle roles backed by SPDD
 Default lifecycle:
 
     Initialize -> Plan -> Architect -> Code -> Review -> Retro -> Sync
+
+The matching slash commands live in `.cursor/commands/`:
+
+    /sdlc-spdd-init
+    /sdlc-spdd-plan
+    /sdlc-spdd-architect
+    /sdlc-spdd-code
+    /sdlc-spdd-review
+    /sdlc-spdd-prompt-update
+    /sdlc-spdd-retro
+    /sdlc-spdd-sync
 
 Preserve context by reading relevant artifacts before answering:
 
