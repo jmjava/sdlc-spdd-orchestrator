@@ -85,7 +85,7 @@ expect_fail() {
   if "$@" >/dev/null 2>&1; then bad "expected FAIL but passed: ${label}"; else ok "correctly fails: ${label}"; fi
 }
 
-commands=(init plan architect code review prompt-update retro sync)
+commands=(init analysis plan architect code api-test review prompt-update retro sync)
 
 assert_cursor_pack() {
   local t="$1"
@@ -126,7 +126,8 @@ assert_claude_grounded() {
   assert_contains "${t}/CLAUDE.md" "BEGIN SDLC-SPDD MANAGED CLAUDE GROUNDING" "Claude managed grounding begin"
   assert_contains "${t}/CLAUDE.md" "END SDLC-SPDD MANAGED CLAUDE GROUNDING" "Claude managed grounding end"
   assert_contains "${t}/CLAUDE.md" "session-notes/" "Claude Planning grounding"
-  assert_contains "${t}/CLAUDE.md" "spdd/canvas/" "Claude SPDD grounding"
+  assert_contains "${t}/CLAUDE.md" "spdd/analysis/" "Claude SPDD analysis grounding"
+  assert_contains "${t}/CLAUDE.md" "/sdlc-spdd-analysis" "Claude analysis command"
   assert_contains "${t}/CLAUDE.md" "agent-context/sessions/" "Claude SDLC session grounding"
   assert_contains "${t}/CLAUDE.md" "agent-context/memory/" "Claude SDLC memory grounding"
   assert_count "${t}/CLAUDE.md" "BEGIN SDLC-SPDD MANAGED CLAUDE GROUNDING" 1 "Claude managed grounding begin markers"
@@ -137,6 +138,10 @@ assert_memory_seed_files() {
   local t="$1"
   assert_file "${t}/agent-context/memory/phase-index.md"
   assert_same "${t}/agent-context/memory/phase-index.md" "${REPO_ROOT}/agent-context/memory/phase-index.md"
+  assert_file "${t}/agent-context/memory/domain-index.md"
+  assert_same "${t}/agent-context/memory/domain-index.md" "${REPO_ROOT}/agent-context/memory/domain-index.md"
+  assert_file "${t}/scripts/sdlc-spdd/index-spdd-analysis.sh"
+  assert_file "${t}/spdd/analysis/.gitkeep"
 }
 
 assert_no_cursor()  { local t="$1"; assert_absent "${t}/.cursor"; }

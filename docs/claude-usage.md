@@ -16,9 +16,11 @@ This installs:
 
 - `CLAUDE.md` (project memory and operating model, at the project root)
 - `.claude/commands/sdlc-spdd-init.md`
+- `.claude/commands/sdlc-spdd-analysis.md`
 - `.claude/commands/sdlc-spdd-plan.md`
 - `.claude/commands/sdlc-spdd-architect.md`
 - `.claude/commands/sdlc-spdd-code.md`
+- `.claude/commands/sdlc-spdd-api-test.md`
 - `.claude/commands/sdlc-spdd-review.md`
 - `.claude/commands/sdlc-spdd-prompt-update.md`
 - `.claude/commands/sdlc-spdd-retro.md`
@@ -37,9 +39,11 @@ Project-scoped commands installed under `.claude/commands/` are available in any
 | Command | Purpose |
 |---------|---------|
 | `/sdlc-spdd-init` | Bootstrap project folders and memory |
-| `/sdlc-spdd-plan` | Create REASONS Canvas from requirement |
+| `/sdlc-spdd-analysis` | Fowler Step 3: domain keywords, scoped code scan, analysis artifact |
+| `/sdlc-spdd-plan` | Create REASONS Canvas from accepted analysis |
 | `/sdlc-spdd-architect` | Harden canvas before coding |
 | `/sdlc-spdd-code` | Implement one approved operation |
+| `/sdlc-spdd-api-test` | Generate cURL API test script from canvas + implementation |
 | `/sdlc-spdd-review` | Review changes against canvas |
 | `/sdlc-spdd-prompt-update` | Update canvas first when requirements or behavior intent change |
 | `/sdlc-spdd-retro` | Capture learnings into memory |

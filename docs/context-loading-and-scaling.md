@@ -133,7 +133,8 @@ that prose against the codebase — not by parsing the canvas.
 | Index | Keyed by | Use it to |
 |-------|----------|-----------|
 | `agent-context/memory/code-areas.md` | Canonical category name | Known code areas; read **first at capture** to match session content |
-| `agent-context/memory/context-index.md` | Code area → context (Kind: session, decision, pitfall, pattern) | Find prior work **and** durable memory for an area, across any Work ID or date |
+| `agent-context/memory/domain-index.md` | Domain keyword → area + artifact | Fowler Step 3 scoped scan; filter before reading code |
+| `agent-context/memory/context-index.md` | Code area → context (Kind: analysis, session, decision, pitfall, pattern) | Find prior work **and** durable memory for an area, across any Work ID or date |
 | `agent-context/memory/session-index.md` | Session (newest first), Work ID + Areas | Session-only view; full detail in `agent-context/memory/sessions/<entry>` |
 | `agent-context/memory/phase-index.md` | SDLC phase → static files | Playbooks, harness, planning docs when you know the phase (not area-specific) |
 
@@ -225,11 +226,28 @@ the code area. A practical default:
 | Phase | Load |
 |-------|------|
 | init | repo structure, stack detection output |
-| plan | the requirement, `ROADMAP.md`, active `milestone-*.md` |
-| architect | the Work ID canvas, `agent-context/memory/architecture-decisions.md`, `agent-context/harness/` |
-| code | the Work ID canvas, that feature's `progress-log.md`, `agent-context/memory/known-pitfalls.md` |
-| review | the Work ID canvas, the diff, `agent-context/harness/quality-gates.md` |
-| retro / sync | the Work ID canvas, that feature's progress log, the relevant memory file being updated |
+| analysis | requirement, `domain-index.md`, `context-index.md`, `code-areas.md`; scan only matched code areas |
+| plan | `spdd/analysis/<WORK-ID>-analysis.md`, requirement, `ROADMAP.md`, active `milestone-*.md` |
+| architect | analysis + Work ID canvas, `architecture-decisions.md`, `agent-context/harness/` |
+| code | Work ID canvas, that feature's `progress-log.md`, `known-pitfalls.md` |
+| api-test | Work ID canvas Requirements/Operations, implemented endpoints for this Work ID |
+| review | Work ID canvas, the diff, `quality-gates.md` |
+| retro / sync | Work ID canvas, that feature's progress log, the relevant memory file being updated |
+
+## Fowler SPDD alignment
+
+Martin Fowler's [SPDD article](https://martinfowler.com/articles/structured-prompt-driven/) requires **scoped codebase scan at analysis time** (domain keywords → relevant modules only) and **decision memory** across iterations (canvases, analysis, trade-offs compound as governed assets).
+
+This orchestrator implements that through:
+
+1. **`/sdlc-spdd-analysis`** — agent extracts domain keywords, filters indexes, scans scoped code, writes `spdd/analysis/<WORK-ID>-analysis.md`.
+2. **`index-spdd-analysis.sh`** — indexes keywords into `domain-index.md` and areas into `context-index.md` (Kind: `analysis`).
+3. **`/sdlc-spdd-plan`** — reads the analysis artifact; refuses to create a canvas without it.
+4. **`/sdlc-spdd-api-test`** — Fowler Step 5 API boundary verification.
+
+Command mapping and assistant install paths: [SPDD compliance — Fowler mapping](spdd-compliance.md#fowler--openspdd-command-mapping). Works from **Cursor** (`.cursor/commands/`), **Copilot** (`.github/prompts/`), and **Claude Code** (`.claude/commands/`) with CI parity validation.
+
+Why narrow, indexed context is necessary: [Chelsea Troy and the framework](chelsea-troy-and-the-framework.md) (Lost in the Middle, scoped investigation, human judgment gates).
 
 ## Related
 

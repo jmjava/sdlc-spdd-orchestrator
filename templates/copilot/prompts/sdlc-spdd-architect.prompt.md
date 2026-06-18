@@ -11,8 +11,8 @@ Review and harden a REASONS Canvas before implementation. Do not implement code.
 
 ## Required Behavior
 
-1. Read the provided REASONS Canvas.
-2. Inspect relevant project files.
+1. Read `spdd/analysis/<WORK-ID>-analysis.md` when present, then read the REASONS Canvas.
+2. Inspect relevant project files scoped to analysis Code Areas when available.
 3. Verify the Entities section is complete.
 4. Verify the Approach is realistic.
 5. Verify the Structure matches the project.

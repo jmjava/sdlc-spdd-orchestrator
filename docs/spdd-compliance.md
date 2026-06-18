@@ -25,9 +25,9 @@ These planning documents inform SPDD work, but they do not replace the REASONS C
 |------------------|--------------------------------|
 | Prompts are first-class artifacts | Cursor commands, Copilot prompt files, Claude Code commands, REASONS Canvas files, and agent memory live in the repository |
 | Prompts are version controlled | Generated canvases and prompt assets are normal files committed with code |
-| Business intent is explicit before coding | Roadmap/milestones/session notes inform `/sdlc-spdd-plan`, which creates Requirements, Entities, Approach, Structure, Operations, Norms, and Safeguards before implementation |
-| Abstraction comes before execution | `/sdlc-spdd-architect` hardens intent and architecture before `/sdlc-spdd-code` |
-| Code generation has boundaries | `/sdlc-spdd-code` implements exactly one approved operation from the canvas |
+| Business intent is explicit before coding | `/sdlc-spdd-analysis` produces scoped analysis context; `/sdlc-spdd-plan` creates the REASONS Canvas from that artifact |
+| Abstraction comes before execution | Analysis (Fowler Step 3) precedes canvas; `/sdlc-spdd-architect` hardens intent before `/sdlc-spdd-code` |
+| Code generation has boundaries | `/sdlc-spdd-code` implements exactly one approved operation; `/sdlc-spdd-api-test` verifies at the API boundary (Fowler Step 5) |
 | Review checks intent, not only code | `/sdlc-spdd-review` compares implementation against all REASONS sections |
 | Prompt and code evolve together | `/sdlc-spdd-sync` reconciles implementation reality back into canvas artifacts |
 | Learnings become reusable | `/sdlc-spdd-retro` updates project memory and reusable patterns |
@@ -56,27 +56,64 @@ Use this closed loop:
 
     Business input
       -> Roadmap, milestone, requirement, Jira issue, or session note
+      -> Analysis context (domain keywords, scoped code scan)
       -> REASONS Canvas
       -> Architecture hardening
       -> One operation of code
+      -> API test verification
       -> Review against canvas
       -> Sync prompt artifacts with reality
       -> Retro into reusable memory
 
-Required commands (run `/sdlc-spdd-*` in **AI chat** — Cursor/Copilot/Claude Code, not a terminal — see [How to run assistant commands](initialization-and-invocation.md#how-to-run-assistant-commands)):
+## Fowler / OpenSPDD Command Mapping
+
+This scaffold implements Martin Fowler's [SPDD article](https://martinfowler.com/articles/structured-prompt-driven/) workflow through **Cursor**, **GitHub Copilot**, and **Claude Code** command packs (same semantics, different install paths). It does not require the upstream `openspdd` CLI.
+
+| Fowler / OpenSPDD | Hybrid command | Cursor | Copilot | Claude |
+|-------------------|----------------|--------|---------|--------|
+| (planning / story) | Milestone + `create-work-from-milestone.sh` | — | — | — |
+| `/spdd-analysis` | `/sdlc-spdd-analysis` | `.cursor/commands/` | `.github/prompts/` | `.claude/commands/` |
+| `/spdd-reasons-canvas` | `/sdlc-spdd-plan` (after analysis) | same | same | same |
+| (architecture hardening) | `/sdlc-spdd-architect` | same | same | same |
+| `/spdd-generate` | `/sdlc-spdd-code` | same | same | same |
+| `/spdd-api-test` | `/sdlc-spdd-api-test` | same | same | same |
+| (code review) | `/sdlc-spdd-review` | same | same | same |
+| `/spdd-prompt-update` | `/sdlc-spdd-prompt-update` | same | same | same |
+| `/spdd-sync` | `/sdlc-spdd-sync` | same | same | same |
+| (learnings) | `/sdlc-spdd-retro` | SDLC extension | same | same |
+
+**Decision memory** (Fowler's cross-iteration asset accumulation) lives in:
+
+| Artifact | Role |
+|----------|------|
+| `spdd/analysis/<WORK-ID>-analysis.md` | Step 3 strategic analysis (domain keywords, scoped areas) |
+| `spdd/canvas/<WORK-ID>.md` | REASONS Canvas governing prompt |
+| `agent-context/memory/domain-index.md` | Keyword → area → analysis/canvas lookup |
+| `agent-context/memory/context-index.md` | Area → context (Kinds: analysis, session, decision, pitfall, pattern) |
+| `agent-context/memory/code-areas.md` | Canonical code-area registry |
+
+After `/sdlc-spdd-analysis`, run:
+
+    ./scripts/sdlc-spdd/index-spdd-analysis.sh --target . --work-id <WORK-ID>
+
+Required commands (run `/sdlc-spdd-*` in **AI chat** — Cursor, Copilot, or Claude Code, not a terminal — see [How to run assistant commands](initialization-and-invocation.md#how-to-run-assistant-commands)):
 
 | Phase | Command |
 |-------|---------|
 | Initialize | `/sdlc-spdd-init` |
-| Plan | `/sdlc-spdd-plan` |
-| Architect | `/sdlc-spdd-architect` |
-| Code | `/sdlc-spdd-code` |
-| Review | `/sdlc-spdd-review` |
-| Prompt update | `/sdlc-spdd-prompt-update` |
-| Retro | `/sdlc-spdd-retro` |
-| Sync | `/sdlc-spdd-sync` |
+| Analysis | `/sdlc-spdd-analysis @requirements/<file>.md` |
+| Plan | `/sdlc-spdd-plan @spdd/analysis/<WORK-ID>-analysis.md` |
+| Architect | `/sdlc-spdd-architect @spdd/canvas/<WORK-ID>.md` |
+| Code | `/sdlc-spdd-code @spdd/canvas/<WORK-ID>.md operation T01` |
+| API test | `/sdlc-spdd-api-test @spdd/canvas/<WORK-ID>.md` |
+| Review | `/sdlc-spdd-review @spdd/canvas/<WORK-ID>.md` |
+| Prompt update | `/sdlc-spdd-prompt-update @spdd/canvas/<WORK-ID>.md` |
+| Retro | `/sdlc-spdd-retro @spdd/canvas/<WORK-ID>.md` |
+| Sync | `/sdlc-spdd-sync @spdd/canvas/<WORK-ID>.md` |
 
-This scaffold does not require the upstream `openspdd` CLI. It implements the same workflow shape through repository templates and assistant prompt files for Cursor, GitHub Copilot, and Claude Code.
+This scaffold does not require the upstream `openspdd` CLI. All three assistant adapters share the same lifecycle and grounding anchors, validated by `scripts/validate-command-adapters.sh`.
+
+For the **context and judgment** rationale (Lost in the Middle, scoped investigation, human evaluation gates), see [Chelsea Troy and the framework](chelsea-troy-and-the-framework.md).
 
 ## Three Core Skills
 

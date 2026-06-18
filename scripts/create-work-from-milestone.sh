@@ -447,7 +447,9 @@ if ((${#created_work_ids[@]} > 0)); then
     plan_cmd="${plan_refs//<WORK-ID>/${work_id}}"
     echo
     echo "  ${work_id}:"
-    echo "    /sdlc-spdd-plan ${plan_cmd}"
+    echo "    /sdlc-spdd-analysis @${milestone_requirement_rel}"
+    echo "    ./scripts/sdlc-spdd/index-spdd-analysis.sh --target . --work-id ${work_id}"
+    echo "    /sdlc-spdd-plan @spdd/analysis/${work_id}-analysis.md"
     echo "    /sdlc-spdd-architect @spdd/canvas/${work_id}.md"
   done
 fi

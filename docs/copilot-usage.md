@@ -18,9 +18,11 @@ This installs:
 
 - `.github/copilot-instructions.md`
 - `.github/prompts/sdlc-spdd-init.prompt.md`
+- `.github/prompts/sdlc-spdd-analysis.prompt.md`
 - `.github/prompts/sdlc-spdd-plan.prompt.md`
 - `.github/prompts/sdlc-spdd-architect.prompt.md`
 - `.github/prompts/sdlc-spdd-code.prompt.md`
+- `.github/prompts/sdlc-spdd-api-test.prompt.md`
 - `.github/prompts/sdlc-spdd-review.prompt.md`
 - `.github/prompts/sdlc-spdd-prompt-update.prompt.md`
 - `.github/prompts/sdlc-spdd-retro.prompt.md`
@@ -33,9 +35,11 @@ Run these in **Copilot Chat** — not in a terminal. See [How to run assistant c
 In GitHub Copilot Chat, invoke prompt files with slash commands:
 
     /sdlc-spdd-init
-    /sdlc-spdd-plan @requirements/order-status-api.md
+    /sdlc-spdd-analysis @requirements/order-status-api.md
+    /sdlc-spdd-plan @spdd/analysis/FEAT-001-order-status-api-analysis.md
     /sdlc-spdd-architect @spdd/canvas/FEAT-001-order-status-api.md
     /sdlc-spdd-code @spdd/canvas/FEAT-001-order-status-api.md operation T01
+    /sdlc-spdd-api-test @spdd/canvas/FEAT-001-order-status-api.md
     /sdlc-spdd-review @spdd/canvas/FEAT-001-order-status-api.md
     /sdlc-spdd-prompt-update @spdd/canvas/FEAT-001-order-status-api.md
     /sdlc-spdd-retro @spdd/canvas/FEAT-001-order-status-api.md

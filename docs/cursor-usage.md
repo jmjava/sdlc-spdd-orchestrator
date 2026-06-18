@@ -25,9 +25,11 @@ Open the **target project** in Cursor. Open **Chat** or **Agent**. Type `/` and 
 | Command | Purpose |
 |---------|---------|
 | `/sdlc-spdd-init` | Bootstrap project folders and memory |
-| `/sdlc-spdd-plan` | Create REASONS Canvas from requirement |
+| `/sdlc-spdd-analysis` | Fowler Step 3: domain keywords, scoped code scan, analysis artifact |
+| `/sdlc-spdd-plan` | Create REASONS Canvas from accepted analysis |
 | `/sdlc-spdd-architect` | Harden canvas before coding |
 | `/sdlc-spdd-code` | Implement one approved operation |
+| `/sdlc-spdd-api-test` | Generate cURL API test script from canvas + implementation |
 | `/sdlc-spdd-review` | Review changes against canvas |
 | `/sdlc-spdd-prompt-update` | Update canvas first when requirements or behavior intent change |
 | `/sdlc-spdd-retro` | Capture learnings into memory |

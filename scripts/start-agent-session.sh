@@ -9,7 +9,7 @@ Create a durable SDLC-SPDD session brief that helps a new agent session resume
 previous work with the right SDLC phase, REASONS Canvas, memory, and handoff context.
 
 Phases:
-  init, plan, architect, code, review, prompt-update, retro, sync, resume
+  init, analysis, plan, architect, code, api-test, review, prompt-update, retro, sync, resume
 
 Options:
   --milestone <file>    Active milestone doc, such as milestone-1.md. When omitted
@@ -59,7 +59,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 case "${PHASE}" in
-  init|plan|architect|code|review|prompt-update|retro|sync|resume) ;;
+  init|analysis|plan|architect|code|api-test|review|prompt-update|retro|sync|resume) ;;
   *)
     echo "Unsupported phase: ${PHASE}" >&2
     usage >&2
@@ -131,14 +131,20 @@ case "${PHASE}" in
   init)
     recommended_command="/sdlc-spdd-init"
     ;;
+  analysis)
+    recommended_command="/sdlc-spdd-analysis @requirements/<requirement>.md"
+    ;;
   plan)
-    recommended_command="/sdlc-spdd-plan @requirements/<requirement>.md"
+    recommended_command="/sdlc-spdd-plan @spdd/analysis/${WORK_ID:-<WORK-ID>}-analysis.md"
     ;;
   architect)
     recommended_command="/sdlc-spdd-architect @spdd/canvas/${WORK_ID:-<WORK-ID>}.md"
     ;;
   code)
     recommended_command="/sdlc-spdd-code @spdd/canvas/${WORK_ID:-<WORK-ID>}.md operation <T##>"
+    ;;
+  api-test)
+    recommended_command="/sdlc-spdd-api-test @spdd/canvas/${WORK_ID:-<WORK-ID>}.md"
     ;;
   review)
     recommended_command="/sdlc-spdd-review @spdd/canvas/${WORK_ID:-<WORK-ID>}.md"

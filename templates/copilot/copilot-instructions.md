@@ -6,13 +6,29 @@ Use these instructions for every GitHub Copilot Chat request in this workspace.
 
 This repository uses SDLC-SPDD: SDLC Agents-style lifecycle roles backed by SPDD REASONS Canvas design contracts.
 
-Default lifecycle:
+Default lifecycle (Fowler SPDD + SDLC hybrid):
 
-    Initialize -> Plan -> Architect -> Code -> Review -> Retro -> Sync
+    Initialize -> Analysis -> Plan -> Architect -> Code -> API Test -> Review -> Retro -> Sync
+
+The matching slash commands live in `.github/prompts/` (invoke in Copilot Chat):
+
+    /sdlc-spdd-init
+    /sdlc-spdd-analysis
+    /sdlc-spdd-plan
+    /sdlc-spdd-architect
+    /sdlc-spdd-code
+    /sdlc-spdd-api-test
+    /sdlc-spdd-review
+    /sdlc-spdd-prompt-update
+    /sdlc-spdd-retro
+    /sdlc-spdd-sync
+
+If slash commands are not listed, reference a prompt file: `#prompt:sdlc-spdd-analysis`
 
 Preserve context by reading relevant artifacts before answering:
 
 - `requirements/`
+- `spdd/analysis/`
 - `spdd/canvas/`
 - `spdd/tasks/`
 - `spdd/reviews/`
@@ -33,11 +49,12 @@ Load context by index, not by scanning. Keep working context small and relevant 
 
 1. Start at `agent-context/sessions/current-session.md` to resume the active Work ID and phase. If it is missing, read the most recent brief in `agent-context/sessions/` or the indexes in `agent-context/memory/`.
 2. Retrieve by relevance, not recency. A Work ID's own history is its `agent-context/features/<WORK-ID>/progress-log.md` and `spdd/canvas/<WORK-ID>.md` — read those, not the global history. Sessions for unrelated work are interleaved in time, so never read history top-to-bottom.
-3. Discover related work by code area, not by scanning. The REASONS Canvas is prose; determine which code areas the work matches (a Java package or a directory). To find prior context in the same area across other Work IDs, filter `agent-context/memory/context-index.md` by Area (Kinds: session, decision, pitfall, pattern) and `agent-context/memory/session-index.md` by Area; read matches newest-first and stop once you have enough. Full per-session detail is in `agent-context/memory/sessions/`. For static playbooks and harness files, use `agent-context/memory/phase-index.md` by phase. `session-history.md` is only a recent chronological overview (older entries archived under `agent-context/memory/archive/`). Do not read whole directories. When capturing: read `agent-context/memory/code-areas.md`; `capture-session-memory.sh` parses session documents/content (summary, session-notes, current-session.md, latest timestamped session brief, canvas, progress log, capture flags) for path/package tokens, matches known categories, and registers new ones. Use `--areas` only to override or supplement parsed categories.
+3. Discover related work by code area or domain keyword, not by scanning. Filter `agent-context/memory/domain-index.md` by Domain Keywords from the analysis artifact, then `context-index.md` and `session-index.md` by Area (Kinds: analysis, session, decision, pitfall, pattern). Read matches newest-first. Full per-session detail is in `agent-context/memory/sessions/`. For static playbooks and harness files, use `agent-context/memory/phase-index.md` by phase. `session-history.md` is only a recent chronological overview (older entries archived under `agent-context/memory/archive/`). Do not read whole directories. When capturing: read `agent-context/memory/code-areas.md`; `capture-session-memory.sh` parses session documents/content (summary, session-notes, current-session.md, latest timestamped session brief, analysis, canvas, progress log, capture flags) for path/package tokens, matches known categories, and registers new ones. After `/sdlc-spdd-analysis`, run `index-spdd-analysis.sh` to index domain keywords. Use `--areas` only to override or supplement parsed categories.
 
 Per-phase context budget:
 
-- plan: the requirement, `ROADMAP.md`, active `milestone-*.md`
+- plan: the requirement, `spdd/analysis/<WORK-ID>-analysis.md`, `ROADMAP.md`, active `milestone-*.md`
+- analysis: the requirement, `domain-index.md`, `context-index.md`, scoped code areas only
 - architect: the Work ID canvas, `agent-context/memory/architecture-decisions.md`, `agent-context/harness/`
 - code: the Work ID canvas, that feature's `progress-log.md`, `agent-context/memory/known-pitfalls.md`
 - review: the Work ID canvas, the diff, `agent-context/harness/quality-gates.md`
