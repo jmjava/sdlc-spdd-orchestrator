@@ -88,7 +88,7 @@ point at the few artifacts that matter for the current Work ID, phase, or code a
 |-------|------|------------|
 | **1 — Install** | Once (`setup-agent-prompts.sh` / `init-project.sh`) | Tier 1 grounding files, memory seeds, `phase-index.md`, runtime scripts under `scripts/sdlc-spdd/`, framework docs under `docs/sdlc-spdd/` |
 | **2 — Every request** | Automatic (no script) | Tier 1 grounding injects operating model, artifact locations, and index-based loading rules on **every** chat request |
-| **3 — Every session** | `start-agent-session.sh` before work | `agent-context/sessions/current-session.md` — Framework Orientation, artifact status, **Resume Prompt** (paste verbatim into chat) |
+| **3 — Every session** | `start-agent-session.sh` before work | `agent-context/sessions/current-session.md` — Framework Orientation, **Resolved Context** (from `resolve-agent-context.sh`), artifact status, **Resume Prompt** (paste verbatim into chat) |
 | **4 — Cold start** | Chat opened without a fresh brief | Tier 2 still applies; read existing `current-session.md` or re-run `start-agent-session.sh` — do not guess Work ID or scan directories |
 | **Close the loop** | `capture-session-memory.sh` at session end | Indexes grow (`context-index`, `session-index`, `code-areas`) so the next bootstrap into the same area finds prior context immediately |
 
@@ -97,9 +97,10 @@ point at the few artifacts that matter for the current Work ID, phase, or code a
     ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase>
 
 The brief opens with **Framework Orientation** (pointers to grounding, framework
-docs, and all retrieval indexes below), then work-specific artifact status and the
-Resume Prompt. Paste the Resume Prompt so Layer 2 (rules) and Layer 3 (work
-context) combine.
+docs, and retrieval indexes), then **Resolved Context** (phase files, extensions,
+Work ID artifacts, area-filtered index rows), artifact status, and the Resume
+Prompt. Paste the Resume Prompt so Layer 2 (rules) and Layer 3 (work context)
+combine — load only files listed under Resolved Context.
 
 ```mermaid
 flowchart TD

@@ -62,7 +62,12 @@ Start or resume:
 
     ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase> [--milestone milestone-1.md]
 
-Paste the Resume Prompt from `agent-context/sessions/current-session.md`.
+Paste the Resume Prompt from `agent-context/sessions/current-session.md`. Load only files listed under **Resolved Context** in that brief.
+
+Refresh context after adding extensions or `#SkillName` skills:
+
+    ./scripts/sdlc-spdd/resolve-agent-context.sh --target . --phase <phase> --work-id <WORK-ID>
+    ./scripts/sdlc-spdd/resolve-agent-context.sh --target . --text "#TDD #java"
 
 Check previous work:
 

@@ -33,7 +33,7 @@ Goal: recover context before asking the assistant to act.
 
        ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase>
 
-3. **Paste the Resume Prompt** from `agent-context/sessions/current-session.md`. That generated prompt is the source of truth — it already includes canvas, memory, and planning `@` references when those files exist.
+3. **Paste the Resume Prompt** from `agent-context/sessions/current-session.md`. That generated prompt is the source of truth — it directs the agent to load only the files listed under **Resolved Context** in the same brief (phase extensions, Work ID artifacts, and area-filtered index rows).
 
 Optional — ask for a status summary after pasting the resume prompt:
 
