@@ -1,6 +1,6 @@
 # Workflow
 
-This page is the **canonical step sequence** (13 steps, which part owns each). It is a reference table — not a daily runbook and not the prompt library.
+This page is the **canonical step sequence** (15 steps, which part owns each). It is a reference table — not a daily runbook and not the prompt library.
 
 | Need | Open |
 |------|------|
@@ -32,15 +32,17 @@ Set `--phase` on `start-agent-session.sh` to the phase you are about to run. Pas
 | 2 | SDLC | **Initialize** — `/sdlc-spdd-init` |
 | 3 | Planning → SPDD | **Map milestone work when needed** — `./scripts/sdlc-spdd/create-work-from-milestone.sh --target . --milestone milestone-1.md --all` |
 | 4 | SDLC | **Start session** — `./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase>` → paste Resume Prompt |
-| 5 | SPDD (+ Planning) | **Plan** — `/sdlc-spdd-plan @requirements/my-feature.md @ROADMAP.md @milestone-1.md` |
-| 6 | SPDD | **Architect** — `/sdlc-spdd-architect @spdd/canvas/<WORK-ID>.md` |
-| 7 | SDLC + SPDD | **Code** — `/sdlc-spdd-code @spdd/canvas/<WORK-ID>.md operation T01` (one operation at a time) |
-| 8 | SPDD | **Review** — `/sdlc-spdd-review @spdd/canvas/<WORK-ID>.md` |
-| 9 | SPDD | **Prompt update when intent changes** — `/sdlc-spdd-prompt-update @spdd/canvas/<WORK-ID>.md` |
-| 10 | SDLC | **Retro** — `/sdlc-spdd-retro @spdd/canvas/<WORK-ID>.md` |
-| 11 | SPDD | **Sync** — `/sdlc-spdd-sync @spdd/canvas/<WORK-ID>.md` |
-| 12 | SDLC + Planning | **Capture memory and session notes** — `capture-session-memory.sh` (milestone auto-detected when Work ID is in `milestone-*.md`) |
-| 13 | Planning ← SPDD | **Refresh roadmap summary** — `./scripts/sdlc-spdd/sync-roadmap-from-spdd.sh --target .` |
+| 5 | SPDD (+ Planning) | **Analysis** — `/sdlc-spdd-analysis @requirements/my-feature.md @ROADMAP.md @milestone-1.md`, then `./scripts/sdlc-spdd/index-spdd-analysis.sh --target . --work-id <WORK-ID>` |
+| 6 | SPDD (+ Planning) | **Plan** — `/sdlc-spdd-plan @spdd/analysis/<WORK-ID>-analysis.md` (requires the analysis artifact from step 5) |
+| 7 | SPDD | **Architect** — `/sdlc-spdd-architect @spdd/canvas/<WORK-ID>.md` |
+| 8 | SDLC + SPDD | **Code** — `/sdlc-spdd-code @spdd/canvas/<WORK-ID>.md operation T01` (one operation at a time) |
+| 9 | SPDD | **API test** — `/sdlc-spdd-api-test @spdd/canvas/<WORK-ID>.md` |
+| 10 | SPDD | **Review** — `/sdlc-spdd-review @spdd/canvas/<WORK-ID>.md` |
+| 11 | SPDD | **Prompt update when intent changes** — `/sdlc-spdd-prompt-update @spdd/canvas/<WORK-ID>.md` |
+| 12 | SDLC | **Retro** — `/sdlc-spdd-retro @spdd/canvas/<WORK-ID>.md` |
+| 13 | SPDD | **Sync** — `/sdlc-spdd-sync @spdd/canvas/<WORK-ID>.md` |
+| 14 | SDLC + Planning | **Capture memory and session notes** — `capture-session-memory.sh` (milestone auto-detected when Work ID is in `milestone-*.md`) |
+| 15 | Planning ← SPDD | **Refresh roadmap summary** — `./scripts/sdlc-spdd/sync-roadmap-from-spdd.sh --target .` |
 
 ## Work IDs
 

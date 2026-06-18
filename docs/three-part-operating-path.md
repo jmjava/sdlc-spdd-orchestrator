@@ -76,12 +76,13 @@ Use when work is already on `milestone-*.md` or `ROADMAP.md`.
 |------|------|--------|
 | A1 | **Planning** | Define goal and checklist in `milestone-1.md`; set Current Focus in `ROADMAP.md` |
 | A2 | **Planning → SPDD** | `./scripts/sdlc-spdd/create-work-from-milestone.sh --target . --milestone milestone-1.md --all` |
-| A3 | **SPDD** | `/sdlc-spdd-plan @requirements/milestones/<WORK-ID>.md @ROADMAP.md @milestone-1.md` |
-| A4 | **SPDD** | `/sdlc-spdd-architect @spdd/canvas/<WORK-ID>.md` — wait for Ready For Coding |
-| A5 | **SDLC** | `./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase code --milestone milestone-1.md` — session brief at **code** phase because plan/architect may span earlier chats; re-run with the matching `--phase` whenever the phase changes |
-| A6 | **SDLC + SPDD** | `/sdlc-spdd-code @spdd/canvas/<WORK-ID>.md operation T01` → review → sync |
-| A7 | **SDLC + Planning** | `capture-session-memory.sh` with `--milestone` and `--roadmap-note` |
-| A8 | **Planning ← SPDD** | `./scripts/sdlc-spdd/sync-roadmap-from-spdd.sh --target .` |
+| A3 | **SPDD** | `/sdlc-spdd-analysis @requirements/milestones/<WORK-ID>.md @ROADMAP.md @milestone-1.md`, then `./scripts/sdlc-spdd/index-spdd-analysis.sh --target . --work-id <WORK-ID>` |
+| A4 | **SPDD** | `/sdlc-spdd-plan @spdd/analysis/<WORK-ID>-analysis.md` (requires the analysis artifact from A3) |
+| A5 | **SPDD** | `/sdlc-spdd-architect @spdd/canvas/<WORK-ID>.md` — wait for Ready For Coding |
+| A6 | **SDLC** | `./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase code --milestone milestone-1.md` — session brief at **code** phase because analysis/plan/architect may span earlier chats; re-run with the matching `--phase` whenever the phase changes |
+| A7 | **SDLC + SPDD** | `/sdlc-spdd-code @spdd/canvas/<WORK-ID>.md operation T01` → api-test → review → sync |
+| A8 | **SDLC + Planning** | `capture-session-memory.sh` with `--milestone` and `--roadmap-note` |
+| A9 | **Planning ← SPDD** | `./scripts/sdlc-spdd/sync-roadmap-from-spdd.sh --target .` |
 
 ### Entry B — Start from an ad-hoc requirement
 
@@ -89,13 +90,14 @@ Use when a bug, feature request, or spike arrives without a milestone item yet.
 
 | Step | Part | Action |
 |------|------|--------|
-| B1 | **SDLC** | Triage: propose Work ID and whether `/sdlc-spdd-plan` is safe |
-| B2 | **SDLC** | `./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase plan` |
-| B3 | **SPDD** (+ Planning if applicable) | `/sdlc-spdd-plan @requirements/<file>.md` or with `@ROADMAP.md @milestone-1.md` |
-| B4 | **SPDD** | `/sdlc-spdd-architect @spdd/canvas/<WORK-ID>.md` |
-| B5–B7 | **SDLC + SPDD** | Same as A5–A6 (code one operation → review → sync) |
-| B8 | **SDLC + Planning** | Capture memory; link Work ID in milestone Linked Work table if it belongs to a milestone |
-| B9 | **Planning ← SPDD** | `sync-roadmap-from-spdd.sh` when ready for roadmap summary |
+| B1 | **SDLC** | Triage: propose Work ID and whether `/sdlc-spdd-analysis` is safe |
+| B2 | **SDLC** | `./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase analysis` |
+| B3 | **SPDD** (+ Planning if applicable) | `/sdlc-spdd-analysis @requirements/<file>.md` or with `@ROADMAP.md @milestone-1.md`, then `./scripts/sdlc-spdd/index-spdd-analysis.sh --target . --work-id <WORK-ID>` |
+| B4 | **SPDD** | `/sdlc-spdd-plan @spdd/analysis/<WORK-ID>-analysis.md` (requires the analysis artifact from B3) |
+| B5 | **SPDD** | `/sdlc-spdd-architect @spdd/canvas/<WORK-ID>.md` |
+| B6–B8 | **SDLC + SPDD** | Same as A6–A7 (code one operation → api-test → review → sync) |
+| B9 | **SDLC + Planning** | Capture memory; link Work ID in milestone Linked Work table if it belongs to a milestone |
+| B10 | **Planning ← SPDD** | `sync-roadmap-from-spdd.sh` when ready for roadmap summary |
 
 ## Daily Loop (all three parts)
 
@@ -143,7 +145,7 @@ Once initialized, repeat this loop every agent session:
 
 ## Which Part Owns Each Workflow Step
 
-Maps the [13-step workflow](workflow.md) to the three parts:
+Maps the [15-step workflow](workflow.md) to the three parts:
 
 | Step | Workflow action | Primary part | Also touches |
 |------|-----------------|--------------|--------------|
@@ -151,15 +153,17 @@ Maps the [13-step workflow](workflow.md) to the three parts:
 | 2 | `/sdlc-spdd-init` | SDLC | Detects stack into memory |
 | 3 | `create-work-from-milestone.sh` | Planning | Creates SPDD draft canvas |
 | 4 | `start-agent-session.sh` | SDLC | Reads Planning + SPDD status |
-| 5 | `/sdlc-spdd-plan` | SPDD | Planning context in prompt |
-| 6 | `/sdlc-spdd-architect` | SPDD | SDLC architecture-first gate |
-| 7 | `/sdlc-spdd-code` | SDLC + SPDD | One canvas Operation |
-| 8 | `/sdlc-spdd-review` | SPDD | SDLC review phase |
-| 9 | `/sdlc-spdd-prompt-update` | SPDD | When intent changes |
-| 10 | `/sdlc-spdd-retro` | SDLC | Writes reusable memory |
-| 11 | `/sdlc-spdd-sync` | SPDD | Reconciles canvas with code |
-| 12 | `capture-session-memory.sh` | SDLC + Planning | Session notes, milestone |
-| 13 | `sync-roadmap-from-spdd.sh` | Planning | Summary from SPDD metadata |
+| 5 | `/sdlc-spdd-analysis` + `index-spdd-analysis.sh` | SPDD | Keywords + code areas into memory |
+| 6 | `/sdlc-spdd-plan` | SPDD | Planning context in prompt |
+| 7 | `/sdlc-spdd-architect` | SPDD | SDLC architecture-first gate |
+| 8 | `/sdlc-spdd-code` | SDLC + SPDD | One canvas Operation |
+| 9 | `/sdlc-spdd-api-test` | SPDD | Verifies operation behavior |
+| 10 | `/sdlc-spdd-review` | SPDD | SDLC review phase |
+| 11 | `/sdlc-spdd-prompt-update` | SPDD | When intent changes |
+| 12 | `/sdlc-spdd-retro` | SDLC | Writes reusable memory |
+| 13 | `/sdlc-spdd-sync` | SPDD | Reconciles canvas with code |
+| 14 | `capture-session-memory.sh` | SDLC + Planning | Session notes, milestone |
+| 15 | `sync-roadmap-from-spdd.sh` | Planning | Summary from SPDD metadata |
 
 ## Decision Guide: Which Part Right Now?
 
@@ -191,8 +195,8 @@ Run `start-agent-session.sh` with `--phase` set to the phase you are **about to 
 
 | Entry | When to create the first brief |
 |-------|-------------------------------|
-| **A** (milestone) | After plan + architect, at **code** phase (steps A3–A4 may happen without a brief, or with `--phase plan` if you prefer) |
-| **B** (ad-hoc) / **First day** | At **plan** phase, before `/sdlc-spdd-plan` |
+| **A** (milestone) | After analysis + plan + architect, at **code** phase (steps A3–A5 may happen without a brief, or with `--phase analysis` if you prefer) |
+| **B** (ad-hoc) / **First day** | At **analysis** phase, before `/sdlc-spdd-analysis` |
 | **Daily resume** | At whatever phase you are resuming today |
 
 Re-run the script whenever the phase changes so `current-session.md` stays accurate.
@@ -238,7 +242,7 @@ When layers disagree, use this order:
 
 ## Read Next
 
-- [Workflow](workflow.md) — 13-step command sequence
+- [Workflow](workflow.md) — 15-step command sequence
 - [Daily runbook](daily-runbook.md) — day-to-day operations
 - [Roadmap, milestones, and session notes](roadmap-milestones-and-session-notes.md) — planning file details
 - [SPDD compliance](spdd-compliance.md) — canvas compliance checklist

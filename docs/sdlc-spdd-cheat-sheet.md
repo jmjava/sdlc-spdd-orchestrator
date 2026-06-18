@@ -86,38 +86,50 @@ Refresh roadmap:
 
 ## Lifecycle
 
-    Initialize -> Plan -> Architect -> Code -> Review -> Retro -> Sync
+    Initialize -> Analysis -> Plan -> Architect -> Code -> API Test -> Review -> Retro -> Sync
 
 ## Start Work
 
+Begin with `/sdlc-spdd-analysis` (Fowler Step 3). It extracts domain keywords,
+scans only the relevant code areas, and writes `spdd/analysis/<WORK-ID>-analysis.md`.
+`/sdlc-spdd-plan` requires that artifact and stops if it is missing.
+
 Plain requirement:
 
-    /sdlc-spdd-plan Create an endpoint that returns order status by ID.
+    /sdlc-spdd-analysis Create an endpoint that returns order status by ID.
 
 Requirement file:
 
-    /sdlc-spdd-plan @requirements/order-status-api.md
+    /sdlc-spdd-analysis @requirements/order-status-api.md
 
 Jira:
 
-    /sdlc-spdd-plan Jira ABC-123: add order status lookup. Link https://jira.example.com/browse/ABC-123.
+    /sdlc-spdd-analysis Jira ABC-123: add order status lookup. Link https://jira.example.com/browse/ABC-123.
 
 GitHub issue:
 
-    /sdlc-spdd-plan GitHub issue https://github.com/org/repo/issues/42.
+    /sdlc-spdd-analysis GitHub issue https://github.com/org/repo/issues/42.
 
 Bug:
 
-    /sdlc-spdd-plan BUG: checkout fails when an order has no discount. Use BUG-003-null-discount-checkout.
+    /sdlc-spdd-analysis BUG: checkout fails when an order has no discount. Use BUG-003-null-discount-checkout.
+
+Then index the analysis so domain keywords and code areas feed decision memory,
+and continue to planning:
+
+    ./scripts/sdlc-spdd/index-spdd-analysis.sh --target . --work-id <WORK-ID>
+    /sdlc-spdd-plan @spdd/analysis/<WORK-ID>-analysis.md
 
 ## Invoke Skills
 
 | Need | Command |
 |------|---------|
 | Initialize repo context | `/sdlc-spdd-init` |
-| Turn requirement into canvas | `/sdlc-spdd-plan @requirements/file.md` |
+| Analyze requirement + scope code areas | `/sdlc-spdd-analysis @requirements/file.md` |
+| Turn analysis into canvas | `/sdlc-spdd-plan @spdd/analysis/WORK-ID-analysis.md` |
 | Harden design before coding | `/sdlc-spdd-architect @spdd/canvas/WORK-ID.md` |
 | Implement one operation | `/sdlc-spdd-code @spdd/canvas/WORK-ID.md operation T01` |
+| Verify with API tests | `/sdlc-spdd-api-test @spdd/canvas/WORK-ID.md` |
 | Review implementation | `/sdlc-spdd-review @spdd/canvas/WORK-ID.md` |
 | Update changed intent | `/sdlc-spdd-prompt-update @spdd/canvas/WORK-ID.md` |
 | Capture learnings | `/sdlc-spdd-retro @spdd/canvas/WORK-ID.md` |

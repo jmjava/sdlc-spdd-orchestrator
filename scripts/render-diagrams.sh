@@ -112,15 +112,33 @@ else
 fi
 mkdir -p "${RENDER_DIR}"
 
+# Chrome can intermittently time out while bringing up its WebSocket endpoint
+# in CI ("Timed out ... waiting for the WS endpoint URL"). Retry a few times so
+# a transient browser-launch hiccup does not fail the whole validation.
+RENDER_ATTEMPTS="${RENDER_ATTEMPTS:-3}"
+
 render_block() {
   local block="$1"
   local out_file="$2"
-  npx -y -p @mermaid-js/mermaid-cli mmdc \
-    -p "${PUPPETEER_CONFIG}" \
-    -c "${MERMAID_CONFIG}" \
-    -i "${block}" \
-    -o "${out_file}" \
-    -b white >/dev/null 2>"${block}.err"
+  local attempt=1
+  while :; do
+    if npx -y -p @mermaid-js/mermaid-cli mmdc \
+      -p "${PUPPETEER_CONFIG}" \
+      -c "${MERMAID_CONFIG}" \
+      -i "${block}" \
+      -o "${out_file}" \
+      -b white >/dev/null 2>"${block}.err"; then
+      return 0
+    fi
+    # Only retry transient browser-launch failures; real syntax errors fail fast.
+    if (( attempt < RENDER_ATTEMPTS )) && grep -qiE 'WS endpoint|Timed out|Target closed|Protocol error|net::' "${block}.err"; then
+      echo "  retry ${attempt}/${RENDER_ATTEMPTS} (transient browser launch) ..." >&2
+      attempt=$((attempt + 1))
+      sleep 3
+      continue
+    fi
+    return 1
+  done
 }
 
 echo "Browser:  ${CHROME_BIN}"

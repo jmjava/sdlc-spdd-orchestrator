@@ -1,3 +1,11 @@
 {
-  "args": ["--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage"]
+  "args": [
+    "--no-sandbox",
+    "--disable-gpu",
+    "--disable-dev-shm-usage",
+    "--no-zygote",
+    "--disable-extensions"
+  ],
+  "timeout": 60000,
+  "protocolTimeout": 120000
 }
