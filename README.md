@@ -228,6 +228,7 @@ Refresh the roadmap summary from SPDD canvases:
 | `scripts/sdlc-spdd/resync-agent-session.sh` | Check or reconcile feature/canonical canvas drift |
 | `scripts/sdlc-spdd/capture-session-memory.sh` | Persist session summary, validation, decisions, pitfalls, patterns, and next steps |
 | `scripts/sdlc-spdd/index-spdd-analysis.sh` | Index analysis domain keywords and code areas into decision-memory indexes |
+| `scripts/sdlc-spdd/resolve-agent-context.sh` | Resolve SDLC Agents `#SkillName` and phase extensions for progressive loading |
 | `scripts/sdlc-spdd/create-work-from-milestone.sh` | Map milestone checklist items to Work IDs, requirements, feature workspaces, and draft canvases |
 | `scripts/sdlc-spdd/sync-roadmap-from-spdd.sh` | Refresh a managed roadmap summary from SPDD canvas metadata |
 | `scripts/sdlc-spdd/summarize-session-notes.sh` | Import existing daily session notes into durable memory |

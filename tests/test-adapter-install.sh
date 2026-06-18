@@ -144,7 +144,10 @@ assert_memory_seed_files() {
   assert_file "${t}/spdd/analysis/.gitkeep"
   assert_file "${t}/agent-context/extensions/README.md"
   assert_file "${t}/agent-context/extensions/_all-agents/.gitkeep"
+  assert_file "${t}/agent-context/extensions/coding-agent/.gitkeep"
   assert_file "${t}/agent-context/extensions/skills/.gitkeep"
+  assert_file "${t}/agent-context/extensions/skills/TDD.md"
+  assert_file "${t}/scripts/sdlc-spdd/resolve-agent-context.sh"
 }
 
 assert_progressive_disclosure_grounding() {
@@ -155,7 +158,7 @@ assert_progressive_disclosure_grounding() {
     "${t}/CLAUDE.md"; do
     assert_contains "${f}" "progressive disclosure" "progressive disclosure in $(basename "${f}")"
     assert_contains "${f}" "api-test:" "api-test phase budget in $(basename "${f}")"
-    assert_contains "${f}" "agent-context/extensions/skills/" "extensions skills path in $(basename "${f}")"
+    assert_contains "${f}" "resolve-agent-context.sh" "resolve script reference in $(basename "${f}")"
   done
 }
 

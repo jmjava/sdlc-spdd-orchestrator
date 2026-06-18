@@ -136,7 +136,8 @@ SDLC Agents supports dynamic skill selection and extensions. This scaffold docum
 - Use `#SkillName` to request relevant skills, such as `#TDD`, `#java`, `#security`, or `#tekton`.
 - Use `!SkillName` to exclude irrelevant skills, such as `!Kafka`.
 - Store reusable project guidance in `agent-context/memory/` and `agent-context/playbooks/`.
-- Add project-specific rules under `agent-context/extensions/` (`_all-agents/`, `skills/`) — load only when the phase or `#SkillName` calls for them.
+- Resolve skills and phase extensions with `./scripts/sdlc-spdd/resolve-agent-context.sh` (see [SDLC Agents and the framework](sdlc-agents-and-the-framework.md)).
+- Add project-specific rules under `agent-context/extensions/` (SDLC Agents agent folder names) — loaded via resolve script or session brief **Resolved Context**.
 - Use `ROADMAP.md`, `milestone-*.md`, and `session-notes/` for human-level planning context, not as replacements for the REASONS Canvas.
 
 Example:

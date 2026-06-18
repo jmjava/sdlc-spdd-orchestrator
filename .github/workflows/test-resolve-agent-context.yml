@@ -1,0 +1,25 @@
+name: Test Resolve Agent Context
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/resolve-agent-context.sh'
+      - 'scripts/start-agent-session.sh'
+      - 'tests/test-resolve-agent-context.sh'
+      - 'templates/agent-context/extensions/**'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/resolve-agent-context.sh'
+      - 'scripts/start-agent-session.sh'
+      - 'tests/test-resolve-agent-context.sh'
+      - 'templates/agent-context/extensions/**'
+
+jobs:
+  test-resolve-agent-context:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run resolve-agent-context regression harness
+        run: ./tests/test-resolve-agent-context.sh

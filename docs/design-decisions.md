@@ -50,4 +50,16 @@ All contracts, memory, and commands are inspectable Markdown files.
 
 ## SDLC Agents compatibility boundary
 
-This project adopts SDLC Agents lifecycle and context-engineering principles, but does not yet implement the full upstream runtime, dynamic skill loader, or extension loader. Teams can still use SDLC Agents-style skills by referencing `#SkillName` and storing reusable guidance in `agent-context/playbooks/`, `agent-context/memory/`, or a project-local `agent-context/extensions/` folder.
+This project adopts SDLC Agents lifecycle and context-engineering principles through Markdown command adapters and shell scripts — not a compiled upstream runtime.
+
+Implemented today:
+
+- **Progressive disclosure** — Tier 1/2 context, indexes, per-phase budgets
+- **Dynamic skill selection** — `#SkillName` / `!SkillName` via `resolve-agent-context.sh`
+- **Extension support** — `agent-context/extensions/` with SDLC Agents agent folder names; phase resolution in session briefs
+- **Self-learning** — retro, capture, indexed memory retrieval
+
+Still deferred from upstream SDLC Agents:
+
+- Compiled multi-agent runtime (orchestration is prompt + session brief based)
+- Automatic injection without running resolve script or starting a session brief

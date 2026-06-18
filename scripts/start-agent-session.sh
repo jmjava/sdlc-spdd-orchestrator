@@ -231,32 +231,36 @@ active_milestone="$(resolve_milestone "${MILESTONE}" || true)"
 today_note_rel="session-notes/$(date -u +"%Y-%m-%d").md"
 
 resume_prompt="For ${WORK_ID:-<WORK-ID>}, read @agent-context/sessions/current-session.md first."
-if [[ -n "${WORK_ID}" ]]; then
-  resume_prompt+=$'\n\n'"For ${WORK_ID}, read @spdd/canvas/${WORK_ID}.md, @agent-context/features/${WORK_ID}/progress-log.md, and @agent-context/memory/known-pitfalls.md."
-else
-  resume_prompt+=$'\n\n'"Read @agent-context/memory/project-memory.md and @agent-context/memory/known-pitfalls.md."
+resume_prompt+=$'\n\n'"Load only the files listed under **Resolved Context** in that brief for the ${PHASE} phase (SDLC Agents progressive disclosure)."
+if [[ -n "${WORK_ID}" && ( "${PHASE}" == "code" || "${PHASE}" == "review" || "${PHASE}" == "architect" || "${PHASE}" == "api-test" || "${PHASE}" == "retro" || "${PHASE}" == "sync" ) ]]; then
+  resume_prompt+=$'\n'"Also read @spdd/canvas/${WORK_ID}.md for this Work ID."
 fi
-
-planning_refs=()
-if [[ -f "${roadmap_file}" ]]; then
-  planning_refs+=("@ROADMAP.md")
+if [[ "${PHASE}" == "plan" && -n "${WORK_ID}" ]]; then
+  resume_prompt+=$'\n'"Also read @spdd/analysis/${WORK_ID}-analysis.md before planning."
 fi
-if [[ -n "${active_milestone}" ]]; then
-  planning_refs+=("@${active_milestone}")
-fi
-if [[ -f "${today_note}" ]]; then
-  planning_refs+=("@${today_note_rel}")
-fi
-if ((${#planning_refs[@]} > 0)); then
-  planning_refs_joined="$(printf '%s, ' "${planning_refs[@]}")"
-  planning_refs_joined="${planning_refs_joined%, }"
-  resume_prompt+=$'\n\n'"Also read ${planning_refs_joined}."
+if [[ "${PHASE}" == "analysis" ]]; then
+  resume_prompt+=$'\n'"Use @requirements/ or milestone sources named in the brief; filter indexes before scanning code."
 fi
 
 resume_prompt+=$'\n\n'"Continue in the ${PHASE} phase using the hybrid SDLC Agents + SPDD workflow."
 resume_prompt+=$'\n'"Recommended command: ${recommended_command}"
 
 resume_prompt_indented="$(printf '%s\n' "${resume_prompt}" | sed 's/^/    /')"
+
+resolve_script=""
+if [[ -x "${TARGET}/scripts/sdlc-spdd/resolve-agent-context.sh" ]]; then
+  resolve_script="${TARGET}/scripts/sdlc-spdd/resolve-agent-context.sh"
+elif [[ -x "$(dirname "${BASH_SOURCE[0]}")/resolve-agent-context.sh" ]]; then
+  resolve_script="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/resolve-agent-context.sh"
+fi
+
+resolved_context_md="No resolved context (run with a supported --phase)."
+if [[ -n "${resolve_script}" && "${PHASE}" != "resume" ]]; then
+  resolved_context_md="$("${resolve_script}" --target "${TARGET}" --phase "${PHASE}" --format markdown 2>/dev/null || true)"
+  if [[ -z "${resolved_context_md}" ]]; then
+    resolved_context_md="No resolved context files for phase ${PHASE}."
+  fi
+fi
 
 cat > "${session_file}" <<EOF
 # SDLC-SPDD Agent Session
@@ -279,6 +283,7 @@ New agents: load these first so you know how to operate within the SDLC-SPDD fra
 - Operating model + work rules: the always-on grounding file (.cursor/rules/sdlc-spdd.mdc, .github/copilot-instructions.md, or CLAUDE.md) is loaded on every request.
 - How the framework works: docs/sdlc-spdd/three-part-operating-path.md, docs/sdlc-spdd/ten-thousand-foot-view.md.
 - Session + context-loading rules: docs/sdlc-spdd/context-loading-and-scaling.md#bootstrap-and-index-based-loading (bootstrap layers, index catalog, retrieval, capture).
+- Resolve phase skills/extensions: ./scripts/sdlc-spdd/resolve-agent-context.sh --target . --phase ${PHASE}
 
 ## Hybrid Operating Model
 
@@ -324,13 +329,16 @@ Use indexes for retrieval — do not scan directories or read session-history to
 - agent-context/harness/quality-gates.md
 - agent-context/harness/validation-rules.md
 
-## Playbooks To Consider
+## Resolved Context
 
-- agent-context/playbooks/java-feature-playbook.md
-- agent-context/playbooks/bugfix-playbook.md
-- agent-context/playbooks/refactor-playbook.md
-- agent-context/playbooks/pr-review-playbook.md
-- agent-context/playbooks/session-handoff-playbook.md
+Phase-specific extensions, playbooks, and memory files to load for **${PHASE}** (from resolve-agent-context.sh):
+
+${resolved_context_md}
+
+Refresh after adding extensions or `#SkillName` skills:
+
+    ./scripts/sdlc-spdd/resolve-agent-context.sh --target . --phase ${PHASE}
+    ./scripts/sdlc-spdd/resolve-agent-context.sh --target . --phase ${PHASE} --text "#TDD #java"
 
 ## Git Status
 

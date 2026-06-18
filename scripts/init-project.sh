@@ -134,6 +134,13 @@ for dir in \
   agent-context/playbooks \
   agent-context/extensions \
   agent-context/extensions/_all-agents \
+  agent-context/extensions/initializer-agent \
+  agent-context/extensions/planning-agent \
+  agent-context/extensions/architect-agent \
+  agent-context/extensions/coding-agent \
+  agent-context/extensions/codereview-agent \
+  agent-context/extensions/retro-agent \
+  agent-context/extensions/curator-agent \
   agent-context/extensions/skills \
   agent-context/features \
   agent-context/sessions \
@@ -189,6 +196,13 @@ copy_if_missing \
   "${REPO_ROOT}/templates/agent-context/extensions/README.md" \
   "${TARGET}/agent-context/extensions/README.md"
 
+for file in "${REPO_ROOT}"/templates/agent-context/extensions/skills/*.md; do
+  [[ -f "${file}" ]] || continue
+  copy_if_missing \
+    "${file}" \
+    "${TARGET}/agent-context/extensions/skills/$(basename "${file}")"
+done
+
 copy_if_missing \
   "${REPO_ROOT}/agent-context/harness/quality-gates.md" \
   "${TARGET}/agent-context/harness/quality-gates.md"
@@ -222,6 +236,7 @@ for file in \
   resync-agent-session.sh \
   capture-session-memory.sh \
   index-spdd-analysis.sh \
+  resolve-agent-context.sh \
   create-work-from-milestone.sh \
   sync-roadmap-from-spdd.sh \
   summarize-session-notes.sh \

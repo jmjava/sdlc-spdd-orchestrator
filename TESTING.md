@@ -22,6 +22,7 @@ In orchestrator repo:
 - `test-adapter-install` (`.github/workflows/test-adapter-install.yml`)
 - `test-session-memory` (`.github/workflows/test-session-memory.yml`)
 - `test-index-spdd-analysis` (`.github/workflows/test-index-spdd-analysis.yml`)
+- `test-resolve-agent-context` (`.github/workflows/test-resolve-agent-context.yml`)
 - `validate-canvas` (`.github/workflows/validate-canvas.yml`)
 - `validate-diagrams` (`.github/workflows/validate-diagrams.yml`)
 
@@ -99,6 +100,20 @@ throwaway targets and asserts:
 - `--dry-run` writes nothing; missing analysis file exits non-zero
 
 Run locally after changing `index-spdd-analysis.sh` or `domain-index.md`.
+
+### Resolve agent context harness
+
+`./tests/test-resolve-agent-context.sh` runs `resolve-agent-context.sh` against
+throwaway targets and asserts:
+
+- `--phase code` resolves `_all-agents/`, `coding-agent/`, and code playbooks
+- `#SkillName` resolves `extensions/skills/` and `*-playbook.md` files
+- `!SkillName` excludes a skill even when also requested with `#`
+- `--list-skills` discovers skills and playbook-derived names
+- `--format json` returns a paths array
+
+Run locally after changing `resolve-agent-context.sh`, extension templates, or
+`start-agent-session.sh` Resolved Context integration.
 
 ### Whole-ecosystem grounding norm (enforced)
 

@@ -12,12 +12,12 @@ SDLC Agents advertises six capabilities that distinguish it from undifferentiate
 |------------------------|---------------|------------------------|-------------|---------------------|
 | **Progressive disclosure** | Agents load only contextually relevant knowledge — no bloated prompts | ↓ 60–80% fewer tokens vs. full-context (upstream claim) | **Adopted** | Tier 1 fixed grounding + Tier 2 on-demand; per-phase budgets; index retrieval instead of directory scans |
 | **Self-learning** | Retro agent captures lessons; knowledge accumulates across tasks | Reuses learnings without re-explaining | **Adopted** | `/sdlc-spdd-retro`, `capture-session-memory.sh`, durable memory files, growing indexes |
-| **Extension support** | Add custom skills without modifying core agent files | Load extensions only when relevant | **Adopted** (manual load) | `agent-context/extensions/` (`_all-agents/`, `skills/`) scaffolded at install |
-| **Dynamic skill selection** | `#SkillName` to include, `!SkillName` to exclude | On-demand loading saves tokens | **Adopted** (convention) | Grounding Work Rules; skills in `playbooks/` or `extensions/skills/` |
+| **Extension support** | Add custom skills without modifying core agent files | Load extensions only when relevant | **Adopted** | `agent-context/extensions/` + `resolve-agent-context.sh` + session brief **Resolved Context** |
+| **Dynamic skill selection** | `#SkillName` to include, `!SkillName` to exclude | On-demand loading saves tokens | **Adopted** | `resolve-agent-context.sh --text`; example skills in `extensions/skills/` |
 | **Architecture-first** | Structure validated before implementation | Prevents costly rework iterations | **Adopted** | `/sdlc-spdd-architect` → **Ready For Coding** gate before `/sdlc-spdd-code` |
 | **Multi-agent orchestration** | Specialized agents with clear handoffs | Each agent loads minimal context | **Adopted** (prompt-based) | One `/sdlc-spdd-*` command per phase; `start-agent-session.sh` Resume Prompt handoffs |
 
-We do **not** ship SDLC Agents' compiled runtime or automatic skill/extension injectors. The **discipline** is the same; the **mechanism** is Markdown command adapters + repository artifacts + shell scripts.
+We do **not** ship SDLC Agents' compiled multi-agent runtime. Skill and extension paths are resolved by `resolve-agent-context.sh` and embedded in session briefs — not injected silently on every chat request.
 
 ## Core claim (SDLC Agents)
 
@@ -46,32 +46,49 @@ Key upstream capabilities (detail sections below):
 
 See [Two tiers of context](context-loading-and-scaling.md#two-tiers-of-context).
 
-## Dynamic skill selection → `#SkillName` / `!SkillName`
+## Dynamic skill selection → `resolve-agent-context.sh`
 
-SDLC Agents lets users request skills inline (for example `#TDD`, `#java`, `!Kafka`). This orchestrator documents the same pattern in assistant-neutral form:
+SDLC Agents lets users request skills inline (for example `#TDD`, `#java`, `!Kafka`). This orchestrator resolves them with:
 
-    /sdlc-spdd-analysis Add order processing API #java #TDD !Kafka
+    ./scripts/sdlc-spdd/resolve-agent-context.sh --text "Implement auth #TDD #java !Kafka"
+    ./scripts/sdlc-spdd/resolve-agent-context.sh --phase code --text "#TDD"
 
-Expected behavior:
+Search order for `#SkillName`:
 
-1. Load matching guidance from `agent-context/playbooks/` or `agent-context/extensions/skills/` when present.
-2. Exclude skills marked with `!`.
-3. Record selected skills in the analysis artifact, canvas Metadata, or progress log.
+1. `agent-context/extensions/skills/<SkillName>.md`
+2. `agent-context/playbooks/<skillname>-playbook.md`
+3. `agent-context/playbooks/<skillname>.md`
 
-The orchestrator does **not** ship an automatic skill loader runtime (same boundary as upstream — see [design decisions](design-decisions.md)). Teams reference skills explicitly in prompts; agents load the named files when they exist.
+`!SkillName` tokens exclude a skill even if also requested with `#`.
+
+`start-agent-session.sh` embeds phase-resolved paths under **Resolved Context** in `current-session.md`.
+
+List discoverable skills:
+
+    ./scripts/sdlc-spdd/resolve-agent-context.sh --list-skills
 
 ## Extensions → `agent-context/extensions/`
 
-SDLC Agents supports custom rules without modifying core agent files. After `init-project.sh`, projects include:
+SDLC Agents supports custom rules without modifying core agent files. After `init-project.sh`, projects include SDLC Agents-aligned agent folders:
 
     agent-context/extensions/
-    ├── _all-agents/     # Rules for every phase
-    ├── skills/          # Custom skill markdown (referenced via #SkillName)
+    ├── _all-agents/        # every phase
+    ├── initializer-agent/
+    ├── planning-agent/     # analysis, plan, prompt-update
+    ├── architect-agent/
+    ├── coding-agent/       # code, api-test
+    ├── codereview-agent/
+    ├── retro-agent/
+    ├── curator-agent/      # sync
+    ├── skills/             # #SkillName targets
     └── README.md
 
-Drop a `.md` file into the appropriate folder; agents should read extensions **only when** the active phase or `#SkillName` directive calls for them — not on every request.
+Phase resolution (via `resolve-agent-context.sh --phase <phase>`):
 
-Playbooks under `agent-context/playbooks/` remain the shipped, framework-owned workflows. Extensions are project-owned overrides and additions.
+- Loads `_all-agents/*.md` + the matching `*-agent/*.md` folder
+- Adds phase static playbooks from `phase-index.md` (for example code → bugfix/java/refactor playbooks)
+
+Drop a `.md` file into the appropriate folder; `start-agent-session.sh` lists resolved paths in the session brief — agents load those files, not the whole tree.
 
 ## Phase-specialized context → per-phase budget
 
@@ -152,11 +169,11 @@ Each command pack states **do not** do the next agent's job (for example plan do
 | Self-learning across tasks | **Adopted** — retro, capture, indexed memory retrieval |
 | Architecture-first gate | **Adopted** — architect readiness before code |
 | Multi-agent orchestration | **Adopted** (prompt-based) — phase commands + session handoffs |
-| Dynamic `#SkillName` / `!SkillName` | **Adopted** (convention) — documented in grounding; agent loads named files |
-| Extensions folder | **Adopted** — scaffolded at install; load when phase or `#SkillName` calls |
+| Dynamic `#SkillName` / `!SkillName` | **Adopted** — `resolve-agent-context.sh` |
+| Extensions folder + phase agent dirs | **Adopted** — install scaffold + session brief resolution |
 | Compiled multi-agent runtime | **Deferred** — Markdown command adapters instead |
-| Automatic skill loader | **Deferred** — explicit `#SkillName` + file reference |
-| Automatic extension injection | **Deferred** — load when phase or prompt names them |
+| Automatic skill loader (no script) | **Deferred** — run resolve script or read session brief |
+| Automatic extension injection (no script) | **Deferred** — `start-agent-session.sh` + resolve script |
 | Curator as separate always-on agent | **Partial** — `/sdlc-spdd-sync` + memory hygiene scripts; no dedicated curator command |
 | Token savings measurement | **Not measured** — upstream 60–80% claim applies to their runtime; our model reduces load by design but is not benchmarked |
 
@@ -176,8 +193,9 @@ Each command pack states **do not** do the next agent's job (for example plan do
 |---------------------|-------------------|
 | Progressive disclosure | Tier 1 grounding + [context loading](context-loading-and-scaling.md) |
 | Self-learning | `/sdlc-spdd-retro`, `capture-session-memory.sh`, memory + indexes |
-| Extensions | `agent-context/extensions/` (installed by `init-project.sh`) |
-| `#SkillName` | Grounding Work Rules; [hybrid model — Skills](hybrid-model.md#skills-and-extensions) |
+| Extensions | `agent-context/extensions/` + `resolve-agent-context.sh` |
+| `#SkillName` | `resolve-agent-context.sh --text`; [hybrid model — Skills](hybrid-model.md#skills-and-extensions) |
+| Skill/extension resolver | `scripts/resolve-agent-context.sh` → `scripts/sdlc-spdd/` at install |
 | Architecture-first | `/sdlc-spdd-architect`, readiness gate, harness |
 | Multi-agent orchestration | Phase command packs; `start-agent-session.sh` handoffs |
 | Phase agents | `templates/cursor/sdlc-spdd-*.md`, Copilot/Claude command packs |

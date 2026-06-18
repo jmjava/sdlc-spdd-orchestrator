@@ -6,7 +6,7 @@ This folder holds project memory, feature workspaces, playbooks, and quality har
 
 - `memory/` — durable project context and retrieval indexes
 - `playbooks/` — repeatable workflows by work type
-- `extensions/` — project-local SDLC Agents-style rules and `#SkillName` skills (load on demand only)
+- `extensions/` — SDLC Agents-style rules (`_all-agents/`, `*-agent/`, `skills/`); resolve with `resolve-agent-context.sh`
 - `features/` — per-work workspaces
 - `sessions/` — generated session briefs and current-session handoffs
 - `harness/` — validation rules and quality gates

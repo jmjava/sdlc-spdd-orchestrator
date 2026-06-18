@@ -19,6 +19,7 @@ They solve three operational needs:
 | `scripts/sdlc-spdd/resync-agent-session.sh` | Target-local script that checks or reconciles feature/canonical canvases, validates the canvas, and creates a session brief |
 | `scripts/sdlc-spdd/capture-session-memory.sh` | Target-local script that persists current session summary, validation, decisions, pitfalls, patterns, and next steps |
 | `scripts/sdlc-spdd/index-spdd-analysis.sh` | Index Fowler analysis artifacts into `domain-index.md` and `context-index.md` |
+| `scripts/sdlc-spdd/resolve-agent-context.sh` | Resolve SDLC Agents `#SkillName` / phase extensions for progressive loading |
 | `scripts/sdlc-spdd/create-work-from-milestone.sh` | Target-local script that maps milestone checklist items into SDLC-SPDD work artifacts |
 | `scripts/sdlc-spdd/sync-roadmap-from-spdd.sh` | Target-local script that refreshes a managed roadmap summary from canvas metadata |
 | `scripts/sdlc-spdd/summarize-session-notes.sh` | Target-local script that imports existing session notes into durable memory |
@@ -233,6 +234,17 @@ domain keywords and code areas:
 
 Updates `domain-index.md`, `context-index.md` (Kind: `analysis`), and
 `code-areas.md`. See [Chelsea Troy and the framework](chelsea-troy-and-the-framework.md).
+
+## 6. Resolve Skills and Phase Extensions (SDLC Agents)
+
+Resolve which extension, playbook, and memory files to load — do not list whole directories:
+
+    ./scripts/sdlc-spdd/resolve-agent-context.sh --target . --phase code
+    ./scripts/sdlc-spdd/resolve-agent-context.sh --target . --text "Implement retry #TDD #java !Kafka"
+    ./scripts/sdlc-spdd/resolve-agent-context.sh --list-skills
+
+`start-agent-session.sh` embeds `--phase` output under **Resolved Context** in
+`current-session.md`. See [SDLC Agents and the framework](sdlc-agents-and-the-framework.md).
 
 ## Hybrid Contract
 
