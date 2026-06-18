@@ -132,6 +132,9 @@ for dir in \
   session-notes \
   agent-context/memory \
   agent-context/playbooks \
+  agent-context/extensions \
+  agent-context/extensions/_all-agents \
+  agent-context/extensions/skills \
   agent-context/features \
   agent-context/sessions \
   agent-context/harness \
@@ -181,6 +184,10 @@ for file in "${REPO_ROOT}"/agent-context/playbooks/*.md; do
     "${file}" \
     "${TARGET}/agent-context/playbooks/$(basename "${file}")"
 done
+
+copy_if_missing \
+  "${REPO_ROOT}/templates/agent-context/extensions/README.md" \
+  "${TARGET}/agent-context/extensions/README.md"
 
 copy_if_missing \
   "${REPO_ROOT}/agent-context/harness/quality-gates.md" \

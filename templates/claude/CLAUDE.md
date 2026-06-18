@@ -40,7 +40,7 @@ Preserve context by reading relevant artifacts before answering:
 - `agent-context/features/`
 - `agent-context/harness/`
 
-Use progressive disclosure: load only the artifacts relevant to the current Work ID, phase, and operation.
+Use progressive disclosure ([SDLC Agents](https://github.com/dsilahcilar/sdlc-agents)): load only the artifacts relevant to the current Work ID, phase, and operation. Never list or read whole directories — use indexes. See `docs/sdlc-spdd/sdlc-agents-and-the-framework.md`.
 
 ## Context Loading
 
@@ -56,6 +56,7 @@ Per-phase context budget:
 - analysis: the requirement, `domain-index.md`, `context-index.md`, scoped code areas only
 - architect: the Work ID canvas, `agent-context/memory/architecture-decisions.md`, `agent-context/harness/`
 - code: the Work ID canvas, that feature's `progress-log.md`, `agent-context/memory/known-pitfalls.md`
+- api-test: the Work ID canvas Requirements/Operations, implemented endpoints for this Work ID
 - review: the Work ID canvas, the diff, `agent-context/harness/quality-gates.md`
 - retro / sync: the Work ID canvas, that feature's progress log, the memory file being updated
 
@@ -71,7 +72,7 @@ Per-phase context budget:
 - Ask clarifying questions only when needed to prevent incorrect work; otherwise state assumptions in the canvas or progress log.
 - For behavior or requirement changes, update the REASONS Canvas before changing code.
 - For non-behavioral refactors, review the code change and then sync the canvas back to implementation reality.
-- Treat `#SkillName` markers as explicit skill requests and `!SkillName` markers as exclusions. Record selected skills in the canvas or progress log when relevant.
+- Treat `#SkillName` markers as explicit skill requests and `!SkillName` markers as exclusions. Load matching files from `agent-context/playbooks/` or `agent-context/extensions/skills/` when present. Record selected skills in the canvas or progress log when relevant.
 
 ## Context-Preserving Questions
 

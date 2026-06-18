@@ -35,7 +35,7 @@ Properties:
 Everything below is pulled into context **only when needed**:
 
 - `requirements/`, `requirements/milestones/`
-- `spdd/canvas/`, `spdd/tasks/`, `spdd/reviews/`, `spdd/sync/`
+- `spdd/analysis/`, `spdd/canvas/`, `spdd/tasks/`, `spdd/reviews/`, `spdd/sync/`
 - `ROADMAP.md`, `milestone-*.md`, `session-notes/`
 - `agent-context/sessions/`, `agent-context/memory/`,
   `agent-context/features/`, `agent-context/harness/`, `agent-context/playbooks/`
@@ -247,7 +247,7 @@ This orchestrator implements that through:
 
 Command mapping and assistant install paths: [SPDD compliance — Fowler mapping](spdd-compliance.md#fowler--openspdd-command-mapping). Works from **Cursor** (`.cursor/commands/`), **Copilot** (`.github/prompts/`), and **Claude Code** (`.claude/commands/`) with CI parity validation.
 
-Why narrow, indexed context is necessary: [Chelsea Troy and the framework](chelsea-troy-and-the-framework.md) (Lost in the Middle, scoped investigation, human judgment gates).
+Why narrow, indexed context is necessary: [Chelsea Troy and the framework](chelsea-troy-and-the-framework.md) (Lost in the Middle, scoped investigation, human judgment gates). SDLC Agents progressive disclosure alignment: [SDLC Agents and the framework](sdlc-agents-and-the-framework.md).
 
 ## Related
 

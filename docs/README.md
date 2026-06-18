@@ -99,6 +99,7 @@ Read these when you need historical context, compliance detail, or repository ar
 | [Context loading and scaling](context-loading-and-scaling.md) | Tiers, scaling, and [bootstrap + index-based loading](context-loading-and-scaling.md#bootstrap-and-index-based-loading) |
 | [SPDD compliance](spdd-compliance.md) | You need to verify against Structured Prompt-Driven Development expectations |
 | [Chelsea Troy and the framework](chelsea-troy-and-the-framework.md) | You want the LLM context/judgment rationale behind index-driven loading |
+| [SDLC Agents and the framework](sdlc-agents-and-the-framework.md) | You want progressive disclosure, `#SkillName`, and extensions mapped to this orchestrator |
 | [Design decisions](design-decisions.md) | You want the rationale behind major choices |
 
 ## Prompt Standards by Concept

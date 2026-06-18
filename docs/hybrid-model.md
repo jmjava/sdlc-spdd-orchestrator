@@ -114,14 +114,16 @@ Concept guides: [What SDLC brings](what-sdlc-brings.md), [What SPDD brings](what
 
 ## Context Loading Rules
 
-Use SDLC Agents-style progressive disclosure with SPDD artifacts:
+Use SDLC Agents-style progressive disclosure with SPDD artifacts. Load only what the current phase needs; use indexes instead of directory scans. See [SDLC Agents and the framework](sdlc-agents-and-the-framework.md).
 
 | Phase | Load this context | Avoid loading |
 |-------|-------------------|---------------|
 | Init | Repo layout, stack markers, existing memory | Full codebase unless needed for stack detection |
-| Plan | Requirement, roadmap, milestone, source issue, relevant modules, memory | Unrelated source files |
-| Architect | Canvas, architecture notes, relevant interfaces, safeguards | Implementation details not needed for design |
+| Analysis | Requirement, `domain-index.md`, `context-index.md`, `code-areas.md`; scan only matched code areas | Unrelated modules, whole repo |
+| Plan | `spdd/analysis/<WORK-ID>-analysis.md`, requirement, roadmap, milestone, source issue | Unrelated source files |
+| Architect | Analysis + canvas, architecture notes, relevant interfaces, safeguards | Implementation details not needed for design |
 | Code | Canvas, selected operation, relevant files, tests | Other operations or unrelated modules |
+| API test | Canvas Requirements/Operations, implemented endpoints for this Work ID | Unrelated features |
 | Review | Canvas, diff, tests, safeguards | New feature ideation |
 | Prompt update | Canvas, changed requirement, source issue | Source code edits |
 | Sync | Canvas, accepted code changes, review report | Unreviewed behavior changes |
@@ -133,13 +135,15 @@ SDLC Agents supports dynamic skill selection and extensions. This scaffold docum
 
 - Use `#SkillName` to request relevant skills, such as `#TDD`, `#java`, `#security`, or `#tekton`.
 - Use `!SkillName` to exclude irrelevant skills, such as `!Kafka`.
-- Store reusable project guidance in `agent-context/memory/` today.
+- Store reusable project guidance in `agent-context/memory/` and `agent-context/playbooks/`.
+- Add project-specific rules under `agent-context/extensions/` (`_all-agents/`, `skills/`) — load only when the phase or `#SkillName` calls for them.
 - Use `ROADMAP.md`, `milestone-*.md`, and `session-notes/` for human-level planning context, not as replacements for the REASONS Canvas.
-- If a team wants SDLC Agents-style extensions, add Markdown guidance under `agent-context/playbooks/` or a project-local `agent-context/extensions/` folder and reference it from the active prompt.
 
 Example:
 
-    /sdlc-spdd-plan Add order processing API #java #TDD !Kafka
+    /sdlc-spdd-analysis Add order processing API #java #TDD !Kafka
+    ./scripts/sdlc-spdd/index-spdd-analysis.sh --target . --work-id <WORK-ID>
+    /sdlc-spdd-plan @spdd/analysis/<WORK-ID>-analysis.md
 
 The expected behavior is to load Java and TDD guidance, avoid Kafka assumptions, and record the selected skills in the canvas or progress log.
 
