@@ -249,6 +249,22 @@ Command mapping and assistant install paths: [SPDD compliance — Fowler mapping
 
 Why narrow, indexed context is necessary: [Chelsea Troy and the framework](chelsea-troy-and-the-framework.md) (Lost in the Middle, scoped investigation, human judgment gates). SDLC Agents progressive disclosure alignment: [SDLC Agents and the framework](sdlc-agents-and-the-framework.md).
 
+### Unified resolve (static + indexed)
+
+`resolve-agent-context.sh` combines SDLC Agents phase/skill resolution with
+area-filtered `context-index.md` rows:
+
+    ./scripts/sdlc-spdd/resolve-agent-context.sh --target . --phase code --work-id <WORK-ID>
+    ./scripts/sdlc-spdd/resolve-agent-context.sh --target . --phase code --areas src/billing
+
+- **`--work-id`** — reads Code Areas from the analysis artifact, adds Work ID
+  canvas/analysis/progress-log paths, filters `context-index.md` by those areas.
+- **Area-scoped runs** skip whole-file memory logs (`known-pitfalls.md`, etc.)
+  when index rows already target the area; load the **Entry** paths and **Source**
+  anchors from the resolved index table instead.
+- **`start-agent-session.sh`** embeds the markdown output under **Resolved Context**
+  in `current-session.md`.
+
 ## Related
 
 - [Architecture](architecture.md) — five delivery concerns and progressive loading.

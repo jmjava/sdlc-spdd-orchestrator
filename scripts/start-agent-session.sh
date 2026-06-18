@@ -256,7 +256,11 @@ fi
 
 resolved_context_md="No resolved context (run with a supported --phase)."
 if [[ -n "${resolve_script}" && "${PHASE}" != "resume" ]]; then
-  resolved_context_md="$("${resolve_script}" --target "${TARGET}" --phase "${PHASE}" --format markdown 2>/dev/null || true)"
+  resolve_args=(--target "${TARGET}" --phase "${PHASE}" --format markdown)
+  if [[ -n "${WORK_ID}" ]]; then
+    resolve_args+=(--work-id "${WORK_ID}")
+  fi
+  resolved_context_md="$("${resolve_script}" "${resolve_args[@]}" 2>/dev/null || true)"
   if [[ -z "${resolved_context_md}" ]]; then
     resolved_context_md="No resolved context files for phase ${PHASE}."
   fi
@@ -315,29 +319,24 @@ ${milestone_list}
 
 ## Persistent Memory To Read
 
-Use indexes for retrieval — do not scan directories or read session-history top-to-bottom.
+Use **Resolved Context** below first (static + area-filtered index rows). For manual lookup:
 
-- agent-context/memory/code-areas.md — known code-area categories
-- agent-context/memory/context-index.md — filter by Area before touching code
+- agent-context/memory/context-index.md — filter by Area when you know the code area
+- agent-context/memory/domain-index.md — filter by Keyword during analysis
 - agent-context/memory/session-index.md — session-only view (newest first)
-- agent-context/memory/phase-index.md — playbooks and harness by SDLC phase
-- agent-context/memory/architecture-decisions.md — full decision log
-- agent-context/memory/known-pitfalls.md — full pitfalls log
-- agent-context/memory/reusable-patterns.md — full patterns log
-- agent-context/memory/project-memory.md — project-wide notes
-- ROADMAP.md, milestone-*.md, session-notes/
-- agent-context/harness/quality-gates.md
-- agent-context/harness/validation-rules.md
+- agent-context/memory/code-areas.md — canonical area categories
+
+Do not read session-history.md top-to-bottom or load whole memory logs when index rows already point at the relevant entries.
 
 ## Resolved Context
 
-Phase-specific extensions, playbooks, and memory files to load for **${PHASE}** (from resolve-agent-context.sh):
+Phase-specific extensions, playbooks, Work ID artifacts, and area-filtered index matches for **${PHASE}** (from resolve-agent-context.sh):
 
 ${resolved_context_md}
 
-Refresh after adding extensions or `#SkillName` skills:
+Refresh after adding extensions, code areas, or `#SkillName` skills:
 
-    ./scripts/sdlc-spdd/resolve-agent-context.sh --target . --phase ${PHASE}
+    ./scripts/sdlc-spdd/resolve-agent-context.sh --target . --phase ${PHASE}${WORK_ID:+ --work-id ${WORK_ID}}
     ./scripts/sdlc-spdd/resolve-agent-context.sh --target . --phase ${PHASE} --text "#TDD #java"
 
 ## Git Status

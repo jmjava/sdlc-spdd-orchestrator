@@ -130,7 +130,7 @@ SDLC Agents Retro and Curator agents accumulate knowledge so future tasks do not
 | Retro agent | `/sdlc-spdd-retro` — writes `retro.md`, updates memory files |
 | Curator agent | `/sdlc-spdd-sync` + `summarize-session-notes.sh` — reconcile drift, import narrative notes |
 | Knowledge persists across tasks | `architecture-decisions.md`, `known-pitfalls.md`, `reusable-patterns.md` |
-| Retrieve without re-explaining | Filter `context-index.md` by Area/Kind; code phase loads `known-pitfalls.md` for matched areas only |
+| Retrieve without re-explaining | `resolve-agent-context.sh --work-id` filters `context-index.md` by Code Areas; area-scoped runs skip whole memory logs and resolve **Entry** paths + **Source** anchors |
 
 **Capture loop** (every session end):
 

@@ -94,6 +94,43 @@ else
   bad "session brief missing Resolved Context"
 fi
 
+echo "== Test 9: --work-id + context-index area filter =="
+mkdir -p "${WORK}/spdd/analysis" "${WORK}/spdd/canvas" "${WORK}/agent-context/memory/sessions"
+cat > "${WORK}/spdd/analysis/FEAT-050-billing-analysis.md" <<'AN'
+# Analysis Context: FEAT-050-billing
+
+## Code Areas
+
+- src/billing
+AN
+cat > "${WORK}/spdd/canvas/FEAT-050-billing.md" <<'CV'
+# Canvas
+CV
+cat > "${WORK}/agent-context/memory/context-index.md" <<'CTX'
+# Context Index
+
+| Area | Kind | Work ID | Phase | Timestamp | Source | Entry |
+|------|------|---------|-------|-----------|--------|-------|
+| src/billing | session | BUG-001 | code | 2026-01-01T00:00:00Z | spdd/canvas/BUG-001.md | agent-context/memory/sessions/20260101-code-BUG-001.md |
+| src/payments | session | FEAT-002 | code | 2026-01-02T00:00:00Z | spdd/canvas/FEAT-002.md | agent-context/memory/sessions/20260102-code-FEAT-002.md |
+CTX
+echo "session detail" > "${WORK}/agent-context/memory/sessions/20260101-code-BUG-001.md"
+out="$("${RESOLVE}" --target "${WORK}" --phase code --work-id FEAT-050-billing --format paths)"
+assert_contains "${out}" "spdd/canvas/FEAT-050-billing.md" "work-id canvas artifact"
+assert_contains "${out}" "agent-context/memory/sessions/20260101-code-BUG-001.md" "billing area session entry"
+if grep -Fq "agent-context/memory/sessions/20260102-code-FEAT-002.md" <<< "${out}"; then
+  bad "unrelated payments area should not resolve"
+else
+  ok "payments area excluded"
+fi
+md="$("${RESOLVE}" --target "${WORK}" --phase code --work-id FEAT-050-billing --format markdown)"
+assert_contains "${md}" "Indexed context" "markdown index section"
+if grep -Fq "known-pitfalls.md" <<< "${out}"; then
+  bad "whole known-pitfalls should not load when area-scoped"
+else
+  ok "area-scoped skips whole pitfalls file"
+fi
+
 echo
 if (( fail > 0 )); then
   echo "${fail} failed, ${pass} passed" >&2

@@ -4,7 +4,8 @@ set -euo pipefail
 # Resolve SDLC Agents-style context for progressive disclosure:
 #   - #SkillName / !SkillName directives in prompt text
 #   - Phase-specific extension folders (_all-agents + *-agent)
-#   - Static playbooks linked from phase-index.md for the active phase
+#   - Static playbooks for the active phase
+#   - context-index.md rows filtered by --work-id / --areas (dynamic memory)
 #
 # Prints paths relative to --target (one per line with --format paths).
 
@@ -12,14 +13,17 @@ usage() {
   cat <<'EOF'
 Usage: resolve-agent-context.sh [options]
 
-Resolve skills and phase extensions for SDLC Agents-style progressive loading.
-Agents and session scripts use this to list only the files to load — not whole
-directories.
+Resolve skills, phase extensions, and indexed context for progressive loading.
+Combines SDLC Agents static resolution with area-keyed context-index rows.
 
 Options:
   --target <path>     Target project (default: .)
   --phase <phase>     SDLC phase: init, analysis, plan, architect, code,
                       api-test, review, prompt-update, retro, sync
+  --work-id <id>      Load code areas from analysis + Work ID artifacts; filter
+                      context-index.md by those areas
+  --areas <list>      Comma-separated code areas (overrides/supplements work-id)
+  --index-limit <n>   Max context-index rows to resolve (default: 12)
   --text <string>     Prompt text containing #SkillName and !SkillName tokens
   --text-file <path>  Read prompt text from a file
   --format <fmt>      Output: paths (default), markdown, json
@@ -28,18 +32,21 @@ Options:
   -h, --help          Show this help
 
 Examples:
-  ./scripts/sdlc-spdd/resolve-agent-context.sh --target . --phase code
+  ./scripts/sdlc-spdd/resolve-agent-context.sh --target . --phase code --work-id FEAT-001
+  ./scripts/sdlc-spdd/resolve-agent-context.sh --phase code --areas src/billing,com.acme.billing
   ./scripts/sdlc-spdd/resolve-agent-context.sh --text "Implement auth #TDD #java !Kafka"
-  ./scripts/sdlc-spdd/resolve-agent-context.sh --phase architect --text "#security"
   ./scripts/sdlc-spdd/resolve-agent-context.sh --list-skills
 EOF
 }
 
 TARGET="."
 PHASE=""
+WORK_ID=""
+AREAS_ARG=""
 TEXT=""
 TEXT_FILE=""
 FORMAT="paths"
+INDEX_LIMIT=12
 LIST_SKILLS=0
 DRY_RUN=0
 
@@ -47,6 +54,9 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --target) TARGET="${2:-}"; shift 2 ;;
     --phase) PHASE="${2:-}"; shift 2 ;;
+    --work-id) WORK_ID="${2:-}"; shift 2 ;;
+    --areas) AREAS_ARG="${2:-}"; shift 2 ;;
+    --index-limit) INDEX_LIMIT="${2:-}"; shift 2 ;;
     --text) TEXT="${2:-}"; shift 2 ;;
     --text-file) TEXT_FILE="${2:-}"; shift 2 ;;
     --format) FORMAT="${2:-}"; shift 2 ;;
@@ -88,6 +98,162 @@ if [[ -n "${TEXT_FILE}" ]]; then
   fi
   TEXT="$(cat "${TEXT_FILE}")"
 fi
+
+normalize_area() {
+  local a="$1"
+  a="$(printf '%s' "${a}" | tr '[:upper:]' '[:lower:]')"
+  a="${a#"${a%%[![:space:]]*}"}"
+  a="${a%"${a##*[![:space:]]}"}"
+  a="$(printf '%s' "${a}" | tr -s '/')"
+  a="${a%/}"
+  printf '%s' "${a}"
+}
+
+parse_section_bullets() {
+  local file="$1"
+  local section="$2"
+  [[ -f "${file}" ]] || return 0
+  awk -v section="${section}" '
+    BEGIN { in_section = 0 }
+    $0 ~ "^##[[:space:]]+" section "[[:space:]]*$" { in_section = 1; next }
+    in_section && /^## / { exit }
+    in_section && /^-[[:space:]]+/ {
+      line = $0
+      sub(/^-[[:space:]]+/, "", line)
+      sub(/[[:space:]]+\(.+\)$/, "", line)
+      gsub(/`/, "", line)
+      if (length(line) > 0) print line
+    }
+  ' "${file}"
+}
+
+declare -a filter_areas=()
+declare -A filter_area_set=()
+
+register_area() {
+  local norm
+  norm="$(normalize_area "$1")"
+  [[ -z "${norm}" ]] && return 0
+  [[ -n "${filter_area_set[${norm}]:-}" ]] && return 0
+  filter_area_set["${norm}"]=1
+  filter_areas+=("${norm}")
+}
+
+collect_areas_from_work_id() {
+  local wid="$1"
+  local candidate
+  for candidate in \
+    "${TARGET}/spdd/analysis/${wid}-analysis.md" \
+    "${TARGET}/agent-context/features/${wid}/analysis-context.md"; do
+    while IFS= read -r _ar; do
+      register_area "${_ar}"
+    done < <(parse_section_bullets "${candidate}" "Code Areas")
+  done
+}
+
+if [[ -n "${WORK_ID}" ]]; then
+  collect_areas_from_work_id "${WORK_ID}"
+fi
+
+if [[ -n "${AREAS_ARG}" ]]; then
+  _item="${AREAS_ARG}"
+  while [[ "${_item}" == *","* ]]; do
+    _part="${_item%%,*}"
+    register_area "${_part}"
+    _item="${_item#*,}"
+  done
+  register_area "${_item}"
+fi
+
+area_scoped=0
+((${#filter_areas[@]} > 0)) && area_scoped=1
+
+declare -a index_rows=()
+
+resolve_index_source_path() {
+  local source="$1"
+  source="${source#"${source%%[![:space:]]*}"}"
+  source="${source%"${source##*[![:space:]]}"}"
+  [[ -z "${source}" ]] && return 1
+  if [[ "${source}" == */* ]]; then
+    if [[ -f "${TARGET}/${source}" ]]; then
+      add_path "${TARGET}/${source}"
+      return 0
+    fi
+    return 1
+  fi
+  local candidate="${TARGET}/agent-context/memory/${source}"
+  if [[ -f "${candidate}" ]]; then
+    add_path "${candidate}"
+    return 0
+  fi
+  candidate="${TARGET}/${source}"
+  if [[ -f "${candidate}" ]]; then
+    add_path "${candidate}"
+    return 0
+  fi
+  return 1
+}
+
+resolve_index_entry_path() {
+  local entry="$1"
+  local source="$2"
+  entry="${entry#"${entry%%[![:space:]]*}"}"
+  entry="${entry%"${entry##*[![:space:]]}"}"
+  [[ -z "${entry}" ]] && return 0
+  if [[ "${entry}" == */* ]]; then
+    add_path "${TARGET}/${entry}"
+    return 0
+  fi
+  resolve_index_source_path "${source}" || true
+}
+
+collect_context_index_matches() {
+  local index_file="${TARGET}/agent-context/memory/context-index.md"
+  [[ -f "${index_file}" ]] || return 0
+  ((${#filter_areas[@]} > 0)) || return 0
+
+  local areas_csv=""
+  local _a
+  for _a in "${filter_areas[@]}"; do
+    areas_csv+="${_a},"
+  done
+  areas_csv="${areas_csv%,}"
+
+  while IFS= read -r row; do
+    [[ -n "${row}" ]] || continue
+    index_rows+=("${row}")
+    local entry source
+    entry="$(printf '%s' "${row}" | awk -F'|' '{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $8); print $8}')"
+    source="$(printf '%s' "${row}" | awk -F'|' '{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $7); print $7}')"
+    resolve_index_entry_path "${entry}" "${source}"
+  done < <(
+    awk -F'|' -v areas="${areas_csv}" -v limit="${INDEX_LIMIT}" '
+      BEGIN {
+        n = split(areas, want, ",")
+        for (i = 1; i <= n; i++) area_set[want[i]] = 1
+        count = 0
+      }
+      /^\| / && $0 !~ /^\| Area/ {
+        if (count >= limit) exit
+        a = $2
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", a)
+        if (a in area_set) {
+          print
+          count++
+        }
+      }
+    ' "${index_file}"
+  )
+}
+
+add_work_id_artifacts() {
+  local wid="$1"
+  add_path "${TARGET}/spdd/canvas/${wid}.md"
+  add_path "${TARGET}/spdd/analysis/${wid}-analysis.md"
+  add_path "${TARGET}/agent-context/features/${wid}/progress-log.md"
+  add_path "${TARGET}/agent-context/features/${wid}/analysis-context.md"
+}
 
 phase_agent_dir() {
   case "${1:-}" in
@@ -200,12 +366,15 @@ list_discoverable_skills() {
 
 phase_static_playbooks() {
   local phase="$1"
+  local scoped="${2:-0}"
   case "${phase}" in
     code)
       add_path "${TARGET}/agent-context/playbooks/java-feature-playbook.md"
       add_path "${TARGET}/agent-context/playbooks/bugfix-playbook.md"
       add_path "${TARGET}/agent-context/playbooks/refactor-playbook.md"
-      add_path "${TARGET}/agent-context/memory/known-pitfalls.md"
+      if (( scoped == 0 )); then
+        add_path "${TARGET}/agent-context/memory/known-pitfalls.md"
+      fi
       ;;
     api-test)
       add_path "${TARGET}/agent-context/harness/quality-gates.md"
@@ -216,15 +385,20 @@ phase_static_playbooks() {
       ;;
     retro|sync)
       add_path "${TARGET}/agent-context/playbooks/session-handoff-playbook.md"
-      add_path "${TARGET}/agent-context/memory/reusable-patterns.md"
+      if (( scoped == 0 )); then
+        add_path "${TARGET}/agent-context/memory/reusable-patterns.md"
+      fi
       ;;
     architect)
       add_path "${TARGET}/agent-context/harness/validation-rules.md"
-      add_path "${TARGET}/agent-context/memory/architecture-decisions.md"
+      if (( scoped == 0 )); then
+        add_path "${TARGET}/agent-context/memory/architecture-decisions.md"
+      fi
       ;;
     analysis)
       add_path "${TARGET}/agent-context/memory/domain-index.md"
       add_path "${TARGET}/agent-context/memory/code-areas.md"
+      add_path "${TARGET}/agent-context/memory/context-index.md"
       ;;
     plan)
       add_path "${TARGET}/ROADMAP.md"
@@ -244,7 +418,15 @@ if [[ -n "${PHASE}" ]]; then
   if [[ -n "${agent_dir}" ]]; then
     collect_extension_md "${ext_base}/${agent_dir}"
   fi
-  phase_static_playbooks "${PHASE}"
+  phase_static_playbooks "${PHASE}" "${area_scoped}"
+fi
+
+if [[ -n "${WORK_ID}" ]]; then
+  add_work_id_artifacts "${WORK_ID}"
+fi
+
+if (( area_scoped == 1 )); then
+  collect_context_index_matches
 fi
 
 if [[ -n "${TEXT}" ]]; then
@@ -262,26 +444,55 @@ emit_paths() {
 }
 
 emit_markdown() {
-  if ((${#resolved_paths[@]} == 0)); then
+  local p kind row
+  if ((${#resolved_paths[@]} == 0 && ${#index_rows[@]} == 0)); then
     echo "No resolved context files."
     return 0
   fi
-  echo "| Kind | Path |"
-  echo "|------|------|"
-  local p kind
-  for p in "${resolved_paths[@]}"; do
-    kind="file"
-    if [[ "${p}" == agent-context/extensions/* ]]; then
-      kind="extension"
-    elif [[ "${p}" == agent-context/playbooks/* ]]; then
-      kind="playbook"
-    elif [[ "${p}" == agent-context/memory/* ]]; then
-      kind="memory"
-    elif [[ "${p}" == agent-context/harness/* ]]; then
-      kind="harness"
-    fi
-    echo "| ${kind} | ${p} |"
-  done
+  if ((${#resolved_paths[@]} > 0)); then
+    echo "### Static and phase files"
+    echo ""
+    echo "| Kind | Path |"
+    echo "|------|------|"
+    for p in "${resolved_paths[@]}"; do
+      kind="file"
+      if [[ "${p}" == agent-context/extensions/* ]]; then
+        kind="extension"
+      elif [[ "${p}" == agent-context/playbooks/* ]]; then
+        kind="playbook"
+      elif [[ "${p}" == agent-context/memory/* ]]; then
+        kind="memory"
+      elif [[ "${p}" == agent-context/harness/* ]]; then
+        kind="harness"
+      elif [[ "${p}" == spdd/* ]]; then
+        kind="spdd"
+      fi
+      echo "| ${kind} | ${p} |"
+    done
+  fi
+  if ((${#index_rows[@]} > 0)); then
+    echo ""
+    echo "### Indexed context (newest first, area-filtered)"
+    echo ""
+    echo "Read the **Entry** column — session/analysis paths load directly; decision/pitfall/pattern rows point at anchors in **Source**."
+    echo ""
+    echo "| Area | Kind | Work ID | Entry | Source |"
+    echo "|------|------|---------|-------|--------|"
+    for row in "${index_rows[@]}"; do
+      printf '%s\n' "${row}" | awk -F'|' '{
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2)
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", $3)
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", $4)
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", $8)
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", $7)
+        print "| " $2 " | " $3 " | " $4 " | " $8 " | " $7 " |"
+      }'
+    done
+  fi
+  if ((${#filter_areas[@]} > 0)); then
+    echo ""
+    echo "Code areas: ${filter_areas[*]}"
+  fi
   if ((${#skill_includes[@]} > 0)); then
     echo ""
     echo "Skills requested: ${skill_includes[*]}"
@@ -292,8 +503,16 @@ emit_markdown() {
 }
 
 emit_json() {
-  printf '{"phase":"%s","includes":[' "${PHASE}"
-  local first=1 s
+  printf '{"phase":"%s","workId":"%s","areas":[' "${PHASE}" "${WORK_ID}"
+  local first=1 a
+  for a in "${filter_areas[@]}"; do
+    [[ ${first} -eq 1 ]] || printf ','
+    first=0
+    printf '"%s"' "${a}"
+  done
+  printf '],"includes":['
+  first=1
+  local s
   for s in "${skill_includes[@]}"; do
     [[ ${first} -eq 1 ]] || printf ','
     first=0
@@ -313,6 +532,16 @@ emit_json() {
     [[ ${first} -eq 1 ]] || printf ','
     first=0
     printf '"%s"' "${p}"
+  done
+  printf '],"indexRows":['
+  first=1
+  local row esc
+  for row in "${index_rows[@]}"; do
+    [[ ${first} -eq 1 ]] || printf ','
+    first=0
+    esc="${row//\\/\\\\}"
+    esc="${esc//\"/\\\"}"
+    printf '"%s"' "${esc}"
   done
   printf ']}\n'
 }
