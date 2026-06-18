@@ -1,22 +1,38 @@
 # SDLC Agents and the SDLC-SPDD Framework
 
-How [SDLC Agents](https://github.com/dsilahcilar/sdlc-agents) progressive disclosure and context-engineering principles map to this orchestrator — and where we implement them today.
+How [SDLC Agents](https://github.com/dsilahcilar/sdlc-agents) core capabilities map to this orchestrator — and where we implement, partially implement, or defer each one.
 
 This is complementary to [context loading and scaling](context-loading-and-scaling.md), [Chelsea Troy and the framework](chelsea-troy-and-the-framework.md), and [hybrid model](hybrid-model.md). SDLC Agents supplies the **lifecycle and loading discipline**; SPDD supplies the **governed artifact contract**; this orchestrator wires both into Cursor, Copilot, and Claude Code.
 
+## Core capabilities map
+
+SDLC Agents advertises six capabilities that distinguish it from undifferentiated AI coding assistants. Here is how each maps to this orchestrator:
+
+| SDLC Agents capability | What it means | Token / process impact | Status here | SDLC-SPDD mechanism |
+|------------------------|---------------|------------------------|-------------|---------------------|
+| **Progressive disclosure** | Agents load only contextually relevant knowledge — no bloated prompts | ↓ 60–80% fewer tokens vs. full-context (upstream claim) | **Adopted** | Tier 1 fixed grounding + Tier 2 on-demand; per-phase budgets; index retrieval instead of directory scans |
+| **Self-learning** | Retro agent captures lessons; knowledge accumulates across tasks | Reuses learnings without re-explaining | **Adopted** | `/sdlc-spdd-retro`, `capture-session-memory.sh`, durable memory files, growing indexes |
+| **Extension support** | Add custom skills without modifying core agent files | Load extensions only when relevant | **Adopted** (manual load) | `agent-context/extensions/` (`_all-agents/`, `skills/`) scaffolded at install |
+| **Dynamic skill selection** | `#SkillName` to include, `!SkillName` to exclude | On-demand loading saves tokens | **Adopted** (convention) | Grounding Work Rules; skills in `playbooks/` or `extensions/skills/` |
+| **Architecture-first** | Structure validated before implementation | Prevents costly rework iterations | **Adopted** | `/sdlc-spdd-architect` → **Ready For Coding** gate before `/sdlc-spdd-code` |
+| **Multi-agent orchestration** | Specialized agents with clear handoffs | Each agent loads minimal context | **Adopted** (prompt-based) | One `/sdlc-spdd-*` command per phase; `start-agent-session.sh` Resume Prompt handoffs |
+
+We do **not** ship SDLC Agents' compiled runtime or automatic skill/extension injectors. The **discipline** is the same; the **mechanism** is Markdown command adapters + repository artifacts + shell scripts.
+
 ## Core claim (SDLC Agents)
 
-LLMs write code fast, but naive prompt stuffing wastes tokens and dilutes attention. SDLC Agents addresses this with **progressive disclosure**: each specialized phase loads **only contextually relevant knowledge** — not whole directories, not unrelated history, not every skill at once.
+LLMs write code fast, but naive prompt stuffing wastes tokens and dilutes attention. SDLC Agents addresses this with specialized phases, progressive disclosure, and accumulated project memory — not one undifferentiated "fix it" chat.
 
-Key upstream capabilities:
+Key upstream capabilities (detail sections below):
 
 | SDLC Agents capability | What it means |
 |------------------------|---------------|
 | **Progressive disclosure** | Agents load only what the current task needs |
-| **Dynamic skill selection** | `#SkillName` to include, `!SkillName` to exclude |
+| **Self-learning** | Retro + curator patterns; lessons persist across tasks |
 | **Extension support** | Project-local rules in `agent-context/extensions/` |
-| **Phase-specialized agents** | Initializer, Planning, Architect, Coding, Review, Retro, Curator |
+| **Dynamic skill selection** | `#SkillName` to include, `!SkillName` to exclude |
 | **Architecture-first** | Structure validated before implementation |
+| **Multi-agent orchestration** | Initializer, Planning, Architect, Coding, Review, Retro, Curator with handoffs |
 
 ## Progressive disclosure → two-tier context
 
@@ -76,28 +92,73 @@ Fowler Step 3 **analysis** and Step 5 **api-test** extend the SDLC Agents lifecy
 
 ## Architecture-first → `/sdlc-spdd-architect`
 
-SDLC Agents validates structure before coding. This orchestrator requires **Ready For Coding** from `/sdlc-spdd-architect` before `/sdlc-spdd-code` implements an operation.
+SDLC Agents validates structure before coding. This orchestrator enforces an explicit readiness gate:
 
-## Continual learning → indexes + capture
+| SDLC Agents | SDLC-SPDD |
+|-------------|-----------|
+| Architect agent reviews plan against rules | `/sdlc-spdd-architect` reads analysis + canvas, scoped code areas |
+| Blocks coding until design is sound | Canvas must reach **Ready For Coding** before `/sdlc-spdd-code` |
+| Entities, Approach, Structure, Safeguards checked | REASONS Canvas sections + `agent-context/harness/` quality gates |
 
-SDLC Agents Retro and Curator agents accumulate knowledge. This orchestrator captures learnings into durable memory and grows retrieval indexes:
+Analysis (`/sdlc-spdd-analysis`) narrows scope **before** the architect runs — so architecture review reads relevant modules, not the whole repo.
 
-- `capture-session-memory.sh` → `session-index.md`, `context-index.md`, `code-areas.md`
-- `index-spdd-analysis.sh` → `domain-index.md`, analysis rows in `context-index.md`
-- Retro writes `architecture-decisions.md`, `known-pitfalls.md`, `reusable-patterns.md`
+Grounding files and session anti-patterns explicitly forbid coding before architect.
 
-Future sessions retrieve by **area or keyword**, not by reading all history.
+## Self-learning → retro, capture, and indexes
+
+SDLC Agents Retro and Curator agents accumulate knowledge so future tasks do not re-explain the same lessons.
+
+| SDLC Agents | SDLC-SPDD |
+|-------------|-----------|
+| Retro agent | `/sdlc-spdd-retro` — writes `retro.md`, updates memory files |
+| Curator agent | `/sdlc-spdd-sync` + `summarize-session-notes.sh` — reconcile drift, import narrative notes |
+| Knowledge persists across tasks | `architecture-decisions.md`, `known-pitfalls.md`, `reusable-patterns.md` |
+| Retrieve without re-explaining | Filter `context-index.md` by Area/Kind; code phase loads `known-pitfalls.md` for matched areas only |
+
+**Capture loop** (every session end):
+
+    capture-session-memory.sh → session-index + context-index + code-areas grow
+    index-spdd-analysis.sh     → domain-index + analysis rows after Fowler Step 3
+
+Next session: bootstrap → indexes → load only matched artifacts. You do not paste prior retro prose into every prompt.
+
+## Multi-agent orchestration → phase commands + session handoffs
+
+SDLC Agents runs specialized agents with clear responsibilities. This orchestrator does not compile a runtime; it **simulates** the same separation through command packs and handoff artifacts:
+
+| SDLC Agents agent | SDLC-SPDD command | Handoff artifact |
+|-------------------|-------------------|------------------|
+| Initializer | `/sdlc-spdd-init` | `project-memory.md`, stack detection |
+| Planning | `/sdlc-spdd-plan` | REASONS Canvas under `spdd/canvas/` |
+| Architect | `/sdlc-spdd-architect` | Readiness decision on canvas |
+| Coding | `/sdlc-spdd-code` | One Operation + progress log |
+| Code Review | `/sdlc-spdd-review` | Review report under `spdd/reviews/` |
+| Retro | `/sdlc-spdd-retro` | Memory files + feature `retro.md` |
+| Curator (maintenance) | `/sdlc-spdd-sync` | Updated canvas + `spdd/sync/` log |
+
+**Analysis** and **API test** are Fowler SPDD additions inserted without breaking handoffs:
+
+    Analysis → Plan → Architect → Code → API Test → Review → Retro → Sync
+
+**Session glue:** `start-agent-session.sh` writes `current-session.md` with Framework Orientation + Resume Prompt — the paste-this handoff between chats. Re-run with `--phase` when the phase changes.
+
+Each command pack states **do not** do the next agent's job (for example plan does not code; architect does not implement).
 
 ## What we adopt vs. what we defer
 
 | SDLC Agents feature | Status in this orchestrator |
 |---------------------|----------------------------|
 | Progressive disclosure by phase | **Adopted** — Tier 1/2 model, indexes, per-phase budgets |
-| Dynamic `#SkillName` / `!SkillName` | **Adopted** — documented in grounding and hybrid model |
-| Extensions folder | **Adopted** — scaffolded at install; manual reference in prompts |
+| Self-learning across tasks | **Adopted** — retro, capture, indexed memory retrieval |
+| Architecture-first gate | **Adopted** — architect readiness before code |
+| Multi-agent orchestration | **Adopted** (prompt-based) — phase commands + session handoffs |
+| Dynamic `#SkillName` / `!SkillName` | **Adopted** (convention) — documented in grounding; agent loads named files |
+| Extensions folder | **Adopted** — scaffolded at install; load when phase or `#SkillName` calls |
 | Compiled multi-agent runtime | **Deferred** — Markdown command adapters instead |
 | Automatic skill loader | **Deferred** — explicit `#SkillName` + file reference |
 | Automatic extension injection | **Deferred** — load when phase or prompt names them |
+| Curator as separate always-on agent | **Partial** — `/sdlc-spdd-sync` + memory hygiene scripts; no dedicated curator command |
+| Token savings measurement | **Not measured** — upstream 60–80% claim applies to their runtime; our model reduces load by design but is not benchmarked |
 
 ## Anti-patterns (violates progressive disclosure)
 
@@ -114,12 +175,15 @@ Future sessions retrieve by **area or keyword**, not by reading all history.
 | SDLC Agents concept | Where in this repo |
 |---------------------|-------------------|
 | Progressive disclosure | Tier 1 grounding + [context loading](context-loading-and-scaling.md) |
-| Phase agents | `templates/cursor/sdlc-spdd-*.md`, Copilot/Claude command packs |
-| `#SkillName` | Grounding Work Rules; [hybrid model — Skills](hybrid-model.md#skills-and-extensions) |
+| Self-learning | `/sdlc-spdd-retro`, `capture-session-memory.sh`, memory + indexes |
 | Extensions | `agent-context/extensions/` (installed by `init-project.sh`) |
+| `#SkillName` | Grounding Work Rules; [hybrid model — Skills](hybrid-model.md#skills-and-extensions) |
+| Architecture-first | `/sdlc-spdd-architect`, readiness gate, harness |
+| Multi-agent orchestration | Phase command packs; `start-agent-session.sh` handoffs |
+| Phase agents | `templates/cursor/sdlc-spdd-*.md`, Copilot/Claude command packs |
 | Index retrieval | `agent-context/memory/*-index.md` |
 | Session handoff | `start-agent-session.sh` → `current-session.md` |
-| Capture learning | `capture-session-memory.sh`, `/sdlc-spdd-retro` |
+| Curator-like sync | `/sdlc-spdd-sync`, `summarize-session-notes.sh` |
 
 ## Read next
 
