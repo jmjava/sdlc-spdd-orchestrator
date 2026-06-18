@@ -86,7 +86,7 @@ SDLC Agents supports custom rules without modifying core agent files. After `ini
 Phase resolution (via `resolve-agent-context.sh --phase <phase>`):
 
 - Loads `_all-agents/*.md` + the matching `*-agent/*.md` folder
-- Adds phase static playbooks from `phase-index.md` (for example code → bugfix/java/refactor playbooks)
+- Adds phase static files by parsing `agent-context/memory/phase-index.md` (playbooks, harness, planning docs)
 
 Drop a `.md` file into the appropriate folder; `start-agent-session.sh` lists resolved paths in the session brief — agents load those files, not the whole tree.
 

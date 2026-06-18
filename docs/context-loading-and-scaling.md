@@ -259,9 +259,10 @@ area-filtered `context-index.md` rows:
 
 - **`--work-id`** — reads Code Areas from the analysis artifact, adds Work ID
   canvas/analysis/progress-log paths, filters `context-index.md` by those areas.
+- **Phase static files** — loaded from `agent-context/memory/phase-index.md` (single source of truth).
 - **Area-scoped runs** skip whole-file memory logs (`known-pitfalls.md`, etc.)
-  when index rows already target the area; load the **Entry** paths and **Source**
-  anchors from the resolved index table instead.
+  when index rows already target the area; anchor-only index rows stay in the
+  index table without loading whole memory logs.
 - **`start-agent-session.sh`** embeds the markdown output under **Resolved Context**
   in `current-session.md`.
 

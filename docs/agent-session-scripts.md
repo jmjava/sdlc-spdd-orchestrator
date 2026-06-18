@@ -239,12 +239,17 @@ Updates `domain-index.md`, `context-index.md` (Kind: `analysis`), and
 
 Resolve which extension, playbook, and memory files to load — do not list whole directories:
 
-    ./scripts/sdlc-spdd/resolve-agent-context.sh --target . --phase code
+    ./scripts/sdlc-spdd/resolve-agent-context.sh --target . --phase code --work-id <WORK-ID>
+    ./scripts/sdlc-spdd/resolve-agent-context.sh --target . --phase code --areas src/billing,com.acme.billing
     ./scripts/sdlc-spdd/resolve-agent-context.sh --target . --text "Implement retry #TDD #java !Kafka"
     ./scripts/sdlc-spdd/resolve-agent-context.sh --list-skills
 
-`start-agent-session.sh` embeds `--phase` output under **Resolved Context** in
-`current-session.md`. See [SDLC Agents and the framework](sdlc-agents-and-the-framework.md).
+Static phase files come from `agent-context/memory/phase-index.md`. With `--work-id` or
+`--areas`, `context-index.md` rows are filtered by code area (newest first); anchor-only
+index entries stay in the Resolved Context table without loading whole memory logs.
+
+`start-agent-session.sh` embeds resolve output under **Resolved Context** in
+`current-session.md` and passes `--work-id` when set. See [SDLC Agents and the framework](sdlc-agents-and-the-framework.md).
 
 ## Hybrid Contract
 

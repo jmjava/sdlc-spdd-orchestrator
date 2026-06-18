@@ -4,7 +4,7 @@ set -euo pipefail
 # Resolve SDLC Agents-style context for progressive disclosure:
 #   - #SkillName / !SkillName directives in prompt text
 #   - Phase-specific extension folders (_all-agents + *-agent)
-#   - Static playbooks for the active phase
+#   - Static playbooks for the active phase (from agent-context/memory/phase-index.md)
 #   - context-index.md rows filtered by --work-id / --areas (dynamic memory)
 #
 # Prints paths relative to --target (one per line with --format paths).
@@ -170,42 +170,16 @@ area_scoped=0
 
 declare -a index_rows=()
 
-resolve_index_source_path() {
-  local source="$1"
-  source="${source#"${source%%[![:space:]]*}"}"
-  source="${source%"${source##*[![:space:]]}"}"
-  [[ -z "${source}" ]] && return 1
-  if [[ "${source}" == */* ]]; then
-    if [[ -f "${TARGET}/${source}" ]]; then
-      add_path "${TARGET}/${source}"
-      return 0
-    fi
-    return 1
-  fi
-  local candidate="${TARGET}/agent-context/memory/${source}"
-  if [[ -f "${candidate}" ]]; then
-    add_path "${candidate}"
-    return 0
-  fi
-  candidate="${TARGET}/${source}"
-  if [[ -f "${candidate}" ]]; then
-    add_path "${candidate}"
-    return 0
-  fi
-  return 1
-}
-
 resolve_index_entry_path() {
   local entry="$1"
-  local source="$2"
   entry="${entry#"${entry%%[![:space:]]*}"}"
   entry="${entry%"${entry##*[![:space:]]}"}"
   [[ -z "${entry}" ]] && return 0
+  # File paths load directly; anchor-only entries (### …) stay in the index table —
+  # do not pull in whole memory logs.
   if [[ "${entry}" == */* ]]; then
     add_path "${TARGET}/${entry}"
-    return 0
   fi
-  resolve_index_source_path "${source}" || true
 }
 
 collect_context_index_matches() {
@@ -223,10 +197,9 @@ collect_context_index_matches() {
   while IFS= read -r row; do
     [[ -n "${row}" ]] || continue
     index_rows+=("${row}")
-    local entry source
+    local entry
     entry="$(printf '%s' "${row}" | awk -F'|' '{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $8); print $8}')"
-    source="$(printf '%s' "${row}" | awk -F'|' '{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $7); print $7}')"
-    resolve_index_entry_path "${entry}" "${source}"
+    resolve_index_entry_path "${entry}"
   done < <(
     awk -F'|' -v areas="${areas_csv}" -v limit="${INDEX_LIMIT}" '
       BEGIN {
@@ -364,46 +337,131 @@ list_discoverable_skills() {
   done | sort -f
 }
 
-phase_static_playbooks() {
-  local phase="$1"
-  local scoped="${2:-0}"
-  case "${phase}" in
-    code)
-      add_path "${TARGET}/agent-context/playbooks/java-feature-playbook.md"
-      add_path "${TARGET}/agent-context/playbooks/bugfix-playbook.md"
-      add_path "${TARGET}/agent-context/playbooks/refactor-playbook.md"
-      if (( scoped == 0 )); then
-        add_path "${TARGET}/agent-context/memory/known-pitfalls.md"
+phase_index_row_matches() {
+  local row_phase="$1"
+  local active="$2"
+  row_phase="${row_phase#"${row_phase%%[![:space:]]*}"}"
+  row_phase="${row_phase%"${row_phase##*[![:space:]]}"}"
+  [[ "${row_phase}" == "${active}" ]] && return 0
+  if [[ "${row_phase}" == *"/"* ]]; then
+    local part
+    IFS='/' read -ra _parts <<< "${row_phase}"
+    for part in "${_parts[@]}"; do
+      part="${part#"${part%%[![:space:]]*}"}"
+      part="${part%"${part##*[![:space:]]}"}"
+      [[ "${part}" == "${active}" ]] && return 0
+    done
+  fi
+  return 1
+}
+
+phase_index_path_area_scoped_skip() {
+  local rel="$1"
+  case "${rel}" in
+    agent-context/memory/known-pitfalls.md|known-pitfalls.md) return 0 ;;
+    agent-context/memory/architecture-decisions.md|architecture-decisions.md) return 0 ;;
+    agent-context/memory/reusable-patterns.md|reusable-patterns.md) return 0 ;;
+  esac
+  return 1
+}
+
+add_phase_index_glob() {
+  local pattern="$1"
+  shopt -s nullglob
+  local match
+  for match in "${TARGET}/${pattern}"; do
+    if [[ -f "${match}" ]]; then
+      add_path "${match}"
+    fi
+  done
+  shopt -u nullglob
+}
+
+add_phase_index_directory() {
+  local rel_dir="$1"
+  local dir="${TARGET}/${rel_dir}"
+  [[ -d "${dir}" ]] || return 0
+
+  case "${rel_dir}" in
+    spdd/tasks|spdd/tasks/)
+      if [[ -n "${WORK_ID}" ]]; then
+        shopt -s nullglob
+        local task
+        for task in "${dir}/${WORK_ID}"*.md "${dir}/${WORK_ID}-"*.md; do
+          add_path "${task}"
+        done
+        shopt -u nullglob
       fi
       ;;
-    api-test)
-      add_path "${TARGET}/agent-context/harness/quality-gates.md"
-      ;;
-    review)
-      add_path "${TARGET}/agent-context/playbooks/pr-review-playbook.md"
-      add_path "${TARGET}/agent-context/harness/quality-gates.md"
-      ;;
-    retro|sync)
-      add_path "${TARGET}/agent-context/playbooks/session-handoff-playbook.md"
-      if (( scoped == 0 )); then
-        add_path "${TARGET}/agent-context/memory/reusable-patterns.md"
+    spdd/analysis|spdd/analysis/)
+      if [[ -n "${WORK_ID}" ]]; then
+        add_path "${TARGET}/spdd/analysis/${WORK_ID}-analysis.md"
       fi
       ;;
-    architect)
-      add_path "${TARGET}/agent-context/harness/validation-rules.md"
-      if (( scoped == 0 )); then
-        add_path "${TARGET}/agent-context/memory/architecture-decisions.md"
-      fi
+    requirements/milestones|requirements/milestones/)
+      shopt -s nullglob
+      local f
+      for f in "${dir}"/*.md; do
+        add_path "${f}"
+      done
+      shopt -u nullglob
       ;;
-    analysis)
-      add_path "${TARGET}/agent-context/memory/domain-index.md"
-      add_path "${TARGET}/agent-context/memory/code-areas.md"
-      add_path "${TARGET}/agent-context/memory/context-index.md"
-      ;;
-    plan)
-      add_path "${TARGET}/ROADMAP.md"
+    *)
+      shopt -s nullglob
+      local f
+      for f in "${dir}"/*.md; do
+        add_path "${f}"
+      done
+      shopt -u nullglob
       ;;
   esac
+}
+
+add_phase_index_path() {
+  local raw="$1"
+  local scoped="${2:-0}"
+  raw="${raw#"${raw%%[![:space:]]*}"}"
+  raw="${raw%"${raw##*[![:space:]]}"}"
+  raw="${raw#\`}"
+  raw="${raw%\`}"
+  [[ -z "${raw}" ]] && return 0
+
+  if (( scoped == 1 )) && phase_index_path_area_scoped_skip "${raw}"; then
+    return 0
+  fi
+
+  if [[ "${raw}" == *"*"* ]]; then
+    add_phase_index_glob "${raw}"
+    return 0
+  fi
+
+  if [[ "${raw}" == */ ]]; then
+    add_phase_index_directory "${raw%/}"
+    return 0
+  fi
+
+  if [[ "${raw}" == */* && -d "${TARGET}/${raw}" ]]; then
+    add_phase_index_directory "${raw}"
+    return 0
+  fi
+
+  add_path "${TARGET}/${raw}"
+}
+
+load_phase_index_paths() {
+  local phase="$1"
+  local scoped="${2:-0}"
+  local index_file="${TARGET}/agent-context/memory/phase-index.md"
+  [[ -f "${index_file}" ]] || return 0
+
+  while IFS= read -r row; do
+    [[ -n "${row}" ]] || continue
+    local row_phase raw_path
+    row_phase="$(printf '%s' "${row}" | awk -F'|' '{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); print $2}')"
+    raw_path="$(printf '%s' "${row}" | awk -F'|' '{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $3); print $3}')"
+    phase_index_row_matches "${row_phase}" "${phase}" || continue
+    add_phase_index_path "${raw_path}" "${scoped}"
+  done < <(awk '/^\| / && $0 !~ /^\| Phase/' "${index_file}")
 }
 
 if [[ "${LIST_SKILLS}" -eq 1 ]]; then
@@ -418,7 +476,7 @@ if [[ -n "${PHASE}" ]]; then
   if [[ -n "${agent_dir}" ]]; then
     collect_extension_md "${ext_base}/${agent_dir}"
   fi
-  phase_static_playbooks "${PHASE}" "${area_scoped}"
+  load_phase_index_paths "${PHASE}" "${area_scoped}"
 fi
 
 if [[ -n "${WORK_ID}" ]]; then
@@ -502,13 +560,24 @@ emit_markdown() {
   fi
 }
 
+json_escape() {
+  local s="$1"
+  s="${s//\\/\\\\}"
+  s="${s//\"/\\\"}"
+  s="${s//$'\n'/\\n}"
+  s="${s//$'\r'/\\r}"
+  s="${s//$'\t'/\\t}"
+  printf '%s' "${s}"
+}
+
 emit_json() {
-  printf '{"phase":"%s","workId":"%s","areas":[' "${PHASE}" "${WORK_ID}"
+  printf '{"phase":"%s","workId":"%s","areas":[' \
+    "$(json_escape "${PHASE}")" "$(json_escape "${WORK_ID}")"
   local first=1 a
   for a in "${filter_areas[@]}"; do
     [[ ${first} -eq 1 ]] || printf ','
     first=0
-    printf '"%s"' "${a}"
+    printf '"%s"' "$(json_escape "${a}")"
   done
   printf '],"includes":['
   first=1
@@ -516,14 +585,14 @@ emit_json() {
   for s in "${skill_includes[@]}"; do
     [[ ${first} -eq 1 ]] || printf ','
     first=0
-    printf '"%s"' "${s}"
+    printf '"%s"' "$(json_escape "${s}")"
   done
   printf '],"excludes":['
   first=1
   for s in "${skill_excludes[@]}"; do
     [[ ${first} -eq 1 ]] || printf ','
     first=0
-    printf '"%s"' "${s}"
+    printf '"%s"' "$(json_escape "${s}")"
   done
   printf '],"paths":['
   first=1
@@ -531,17 +600,15 @@ emit_json() {
   for p in "${resolved_paths[@]}"; do
     [[ ${first} -eq 1 ]] || printf ','
     first=0
-    printf '"%s"' "${p}"
+    printf '"%s"' "$(json_escape "${p}")"
   done
   printf '],"indexRows":['
   first=1
-  local row esc
+  local row
   for row in "${index_rows[@]}"; do
     [[ ${first} -eq 1 ]] || printf ','
     first=0
-    esc="${row//\\/\\\\}"
-    esc="${esc//\"/\\\"}"
-    printf '"%s"' "${esc}"
+    printf '"%s"' "$(json_escape "${row}")"
   done
   printf ']}\n'
 }

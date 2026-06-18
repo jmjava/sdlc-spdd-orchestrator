@@ -106,11 +106,13 @@ Run locally after changing `index-spdd-analysis.sh` or `domain-index.md`.
 `./tests/test-resolve-agent-context.sh` runs `resolve-agent-context.sh` against
 throwaway targets and asserts:
 
-- `--phase code` resolves `_all-agents/`, `coding-agent/`, and code playbooks
+- `--phase code` resolves `_all-agents/`, `coding-agent/`, and playbooks from `phase-index.md`
 - `#SkillName` resolves `extensions/skills/` and `*-playbook.md` files
 - `!SkillName` excludes a skill even when also requested with `#`
+- `--work-id` / `--areas` filter `context-index.md` by code area; anchor-only rows do not load whole memory logs
 - `--list-skills` discovers skills and playbook-derived names
-- `--format json` returns a paths array
+- `--format json` returns paths, areas, and index rows
+- `start-agent-session.sh` resume prompt skips artifacts already listed in Resolved Context
 
 Run locally after changing `resolve-agent-context.sh`, extension templates, or
 `start-agent-session.sh` Resolved Context integration.

@@ -39,7 +39,10 @@ Write failing test first.
 EOF
 
 cp "${REPO_ROOT}/agent-context/playbooks/bugfix-playbook.md" "${WORK}/agent-context/playbooks/"
+cp "${REPO_ROOT}/agent-context/playbooks/java-feature-playbook.md" "${WORK}/agent-context/playbooks/" 2>/dev/null || true
+cp "${REPO_ROOT}/agent-context/playbooks/refactor-playbook.md" "${WORK}/agent-context/playbooks/" 2>/dev/null || true
 cp "${REPO_ROOT}/agent-context/playbooks/pr-review-playbook.md" "${WORK}/agent-context/playbooks/"
+cp "${REPO_ROOT}/agent-context/memory/phase-index.md" "${WORK}/agent-context/memory/"
 cp "${REPO_ROOT}/agent-context/memory/known-pitfalls.md" "${WORK}/agent-context/memory/" 2>/dev/null || \
   printf '# Known Pitfalls\n\n' > "${WORK}/agent-context/memory/known-pitfalls.md"
 cp "${REPO_ROOT}/agent-context/harness/quality-gates.md" "${WORK}/agent-context/harness/" 2>/dev/null || \
@@ -129,6 +132,32 @@ if grep -Fq "known-pitfalls.md" <<< "${out}"; then
   bad "whole known-pitfalls should not load when area-scoped"
 else
   ok "area-scoped skips whole pitfalls file"
+fi
+
+echo "== Test 10: anchor-only index rows do not load whole memory logs =="
+cat >> "${WORK}/agent-context/memory/context-index.md" <<'CTX2'
+| src/billing | pitfall | BUG-003 | code | 2026-01-03T00:00:00Z | known-pitfalls.md | ### 2026-01-03T00:00:00Z - BUG-003 |
+CTX2
+out="$("${RESOLVE}" --target "${WORK}" --phase code --work-id FEAT-050-billing --format paths)"
+if grep -Fq "known-pitfalls.md" <<< "${out}"; then
+  bad "anchor-only pitfall row should not load whole known-pitfalls.md"
+else
+  ok "anchor-only rows stay in index table only"
+fi
+
+echo "== Test 11: api-test resolves tasks from phase-index =="
+mkdir -p "${WORK}/spdd/tasks"
+echo "# API tasks" > "${WORK}/spdd/tasks/FEAT-050-billing-api-test.md"
+out="$("${RESOLVE}" --target "${WORK}" --phase api-test --work-id FEAT-050-billing --format paths)"
+assert_contains "${out}" "spdd/tasks/FEAT-050-billing-api-test.md" "work-id api-test task"
+assert_contains "${out}" "agent-context/harness/quality-gates.md" "api-test quality gates from phase-index"
+
+echo "== Test 12: resume prompt omits canvas when already resolved =="
+"${START}" --target "${WORK}" --work-id FEAT-050-billing --phase code >/dev/null
+if grep -Fq "Also read @spdd/canvas/FEAT-050-billing.md" "${WORK}/agent-context/sessions/current-session.md"; then
+  bad "resume prompt should not duplicate canvas already in Resolved Context"
+else
+  ok "resume prompt skips redundant canvas mention"
 fi
 
 echo

@@ -230,13 +230,45 @@ resolve_milestone() {
 active_milestone="$(resolve_milestone "${MILESTONE}" || true)"
 today_note_rel="session-notes/$(date -u +"%Y-%m-%d").md"
 
+resolve_script=""
+if [[ -x "${TARGET}/scripts/sdlc-spdd/resolve-agent-context.sh" ]]; then
+  resolve_script="${TARGET}/scripts/sdlc-spdd/resolve-agent-context.sh"
+elif [[ -x "$(dirname "${BASH_SOURCE[0]}")/resolve-agent-context.sh" ]]; then
+  resolve_script="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/resolve-agent-context.sh"
+fi
+
+resolved_context_md="No resolved context (run with a supported --phase)."
+resolved_paths_raw=""
+if [[ -n "${resolve_script}" && "${PHASE}" != "resume" ]]; then
+  resolve_args=(--target "${TARGET}" --phase "${PHASE}" --format markdown)
+  resolve_path_args=(--target "${TARGET}" --phase "${PHASE}" --format paths)
+  if [[ -n "${WORK_ID}" ]]; then
+    resolve_args+=(--work-id "${WORK_ID}")
+    resolve_path_args+=(--work-id "${WORK_ID}")
+  fi
+  resolved_context_md="$("${resolve_script}" "${resolve_args[@]}" 2>/dev/null || true)"
+  resolved_paths_raw="$("${resolve_script}" "${resolve_path_args[@]}" 2>/dev/null || true)"
+  if [[ -z "${resolved_context_md}" ]]; then
+    resolved_context_md="No resolved context files for phase ${PHASE}."
+  fi
+fi
+
+resolved_includes() {
+  local needle="$1"
+  grep -Fxq "${needle}" <<< "${resolved_paths_raw}"
+}
+
 resume_prompt="For ${WORK_ID:-<WORK-ID>}, read @agent-context/sessions/current-session.md first."
 resume_prompt+=$'\n\n'"Load only the files listed under **Resolved Context** in that brief for the ${PHASE} phase (SDLC Agents progressive disclosure)."
 if [[ -n "${WORK_ID}" && ( "${PHASE}" == "code" || "${PHASE}" == "review" || "${PHASE}" == "architect" || "${PHASE}" == "api-test" || "${PHASE}" == "retro" || "${PHASE}" == "sync" ) ]]; then
-  resume_prompt+=$'\n'"Also read @spdd/canvas/${WORK_ID}.md for this Work ID."
+  if ! resolved_includes "spdd/canvas/${WORK_ID}.md"; then
+    resume_prompt+=$'\n'"Also read @spdd/canvas/${WORK_ID}.md for this Work ID."
+  fi
 fi
 if [[ "${PHASE}" == "plan" && -n "${WORK_ID}" ]]; then
-  resume_prompt+=$'\n'"Also read @spdd/analysis/${WORK_ID}-analysis.md before planning."
+  if ! resolved_includes "spdd/analysis/${WORK_ID}-analysis.md"; then
+    resume_prompt+=$'\n'"Also read @spdd/analysis/${WORK_ID}-analysis.md before planning."
+  fi
 fi
 if [[ "${PHASE}" == "analysis" ]]; then
   resume_prompt+=$'\n'"Use @requirements/ or milestone sources named in the brief; filter indexes before scanning code."
@@ -246,25 +278,6 @@ resume_prompt+=$'\n\n'"Continue in the ${PHASE} phase using the hybrid SDLC Agen
 resume_prompt+=$'\n'"Recommended command: ${recommended_command}"
 
 resume_prompt_indented="$(printf '%s\n' "${resume_prompt}" | sed 's/^/    /')"
-
-resolve_script=""
-if [[ -x "${TARGET}/scripts/sdlc-spdd/resolve-agent-context.sh" ]]; then
-  resolve_script="${TARGET}/scripts/sdlc-spdd/resolve-agent-context.sh"
-elif [[ -x "$(dirname "${BASH_SOURCE[0]}")/resolve-agent-context.sh" ]]; then
-  resolve_script="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/resolve-agent-context.sh"
-fi
-
-resolved_context_md="No resolved context (run with a supported --phase)."
-if [[ -n "${resolve_script}" && "${PHASE}" != "resume" ]]; then
-  resolve_args=(--target "${TARGET}" --phase "${PHASE}" --format markdown)
-  if [[ -n "${WORK_ID}" ]]; then
-    resolve_args+=(--work-id "${WORK_ID}")
-  fi
-  resolved_context_md="$("${resolve_script}" "${resolve_args[@]}" 2>/dev/null || true)"
-  if [[ -z "${resolved_context_md}" ]]; then
-    resolved_context_md="No resolved context files for phase ${PHASE}."
-  fi
-fi
 
 cat > "${session_file}" <<EOF
 # SDLC-SPDD Agent Session
