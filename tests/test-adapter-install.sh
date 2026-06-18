@@ -142,6 +142,24 @@ assert_memory_seed_files() {
   assert_same "${t}/agent-context/memory/domain-index.md" "${REPO_ROOT}/agent-context/memory/domain-index.md"
   assert_file "${t}/scripts/sdlc-spdd/index-spdd-analysis.sh"
   assert_file "${t}/spdd/analysis/.gitkeep"
+  assert_file "${t}/agent-context/extensions/README.md"
+  assert_file "${t}/agent-context/extensions/_all-agents/.gitkeep"
+  assert_file "${t}/agent-context/extensions/coding-agent/.gitkeep"
+  assert_file "${t}/agent-context/extensions/skills/.gitkeep"
+  assert_file "${t}/agent-context/extensions/skills/TDD.md"
+  assert_file "${t}/scripts/sdlc-spdd/resolve-agent-context.sh"
+}
+
+assert_progressive_disclosure_grounding() {
+  local t="$1"
+  for f in \
+    "${t}/.cursor/rules/sdlc-spdd.mdc" \
+    "${t}/.github/copilot-instructions.md" \
+    "${t}/CLAUDE.md"; do
+    assert_contains "${f}" "progressive disclosure" "progressive disclosure in $(basename "${f}")"
+    assert_contains "${f}" "api-test:" "api-test phase budget in $(basename "${f}")"
+    assert_contains "${f}" "resolve-agent-context.sh" "resolve script reference in $(basename "${f}")"
+  done
 }
 
 assert_no_cursor()  { local t="$1"; assert_absent "${t}/.cursor"; }
@@ -187,6 +205,7 @@ assert_cursor_pack "${T}"
 assert_copilot_pack "${T}"
 assert_claude_pack "${T}"
 assert_memory_seed_files "${T}"
+assert_progressive_disclosure_grounding "${T}"
 assert_target_adapter_workflow "${T}"
 expect_pass "verify all three" "${VERIFY}" --target "${T}" --require-cursor --require-copilot --require-claude
 expect_pass "validate (3 packs)" "${VALIDATE}" --target "${T}"

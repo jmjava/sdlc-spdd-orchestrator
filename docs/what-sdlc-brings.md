@@ -64,11 +64,12 @@ Coding implements **one approved Operation** at a time (for example `T01`, then 
 
 ### 4. Progressive context loading
 
-Each phase loads only the artifacts it needs. See the context-loading table in [Hybrid SDLC Agents + SPDD model](hybrid-model.md).
+Each phase loads only the artifacts it needs — [SDLC Agents progressive disclosure](https://github.com/dsilahcilar/sdlc-agents). See the context-loading table in [Hybrid SDLC Agents + SPDD model](hybrid-model.md) and [SDLC Agents and the framework](sdlc-agents-and-the-framework.md).
 
 Examples:
 
-- **Plan** loads requirements, roadmap, milestone, and memory — not unrelated source files.
+- **Analysis** loads requirement, indexes, and scoped code areas — not the whole repo.
+- **Plan** loads the analysis artifact, requirement, roadmap, and milestone — not unrelated source files.
 - **Code** loads the canvas, one operation, and relevant files — not other operations.
 - **Review** loads the canvas, diff, and tests — not new feature ideation.
 

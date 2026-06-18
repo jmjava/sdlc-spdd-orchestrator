@@ -35,7 +35,7 @@ Properties:
 Everything below is pulled into context **only when needed**:
 
 - `requirements/`, `requirements/milestones/`
-- `spdd/canvas/`, `spdd/tasks/`, `spdd/reviews/`, `spdd/sync/`
+- `spdd/analysis/`, `spdd/canvas/`, `spdd/tasks/`, `spdd/reviews/`, `spdd/sync/`
 - `ROADMAP.md`, `milestone-*.md`, `session-notes/`
 - `agent-context/sessions/`, `agent-context/memory/`,
   `agent-context/features/`, `agent-context/harness/`, `agent-context/playbooks/`
@@ -88,7 +88,7 @@ point at the few artifacts that matter for the current Work ID, phase, or code a
 |-------|------|------------|
 | **1 — Install** | Once (`setup-agent-prompts.sh` / `init-project.sh`) | Tier 1 grounding files, memory seeds, `phase-index.md`, runtime scripts under `scripts/sdlc-spdd/`, framework docs under `docs/sdlc-spdd/` |
 | **2 — Every request** | Automatic (no script) | Tier 1 grounding injects operating model, artifact locations, and index-based loading rules on **every** chat request |
-| **3 — Every session** | `start-agent-session.sh` before work | `agent-context/sessions/current-session.md` — Framework Orientation, artifact status, **Resume Prompt** (paste verbatim into chat) |
+| **3 — Every session** | `start-agent-session.sh` before work | `agent-context/sessions/current-session.md` — Framework Orientation, **Resolved Context** (from `resolve-agent-context.sh`), artifact status, **Resume Prompt** (paste verbatim into chat) |
 | **4 — Cold start** | Chat opened without a fresh brief | Tier 2 still applies; read existing `current-session.md` or re-run `start-agent-session.sh` — do not guess Work ID or scan directories |
 | **Close the loop** | `capture-session-memory.sh` at session end | Indexes grow (`context-index`, `session-index`, `code-areas`) so the next bootstrap into the same area finds prior context immediately |
 
@@ -97,9 +97,10 @@ point at the few artifacts that matter for the current Work ID, phase, or code a
     ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase>
 
 The brief opens with **Framework Orientation** (pointers to grounding, framework
-docs, and all retrieval indexes below), then work-specific artifact status and the
-Resume Prompt. Paste the Resume Prompt so Layer 2 (rules) and Layer 3 (work
-context) combine.
+docs, and retrieval indexes), then **Resolved Context** (phase files, extensions,
+Work ID artifacts, area-filtered index rows), artifact status, and the Resume
+Prompt. Paste the Resume Prompt so Layer 2 (rules) and Layer 3 (work context)
+combine — load only files listed under Resolved Context.
 
 ```mermaid
 flowchart TD
@@ -247,7 +248,24 @@ This orchestrator implements that through:
 
 Command mapping and assistant install paths: [SPDD compliance — Fowler mapping](spdd-compliance.md#fowler--openspdd-command-mapping). Works from **Cursor** (`.cursor/commands/`), **Copilot** (`.github/prompts/`), and **Claude Code** (`.claude/commands/`) with CI parity validation.
 
-Why narrow, indexed context is necessary: [Chelsea Troy and the framework](chelsea-troy-and-the-framework.md) (Lost in the Middle, scoped investigation, human judgment gates).
+Why narrow, indexed context is necessary: [Chelsea Troy and the framework](chelsea-troy-and-the-framework.md) (Lost in the Middle, scoped investigation, human judgment gates). SDLC Agents progressive disclosure alignment: [SDLC Agents and the framework](sdlc-agents-and-the-framework.md).
+
+### Unified resolve (static + indexed)
+
+`resolve-agent-context.sh` combines SDLC Agents phase/skill resolution with
+area-filtered `context-index.md` rows:
+
+    ./scripts/sdlc-spdd/resolve-agent-context.sh --target . --phase code --work-id <WORK-ID>
+    ./scripts/sdlc-spdd/resolve-agent-context.sh --target . --phase code --areas src/billing
+
+- **`--work-id`** — reads Code Areas from the analysis artifact, adds Work ID
+  canvas/analysis/progress-log paths, filters `context-index.md` by those areas.
+- **Phase static files** — loaded from `agent-context/memory/phase-index.md` (single source of truth).
+- **Area-scoped runs** skip whole-file memory logs (`known-pitfalls.md`, etc.)
+  when index rows already target the area; anchor-only index rows stay in the
+  index table without loading whole memory logs.
+- **`start-agent-session.sh`** embeds the markdown output under **Resolved Context**
+  in `current-session.md`.
 
 ## Related
 

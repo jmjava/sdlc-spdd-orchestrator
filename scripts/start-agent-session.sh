@@ -230,27 +230,48 @@ resolve_milestone() {
 active_milestone="$(resolve_milestone "${MILESTONE}" || true)"
 today_note_rel="session-notes/$(date -u +"%Y-%m-%d").md"
 
-resume_prompt="For ${WORK_ID:-<WORK-ID>}, read @agent-context/sessions/current-session.md first."
-if [[ -n "${WORK_ID}" ]]; then
-  resume_prompt+=$'\n\n'"For ${WORK_ID}, read @spdd/canvas/${WORK_ID}.md, @agent-context/features/${WORK_ID}/progress-log.md, and @agent-context/memory/known-pitfalls.md."
-else
-  resume_prompt+=$'\n\n'"Read @agent-context/memory/project-memory.md and @agent-context/memory/known-pitfalls.md."
+resolve_script=""
+if [[ -x "${TARGET}/scripts/sdlc-spdd/resolve-agent-context.sh" ]]; then
+  resolve_script="${TARGET}/scripts/sdlc-spdd/resolve-agent-context.sh"
+elif [[ -x "$(dirname "${BASH_SOURCE[0]}")/resolve-agent-context.sh" ]]; then
+  resolve_script="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/resolve-agent-context.sh"
 fi
 
-planning_refs=()
-if [[ -f "${roadmap_file}" ]]; then
-  planning_refs+=("@ROADMAP.md")
+resolved_context_md="No resolved context (run with a supported --phase)."
+resolved_paths_raw=""
+if [[ -n "${resolve_script}" && "${PHASE}" != "resume" ]]; then
+  resolve_args=(--target "${TARGET}" --phase "${PHASE}" --format markdown)
+  resolve_path_args=(--target "${TARGET}" --phase "${PHASE}" --format paths)
+  if [[ -n "${WORK_ID}" ]]; then
+    resolve_args+=(--work-id "${WORK_ID}")
+    resolve_path_args+=(--work-id "${WORK_ID}")
+  fi
+  resolved_context_md="$("${resolve_script}" "${resolve_args[@]}" 2>/dev/null || true)"
+  resolved_paths_raw="$("${resolve_script}" "${resolve_path_args[@]}" 2>/dev/null || true)"
+  if [[ -z "${resolved_context_md}" ]]; then
+    resolved_context_md="No resolved context files for phase ${PHASE}."
+  fi
 fi
-if [[ -n "${active_milestone}" ]]; then
-  planning_refs+=("@${active_milestone}")
+
+resolved_includes() {
+  local needle="$1"
+  grep -Fxq "${needle}" <<< "${resolved_paths_raw}"
+}
+
+resume_prompt="For ${WORK_ID:-<WORK-ID>}, read @agent-context/sessions/current-session.md first."
+resume_prompt+=$'\n\n'"Load only the files listed under **Resolved Context** in that brief for the ${PHASE} phase (SDLC Agents progressive disclosure)."
+if [[ -n "${WORK_ID}" && ( "${PHASE}" == "code" || "${PHASE}" == "review" || "${PHASE}" == "architect" || "${PHASE}" == "api-test" || "${PHASE}" == "retro" || "${PHASE}" == "sync" ) ]]; then
+  if ! resolved_includes "spdd/canvas/${WORK_ID}.md"; then
+    resume_prompt+=$'\n'"Also read @spdd/canvas/${WORK_ID}.md for this Work ID."
+  fi
 fi
-if [[ -f "${today_note}" ]]; then
-  planning_refs+=("@${today_note_rel}")
+if [[ "${PHASE}" == "plan" && -n "${WORK_ID}" ]]; then
+  if ! resolved_includes "spdd/analysis/${WORK_ID}-analysis.md"; then
+    resume_prompt+=$'\n'"Also read @spdd/analysis/${WORK_ID}-analysis.md before planning."
+  fi
 fi
-if ((${#planning_refs[@]} > 0)); then
-  planning_refs_joined="$(printf '%s, ' "${planning_refs[@]}")"
-  planning_refs_joined="${planning_refs_joined%, }"
-  resume_prompt+=$'\n\n'"Also read ${planning_refs_joined}."
+if [[ "${PHASE}" == "analysis" ]]; then
+  resume_prompt+=$'\n'"Use @requirements/ or milestone sources named in the brief; filter indexes before scanning code."
 fi
 
 resume_prompt+=$'\n\n'"Continue in the ${PHASE} phase using the hybrid SDLC Agents + SPDD workflow."
@@ -279,6 +300,7 @@ New agents: load these first so you know how to operate within the SDLC-SPDD fra
 - Operating model + work rules: the always-on grounding file (.cursor/rules/sdlc-spdd.mdc, .github/copilot-instructions.md, or CLAUDE.md) is loaded on every request.
 - How the framework works: docs/sdlc-spdd/three-part-operating-path.md, docs/sdlc-spdd/ten-thousand-foot-view.md.
 - Session + context-loading rules: docs/sdlc-spdd/context-loading-and-scaling.md#bootstrap-and-index-based-loading (bootstrap layers, index catalog, retrieval, capture).
+- Resolve phase skills/extensions: ./scripts/sdlc-spdd/resolve-agent-context.sh --target . --phase ${PHASE}
 
 ## Hybrid Operating Model
 
@@ -310,27 +332,25 @@ ${milestone_list}
 
 ## Persistent Memory To Read
 
-Use indexes for retrieval — do not scan directories or read session-history top-to-bottom.
+Use **Resolved Context** below first (static + area-filtered index rows). For manual lookup:
 
-- agent-context/memory/code-areas.md — known code-area categories
-- agent-context/memory/context-index.md — filter by Area before touching code
+- agent-context/memory/context-index.md — filter by Area when you know the code area
+- agent-context/memory/domain-index.md — filter by Keyword during analysis
 - agent-context/memory/session-index.md — session-only view (newest first)
-- agent-context/memory/phase-index.md — playbooks and harness by SDLC phase
-- agent-context/memory/architecture-decisions.md — full decision log
-- agent-context/memory/known-pitfalls.md — full pitfalls log
-- agent-context/memory/reusable-patterns.md — full patterns log
-- agent-context/memory/project-memory.md — project-wide notes
-- ROADMAP.md, milestone-*.md, session-notes/
-- agent-context/harness/quality-gates.md
-- agent-context/harness/validation-rules.md
+- agent-context/memory/code-areas.md — canonical area categories
 
-## Playbooks To Consider
+Do not read session-history.md top-to-bottom or load whole memory logs when index rows already point at the relevant entries.
 
-- agent-context/playbooks/java-feature-playbook.md
-- agent-context/playbooks/bugfix-playbook.md
-- agent-context/playbooks/refactor-playbook.md
-- agent-context/playbooks/pr-review-playbook.md
-- agent-context/playbooks/session-handoff-playbook.md
+## Resolved Context
+
+Phase-specific extensions, playbooks, Work ID artifacts, and area-filtered index matches for **${PHASE}** (from resolve-agent-context.sh):
+
+${resolved_context_md}
+
+Refresh after adding extensions, code areas, or `#SkillName` skills:
+
+    ./scripts/sdlc-spdd/resolve-agent-context.sh --target . --phase ${PHASE}${WORK_ID:+ --work-id ${WORK_ID}}
+    ./scripts/sdlc-spdd/resolve-agent-context.sh --target . --phase ${PHASE} --text "#TDD #java"
 
 ## Git Status
 

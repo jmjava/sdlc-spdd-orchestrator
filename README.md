@@ -59,7 +59,7 @@ flowchart TD
 | Step | Do this | Read this |
 |------|---------|-----------|
 | 1. Install & verify | From orchestrator clone: `setup-agent-prompts.sh --all` then `verify-project-install.sh` | [Installing into your project](docs/installing-into-your-project.md) |
-| 2. First session | `/sdlc-spdd-init`, then plan → architect → code → review one operation | [First day with SDLC-SPDD](docs/first-day-with-sdlc-spdd.md) |
+| 2. First session | `/sdlc-spdd-init`, then analysis → plan → architect → code → api-test → review one operation | [First day with SDLC-SPDD](docs/first-day-with-sdlc-spdd.md) |
 | 3. Learn the model | Understand how Planning, SPDD, and SDLC hand off | [Three-part operating path](docs/three-part-operating-path.md) |
 | 4. Work day to day | Use the default prompts and the start/capture rhythm | [Session prompt standard](docs/session-prompt-standard.md) · [Daily runbook](docs/daily-runbook.md) |
 | 5. Go deeper | Drill into one part when you need it | [Value guides](docs/README.md) · [Prompt standards](docs/session-prompt-standard.md#which-prompt-standard) |
@@ -111,16 +111,31 @@ The system uses a three-layer flow:
 
     Planning: ROADMAP.md, milestone-*.md, requirements/, requirements/milestones/, session-notes/
             -> inform and summarize
-    spdd/canvas/ + agent-context/
+    spdd/analysis/, spdd/canvas/, agent-context/ (memory indexes, extensions, sessions)
             -> govern and remember
-    code / reviews / sync logs
+    code / spdd/tasks/ / reviews / sync logs
             -> execute and validate
 
 | Layer | Purpose | Examples |
 |-------|---------|----------|
 | Planning narrative | Human-readable roadmap, milestone, milestone requirements, and daily session story | `ROADMAP.md`, `milestone-1.md`, `requirements/milestones/`, `session-notes/2026-06-06.md` |
-| Governed agent context | Work-item contract, memory, handoffs, and reusable context | `spdd/canvas/<WORK-ID>.md`, `agent-context/memory/` (indexes: `context-index.md`, `session-index.md`, `code-areas.md`), `agent-context/sessions/` |
-| Implementation evidence | Code, review outputs, sync logs, and validation | source files, `spdd/reviews/`, `spdd/sync/`, tests |
+| Governed agent context | Work-item contract, memory, handoffs, and reusable context | `spdd/analysis/<WORK-ID>-analysis.md`, `spdd/canvas/<WORK-ID>.md`, `agent-context/memory/` (indexes: `domain-index.md`, `context-index.md`, `session-index.md`, `phase-index.md`, `code-areas.md`), `agent-context/extensions/`, `agent-context/sessions/` |
+| Implementation evidence | Code, review outputs, sync logs, and validation | source files, `spdd/tasks/`, `spdd/reviews/`, `spdd/sync/`, tests |
+
+## Context loading (every session)
+
+Progressive disclosure is enforced through session briefs and indexes — not by loading whole directories.
+
+1. **Tier 1 (automatic)** — each assistant injects one small grounding file (`.cursor/rules/sdlc-spdd.mdc`, `.github/copilot-instructions.md`, or `CLAUDE.md`) on every request.
+2. **Tier 2 (on demand)** — `start-agent-session.sh` writes `agent-context/sessions/current-session.md` with a **Resolved Context** table: phase files from `phase-index.md`, SDLC Agents extensions, Work ID artifacts, and area-filtered `context-index.md` rows (via `resolve-agent-context.sh`).
+3. **Paste the Resume Prompt** from that brief into chat — load only the files listed under Resolved Context.
+4. **Close the loop** — `capture-session-memory.sh` and `index-spdd-analysis.sh` grow the indexes for the next session.
+
+    ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase>
+    ./scripts/sdlc-spdd/resolve-agent-context.sh --target . --phase code --work-id <WORK-ID>   # refresh after adding skills
+    ./scripts/sdlc-spdd/resolve-agent-context.sh --target . --text "Implement retry #TDD #java"
+
+Full detail: [Context loading and scaling](docs/context-loading-and-scaling.md) · [SDLC Agents and the framework](docs/sdlc-agents-and-the-framework.md).
 
 ## Install into an Application
 
@@ -140,7 +155,7 @@ This installs:
 - target-local runtime scripts under `scripts/sdlc-spdd/`.
 - local SDLC-SPDD docs under `docs/sdlc-spdd/`.
 - planning scaffolding: `ROADMAP.md`, `milestone-1.md`, and `session-notes/` when missing.
-- SPDD and agent context folders: `spdd/` and `agent-context/`.
+- SPDD and agent context folders: `spdd/` and `agent-context/` (including `extensions/` for SDLC Agents skills and phase rules, and memory indexes such as `phase-index.md`).
 
 Upgrade an existing target project without overwriting application source, canvases, feature workspaces, existing memory, roadmap, milestones, or session notes:
 
@@ -158,9 +173,11 @@ If you already have milestone checklist items, map them into SDLC-SPDD work:
 
     ./scripts/sdlc-spdd/create-work-from-milestone.sh --target . --milestone milestone-1.md --all
 
-Start or resume an agent session:
+Start or resume an agent session (creates `current-session.md` with **Resolved Context**):
 
     ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id FEAT-001-my-feature --phase analysis
+
+Paste the **Resume Prompt** from `agent-context/sessions/current-session.md` into AI chat. Load only files listed under **Resolved Context** in that brief.
 
 Analyze, plan, architect, code, test, and review one operation:
 
@@ -224,10 +241,11 @@ Refresh the roadmap summary from SPDD canvases:
 |--------|------------|
 | `scripts/setup-agent-prompts.sh` | Install the framework into a target project |
 | `scripts/upgrade-project.sh` | Upgrade framework-owned files in an existing target project |
-| `scripts/sdlc-spdd/start-agent-session.sh` | Create a current-session handoff for a new agent |
+| `scripts/sdlc-spdd/start-agent-session.sh` | Create `current-session.md` with **Resolved Context** and a progressive-disclosure Resume Prompt |
 | `scripts/sdlc-spdd/resync-agent-session.sh` | Check or reconcile feature/canonical canvas drift |
 | `scripts/sdlc-spdd/capture-session-memory.sh` | Persist session summary, validation, decisions, pitfalls, patterns, and next steps |
-| `scripts/sdlc-spdd/index-spdd-analysis.sh` | Index analysis domain keywords and code areas into decision-memory indexes |
+| `scripts/sdlc-spdd/index-spdd-analysis.sh` | Index analysis domain keywords and code areas into `domain-index.md` and `context-index.md` |
+| `scripts/sdlc-spdd/resolve-agent-context.sh` | Resolve phase files (`phase-index.md`), `#SkillName` skills, extensions, and area-filtered index rows |
 | `scripts/sdlc-spdd/create-work-from-milestone.sh` | Map milestone checklist items to Work IDs, requirements, feature workspaces, and draft canvases |
 | `scripts/sdlc-spdd/sync-roadmap-from-spdd.sh` | Refresh a managed roadmap summary from SPDD canvas metadata |
 | `scripts/sdlc-spdd/summarize-session-notes.sh` | Import existing daily session notes into durable memory |
@@ -278,6 +296,7 @@ Read these after the value guides above. They explain historical context, compli
 - [SPDD compliance](docs/spdd-compliance.md)
 - [Architecture](docs/architecture.md)
 - [Context loading, indexing, and bootstrap](docs/context-loading-and-scaling.md) — tiers, [bootstrap and index-based loading](docs/context-loading-and-scaling.md#bootstrap-and-index-based-loading), scaling
+- [SDLC Agents and the framework](docs/sdlc-agents-and-the-framework.md) — progressive disclosure, `#SkillName`, extensions, and resolve script
 - [Design decisions](docs/design-decisions.md)
 
 ## What This Is Not

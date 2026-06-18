@@ -6,6 +6,7 @@ This folder holds project memory, feature workspaces, playbooks, and quality har
 
 - `memory/` — durable project context and retrieval indexes
 - `playbooks/` — repeatable workflows by work type
+- `extensions/` — SDLC Agents-style rules (`_all-agents/`, `*-agent/`, `skills/`); resolve with `resolve-agent-context.sh`
 - `features/` — per-work workspaces
 - `sessions/` — generated session briefs and current-session handoffs
 - `harness/` — validation rules and quality gates
@@ -45,7 +46,7 @@ replace directory scans and chronological history reads.
 **Supporting artifacts:** `memory/sessions/` (per-session detail),
 `memory/session-history.md` (recent window only; archive for older entries).
 
-Full detail: [Bootstrap and index-based loading](../docs/context-loading-and-scaling.md#bootstrap-and-index-based-loading). Why narrow context matters: [Chelsea Troy and the framework](../docs/chelsea-troy-and-the-framework.md).
+Full detail: [Bootstrap and index-based loading](../docs/context-loading-and-scaling.md#bootstrap-and-index-based-loading). Why narrow context matters: [Chelsea Troy and the framework](../docs/chelsea-troy-and-the-framework.md), [SDLC Agents progressive disclosure](../docs/sdlc-agents-and-the-framework.md).
 
 ## Canonical Copies
 

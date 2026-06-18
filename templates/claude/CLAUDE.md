@@ -40,7 +40,7 @@ Preserve context by reading relevant artifacts before answering:
 - `agent-context/features/`
 - `agent-context/harness/`
 
-Use progressive disclosure: load only the artifacts relevant to the current Work ID, phase, and operation.
+Use progressive disclosure ([SDLC Agents](https://github.com/dsilahcilar/sdlc-agents)): load only the artifacts relevant to the current Work ID, phase, and operation. Never list or read whole directories — use indexes. See `docs/sdlc-spdd/sdlc-agents-and-the-framework.md`.
 
 ## Context Loading
 
@@ -48,7 +48,7 @@ Load context by index, not by scanning. Keep working context small and relevant 
 
 1. Start at `agent-context/sessions/current-session.md` to resume the active Work ID and phase. If it is missing, read the most recent brief in `agent-context/sessions/` or the indexes in `agent-context/memory/`.
 2. Retrieve by relevance, not recency. A Work ID's own history is its `agent-context/features/<WORK-ID>/progress-log.md` and `spdd/canvas/<WORK-ID>.md` — read those, not the global history. Sessions for unrelated work are interleaved in time, so never read history top-to-bottom.
-3. Discover related work by code area or domain keyword, not by scanning. Filter `agent-context/memory/domain-index.md` by Domain Keywords from the analysis artifact, then `context-index.md` and `session-index.md` by Area (Kinds: analysis, session, decision, pitfall, pattern). Read matches newest-first. Full per-session detail is in `agent-context/memory/sessions/`. For static playbooks and harness files, use `agent-context/memory/phase-index.md` by phase. `session-history.md` is only a recent chronological overview (older entries archived under `agent-context/memory/archive/`). Do not read whole directories. When capturing: read `agent-context/memory/code-areas.md`; `capture-session-memory.sh` parses session documents/content (summary, session-notes, current-session.md, latest timestamped session brief, analysis, canvas, progress log, capture flags) for path/package tokens, matches known categories, and registers new ones. After `/sdlc-spdd-analysis`, run `index-spdd-analysis.sh` to index domain keywords. Use `--areas` only to override or supplement parsed categories.
+3. Discover related work by code area or domain keyword, not by scanning. Filter `agent-context/memory/domain-index.md` by Domain Keywords from the analysis artifact, then `context-index.md` and `session-index.md` by Area (Kinds: analysis, session, decision, pitfall, pattern). Read matches newest-first. Full per-session detail is in `agent-context/memory/sessions/`. For static playbooks and harness files, use `agent-context/memory/phase-index.md` by phase or `./scripts/sdlc-spdd/resolve-agent-context.sh --phase <phase>`. `session-history.md` is only a recent chronological overview (older entries archived under `agent-context/memory/archive/`). Do not read whole directories. When capturing: read `agent-context/memory/code-areas.md`; `capture-session-memory.sh` parses session documents/content (summary, session-notes, current-session.md, latest timestamped session brief, analysis, canvas, progress log, capture flags) for path/package tokens, matches known categories, and registers new ones. After `/sdlc-spdd-analysis`, run `index-spdd-analysis.sh` to index domain keywords. Use `--areas` only to override or supplement parsed categories.
 
 Per-phase context budget:
 
@@ -56,6 +56,7 @@ Per-phase context budget:
 - analysis: the requirement, `domain-index.md`, `context-index.md`, scoped code areas only
 - architect: the Work ID canvas, `agent-context/memory/architecture-decisions.md`, `agent-context/harness/`
 - code: the Work ID canvas, that feature's `progress-log.md`, `agent-context/memory/known-pitfalls.md`
+- api-test: the Work ID canvas Requirements/Operations, implemented endpoints for this Work ID
 - review: the Work ID canvas, the diff, `agent-context/harness/quality-gates.md`
 - retro / sync: the Work ID canvas, that feature's progress log, the memory file being updated
 
@@ -71,7 +72,7 @@ Per-phase context budget:
 - Ask clarifying questions only when needed to prevent incorrect work; otherwise state assumptions in the canvas or progress log.
 - For behavior or requirement changes, update the REASONS Canvas before changing code.
 - For non-behavioral refactors, review the code change and then sync the canvas back to implementation reality.
-- Treat `#SkillName` markers as explicit skill requests and `!SkillName` markers as exclusions. Record selected skills in the canvas or progress log when relevant.
+- Treat `#SkillName` markers as explicit skill requests and `!SkillName` markers as exclusions. Resolve paths with `./scripts/sdlc-spdd/resolve-agent-context.sh --text "<prompt>"` or `--phase <phase>`; load only returned files. Record selected skills in the canvas or progress log when relevant.
 
 ## Context-Preserving Questions
 

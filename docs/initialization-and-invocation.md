@@ -106,7 +106,7 @@ Before asking a new agent to continue previous work:
        cd /path/to/your/project
        ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id FEAT-001-order-status-api --phase code
 
-3. **Paste the Resume Prompt** from `agent-context/sessions/current-session.md`. Do not paraphrase — the script generates canvas, memory, and planning references. See [Session prompt standard](session-prompt-standard.md).
+3. **Paste the Resume Prompt** from `agent-context/sessions/current-session.md`. Do not paraphrase — the brief embeds **Resolved Context** (phase files, extensions, Work ID artifacts, area-filtered index rows) and the Resume Prompt points at only those files. See [Session prompt standard](session-prompt-standard.md).
 
 To reconcile canvas drift before step 2, use `resync-agent-session.sh --from-canvas --force` or `--from-feature --force`. Default authority: canonical `spdd/canvas/<WORK-ID>.md`.
 
