@@ -97,6 +97,7 @@ fully local, low-cost retrieval backend viable for the optimization direction.
 ### Data / Persistence
 
 - Neo4j `Chunk`/`ContentElement` RAG store; vector index dimension tied to embedding model
+- Reference corpus (curated reading) cataloged in `spdd/analysis/SPIKE-retrieval-reference-corpus.md`, ingested via guide profile `menke-2`
 - Throwaway / local only for the spike
 
 ### Domain Entities
