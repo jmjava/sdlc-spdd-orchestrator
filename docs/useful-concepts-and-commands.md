@@ -4,6 +4,45 @@ This page explains **what things mean** (Work ID, canvas, operation, sync, memor
 
 ## Top Concepts
 
+### How the names relate
+
+There is one name — the **Work ID** — and every other artifact name is derived from it.
+
+Anatomy of a Work ID:
+
+    FEAT-004-prompt-optimization-ledger
+    └─┬─┘ └┬┘ └──────────┬──────────┘
+      │    │             └── slug (human-readable name)
+      │    └──────────────── NNN (zero-padded sequence: 001, 002, …)
+      └───────────────────── PREFIX = work type
+                             FEAT=Feature  BUG=Bugfix  REF=Refactor  SPIKE=Spike
+
+Every artifact path is `<location>/<WORK-ID>`:
+
+    FEAT-004-prompt-optimization-ledger
+      ├── requirements/milestones/FEAT-004-prompt-optimization-ledger.md   (Requirement: why + acceptance)
+      ├── spdd/canvas/FEAT-004-prompt-optimization-ledger.md               (REASONS Canvas: design contract)
+      └── agent-context/features/FEAT-004-prompt-optimization-ledger/      (Feature workspace: memory)
+            ├── requirement.md
+            ├── reasons-canvas.md
+            └── progress-log.md
+                    │
+                    └── inside the canvas → Operations T01, T02, … (restart at T01 per canvas)
+
+The two levels to keep straight:
+
+- **Work ID** (`FEAT-004-…`) names *the work* and all of its files.
+- **Operation** (`T01`, `T02`, …) names *a step inside* that work's canvas. It never appears in a file name, branch, or roadmap entry.
+
+| Naming scheme | Names | Derived from |
+|---------------|-------|--------------|
+| Work ID | The whole unit of work | — (the root key) |
+| Prefix | Work type | first segment of the Work ID |
+| Requirement | Intent | `requirements/milestones/<WORK-ID>.md` |
+| Canvas | Design contract | `spdd/canvas/<WORK-ID>.md` |
+| Feature workspace | Working memory | `agent-context/features/<WORK-ID>/` |
+| Operation (`T0x`) | A task inside one canvas | scoped to that canvas |
+
 ### Work ID
 
 A stable identifier for one unit of work.

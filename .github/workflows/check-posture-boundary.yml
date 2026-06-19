@@ -1,0 +1,30 @@
+name: Check Posture Boundary
+
+on:
+  pull_request:
+    paths:
+      - 'templates/**'
+      - 'docs/**'
+      - 'agent-context/**'
+      - 'scripts/check-posture-boundary.sh'
+      - '.github/workflows/check-posture-boundary.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'templates/**'
+      - 'docs/**'
+      - 'agent-context/**'
+      - 'scripts/check-posture-boundary.sh'
+      - '.github/workflows/check-posture-boundary.yml'
+
+jobs:
+  check-posture-boundary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check guard shell syntax
+        run: bash -n ./scripts/check-posture-boundary.sh
+
+      - name: Ensure development posture does not leak into shipped surfaces
+        run: ./scripts/check-posture-boundary.sh
