@@ -98,6 +98,8 @@ Each item names the Beck stage it serves (see [Delivery posture](#delivery-postu
 | `spdd --metrics` surface over the ledger and indexes | Optimization |
 | Act on metrics: prompt + context optimization | Optimization |
 | Context-budget telemetry and enforcement | Optimization |
+| DICE hybrid context backend (SPIKE-001): guide/Neo4j — lexical index + embedding discovery + typed domain graph (Domain-Integrated Context Engineering); spike for go/no-go | Optimization (spike) |
+| Local models + embedding format (SPIKE-002): local tool-capable LLM (Ollama, OpenAI-compatible) + changed embedding format (e.g. 384→768-dim); spike for go/no-go | Optimization (spike) |
 
 ## Dogfooding future work through SPDD
 
@@ -130,6 +132,8 @@ the rest are planned.
 | Work ID | Canvas | Stage | Status |
 |---------|--------|-------|--------|
 | FEAT-004-prompt-optimization-ledger | spdd/canvas/FEAT-004-prompt-optimization-ledger.md | make it fast (prompt optimization) | Specced — deferred until make-it-right refactors land |
+| SPIKE-001-guide-rag-context-backend | spdd/canvas/SPIKE-001-guide-rag-context-backend.md | make it fast (optimization, spike — DICE hybrid) | Draft — parked behind FEAT-004/005 |
+| SPIKE-002-local-llm-and-embedding-format | spdd/canvas/SPIKE-002-local-llm-and-embedding-format.md | make it fast (optimization, spike — local models + embedding format) | Draft — parked behind FEAT-004/005 |
 
 Planned follow-on canvases (not yet specced):
 
