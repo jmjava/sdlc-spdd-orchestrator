@@ -10,6 +10,64 @@ Thanks for contributing to SDLC-SPDD Orchestrator.
 - Implement one canvas operation per coding session
 - Match existing conventions in the repository
 
+## Developer Notes: How the Project Evolves (Kent Beck)
+
+The framework evolves through Kent Beck's progression — **make it work → make it
+right → make it fast** — applied to the project as a whole, not to individual
+branches. This is a planning posture, not a branching strategy: we stay on one
+line of work and advance the framework through the stages in order. The
+authoritative stage table and current state live in
+[ROADMAP.md → Delivery posture](ROADMAP.md#delivery-posture-kent-beck-make-it-work--make-it-right--make-it-fast).
+
+**Where we are now:** transitioning from *make it work* (the MVP functions end to
+end) to *make it right* — refactoring the existing framework for readability,
+maintainability, and extensibility. Prompt optimization, and the measurement that
+drives it, is *make it fast* and comes last.
+
+What this means when you contribute:
+
+1. **Name the stage your change serves.** In the PR and any REASONS Canvas, say
+   whether the work is making it work, right, or fast. Use the
+   [Stage classification rubric](ROADMAP.md#stage-classification-rubric) — including
+   its one-line litmus and the worked example — to decide. It is the single
+   source of truth for how work is categorized.
+2. **Default new framework work to "make it right" (a refactor).** Near-term work
+   makes the code and docs we already have easier to read, change, and extend; it
+   does not add new optimization capability.
+3. **Prompt optimization is "make it fast" and comes last.** This includes the
+   measurement that supports it (the optimization ledger, leading indicators). Do
+   not start it until the framework is structurally right.
+4. **Do not optimize an unmeasured system** — but build that measurement as the
+   first step *of* "make it fast", not as a make-it-right prerequisite that jumps
+   the queue.
+
+### Boundary: the development posture never ships
+
+The make-it-work/right/fast posture is **how we develop the orchestrator** — it is
+not a model we impose on projects that *use* the framework. Target teams have their
+own roadmaps and priorities. Keep our internal posture out of everything that
+installs into a target project.
+
+- **Shipped surfaces (must stay neutral):** `templates/**`, every `docs/*.md`
+  (installed as `docs/sdlc-spdd/`), the grounding files
+  (`templates/{claude/CLAUDE.md,copilot/copilot-instructions.md,cursor/rules/sdlc-spdd.mdc}`),
+  and the `agent-context/` memory/playbook/harness files that install copies.
+- **Internal-only surfaces (posture allowed):** `ROADMAP.md` (repo root — targets get
+  `templates/project-docs/ROADMAP.md` instead), this `CONTRIBUTING.md`, and the repo-root
+  `README.md` (the orchestrator's own front page; it is not installed into target projects).
+- **Never** put `make it work/right/fast`, `Kent Beck`, or `Delivery posture/stage`
+  language into a shipped surface. The posture lives only in the two internal files above.
+- **Framework capabilities may ship, but described neutrally.** The
+  prompt-optimization ledger (FEAT-004) is a legitimate, optional capability — when
+  its docs/templates ship, they describe *what it does* ("record whether a prompt
+  change improved an outcome"), never *our* reason for building it.
+
+This boundary is enforced in CI by `./scripts/check-posture-boundary.sh`.
+
+See [design-decisions.md](docs/design-decisions.md) for the architectural "why"
+behind these choices. (That file ships to targets, so it must not carry posture
+language either.)
+
 ## Script Paths: Orchestrator vs Target
 
 This repository and installed target applications use different script paths:

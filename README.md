@@ -2,23 +2,43 @@
 
 A multi-assistant scaffold for disciplined AI-assisted delivery.
 
+> **Project status: turning the corner from MVP to "make it right."**
+> We develop this framework through Kent Beck's progression — *make it work → make it
+> right → make it fast*. Phase one (**make it work**) is done: it functions end to end
+> today. We are now in **make it right** — refactoring the existing code and docs for
+> **readability, maintainability, and extensibility** — before any later **make it
+> fast** work (performance and prompt optimization). Expect the surface to keep
+> improving. See the [ROADMAP](ROADMAP.md) and [milestone-1.md](milestone-1.md) for the
+> current direction and what is in progress.
+>
+> **We dogfood the framework on itself.** This second-phase work is driven through
+> SDLC-SPDD: each improvement is a governed Work ID with its own REASONS Canvas
+> under [`spdd/canvas/`](spdd/canvas/) and requirement under
+> [`requirements/milestones/`](requirements/milestones/) — the same workflow this
+> repo asks target projects to use.
+>
+> **A note on judging the code right now:** much of this phase is active refactoring.
+> Reviewing AI-assisted code before the *make it right* loop is complete is like
+> inspecting wet cement and declaring the building unsafe — let the loop finish
+> before drawing conclusions about a given area.
+
 It is built from **three parts** that work together:
 
-| Part | Answers | Artifacts |
-|------|---------|-----------|
-| **Planning** | *Why* the work matters | `ROADMAP.md`, `milestone-*.md`, `requirements/`, `session-notes/` |
-| **SPDD** | *What* to build (and what not to) | `spdd/canvas/<WORK-ID>.md` (REASONS Canvas) |
-| **SDLC** | *Who acts when* and how sessions hand off | phase commands, session briefs, `agent-context/` memory |
+| Part         | Answers                                   | Artifacts                                                         |
+| ------------ | ----------------------------------------- | ----------------------------------------------------------------- |
+| **Planning** | _Why_ the work matters                    | `ROADMAP.md`, `milestone-*.md`, `requirements/`, `session-notes/` |
+| **SPDD**     | _What_ to build (and what not to)         | `spdd/canvas/<WORK-ID>.md` (REASONS Canvas)                       |
+| **SDLC**     | _Who acts when_ and how sessions hand off | phase commands, session briefs, `agent-context/` memory           |
 
 ## How Commands Work
 
 This repo uses **two kinds** of commands. They run in different places — do not mix them up.
 
-| Kind | Looks like | Where you run it |
-|------|------------|------------------|
-| **Assistant** (AI chat) | `/sdlc-spdd-init`, `/sdlc-spdd-plan @requirements/foo.md` | **Cursor Chat**, **Copilot Chat**, or **Claude Code** in your target project |
-| **Shell — install** (once) | `./scripts/setup-agent-prompts.sh --target ...` | Terminal in the **orchestrator repo** clone |
-| **Shell — daily use** | `./scripts/sdlc-spdd/start-agent-session.sh --target . ...` | Terminal in your **installed target project** |
+| Kind                       | Looks like                                                  | Where you run it                                                             |
+| -------------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| **Assistant** (AI chat)    | `/sdlc-spdd-init`, `/sdlc-spdd-plan @requirements/foo.md`   | **Cursor Chat**, **Copilot Chat**, or **Claude Code** in your target project |
+| **Shell — install** (once) | `./scripts/setup-agent-prompts.sh --target ...`             | Terminal in the **orchestrator repo** clone                                  |
+| **Shell — daily use**      | `./scripts/sdlc-spdd/start-agent-session.sh --target . ...` | Terminal in your **installed target project**                                |
 
 Install/upgrade/verify from the orchestrator clone use `./scripts/<name>.sh`. After install, runtime scripts live in the target at `./scripts/sdlc-spdd/`. See [Script paths](CONTRIBUTING.md#script-paths-orchestrator-vs-target).
 
@@ -56,13 +76,13 @@ flowchart TD
     class D1,D2,D3,D4,D5 doc;
 ```
 
-| Step | Do this | Read this |
-|------|---------|-----------|
-| 1. Install & verify | From orchestrator clone: `setup-agent-prompts.sh --all` then `verify-project-install.sh` | [Installing into your project](docs/installing-into-your-project.md) |
-| 2. First session | `/sdlc-spdd-init`, then analysis → plan → architect → code → api-test → review one operation | [First day with SDLC-SPDD](docs/first-day-with-sdlc-spdd.md) |
-| 3. Learn the model | Understand how Planning, SPDD, and SDLC hand off | [Three-part operating path](docs/three-part-operating-path.md) |
-| 4. Work day to day | Use the default prompts and the start/capture rhythm | [Session prompt standard](docs/session-prompt-standard.md) · [Daily runbook](docs/daily-runbook.md) |
-| 5. Go deeper | Drill into one part when you need it | [Value guides](docs/README.md) · [Prompt standards](docs/session-prompt-standard.md#which-prompt-standard) |
+| Step                | Do this                                                                                      | Read this                                                                                                  |
+| ------------------- | -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| 1. Install & verify | From orchestrator clone: `setup-agent-prompts.sh --all` then `verify-project-install.sh`     | [Installing into your project](docs/installing-into-your-project.md)                                       |
+| 2. First session    | `/sdlc-spdd-init`, then analysis → plan → architect → code → api-test → review one operation | [First day with SDLC-SPDD](docs/first-day-with-sdlc-spdd.md)                                               |
+| 3. Learn the model  | Understand how Planning, SPDD, and SDLC hand off                                             | [Three-part operating path](docs/three-part-operating-path.md)                                             |
+| 4. Work day to day  | Use the default prompts and the start/capture rhythm                                         | [Session prompt standard](docs/session-prompt-standard.md) · [Daily runbook](docs/daily-runbook.md)        |
+| 5. Go deeper        | Drill into one part when you need it                                                         | [Value guides](docs/README.md) · [Prompt standards](docs/session-prompt-standard.md#which-prompt-standard) |
 
 ## Add It to Your Project (about 5 minutes)
 
@@ -96,12 +116,12 @@ For the full documentation map, see [docs/README.md](docs/README.md).
 
 Deeper references, one per part:
 
-| Part | Value guide (what it brings) | Prompt standard (how to prompt) |
-|------|------------------------------|---------------------------------|
-| Planning | [What planning brings](docs/what-planning-brings.md) | [Planning prompt standard](docs/planning-prompt-standard.md) |
-| SPDD | [What SPDD brings](docs/what-spdd-brings.md) | [SPDD prompt standard](docs/spdd-prompt-standard.md) |
-| SDLC | [What SDLC brings](docs/what-sdlc-brings.md) | [Session prompt standard](docs/session-prompt-standard.md) (**default**) |
-| All three | [Three-part operating path](docs/three-part-operating-path.md) | — |
+| Part      | Value guide (what it brings)                                   | Prompt standard (how to prompt)                                          |
+| --------- | -------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Planning  | [What planning brings](docs/what-planning-brings.md)           | [Planning prompt standard](docs/planning-prompt-standard.md)             |
+| SPDD      | [What SPDD brings](docs/what-spdd-brings.md)                   | [SPDD prompt standard](docs/spdd-prompt-standard.md)                     |
+| SDLC      | [What SDLC brings](docs/what-sdlc-brings.md)                   | [Session prompt standard](docs/session-prompt-standard.md) (**default**) |
+| All three | [Three-part operating path](docs/three-part-operating-path.md) | —                                                                        |
 
 Not sure which prompt standard to use? See [Which prompt standard?](docs/session-prompt-standard.md#which-prompt-standard).
 
@@ -116,11 +136,11 @@ The system uses a three-layer flow:
     code / spdd/tasks/ / reviews / sync logs
             -> execute and validate
 
-| Layer | Purpose | Examples |
-|-------|---------|----------|
-| Planning narrative | Human-readable roadmap, milestone, milestone requirements, and daily session story | `ROADMAP.md`, `milestone-1.md`, `requirements/milestones/`, `session-notes/2026-06-06.md` |
-| Governed agent context | Work-item contract, memory, handoffs, and reusable context | `spdd/analysis/<WORK-ID>-analysis.md`, `spdd/canvas/<WORK-ID>.md`, `agent-context/memory/` (indexes: `domain-index.md`, `context-index.md`, `session-index.md`, `phase-index.md`, `code-areas.md`), `agent-context/extensions/`, `agent-context/sessions/` |
-| Implementation evidence | Code, review outputs, sync logs, and validation | source files, `spdd/tasks/`, `spdd/reviews/`, `spdd/sync/`, tests |
+| Layer                   | Purpose                                                                            | Examples                                                                                                                                                                                                                                                   |
+| ----------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Planning narrative      | Human-readable roadmap, milestone, milestone requirements, and daily session story | `ROADMAP.md`, `milestone-1.md`, `requirements/milestones/`, `session-notes/2026-06-06.md`                                                                                                                                                                  |
+| Governed agent context  | Work-item contract, memory, handoffs, and reusable context                         | `spdd/analysis/<WORK-ID>-analysis.md`, `spdd/canvas/<WORK-ID>.md`, `agent-context/memory/` (indexes: `domain-index.md`, `context-index.md`, `session-index.md`, `phase-index.md`, `code-areas.md`), `agent-context/extensions/`, `agent-context/sessions/` |
+| Implementation evidence | Code, review outputs, sync logs, and validation                                    | source files, `spdd/tasks/`, `spdd/reviews/`, `spdd/sync/`, tests                                                                                                                                                                                          |
 
 ## Context loading (every session)
 
@@ -222,43 +242,43 @@ Refresh the roadmap summary from SPDD canvases:
 
 `/sdlc-spdd-*` commands run in **AI chat** (Cursor/Copilot/Claude Code), not a terminal — see [How commands work](#how-commands-work) and [How to run assistant commands](docs/initialization-and-invocation.md#how-to-run-assistant-commands).
 
-| Command | Use it for |
-|---------|------------|
-| `/sdlc-spdd-init` | Initialize project context |
-| `/sdlc-spdd-analysis` | Fowler Step 3: domain keywords, scoped code scan, analysis artifact |
-| `/sdlc-spdd-plan` | Create REASONS Canvas from accepted analysis |
-| `/sdlc-spdd-architect` | Harden the canvas before coding |
-| `/sdlc-spdd-code` | Implement one approved operation |
-| `/sdlc-spdd-api-test` | Generate cURL API test script (Fowler Step 5 verification) |
-| `/sdlc-spdd-review` | Compare implementation to the canvas |
+| Command                    | Use it for                                                          |
+| -------------------------- | ------------------------------------------------------------------- |
+| `/sdlc-spdd-init`          | Initialize project context                                          |
+| `/sdlc-spdd-analysis`      | Fowler Step 3: domain keywords, scoped code scan, analysis artifact |
+| `/sdlc-spdd-plan`          | Create REASONS Canvas from accepted analysis                        |
+| `/sdlc-spdd-architect`     | Harden the canvas before coding                                     |
+| `/sdlc-spdd-code`          | Implement one approved operation                                    |
+| `/sdlc-spdd-api-test`      | Generate cURL API test script (Fowler Step 5 verification)          |
+| `/sdlc-spdd-review`        | Compare implementation to the canvas                                |
 | `/sdlc-spdd-prompt-update` | Update the canvas first when behavior or acceptance criteria change |
-| `/sdlc-spdd-retro` | Capture reusable learnings |
-| `/sdlc-spdd-sync` | Reconcile accepted implementation drift back into prompt artifacts |
+| `/sdlc-spdd-retro`         | Capture reusable learnings                                          |
+| `/sdlc-spdd-sync`          | Reconcile accepted implementation drift back into prompt artifacts  |
 
 ## Core Scripts
 
-| Script | Use it for |
-|--------|------------|
-| `scripts/setup-agent-prompts.sh` | Install the framework into a target project |
-| `scripts/upgrade-project.sh` | Upgrade framework-owned files in an existing target project |
-| `scripts/sdlc-spdd/start-agent-session.sh` | Create `current-session.md` with **Resolved Context** and a progressive-disclosure Resume Prompt |
-| `scripts/sdlc-spdd/resync-agent-session.sh` | Check or reconcile feature/canonical canvas drift |
-| `scripts/sdlc-spdd/capture-session-memory.sh` | Persist session summary, validation, decisions, pitfalls, patterns, and next steps |
-| `scripts/sdlc-spdd/index-spdd-analysis.sh` | Index analysis domain keywords and code areas into `domain-index.md` and `context-index.md` |
-| `scripts/sdlc-spdd/resolve-agent-context.sh` | Resolve phase files (`phase-index.md`), `#SkillName` skills, extensions, and area-filtered index rows |
-| `scripts/sdlc-spdd/create-work-from-milestone.sh` | Map milestone checklist items to Work IDs, requirements, feature workspaces, and draft canvases |
-| `scripts/sdlc-spdd/sync-roadmap-from-spdd.sh` | Refresh a managed roadmap summary from SPDD canvas metadata |
-| `scripts/sdlc-spdd/summarize-session-notes.sh` | Import existing daily session notes into durable memory |
+| Script                                            | Use it for                                                                                            |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `scripts/setup-agent-prompts.sh`                  | Install the framework into a target project                                                           |
+| `scripts/upgrade-project.sh`                      | Upgrade framework-owned files in an existing target project                                           |
+| `scripts/sdlc-spdd/start-agent-session.sh`        | Create `current-session.md` with **Resolved Context** and a progressive-disclosure Resume Prompt      |
+| `scripts/sdlc-spdd/resync-agent-session.sh`       | Check or reconcile feature/canonical canvas drift                                                     |
+| `scripts/sdlc-spdd/capture-session-memory.sh`     | Persist session summary, validation, decisions, pitfalls, patterns, and next steps                    |
+| `scripts/sdlc-spdd/index-spdd-analysis.sh`        | Index analysis domain keywords and code areas into `domain-index.md` and `context-index.md`           |
+| `scripts/sdlc-spdd/resolve-agent-context.sh`      | Resolve phase files (`phase-index.md`), `#SkillName` skills, extensions, and area-filtered index rows |
+| `scripts/sdlc-spdd/create-work-from-milestone.sh` | Map milestone checklist items to Work IDs, requirements, feature workspaces, and draft canvases       |
+| `scripts/sdlc-spdd/sync-roadmap-from-spdd.sh`     | Refresh a managed roadmap summary from SPDD canvas metadata                                           |
+| `scripts/sdlc-spdd/summarize-session-notes.sh`    | Import existing daily session notes into durable memory                                               |
 
 ## Repository Layout
 
-| Path | Purpose |
-|------|---------|
-| `docs/` | User guides, onboarding path, runbooks, and reference docs |
-| `scripts/` | Install, upgrade, validation, and target-local runtime script templates |
-| `templates/` | REASONS Canvas templates, Cursor commands, Copilot prompts, Claude Code commands, stack rules, project-doc templates |
-| `agent-context/` | Memory, playbooks, harness files, and framework-owned context templates |
-| `examples/` | Reference workflows and sample projects |
+| Path             | Purpose                                                                                                              |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `docs/`          | User guides, onboarding path, runbooks, and reference docs                                                           |
+| `scripts/`       | Install, upgrade, validation, and target-local runtime script templates                                              |
+| `templates/`     | REASONS Canvas templates, Cursor commands, Copilot prompts, Claude Code commands, stack rules, project-doc templates |
+| `agent-context/` | Memory, playbooks, harness files, and framework-owned context templates                                              |
+| `examples/`      | Reference workflows and sample projects                                                                              |
 
 ## Documentation Paths
 
