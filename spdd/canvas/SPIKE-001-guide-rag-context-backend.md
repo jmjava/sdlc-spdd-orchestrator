@@ -108,6 +108,7 @@ Exercised the actual MCP tool surface and the underlying Neo4j store:
 ### Data / Persistence
 
 - Neo4j `ContentElement` RAG store (chunks + ONNX embeddings)
+- Reference corpus (curated reading) cataloged in `spdd/analysis/SPIKE-retrieval-reference-corpus.md`, ingested via guide profile `menke-2`
 - DICE domain graph in the same Neo4j: typed nodes (WorkID, Area, Canvas, Operation, Decision, Pitfall, Pattern) + relationships
 - Throwaway / local only for the spike
 
