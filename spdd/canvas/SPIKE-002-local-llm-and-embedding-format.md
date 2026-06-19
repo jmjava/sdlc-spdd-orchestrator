@@ -7,6 +7,7 @@
 - Status: Draft
 - Readiness: Needs Analysis
 - Created: 2026-06-19
+- Updated: 2026-06-19 (confirmational research via live MCP store)
 - Owner:
 - Target Project: sdlc-spdd-orchestrator (self / dogfood) + Embabel guide fork
 - Stack: Bash + Markdown harness ↔ JVM (Embabel guide) + Neo4j + ONNX/Ollama, over MCP (SSE)
@@ -78,7 +79,29 @@ fully local, low-cost retrieval backend viable for the optimization direction.
 - Which local LLMs clear Embabel's tool-calling/structured-output bar? (Lean: Qwen2.5 / Qwen2.5-Coder, Llama 3.1; DeepSeek-R1 likely fails tools.)
 - Does the embedding gain (if any) come from dimension, model quality, or chunking params (`max-chunk-size`, `overlap-size`)? Isolate before recommending.
 - Is an LLM-driven ingest enrichment step (entity/`__Entity__` graph extraction) worth running locally — connecting to SPIKE-001's DICE leg?
-- Make the LLM base-url / embedding model **config-driven** (env/property) vs. fork code edits?
+- Make the LLM base-url / embedding model **config-driven** (env/property) vs. fork code edits? **Research lean (2026-06-19):** try `embabel-agent-ollama-autoconfigure` before forking `UserModelFactory`.
+
+### Confirmational Research (2026-06-19)
+
+Full notes: `spdd/analysis/SPIKE-002-local-llm-and-embedding-format-research.md`
+
+Design verification against live guide MCP + Embabel code corpus (same substrate as
+SPIKE-001; 384-dim ONNX baseline on all chunks).
+
+| Design element | Verdict |
+|----------------|---------|
+| Two independent knobs (LLM vs embedding) | ✅ Confirmed in `DrivineStore` / chat-store code |
+| Dimension change → index drop + re-embed | ✅ Confirmed (`reembedAll`, `VectorIndexManager`) |
+| `OpenAiCompatibleModelFactory` base-url seam | ✅ Confirmed via MCP code signature |
+| `embabel-agent-ollama-autoconfigure` | ✅ First-class module — try before `UserModelFactory` fork |
+| ONNX 384-dim ingest baseline | ✅ Confirmed on all chunks |
+| Local LLM drives agentic flows | ⏳ Unproven — integration exists; quality needs smoke test |
+| Richer embedding justifies re-ingest | ⏳ Unproven — isolate chunking vs dimension in A/B |
+| Shared A/B with SPIKE-001 + FEAT-004 ledger | ✅ Confirmed |
+
+**T01 refinement:** evaluate Ollama autoconfig before custom `UserModelFactory` changes.
+**T03/T04 refinement:** vary chunking params (`max-chunk-size`, `overlap-size`) alongside
+embedding model in the A/B.
 
 ## E - Entities
 
@@ -110,10 +133,10 @@ fully local, low-cost retrieval backend viable for the optimization direction.
 
 ### Proposed Approach (experiment)
 
-1. Make guide's LLM base-url configurable (`LOCAL_LLM_BASE_URL`, default `:11434/v1`) in the fork's `UserModelFactory`; point the chat LLM at Ollama. Use the non-validated `openAiCompatibleLlm(...)` path.
+1. Evaluate `embabel-agent-ollama-autoconfigure` and config-driven base-url first; fork `UserModelFactory` only if autoconfig is insufficient. Point chat LLM at Ollama (`:11434/v1`).
 2. Pull 1–2 tool-capable local LLMs via Ollama; smoke-test guide's agentic flows (confirm tool calls + structured output succeed); record latency.
 3. Swap the embedding model to a candidate format; adjust the `Chunk` vector index dimensions; re-ingest a representative subset of the corpus.
-4. Retrieval A/B: current 384-dim ONNX vs. the candidate, on a fixed set of known queries — score recall/precision + auditability (reuse SPIKE-001 harness + FEAT-004 ledger).
+4. Retrieval A/B: current 384-dim ONNX vs. the candidate, on a fixed set of known queries — score recall/precision + auditability; vary chunking params as well as model/dimension (reuse SPIKE-001 harness + FEAT-004 ledger).
 5. Record cost/latency: hosted vs. local LLM; ingest time + query latency per embedding model; note the hardware envelope.
 6. Write go/no-go with a recommended default (LLM + embedding format) and trade-offs.
 
@@ -133,7 +156,8 @@ fully local, low-cost retrieval backend viable for the optimization direction.
 
 ### Files To Add
 
-- A findings note (e.g. `spdd/analysis/SPIKE-002-local-llm-and-embedding-format-analysis.md`) capturing setup, the A/Bs, measurements, and the recommendation.
+- Confirmational research (done): `spdd/analysis/SPIKE-002-local-llm-and-embedding-format-research.md`
+- A/B findings note (pending): `spdd/analysis/SPIKE-002-local-llm-and-embedding-format-analysis.md`
 
 ### Files To Modify
 
@@ -148,7 +172,7 @@ fully local, low-cost retrieval backend viable for the optimization direction.
 ### T01 - Make guide's LLM base-url configurable (local endpoint)
 
 - Status: Not Started
-- Description: Add `LOCAL_LLM_BASE_URL` (default `http://localhost:11434/v1`) to the fork's `UserModelFactory`; route the chat LLM through it via the non-validated `openAiCompatibleLlm(...)`.
+- Description: Try `embabel-agent-ollama-autoconfigure` + config-driven base-url first; fork `UserModelFactory` only if needed. Route chat LLM through Ollama (`http://localhost:11434/v1`).
 - Files: (guide fork; no orchestrator changes)
 - Validation: guide boots and resolves a local model for chat
 
@@ -215,11 +239,14 @@ fully local, low-cost retrieval backend viable for the optimization direction.
 ## Sync Notes
 
 Sibling to SPIKE-001: same retrieval substrate (guide/Neo4j) and scoring method
-(FEAT-004 ledger), but focused on the **model layer** — running a local tool-capable
-LLM over Ollama's OpenAI-compatible endpoint (a base-url swap in `UserModelFactory`)
-and changing the **embedding format** (384-dim ONNX → a richer model), which drives
-retrieval quality and forces an index rebuild + re-ingest. Goal: a defensible, low-cost,
-fully-local default for the make-it-fast retrieval direction. Record the decision here.
+(FEAT-004 ledger), but focused on the **model layer** — local tool-capable LLM via
+Ollama and embedding-format change (384-dim ONNX → candidate), which drives retrieval
+quality and forces index rebuild + re-ingest.
+
+**Confirmational research 2026-06-19:** two-knob separation and re-embed cost validated
+in corpus; Ollama autoconfig may avoid `UserModelFactory` fork. Local LLM quality and
+embedding upgrade value still require smoke test + A/B. Full notes in
+`spdd/analysis/SPIKE-002-local-llm-and-embedding-format-research.md`.
 
 ## Final Status
 

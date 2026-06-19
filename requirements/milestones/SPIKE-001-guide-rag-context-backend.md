@@ -27,9 +27,11 @@ before committing. The output is a **decision**, not production code.
 
 ## Success / decision criteria
 
+- [ ] SDLC-SPDD DICE entity schema designed (`spdd/analysis/SPIKE-001-dice-entity-schema.md`).
+- [ ] Entity projection ingest loads at least one Work ID subgraph into Neo4j `__Entity__`.
 - [ ] A measured A/B on at least one real Work ID: guide-RAG retrieval vs. current resolver, scored on the FEAT-004 ledger (rework, review-result) and approximate context tokens.
 - [ ] A clear go / no-go recommendation with the trade-offs (value vs. dependency/adoption cost).
-- [ ] If go: a sketch of the follow-on FEAT(s) — corpus/ingest wiring, retrieval seam, and (optionally) a live `remember()` write tool in the fork.
+- [ ] If go: a sketch of the follow-on FEAT(s) — DICE entity ingest, retrieval seam, and (optionally) a live `remember()` write tool in the fork.
 
 ## Dependencies / sequencing
 
