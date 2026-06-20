@@ -1,0 +1,21 @@
+# Python venv for docgen (orchestrator dev only — see scripts/setup-docgen-venv.sh)
+.venv/
+
+# Local secrets (TTS / Whisper for docgen pipeline)
+.env
+
+# Local editable docgen engine path (copy from scripts/docgen-engine.path.example)
+scripts/docgen-engine.path
+
+# docgen bundle — regenerable intermediates (orchestrator dev only)
+docs/demos/audio/
+docs/demos/animations/media/
+docs/demos/animations/timing.json
+docs/demos/animations/__pycache__/
+docs/demos/media/
+docs/demos/.docgen-state.json
+docs/demos/recordings/
+
+# Block accidental media (regenerate locally; deploy via scripts/deploy-docs-pages-local.sh)
+*.mp3
+*.mp4

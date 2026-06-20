@@ -139,7 +139,7 @@ assert_memory_seed_files() {
   assert_file "${t}/agent-context/memory/phase-index.md"
   assert_same "${t}/agent-context/memory/phase-index.md" "${REPO_ROOT}/agent-context/memory/phase-index.md"
   assert_file "${t}/agent-context/memory/domain-index.md"
-  assert_same "${t}/agent-context/memory/domain-index.md" "${REPO_ROOT}/agent-context/memory/domain-index.md"
+  assert_same "${t}/agent-context/memory/domain-index.md" "${REPO_ROOT}/templates/agent-context/memory/domain-index.md"
   assert_file "${t}/scripts/sdlc-spdd/index-spdd-analysis.sh"
   assert_file "${t}/spdd/analysis/.gitkeep"
   assert_file "${t}/agent-context/extensions/README.md"

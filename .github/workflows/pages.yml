@@ -1,0 +1,58 @@
+name: Deploy to GitHub Pages
+
+# Optional: deploy docs/ from main via workflow_dispatch (HTML only — MP4s gitignored on main).
+# Full site with videos: ./scripts/deploy-docs-pages-local.sh → gh-pages branch.
+# See docs/demos/TOOLING.md
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache-bust video URLs
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+        run: |
+          python3 <<'PY'
+          import os, pathlib, re
+          sha = os.environ["GITHUB_SHA"][:12]
+          path = pathlib.Path("docs/index.html")
+          if not path.exists():
+              exit(0)
+          text = path.read_text(encoding="utf-8")
+          new = re.sub(
+              r'src="(demos/recordings/[^"?]+\.mp4)(?:\?[^"]*)?"',
+              lambda m: f'src="{m.group(1)}?v={sha}"',
+              text,
+          )
+          path.write_text(new, encoding="utf-8")
+          PY
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: docs
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

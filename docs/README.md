@@ -75,6 +75,8 @@ Also useful day to day:
 | Guide | Use it when |
 |-------|-------------|
 | [CONTRIBUTING.md](../CONTRIBUTING.md) | You are changing scripts or documentation — includes orchestrator vs target paths and a consistency checklist |
+| [Guide RAG research and dogfooding](guide-rag-research-and-dogfooding.md) | You use Embabel Guide + MCP for `/sdlc-spdd-analysis` or want the framework self-improvement loop explained |
+| [Narrated demos bundle](demos/README.md) | You maintain or extend the docgen bundle under `docs/demos/` |
 | [TESTING.md](../TESTING.md) | You need the command-testing confidence stack (CI gates, local smoke, planning-sync verification) |
 | [Design decisions](design-decisions.md) | You need rationale for major choices (including planned-but-not-installed features) |
 

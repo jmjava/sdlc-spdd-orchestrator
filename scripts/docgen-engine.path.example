@@ -1,0 +1,8 @@
+# Optional: editable install of docgen from a local clone of:
+#   https://github.com/jmjava/documentation-generator
+#
+# Copy this file to `docgen-engine.path` (gitignored) and put ONE absolute path per line to
+# the root of that clone — the directory that contains `pyproject.toml` with `name = "docgen"`.
+#
+# Example (replace with your machine):
+#   /home/ubuntu/github/jmjava/documentation-generator

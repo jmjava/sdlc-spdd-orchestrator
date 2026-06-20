@@ -1,0 +1,50 @@
+# Lint docgen narration scripts under docs/demos (no OpenAI / no Manim render).
+name: docgen lint
+
+on:
+  pull_request:
+    paths:
+      - "docs/demos/**"
+      - ".github/workflows/docgen-lint.yml"
+  push:
+    branches: [main]
+    paths:
+      - "docs/demos/**"
+      - ".github/workflows/docgen-lint.yml"
+
+concurrency:
+  group: docgen-lint-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: docgen lint (narration)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: docs/demos
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install docgen
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install \
+            "docgen @ git+https://github.com/jmjava/documentation-generator.git@main"
+
+      - name: docgen lint
+        run: |
+          set -euo pipefail
+          docgen --config docgen.yaml lint

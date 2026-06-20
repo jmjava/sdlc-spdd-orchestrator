@@ -1,0 +1,39 @@
+name: Check docgen dev boundary
+
+on:
+  pull_request:
+    paths:
+      - 'docs/**'
+      - 'templates/**'
+      - 'agent-context/**'
+      - 'scripts/init-project.sh'
+      - 'scripts/upgrade-project.sh'
+      - 'scripts/verify-docgen-dev-boundary.sh'
+      - 'scripts/lib/shipped-docs-boundary.sh'
+      - '.gitignore'
+      - '.github/workflows/check-docgen-dev-boundary.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/**'
+      - 'templates/**'
+      - 'agent-context/**'
+      - 'scripts/init-project.sh'
+      - 'scripts/upgrade-project.sh'
+      - 'scripts/verify-docgen-dev-boundary.sh'
+      - 'scripts/lib/shipped-docs-boundary.sh'
+      - '.gitignore'
+      - '.github/workflows/check-docgen-dev-boundary.yml'
+
+jobs:
+  check-docgen-dev-boundary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Syntax check
+        run: bash -n ./scripts/verify-docgen-dev-boundary.sh
+
+      - name: Verify docgen dev boundary
+        run: ./scripts/verify-docgen-dev-boundary.sh --smoke-install

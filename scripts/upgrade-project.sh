@@ -359,12 +359,15 @@ for file in \
   known-pitfalls.md \
   reusable-patterns.md \
   session-history.md \
-  phase-index.md \
-  domain-index.md; do
+  phase-index.md; do
   create_missing_memory_file \
     "${REPO_ROOT}/agent-context/memory/${file}" \
     "${TARGET}/agent-context/memory/${file}"
 done
+
+create_missing_memory_file \
+  "${REPO_ROOT}/templates/agent-context/memory/domain-index.md" \
+  "${TARGET}/agent-context/memory/domain-index.md"
 
 # Framework-owned playbooks and harness files are upgraded, with backups.
 for file in "${REPO_ROOT}"/agent-context/playbooks/*.md; do
@@ -397,9 +400,11 @@ for file in \
 done
 
 # User-facing docs are framework-owned when installed under docs/sdlc-spdd.
-# Skip docs/README.md — orchestrator hub only; targets use docs-sdlc-spdd-README.md.
+# Skip orchestrator-internal docs (see scripts/lib/shipped-docs-boundary.sh).
+# shellcheck source=lib/shipped-docs-boundary.sh
+source "${SCRIPT_DIR}/lib/shipped-docs-boundary.sh"
 for file in "${REPO_ROOT}"/docs/*.md; do
-  [[ "$(basename "${file}")" == "README.md" ]] && continue
+  is_orchestrator_only_doc "${file}" && continue
   copy_framework_file \
     "${file}" \
     "${TARGET}/docs/sdlc-spdd/$(basename "${file}")"

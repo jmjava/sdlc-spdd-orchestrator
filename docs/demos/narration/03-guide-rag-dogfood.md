@@ -1,0 +1,9 @@
+This repository does more than publish a framework for other teams. We use the same SPDD workflow, docgen tooling, and Guide research stack to improve the orchestrator itself. That is intentional dogfooding.
+
+During slash sdlc-spdd-analysis, contributors need grounded context from external references without pasting huge documents into every prompt. We run Embabel Guide locally. It ingests curated URLs and local directories into a Neo4j graph with full-text and vector search. The embabel-dev MCP tools, docs vector Search and docs text Search, expose that corpus to Cursor mid-session. Analysis artifacts cite retrieved chunks instead of hand-wavy memory.
+
+The corpus is layered. Profile menke ingests local Embabel and DICE code repos. Menke two adds SPDD, context engineering, and evals reference URLs. Menke three adds framework depth on scripts, manifests, and harness patterns. Menke four adds documentation-generator source and course-builder docgen consumer patterns. Each profile is an append pass on the same store, one ingest at a time on port twenty-one thousand three hundred thirty-seven.
+
+On this repo we dogfood SPDD on ourselves with Work IDs, canvases, and analysis files under spdd. We dogfood docgen with this narration bundle under docs demos. We dogfood Guide for research. A posture guard script keeps internal development language out of shipped templates.
+
+None of that research infrastructure ships to target projects. Guide YAML profiles, Neo4j data, MCP wiring, the local venv, and regenerable audio and video outputs stay on the orchestrator side. Targets receive templates, install scripts, and the docs slash sdlc-spdd hub. For architecture detail on the retrieval experiment, see SPIKE zero zero one in the canvas. For operator steps, see guide-rag-research-and-dogfooding in the docs tree.

@@ -48,6 +48,8 @@ grounding files). This is enforced by `./scripts/check-posture-boundary.sh`.
 | FEAT-003-extension-hook-manifest | spdd/canvas/FEAT-003-extension-hook-manifest.md | requirements/milestones/FEAT-003-extension-hook-manifest.md | Draft — Needs Analysis | Make it right (extensibility) |
 | FEAT-004-prompt-optimization-ledger | spdd/canvas/FEAT-004-prompt-optimization-ledger.md | requirements/milestones/FEAT-004-prompt-optimization-ledger.md | Ready For Coding — deferred | Make it fast; runs after refactors |
 | FEAT-005-canvas-readiness-indicators | spdd/canvas/FEAT-005-canvas-readiness-indicators.md | requirements/milestones/FEAT-005-canvas-readiness-indicators.md | Draft — Needs Analysis | Make it fast; do last |
+| CHORE-001-docgen-initial-documentation | spdd/canvas/CHORE-001-docgen-initial-documentation.md | requirements/milestones/CHORE-001-docgen-initial-documentation.md | Complete (T01–T07) | Docgen bundle scaffold + initial narration (parallel) |
+| CHORE-002-docgen-video-generation | spdd/canvas/CHORE-002-docgen-video-generation.md | requirements/milestones/CHORE-002-docgen-video-generation.md | Complete | 3 MP4s + Pages deploy; manual video regen (no render CI) |
 
 ## Session Updates
 
