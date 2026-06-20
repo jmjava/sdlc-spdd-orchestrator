@@ -1,0 +1,13 @@
+# Optional Python extras for the repo-root `.venv` when working on `docs/demos`
+# (full narration → Manim → compose → validate pipeline).
+#
+# Install docgen first (not listed here — it is not published on PyPI):
+#   ./scripts/setup-docgen-venv.sh
+#   (uses DOCGEN_SRC, scripts/docgen-engine.path, or git+https://github.com/jmjava/documentation-generator.git)
+#
+# Then:
+#   .venv/bin/pip install -r docs/demos/dependencies.txt
+#
+# System packages (not pip): ffmpeg, Cairo/Pango — see docs/demos/TOOLING.md
+
+manim>=0.19.0
