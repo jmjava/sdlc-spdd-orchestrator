@@ -2,6 +2,8 @@
 
 A multi-assistant scaffold for disciplined AI-assisted delivery.
 
+**Demo videos:** [Watch three narrated intro segments on GitHub Pages](https://jmjava.github.io/sdlc-spdd-orchestrator/) — SDLC-SPDD overview, install/workflow, and Guide RAG dogfooding.
+
 > **Project status: turning the corner from MVP to "make it right."**
 > We develop this framework through Kent Beck's progression — *make it work → make it
 > right → make it fast*. Phase one (**make it work**) is done: it functions end to end

@@ -55,6 +55,9 @@ else
   echo "Including ${#mp4s[@]} recording(s) from local tree (not committed on main)."
 fi
 
+# Skip Jekyll so static HTML/MP4 are served as-is on GitHub Pages.
+: > "${STAGING}/.nojekyll"
+
 REMOTE="$(git -C "${ROOT}" remote get-url origin)"
 echo "Staging site at ${STAGING} ($(find "${STAGING}" -type f | wc -l) files)"
 
