@@ -87,6 +87,7 @@ Each item names the Beck stage it serves (see [Delivery posture](#delivery-postu
 | Session-brief archive/rotation (`agent-context/sessions/` → `archive/`; data is already extracted into memory at capture) | Maintainability |
 | Code + docs readability pass (consistent structure, naming, examples) | Readability |
 | Extension/hook manifest in `agent-context/extensions/` | Extensibility |
+| Initial `docgen` narrated-docs bundle (`docs/demos/`) | Readability / operator docs (CHORE-001) |
 
 ### Make it fast — prompt optimization (do last)
 
@@ -143,7 +144,26 @@ Planned follow-on canvases (not yet specced):
 | FEAT-002-command-spec-generation | Single canonical command spec → generated Cursor/Copilot/Claude adapters | make it right (maintainability) |
 | FEAT-003-extension-hook-manifest | Extension manifest with phase/skills/hooks | make it right (extensibility) |
 | FEAT-005-canvas-readiness-indicators | Machine-parseable canvas `readiness:` + validate/review leading indicators | make it fast (measurement for optimization) |
+| CHORE-001-docgen-initial-documentation | Bootstrap `docgen` under `docs/demos/` + two initial narration segments | make it right (operator documentation) |
 
 Refresh this section from canvases with:
 
     ./scripts/sync-roadmap-from-spdd.sh --target .
+
+<!-- SDLC-SPDD-ROADMAP-SUMMARY:START -->
+
+## SDLC-SPDD Work Summary
+
+Generated: 2026-06-20T13:47:47Z
+
+| Work ID | Title | Type | Status | Milestone | Source | Canvas |
+|---------|-------|------|--------|-----------|--------|--------|
+| CHORE-001-docgen-initial-documentation | Initial docgen documentation bundle | Chore (documentation tooling) | Complete | milestone-1.md (parallel track — does not block FEAT-001) | TBD | spdd/canvas/CHORE-001-docgen-initial-documentation.md |
+| FEAT-001-shared-script-library | Shared script library (scripts/lib/) | Feature (refactor) | Draft | milestone-1.md | TBD | spdd/canvas/FEAT-001-shared-script-library.md |
+| FEAT-002-command-spec-generation | Single command spec → generated adapters | Feature (refactor) | Draft | milestone-1.md | TBD | spdd/canvas/FEAT-002-command-spec-generation.md |
+| FEAT-003-extension-hook-manifest | Extension/hook manifest | Feature (refactor) | Draft | milestone-1.md | TBD | spdd/canvas/FEAT-003-extension-hook-manifest.md |
+| FEAT-004-prompt-optimization-ledger | Prompt-optimization ledger + capture metrics | Feature | Draft | milestone-1.md | TBD | spdd/canvas/FEAT-004-prompt-optimization-ledger.md |
+| FEAT-005-canvas-readiness-indicators | Canvas readiness + leading indicators | Feature | Draft | milestone-1.md | TBD | spdd/canvas/FEAT-005-canvas-readiness-indicators.md |
+| SPIKE-001-guide-rag-context-backend | Guide as a DICE hybrid context backend | Spike | Draft | TBD | TBD | spdd/canvas/SPIKE-001-guide-rag-context-backend.md |
+| SPIKE-002-local-llm-and-embedding-format | Local models + embedding format for the retrieval backend | Spike | Draft | TBD | TBD | spdd/canvas/SPIKE-002-local-llm-and-embedding-format.md |
+<!-- SDLC-SPDD-ROADMAP-SUMMARY:END -->

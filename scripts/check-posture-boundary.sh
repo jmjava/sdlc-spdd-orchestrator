@@ -32,6 +32,10 @@ done
 
 cd "${TARGET}"
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/shipped-docs-boundary.sh
+source "${SCRIPT_DIR}/lib/shipped-docs-boundary.sh"
+
 # Posture-specific patterns. The hyphenated forms, the "Kent Beck" attribution,
 # and "Delivery posture/stage" are unambiguous; the spaced "make it work/right/fast"
 # is included too, with the posture-boundary-ok escape hatch for prose false matches.
@@ -47,10 +51,10 @@ if [[ -d templates ]]; then
     < <(find templates -type f \( -name '*.md' -o -name '*.mdc' -o -name '*.prompt.md' \))
 fi
 
-# 2) Top-level docs/*.md ship as docs/sdlc-spdd/ (README.md is excluded by install).
+# 2) Top-level docs/*.md ship as docs/sdlc-spdd/ (orchestrator-only docs excluded).
 for f in docs/*.md; do
   [[ -e "$f" ]] || continue
-  [[ "$(basename "$f")" == "README.md" ]] && continue
+  is_orchestrator_only_doc "${f}" && continue
   shipped_files+=("$f")
 done
 

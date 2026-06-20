@@ -178,12 +178,16 @@ for file in \
   known-pitfalls.md \
   reusable-patterns.md \
   session-history.md \
-  phase-index.md \
-  domain-index.md; do
+  phase-index.md; do
   copy_if_missing \
     "${REPO_ROOT}/agent-context/memory/${file}" \
     "${TARGET}/agent-context/memory/${file}"
 done
+
+# Empty index scaffold — do not seed orchestrator dogfood rows into targets.
+copy_if_missing \
+  "${REPO_ROOT}/templates/agent-context/memory/domain-index.md" \
+  "${TARGET}/agent-context/memory/domain-index.md"
 
 # Copy playbooks for SDLC Agents-style handoffs and repeatable workflows
 for file in "${REPO_ROOT}"/agent-context/playbooks/*.md; do
@@ -212,9 +216,11 @@ copy_if_missing \
   "${TARGET}/agent-context/harness/validation-rules.md"
 
 # Copy user-facing SDLC-SPDD docs into the target project.
-# Skip docs/README.md — orchestrator hub only; targets get a lean README template.
+# Skip orchestrator-internal docs (see scripts/lib/shipped-docs-boundary.sh).
+# shellcheck source=lib/shipped-docs-boundary.sh
+source "${SCRIPT_DIR}/lib/shipped-docs-boundary.sh"
 for file in "${REPO_ROOT}"/docs/*.md; do
-  [[ "$(basename "${file}")" == "README.md" ]] && continue
+  is_orchestrator_only_doc "${file}" && continue
   copy_if_missing \
     "${file}" \
     "${TARGET}/docs/sdlc-spdd/$(basename "${file}")"
