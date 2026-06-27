@@ -108,6 +108,53 @@ _team_auto_branch() {
   git -C "${SDLC_ROOT}" branch --show-current 2>/dev/null || true
 }
 
+_team_milestone_path() {
+  local work_id="$1"
+  local path="${SDLC_ROOT}/requirements/milestones/${work_id}.md"
+  [[ -f "${path}" ]] && printf '%s' "${path}"
+}
+
+# Reads Jira key from requirements/milestones/<WORK-ID>.md ## Jira section (- Key: ABC-123).
+_team_jira_from_milestone() {
+  local work_id="$1"
+  local path
+  path="$(_team_milestone_path "${work_id}")"
+  [[ -n "${path}" ]] || return 0
+  awk '
+    /^## Jira/ { in_jira=1; next }
+    /^## / { if (in_jira) exit }
+    in_jira && /^[[:space:]]*(-[[:space:]]+)?[Kk]ey:[[:space:]]*/ {
+      sub(/^[[:space:]]*(-[[:space:]]+)?[Kk]ey:[[:space:]]*/, "")
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "")
+      if ($0 ~ /^[A-Z][A-Z0-9]+-[0-9]+$/ && $0 !~ /^(TBD|TODO|NONE)$/i) {
+        print $0
+        exit
+      }
+    }
+  ' "${path}"
+}
+
+_team_milestone_has_jira_draft() {
+  local work_id="$1"
+  local path
+  path="$(_team_milestone_path "${work_id}")"
+  [[ -n "${path}" ]] || return 1
+  grep -q '^## Jira' "${path}"
+}
+
+_team_auto_jira() {
+  local jira="${1:-}"
+  local work_id="${2:-}"
+  if [[ -n "${jira}" ]]; then
+    printf '%s' "${jira}"
+    return 0
+  fi
+  if [[ "${SDLC_TEAM_AUTO_JIRA:-1}" != "1" ]]; then
+    return 0
+  fi
+  _team_jira_from_milestone "${work_id}"
+}
+
 _team_run_hook() {
   local work_id="$1"
   local status="$2"
@@ -321,6 +368,13 @@ sdlc_team_infer_work_summary() {
   [[ -d "${root}/agent-context/features/${work_id}" ]] && parts+=("feature workspace")
   [[ -f "${root}/spdd/canvas/${work_id}.md" ]] && parts+=("canvas")
   [[ -f "${root}/requirements/milestones/${work_id}.md" ]] && parts+=("milestone")
+  local jira_key
+  jira_key="$(_team_jira_from_milestone "${work_id}")"
+  if [[ -n "${jira_key}" ]]; then
+    parts+=("jira:${jira_key}")
+  elif _team_milestone_has_jira_draft "${work_id}"; then
+    parts+=("jira draft")
+  fi
   if ((${#parts[@]} == 0)); then
     printf 'artifacts unknown'
   else
@@ -427,6 +481,7 @@ sdlc_team_claim() {
     return 1
   fi
   branch="$(_team_auto_branch "${branch}")"
+  jira="$(_team_auto_jira "${jira}" "${work_id}")"
   local existing_note note
   existing_note="$(_team_registry_note_for "${work_id}")"
   note="$(_team_compose_note "${existing_note}" "${branch}" "${pr}" "${jira}" "${note_extra}")"

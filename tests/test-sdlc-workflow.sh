@@ -294,6 +294,33 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+echo "== Test 20: claim auto-reads jira Key from milestone requirement =="
+T="${WORK}/milestone-jira"
+work_id="FEAT-013-jira"
+setup_feature "${T}" "${work_id}"
+mkdir -p "${T}/requirements/milestones"
+cat > "${T}/requirements/milestones/${work_id}.md" <<'EOF'
+# Requirement: FEAT-013-jira
+
+## Jira
+
+- Key: ORCH-42
+- Summary: test issue
+EOF
+SDLC_USER="dev2" SDLC_ROOT="${T}" wf "${T}" claim "${work_id}" >/dev/null
+if grep -q 'jira:ORCH-42' "${T}/agent-context/work-registry.tsv"; then
+  ok "claim auto-reads jira key from milestone"
+else
+  bad "milestone jira key not in registry"
+fi
+out="$(SDLC_ROOT="${T}" wf "${T}" list-work)"
+if grep -q 'jira:ORCH-42' <<< "${out}"; then
+  ok "list-work shows milestone jira key"
+else
+  bad "list-work missing jira key"
+fi
+
+# ---------------------------------------------------------------------------
 echo
 echo "Results: ${pass} passed, ${fail} failed"
 if [[ "${fail}" -gt 0 ]]; then

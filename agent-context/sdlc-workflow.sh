@@ -551,7 +551,7 @@ In chat: /sdlc-spdd-whereami
 Team sharing: commit agent-context/work-registry.tsv after claim/release/shelf.
 Set SDLC_USER to override the owner name. SDLC_NO_TEAM_REGISTRY=1 opts out.
 SDLC_TEAM_STALE_DAYS=7 flags stale active claims. SDLC_TEAM_REGISTRY_HOOK for Slack/Jira.
-Note tokens: branch:... pr:... jira:... (auto branch from git on claim by default).
+Note tokens: branch:... pr:... jira:... (auto branch from git; auto jira Key from requirements/milestones/<WORK-ID>.md on claim).
 
 Typical loop:
   1. ./scripts/sdlc.sh next

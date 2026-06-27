@@ -51,7 +51,8 @@ For detailed issue creation and synchronization steps, see [jira-runbook.md](jir
 
 ### Create a new Jira issue
 
-When the request starts outside Jira, first draft the issue from the requirement:
+When the request starts outside Jira, draft field syntax in `requirements/milestones/<WORK-ID>.md`
+under `## Jira` first (see [jira-runbook.md](jira-runbook.md)). Then create from that draft:
 
     Draft a Jira issue for this request. Include issue type, summary, business value, scope in, scope out, Given/When/Then acceptance criteria, labels, components, and links.
 

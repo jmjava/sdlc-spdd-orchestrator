@@ -161,7 +161,11 @@ Set `SDLC_USER="Jane"` to label registry rows. Set `SDLC_NO_TEAM_REGISTRY=1` to 
 ```bash
 ./scripts/sdlc.sh claim FEAT-001 --branch cursor/feat-001 --pr "#21" --jira "PROJ-123"
 # auto-detects current git branch on claim (disable: SDLC_TEAM_AUTO_BRANCH=0)
+# auto-reads Jira Key from requirements/milestones/<WORK-ID>.md ## Jira (disable: SDLC_TEAM_AUTO_JIRA=0)
 ```
+
+Jira **draft syntax** for issue creation lives in `requirements/milestones/<WORK-ID>.md` under
+`## Jira`. Set `- Key: ABC-123` after create; `list-work` shows `jira:ABC-123` or `jira draft`.
 
 **Notifications:** copy `agent-context/hooks/notify-team-registry.example.sh` and set:
 
