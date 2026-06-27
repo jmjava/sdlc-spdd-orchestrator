@@ -31,7 +31,9 @@ setup_feature() {
     "${t}/spdd/analysis"
   cp "${POINTER}" "${t}/agent-context/sdlc-pointer.sh"
   cp "${WORKFLOW}" "${t}/agent-context/sdlc-workflow.sh"
-  chmod +x "${t}/agent-context/sdlc-pointer.sh" "${t}/agent-context/sdlc-workflow.sh"
+  cp "${REPO_ROOT}/agent-context/sdlc-team-registry.sh" "${t}/agent-context/sdlc-team-registry.sh"
+  cp "${REPO_ROOT}/templates/agent-context/work-registry.tsv" "${t}/agent-context/work-registry.tsv"
+  chmod +x "${t}/agent-context/sdlc-pointer.sh" "${t}/agent-context/sdlc-workflow.sh" "${t}/agent-context/sdlc-team-registry.sh"
 }
 
 # ---------------------------------------------------------------------------
@@ -207,6 +209,33 @@ if SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" capture --work-id "${work_i
 else
   ok "capture refuses stale work-id"
 fi
+
+# ---------------------------------------------------------------------------
+echo "== Test 14: team registry claim and conflict =="
+T="${WORK}/team"
+work_id="FEAT-009-team"
+setup_feature "${T}" "${work_id}"
+SDLC_USER="alice" SDLC_ROOT="${T}" wf "${T}" claim "${work_id}" >/dev/null
+if grep -q $'FEAT-009-team\tactive\t' "${T}/agent-context/work-registry.tsv"; then
+  ok "claim writes team registry"
+else
+  bad "team registry missing active row"
+fi
+if SDLC_USER="bob" SDLC_ROOT="${T}" wf "${T}" resume "${work_id}" >/dev/null 2>&1; then
+  bad "resume should refuse another owner claim"
+else
+  ok "resume refuses conflicting team claim"
+fi
+if SDLC_USER="bob" SDLC_ROOT="${T}" wf "${T}" resume "${work_id}" --force >/dev/null; then
+  ok "resume --force allows takeover"
+else
+  bad "resume --force should succeed"
+fi
+
+# ---------------------------------------------------------------------------
+echo "== Test 15: list-work discovers repo Work IDs =="
+out="$(SDLC_ROOT="${T}" wf "${T}" list-work)"
+if grep -q 'FEAT-009-team' <<< "${out}"; then ok "list-work shows work id"; else bad "list-work missing id"; fi
 
 # ---------------------------------------------------------------------------
 echo

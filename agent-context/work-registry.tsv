@@ -1,0 +1,8 @@
+# Team Work Registry — tab-separated. Commit updates so teammates see who is on which Work ID.
+# Columns: work_id status phase operation owner updated note
+# status: active | shelved | done | available
+#
+# Updated by: ./scripts/sdlc.sh claim|release|resume|shelf
+# Override owner label: export SDLC_USER="your-name"
+# Opt out of registry writes: export SDLC_NO_TEAM_REGISTRY=1
+work_id	status	phase	operation	owner	updated	note

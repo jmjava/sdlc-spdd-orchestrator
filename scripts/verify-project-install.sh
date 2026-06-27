@@ -155,7 +155,9 @@ run_part "SDLC (sessions, memory, playbooks)" \
   SDLC "session handoff playbook" "agent-context/playbooks/session-handoff-playbook.md" file \
   SDLC "quality gates" "agent-context/harness/quality-gates.md" file \
   SDLC "pointer manager script" "agent-context/sdlc-pointer.sh" executable \
-  SDLC "workflow manager script" "agent-context/sdlc-workflow.sh" executable
+  SDLC "workflow manager script" "agent-context/sdlc-workflow.sh" executable \
+  SDLC "team registry script" "agent-context/sdlc-team-registry.sh" executable \
+  SDLC "team work registry" "agent-context/work-registry.tsv" file
 
 run_part "Runtime scripts and docs" \
   Runtime "runtime scripts directory" "scripts/sdlc-spdd" dir \

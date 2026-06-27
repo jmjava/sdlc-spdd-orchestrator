@@ -134,6 +134,22 @@ run `sync` to reconcile workflow state from those files.
 automatically. After shelving, run `resume <WORK-ID>` then `start-agent-session.sh`
 with the suggested phase to sync back into the chat workflow.
 
+## Team Work ID sharing
+
+Local pointer (`.sdlc/`) is private to your machine. **Team coordination** uses the
+committed file `agent-context/work-registry.tsv` — commit it after claim/release so
+teammates see who is on which Work ID, phase, and operation.
+
+```bash
+./scripts/sdlc.sh list-work              # discover Work IDs in the repo
+./scripts/sdlc.sh team                   # team registry + your pointer
+./scripts/sdlc.sh claim FEAT-001-alpha   # resume + register as active owner
+./scripts/sdlc.sh release --reason "handoff to QA"
+./scripts/sdlc.sh resume OTHER-ID --force   # take over if teammate left stale claim
+```
+
+Set `SDLC_USER="Jane"` to label registry rows. Set `SDLC_NO_TEAM_REGISTRY=1` to opt out.
+
 ## Session Persistence
 
 Use scripts to keep agent sessions durable across chat boundaries:

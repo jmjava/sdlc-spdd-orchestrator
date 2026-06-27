@@ -399,6 +399,14 @@ copy_executable_framework_file \
   "${REPO_ROOT}/agent-context/sdlc-workflow.sh" \
   "${TARGET}/agent-context/sdlc-workflow.sh"
 
+copy_executable_framework_file \
+  "${REPO_ROOT}/agent-context/sdlc-team-registry.sh" \
+  "${TARGET}/agent-context/sdlc-team-registry.sh"
+
+copy_framework_file \
+  "${REPO_ROOT}/templates/agent-context/work-registry.tsv" \
+  "${TARGET}/agent-context/work-registry.tsv"
+
 for file in \
   quality-gates.md \
   validation-rules.md; do

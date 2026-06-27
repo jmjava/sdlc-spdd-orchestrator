@@ -19,6 +19,10 @@ fi
 _SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=/dev/null
 source "${_SCRIPT_DIR}/sdlc-pointer.sh"
+if [[ -f "${_SCRIPT_DIR}/sdlc-team-registry.sh" ]]; then
+  # shellcheck source=/dev/null
+  source "${_SCRIPT_DIR}/sdlc-team-registry.sh"
+fi
 
 SDLC_WORKFLOW_DIR="${SDLC_DIR}/workflows"
 SDLC_WORKFLOW_LOCK="${SDLC_DIR}/workflow.lock"
@@ -536,8 +540,15 @@ SDLC workflow helper — short paths for humans and agents
   ./scripts/sdlc.sh shelf --reason "why"
   ./scripts/sdlc.sh sync [--work-id ID]
   ./scripts/sdlc.sh list-shelved
+  ./scripts/sdlc.sh team              # team registry + your pointer
+  ./scripts/sdlc.sh list-work         # all Work IDs in the repo
+  ./scripts/sdlc.sh claim <WORK-ID>   # resume + register for team
+  ./scripts/sdlc.sh release --reason "why"
 
 In chat: /sdlc-spdd-whereami
+
+Team sharing: commit agent-context/work-registry.tsv after claim/release/shelf.
+Set SDLC_USER to override the owner name. SDLC_NO_TEAM_REGISTRY=1 opts out.
 
 Typical loop:
   1. ./scripts/sdlc.sh next
@@ -896,10 +907,15 @@ sdlc_workflow_resume() {
   local work_id="$1"
   local phase="${2:-}"
   local auto_shelf="${3:-1}"
+  local force_claim="${4:-0}"
 
   if [[ -z "${work_id}" ]]; then
     echo "sdlc_workflow_resume: work id required" >&2
     return 2
+  fi
+
+  if declare -F sdlc_team_check_claim >/dev/null 2>&1; then
+    sdlc_team_check_claim "${work_id}" "${force_claim}" || return $?
   fi
 
   local current
@@ -933,6 +949,10 @@ sdlc_workflow_resume() {
   echo "Recommended command: $(sdlc_workflow_recommended_command "${resolved_phase}" "${work_id}")"
   echo "Quick check: ./scripts/sdlc.sh next"
   echo "Start session: $(sdlc_workflow_shell_start "${work_id}" "${resolved_phase}")"
+  if declare -F sdlc_team_sync_from_workflow >/dev/null 2>&1; then
+    sdlc_team_sync_from_workflow "${work_id}" "active" ""
+    echo "Team: commit agent-context/work-registry.tsv to share this claim."
+  fi
 }
 
 sdlc_workflow_advance() {
@@ -973,6 +993,9 @@ sdlc_workflow_advance() {
   _wf_pass_gates_for_phase "${work_id}" "${current}"
   _wf_set_state_var "${work_id}" phase "${next}"
   _wf_log_history "${work_id}" advance "${current}->${next}"
+  if declare -F sdlc_team_sync_from_workflow >/dev/null 2>&1; then
+    sdlc_team_sync_from_workflow "${work_id}" "active" ""
+  fi
   echo "Advanced ${work_id}: ${current} -> ${next}"
   echo "Recommended command: $(sdlc_workflow_recommended_command "${next}" "${work_id}")"
   echo "Quick check: ./scripts/sdlc.sh next"
@@ -1038,6 +1061,10 @@ sdlc_workflow_shelf() {
   _wf_set_state_var "${work_id}" shelved_reason "${reason}"
   _wf_log_history "${work_id}" shelf "reason=${reason}"
   sdlc_reset_pointer >/dev/null
+  if declare -F sdlc_team_sync_from_workflow >/dev/null 2>&1; then
+    sdlc_team_sync_from_workflow "${work_id}" "shelved" "${reason}"
+    echo "Team: commit agent-context/work-registry.tsv to share shelf status."
+  fi
   echo "Shelved ${work_id}"
   echo "Reason: ${reason}"
   echo "Resume later: ./scripts/sdlc.sh resume ${work_id}"
@@ -1226,15 +1253,16 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     resume|/sdlc-workflow-resume)
       work_id="${1:-}"; shift || true
       phase=""
-      reason=""
+      force_claim=0
       while [[ $# -gt 0 ]]; do
         case "$1" in
           --phase) phase="${2:-}"; shift 2 ;;
+          --force) force_claim=1; shift ;;
           --no-auto-shelf) AUTO_SHELF=0; shift ;;
           *) shift ;;
         esac
       done
-      sdlc_workflow_resume "${work_id}" "${phase}" "${AUTO_SHELF:-1}"
+      sdlc_workflow_resume "${work_id}" "${phase}" "${AUTO_SHELF:-1}" "${force_claim}"
       ;;
     advance|/sdlc-workflow-advance)
       to=""
@@ -1283,8 +1311,57 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     capture|/sdlc-workflow-capture)
       sdlc_workflow_capture "$@"
       ;;
+    team|/sdlc-team-status)
+      if declare -F sdlc_team_status >/dev/null 2>&1; then
+        sdlc_team_status
+      else
+        echo "team registry not installed" >&2
+        exit 1
+      fi
+      ;;
+    list-work|/sdlc-list-work)
+      if declare -F sdlc_team_list_work >/dev/null 2>&1; then
+        sdlc_team_list_work
+      else
+        echo "team registry not installed" >&2
+        exit 1
+      fi
+      ;;
+    claim|/sdlc-team-claim)
+      work_id="${1:-}"; shift || true
+      force=0
+      phase=""
+      while [[ $# -gt 0 ]]; do
+        case "$1" in
+          --force) force=1; shift ;;
+          --phase) phase="${2:-}"; shift 2 ;;
+          *) shift ;;
+        esac
+      done
+      if declare -F sdlc_team_claim >/dev/null 2>&1; then
+        sdlc_team_claim "${work_id}" "${force}" "${phase}"
+      else
+        echo "team registry not installed" >&2
+        exit 1
+      fi
+      ;;
+    release|/sdlc-team-release)
+      reason="released"
+      while [[ $# -gt 0 ]]; do
+        case "$1" in
+          --reason) reason="${2:-}"; shift 2 ;;
+          *) shift ;;
+        esac
+      done
+      if declare -F sdlc_team_release >/dev/null 2>&1; then
+        sdlc_team_release "${reason}"
+      else
+        echo "team registry not installed" >&2
+        exit 1
+      fi
+      ;;
     *)
-      echo "Usage: $0 {status|next|start|capture|resume|advance|skip|shelf|sync|list-shelved|help} ..." >&2
+      echo "Usage: $0 {status|next|start|capture|resume|advance|skip|shelf|sync|team|list-work|claim|release|list-shelved|help} ..." >&2
       echo "Try: $0 help" >&2
       exit 2
       ;;

@@ -230,6 +230,17 @@ if [[ "${DRY_RUN}" -eq 0 && -f "${TARGET}/agent-context/sdlc-workflow.sh" ]]; th
 fi
 
 copy_if_missing \
+  "${REPO_ROOT}/agent-context/sdlc-team-registry.sh" \
+  "${TARGET}/agent-context/sdlc-team-registry.sh"
+if [[ "${DRY_RUN}" -eq 0 && -f "${TARGET}/agent-context/sdlc-team-registry.sh" ]]; then
+  chmod +x "${TARGET}/agent-context/sdlc-team-registry.sh"
+fi
+
+copy_if_missing \
+  "${REPO_ROOT}/templates/agent-context/work-registry.tsv" \
+  "${TARGET}/agent-context/work-registry.tsv"
+
+copy_if_missing \
   "${REPO_ROOT}/agent-context/README.md" \
   "${TARGET}/agent-context/README.md"
 
