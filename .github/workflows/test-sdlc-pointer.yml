@@ -1,0 +1,36 @@
+name: Test SDLC Pointer
+
+on:
+  pull_request:
+    paths:
+      - 'agent-context/sdlc-pointer.sh'
+      - 'agent-context/README.md'
+      - 'scripts/init-project.sh'
+      - 'scripts/upgrade-project.sh'
+      - 'scripts/start-agent-session.sh'
+      - 'scripts/verify-project-install.sh'
+      - 'tests/test-sdlc-pointer.sh'
+      - '.github/workflows/test-sdlc-pointer.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'agent-context/sdlc-pointer.sh'
+      - 'agent-context/README.md'
+      - 'scripts/init-project.sh'
+      - 'scripts/upgrade-project.sh'
+      - 'scripts/start-agent-session.sh'
+      - 'scripts/verify-project-install.sh'
+      - 'tests/test-sdlc-pointer.sh'
+      - '.github/workflows/test-sdlc-pointer.yml'
+
+jobs:
+  test-sdlc-pointer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check shell syntax
+        run: bash -n agent-context/sdlc-pointer.sh tests/test-sdlc-pointer.sh scripts/start-agent-session.sh
+
+      - name: Run SDLC pointer regression tests
+        run: ./tests/test-sdlc-pointer.sh

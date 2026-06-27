@@ -52,6 +52,31 @@ Full detail: [Bootstrap and index-based loading](../docs/context-loading-and-sca
 
 Each work item also has a canonical canvas under `spdd/canvas/`. Keep both copies aligned using `/sdlc-spdd-sync` or `./scripts/sync-agent-context.sh`.
 
+## SDLC Pointer (current chore/task)
+
+Agents can drift onto the wrong Work ID when several chores are open. The pointer
+manager keeps a single active chore in `.sdlc/pointer` (local state; not committed)
+and provides guarded wrappers so commands refuse to run against a stale pointer.
+
+```bash
+# Source once per shell (or let start-agent-session.sh set the pointer for you)
+source agent-context/sdlc-pointer.sh
+
+# Set / inspect / clear
+./agent-context/sdlc-pointer.sh set CHORE-123
+./agent-context/sdlc-pointer.sh get
+./agent-context/sdlc-pointer.sh reset
+
+# Guarded execution — exits 3 when the pointer does not match
+run_against_pointer "CHORE-123" -- ./scripts/sdlc-spdd/capture-session-memory.sh --work-id CHORE-123 ...
+
+# Optional bootstrap override on agent start
+export SDLC_POINTER_OVERRIDE=CHORE-123
+sdlc_init
+```
+
+`start-agent-session.sh` sets the pointer automatically when `--work-id` is provided.
+
 ## Session Persistence
 
 Use scripts to keep agent sessions durable across chat boundaries:

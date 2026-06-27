@@ -215,6 +215,17 @@ copy_if_missing \
   "${REPO_ROOT}/agent-context/harness/validation-rules.md" \
   "${TARGET}/agent-context/harness/validation-rules.md"
 
+copy_if_missing \
+  "${REPO_ROOT}/agent-context/sdlc-pointer.sh" \
+  "${TARGET}/agent-context/sdlc-pointer.sh"
+if [[ "${DRY_RUN}" -eq 0 && -f "${TARGET}/agent-context/sdlc-pointer.sh" ]]; then
+  chmod +x "${TARGET}/agent-context/sdlc-pointer.sh"
+fi
+
+copy_if_missing \
+  "${REPO_ROOT}/agent-context/README.md" \
+  "${TARGET}/agent-context/README.md"
+
 # Copy user-facing SDLC-SPDD docs into the target project.
 # Skip orchestrator-internal docs (see scripts/lib/shipped-docs-boundary.sh).
 # shellcheck source=lib/shipped-docs-boundary.sh
