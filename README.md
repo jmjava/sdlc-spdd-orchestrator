@@ -1,8 +1,21 @@
 # SDLC-SPDD Orchestrator
 
+A multi-assistant scaffold for disciplined AI-assisted delivery.
+
 **Demo videos:** [Watch three narrated intro segments on GitHub Pages](https://jmjava.github.io/sdlc-spdd-orchestrator/) — SDLC-SPDD overview, install/workflow, and Guide RAG dogfooding.
 
-A multi-assistant scaffold for disciplined AI-assisted delivery.
+## Recent highlights
+
+New agent coordination shipped in [#19](https://github.com/jmjava/sdlc-spdd-orchestrator/issues/19) via [#20](https://github.com/jmjava/sdlc-spdd-orchestrator/pull/20) and [#21](https://github.com/jmjava/sdlc-spdd-orchestrator/pull/21):
+
+| What | Why it matters | Try it |
+| ---- | -------------- | ------ |
+| **SDLC pointer** ([#20](https://github.com/jmjava/sdlc-spdd-orchestrator/pull/20)) | Persistent Work ID on your machine; guarded wrappers refuse commands aimed at the wrong chore | `agent-context/sdlc-pointer.sh` — set/get/reset, `run_against_pointer` |
+| **Workflow CLI** ([#21](https://github.com/jmjava/sdlc-spdd-orchestrator/pull/21)) | Phase/gate tracking, canvas-op inference, and safe session capture | `./scripts/sdlc.sh` or `./scripts/sdlc.sh next` |
+| **Team registry** ([#21](https://github.com/jmjava/sdlc-spdd-orchestrator/pull/21)) | Shared claims in git so teammates see who owns which Work ID | `./scripts/sdlc.sh team`, `./scripts/sdlc.sh claim <WORK-ID>` |
+| **Agent grounding** ([#21](https://github.com/jmjava/sdlc-spdd-orchestrator/pull/21)) | `/sdlc-spdd-whereami` in Cursor, Copilot, and Claude — same “what now?” answer as the shell CLI | `/sdlc-spdd-whereami` in chat |
+
+Pointer and workflow state stay local (`.sdlc/pointer`, `.sdlc/workflows/`); team claims live in `agent-context/work-registry.tsv` and sync through git. Details: [agent-context/README.md](agent-context/README.md#sdlc-pointer-current-choretask).
 
 > **Project status: turning the corner from MVP to "make it right."**
 > We develop this framework through Kent Beck's progression — *make it work → make it
