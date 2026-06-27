@@ -238,6 +238,62 @@ out="$(SDLC_ROOT="${T}" wf "${T}" list-work)"
 if grep -q 'FEAT-009-team' <<< "${out}"; then ok "list-work shows work id"; else bad "list-work missing id"; fi
 
 # ---------------------------------------------------------------------------
+echo "== Test 16: stale claim flagged in team output =="
+T="${WORK}/stale"
+work_id="FEAT-010-stale"
+setup_feature "${T}" "${work_id}"
+printf 'work_id\tstatus\tphase\toperation\towner\tupdated\tnote\n' > "${T}/agent-context/work-registry.tsv"
+printf 'FEAT-010-stale\tactive\tcode\t\talice\t2020-01-01T00:00:00Z\t\n' >> "${T}/agent-context/work-registry.tsv"
+out="$(SDLC_TEAM_STALE_DAYS=0 SDLC_ROOT="${T}" wf "${T}" team)"
+if grep -q 'STALE' <<< "${out}"; then ok "stale claim flagged"; else bad "stale flag missing"; fi
+
+# ---------------------------------------------------------------------------
+echo "== Test 17: done status from canvas Final Status =="
+T="${WORK}/done"
+work_id="CHORE-001-done"
+setup_feature "${T}" "${work_id}"
+cp "${REPO_ROOT}/spdd/canvas/CHORE-001-docgen-initial-documentation.md" "${T}/spdd/canvas/${work_id}.md"
+SDLC_ROOT="${T}" wf "${T}" sync-team >/dev/null
+if grep -q $'CHORE-001-done\tdone\t' "${T}/agent-context/work-registry.tsv"; then
+  ok "sync-team marks canvas complete as done"
+else
+  bad "done status not written"
+fi
+
+# ---------------------------------------------------------------------------
+echo "== Test 18: claim records branch and pr note tokens =="
+T="${WORK}/notes"
+work_id="FEAT-011-notes"
+setup_feature "${T}" "${work_id}"
+SDLC_USER="dev1" SDLC_ROOT="${T}" wf "${T}" claim "${work_id}" --branch "cursor/feat-011" --pr "#99" >/dev/null
+if grep -q 'branch:cursor/feat-011' "${T}/agent-context/work-registry.tsv" \
+  && grep -q 'pr:#99' "${T}/agent-context/work-registry.tsv"; then
+  ok "claim stores branch and pr note tokens"
+else
+  bad "branch/pr tokens missing from registry"
+fi
+
+# ---------------------------------------------------------------------------
+echo "== Test 19: registry hook fires on claim =="
+T="${WORK}/hook"
+work_id="FEAT-012-hook"
+setup_feature "${T}" "${work_id}"
+hook_log="${T}/hook.log"
+mkdir -p "${T}/agent-context/hooks"
+cat > "${T}/agent-context/hooks/notify.sh" <<EOF
+#!/usr/bin/env bash
+echo "\$*" >> "${hook_log}"
+EOF
+chmod +x "${T}/agent-context/hooks/notify.sh"
+SDLC_TEAM_REGISTRY_HOOK="${T}/agent-context/hooks/notify.sh" \
+  SDLC_USER="hooker" SDLC_ROOT="${T}" wf "${T}" claim "${work_id}" >/dev/null
+if [[ -f "${hook_log}" ]] && grep -q 'FEAT-012-hook' "${hook_log}"; then
+  ok "registry hook invoked"
+else
+  bad "registry hook not invoked"
+fi
+
+# ---------------------------------------------------------------------------
 echo
 echo "Results: ${pass} passed, ${fail} failed"
 if [[ "${fail}" -gt 0 ]]; then

@@ -407,6 +407,10 @@ copy_framework_file \
   "${REPO_ROOT}/templates/agent-context/work-registry.tsv" \
   "${TARGET}/agent-context/work-registry.tsv"
 
+copy_framework_file \
+  "${REPO_ROOT}/templates/agent-context/hooks/notify-team-registry.example.sh" \
+  "${TARGET}/agent-context/hooks/notify-team-registry.example.sh"
+
 for file in \
   quality-gates.md \
   validation-rules.md; do

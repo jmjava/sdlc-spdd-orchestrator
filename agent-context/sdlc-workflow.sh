@@ -542,13 +542,16 @@ SDLC workflow helper — short paths for humans and agents
   ./scripts/sdlc.sh list-shelved
   ./scripts/sdlc.sh team              # team registry + your pointer
   ./scripts/sdlc.sh list-work         # all Work IDs in the repo
-  ./scripts/sdlc.sh claim <WORK-ID>   # resume + register for team
+  ./scripts/sdlc.sh claim <WORK-ID> [--branch NAME] [--pr #N] [--jira KEY]
   ./scripts/sdlc.sh release --reason "why"
+  ./scripts/sdlc.sh sync-team          # mark done from canvas Final Status
 
 In chat: /sdlc-spdd-whereami
 
 Team sharing: commit agent-context/work-registry.tsv after claim/release/shelf.
 Set SDLC_USER to override the owner name. SDLC_NO_TEAM_REGISTRY=1 opts out.
+SDLC_TEAM_STALE_DAYS=7 flags stale active claims. SDLC_TEAM_REGISTRY_HOOK for Slack/Jira.
+Note tokens: branch:... pr:... jira:... (auto branch from git on claim by default).
 
 Typical loop:
   1. ./scripts/sdlc.sh next
@@ -908,6 +911,7 @@ sdlc_workflow_resume() {
   local phase="${2:-}"
   local auto_shelf="${3:-1}"
   local force_claim="${4:-0}"
+  local team_note="${5:-}"
 
   if [[ -z "${work_id}" ]]; then
     echo "sdlc_workflow_resume: work id required" >&2
@@ -950,7 +954,7 @@ sdlc_workflow_resume() {
   echo "Quick check: ./scripts/sdlc.sh next"
   echo "Start session: $(sdlc_workflow_shell_start "${work_id}" "${resolved_phase}")"
   if declare -F sdlc_team_sync_from_workflow >/dev/null 2>&1; then
-    sdlc_team_sync_from_workflow "${work_id}" "active" ""
+    sdlc_team_sync_from_workflow "${work_id}" "active" "${team_note}"
     echo "Team: commit agent-context/work-registry.tsv to share this claim."
   fi
 }
@@ -1331,15 +1335,32 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
       work_id="${1:-}"; shift || true
       force=0
       phase=""
+      branch=""
+      pr=""
+      jira=""
+      note_extra=""
       while [[ $# -gt 0 ]]; do
         case "$1" in
           --force) force=1; shift ;;
           --phase) phase="${2:-}"; shift 2 ;;
+          --branch) branch="${2:-}"; shift 2 ;;
+          --pr) pr="${2:-}"; shift 2 ;;
+          --jira) jira="${2:-}"; shift 2 ;;
+          --note) note_extra="${2:-}"; shift 2 ;;
           *) shift ;;
         esac
       done
       if declare -F sdlc_team_claim >/dev/null 2>&1; then
-        sdlc_team_claim "${work_id}" "${force}" "${phase}"
+        sdlc_team_claim "${work_id}" "${force}" "${phase}" "${branch}" "${pr}" "${jira}" "${note_extra}"
+      else
+        echo "team registry not installed" >&2
+        exit 1
+      fi
+      ;;
+    sync-team|/sdlc-team-sync)
+      if declare -F sdlc_team_refresh_done_status >/dev/null 2>&1; then
+        sdlc_team_refresh_done_status
+        echo "Team registry refreshed from canvas Final Status."
       else
         echo "team registry not installed" >&2
         exit 1
@@ -1361,7 +1382,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
       fi
       ;;
     *)
-      echo "Usage: $0 {status|next|start|capture|resume|advance|skip|shelf|sync|team|list-work|claim|release|list-shelved|help} ..." >&2
+      echo "Usage: $0 {status|next|start|capture|resume|advance|skip|shelf|sync|sync-team|team|list-work|claim|release|list-shelved|help} ..." >&2
       echo "Try: $0 help" >&2
       exit 2
       ;;

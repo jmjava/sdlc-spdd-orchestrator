@@ -241,6 +241,10 @@ copy_if_missing \
   "${TARGET}/agent-context/work-registry.tsv"
 
 copy_if_missing \
+  "${REPO_ROOT}/templates/agent-context/hooks/notify-team-registry.example.sh" \
+  "${TARGET}/agent-context/hooks/notify-team-registry.example.sh"
+
+copy_if_missing \
   "${REPO_ROOT}/agent-context/README.md" \
   "${TARGET}/agent-context/README.md"
 

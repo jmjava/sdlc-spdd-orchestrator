@@ -150,6 +150,26 @@ teammates see who is on which Work ID, phase, and operation.
 
 Set `SDLC_USER="Jane"` to label registry rows. Set `SDLC_NO_TEAM_REGISTRY=1` to opt out.
 
+**Stale claims:** active rows older than `SDLC_TEAM_STALE_DAYS` (default 7) show `[STALE>Nd]` in
+`team` / `list-work`. Stale claims warn but do not block; non-stale claims block until `--force`.
+
+**Done status:** canvases with `## Final Status` → `Status: Complete` are marked `done` when you run
+`team`, `list-work`, or `sync-team`.
+
+**Branch / PR / Jira linking** (stored in the `note` column):
+
+```bash
+./scripts/sdlc.sh claim FEAT-001 --branch cursor/feat-001 --pr "#21" --jira "PROJ-123"
+# auto-detects current git branch on claim (disable: SDLC_TEAM_AUTO_BRANCH=0)
+```
+
+**Notifications:** copy `agent-context/hooks/notify-team-registry.example.sh` and set:
+
+```bash
+export SDLC_TEAM_REGISTRY_HOOK=./agent-context/hooks/notify-team-registry.sh
+export SDLC_TEAM_SLACK_WEBHOOK=https://hooks.slack.com/services/...
+```
+
 ## Session Persistence
 
 Use scripts to keep agent sessions durable across chat boundaries:
