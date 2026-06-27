@@ -54,6 +54,9 @@ Each work item also has a canonical canvas under `spdd/canvas/`. Keep both copie
 
 ## SDLC Pointer (current chore/task)
 
+**Quick start:** `./scripts/sdlc.sh` (or `./scripts/sdlc.sh next`) shows what to do now.
+In chat: `/sdlc-spdd-whereami`.
+
 Agents can drift onto the wrong Work ID when several chores are open. The pointer
 manager keeps a single active chore in `.sdlc/pointer` (local state; not committed)
 and provides guarded wrappers so commands refuse to run against a stale pointer.
@@ -78,6 +81,17 @@ sdlc_init
 `start-agent-session.sh` sets the pointer automatically when `--work-id` is provided.
 
 ## SDLC Workflow (phase + gate tracking)
+
+**Short commands** (installed at `scripts/sdlc-spdd/sdlc.sh`; orchestrator repo: `scripts/sdlc.sh`):
+
+```bash
+./scripts/sdlc.sh              # what to do now (default)
+./scripts/sdlc.sh status       # full dashboard (auto-syncs)
+./scripts/sdlc.sh start        # open session brief at current phase
+./scripts/sdlc.sh resume FEAT-001-order-status-api
+./scripts/sdlc.sh advance
+./scripts/sdlc.sh shelf --reason "blocked"
+```
 
 The workflow manager builds on the pointer to answer **where am I?**, **what is next?**,
 and **how do I shelf or resume work?** State lives under `.sdlc/workflows/` (local,

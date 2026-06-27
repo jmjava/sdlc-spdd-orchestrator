@@ -78,11 +78,14 @@ if [[ -f "${pointer_script}" && -n "${WORK_ID}" ]]; then
 fi
 
 workflow_script="${TARGET}/agent-context/sdlc-workflow.sh"
+workflow_brief_md="Workflow tools not installed."
 if [[ -f "${workflow_script}" && -n "${WORK_ID}" ]]; then
   SDLC_ROOT="${TARGET}"
   # shellcheck source=/dev/null
   source "${workflow_script}"
   sdlc_workflow_touch_session "${WORK_ID}" "${PHASE}" "${MILESTONE}"
+  sdlc_workflow_sync "${WORK_ID}" >/dev/null 2>&1 || true
+  workflow_brief_md="$(sdlc_workflow_brief_markdown "${WORK_ID}")"
 fi
 
 timestamp="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
@@ -309,6 +312,12 @@ cat > "${session_file}" <<EOF
 - Recommended command: ${recommended_command}
 - Canvas sync state: ${canvas_sync_state}
 - Previous session brief: ${latest_session}
+
+## Workflow State
+
+Local phase + gate tracking (not committed). Refresh with \`./scripts/sdlc.sh next\` or \`/sdlc-spdd-whereami\`.
+
+${workflow_brief_md}
 
 ## Framework Orientation
 

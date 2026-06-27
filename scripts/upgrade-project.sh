@@ -445,7 +445,8 @@ for file in \
   validate-command-adapters.sh \
   verify-agent-command-effects.sh \
   validate-reasons-canvas.sh \
-  verify-project-install.sh; do
+  verify-project-install.sh \
+  sdlc.sh; do
   copy_executable_framework_file \
     "${REPO_ROOT}/scripts/${file}" \
     "${TARGET}/scripts/sdlc-spdd/${file}"

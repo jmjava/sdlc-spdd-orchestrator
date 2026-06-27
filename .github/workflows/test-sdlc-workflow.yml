@@ -11,6 +11,14 @@ on:
       - 'scripts/init-project.sh'
       - 'scripts/upgrade-project.sh'
       - 'scripts/verify-project-install.sh'
+      - 'scripts/sdlc.sh'
+      - 'scripts/validate-command-adapters.sh'
+      - 'templates/cursor/sdlc-spdd-whereami.md'
+      - 'templates/copilot/prompts/sdlc-spdd-whereami.prompt.md'
+      - 'templates/claude/commands/sdlc-spdd-whereami.md'
+      - 'templates/cursor/rules/sdlc-spdd.mdc'
+      - 'templates/copilot/copilot-instructions.md'
+      - 'templates/claude/CLAUDE.md'
       - 'tests/test-sdlc-workflow.sh'
       - 'tests/test-sdlc-pointer.sh'
       - '.github/workflows/test-sdlc-workflow.yml'
@@ -25,6 +33,14 @@ on:
       - 'scripts/init-project.sh'
       - 'scripts/upgrade-project.sh'
       - 'scripts/verify-project-install.sh'
+      - 'scripts/sdlc.sh'
+      - 'scripts/validate-command-adapters.sh'
+      - 'templates/cursor/sdlc-spdd-whereami.md'
+      - 'templates/copilot/prompts/sdlc-spdd-whereami.prompt.md'
+      - 'templates/claude/commands/sdlc-spdd-whereami.md'
+      - 'templates/cursor/rules/sdlc-spdd.mdc'
+      - 'templates/copilot/copilot-instructions.md'
+      - 'templates/claude/CLAUDE.md'
       - 'tests/test-sdlc-workflow.sh'
       - 'tests/test-sdlc-pointer.sh'
       - '.github/workflows/test-sdlc-workflow.yml'
@@ -39,9 +55,11 @@ jobs:
         run: |
           bash -n agent-context/sdlc-pointer.sh
           bash -n agent-context/sdlc-workflow.sh
+          bash -n scripts/sdlc.sh
           bash -n tests/test-sdlc-workflow.sh
           bash -n scripts/start-agent-session.sh
           bash -n scripts/capture-session-memory.sh
+          bash -n scripts/validate-command-adapters.sh
 
       - name: Run SDLC pointer regression tests
         run: ./tests/test-sdlc-pointer.sh

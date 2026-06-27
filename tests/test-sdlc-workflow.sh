@@ -119,6 +119,54 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+echo "== Test 8: next command gives actionable output =="
+T="${WORK}/next"
+work_id="FEAT-005-next"
+setup_feature "${T}" "${work_id}"
+printf '# canvas\nReady For Coding\n' > "${T}/spdd/canvas/${work_id}.md"
+wf "${T}" resume "${work_id}" >/dev/null
+out="$(wf "${T}" next)"
+if grep -q 'Do now (assistant):' <<< "${out}" && grep -q 'When this phase is done:' <<< "${out}"; then
+  ok "next output is actionable"
+else
+  bad "next output missing sections"
+fi
+
+# ---------------------------------------------------------------------------
+echo "== Test 9: status --json for agents =="
+json="$(wf "${T}" status --json)"
+if grep -q '"phase":"code"' <<< "${json}" && grep -q '"recommended_command"' <<< "${json}"; then
+  ok "json status includes phase and command"
+else
+  bad "json status incomplete: ${json}"
+fi
+
+# ---------------------------------------------------------------------------
+echo "== Test 10: sdlc.sh wrapper delegates =="
+T="${WORK}/wrapper"
+work_id="FEAT-005-wrap"
+setup_feature "${T}" "${work_id}"
+mkdir -p "${T}/scripts/sdlc-spdd"
+cp "${REPO_ROOT}/scripts/sdlc.sh" "${T}/scripts/sdlc-spdd/sdlc.sh"
+chmod +x "${T}/scripts/sdlc-spdd/sdlc.sh"
+SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" resume "${work_id}" >/dev/null
+out="$(SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" next)"
+if grep -q "${work_id}" <<< "${out}"; then ok "sdlc.sh wrapper works"; else bad "sdlc.sh wrapper failed"; fi
+
+# ---------------------------------------------------------------------------
+echo "== Test 11: session brief includes workflow state =="
+T="${WORK}/brief"
+work_id="FEAT-006-brief"
+setup_feature "${T}" "${work_id}"
+"${START}" --target "${T}" --work-id "${work_id}" --phase plan >/dev/null
+if grep -q '## Workflow State' "${T}/agent-context/sessions/current-session.md" \
+  && grep -q 'Assistant command' "${T}/agent-context/sessions/current-session.md"; then
+  ok "session brief embeds workflow state"
+else
+  bad "session brief missing workflow state"
+fi
+
+# ---------------------------------------------------------------------------
 echo
 echo "Results: ${pass} passed, ${fail} failed"
 if [[ "${fail}" -gt 0 ]]; then

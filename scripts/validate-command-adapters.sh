@@ -54,6 +54,7 @@ commands=(
   prompt-update
   retro
   sync
+  whereami
 )
 
 failures=0
@@ -160,6 +161,8 @@ check_pack() {
     require_contains "${path}" "Do not make code changes unless explicitly asked." "review guardrail"
   elif [[ "${cmd}" == "sync" ]]; then
     require_contains "${path}" "Do not implement code unless explicitly asked." "sync guardrail"
+  elif [[ "${cmd}" == "whereami" ]]; then
+    require_contains "${path}" "Do not implement code" "whereami guardrail"
   else
     require_contains "${path}" "Do not implement code" "no-code guardrail"
   fi
