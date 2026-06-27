@@ -68,6 +68,15 @@ case "${PHASE}" in
 esac
 
 TARGET="$(cd "${TARGET}" && pwd)"
+
+pointer_script="${TARGET}/agent-context/sdlc-pointer.sh"
+if [[ -f "${pointer_script}" && -n "${WORK_ID}" ]]; then
+  SDLC_ROOT="${TARGET}"
+  # shellcheck source=/dev/null
+  source "${pointer_script}"
+  sdlc_set_pointer "${WORK_ID}" >/dev/null
+fi
+
 timestamp="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 safe_timestamp="$(date -u +"%Y%m%dT%H%M%SZ")"
 session_dir="${TARGET}/agent-context/sessions"

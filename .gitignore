@@ -1,3 +1,6 @@
+# Local SDLC pointer state (see agent-context/sdlc-pointer.sh)
+.sdlc/
+
 # Python venv for docgen (orchestrator dev only — see scripts/setup-docgen-venv.sh)
 .venv/
 

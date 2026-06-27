@@ -391,6 +391,10 @@ copy_framework_file \
   "${REPO_ROOT}/agent-context/README.md" \
   "${TARGET}/agent-context/README.md"
 
+copy_executable_framework_file \
+  "${REPO_ROOT}/agent-context/sdlc-pointer.sh" \
+  "${TARGET}/agent-context/sdlc-pointer.sh"
+
 for file in \
   quality-gates.md \
   validation-rules.md; do
