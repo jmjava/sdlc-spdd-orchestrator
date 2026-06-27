@@ -56,7 +56,11 @@ under `## Jira` first (see [jira-runbook.md](jira-runbook.md)). Then create from
 
     Draft a Jira issue for this request. Include issue type, summary, business value, scope in, scope out, Given/When/Then acceptance criteria, labels, components, and links.
 
-Create the issue in Jira using your team's approved UI, automation, MCP tool, or API workflow. After Jira returns a key, plan from that key:
+After Jira returns a key, update `requirements/milestones/<WORK-ID>.md` `## Jira` Key field, then claim to auto-link into the team registry:
+
+    ./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>
+
+Plan from the key:
 
     /sdlc-spdd-plan Jira ABC-123: <summary>. Link the canvas to https://jira.example.com/browse/ABC-123 and use the Jira acceptance criteria as the Requirements source.
 

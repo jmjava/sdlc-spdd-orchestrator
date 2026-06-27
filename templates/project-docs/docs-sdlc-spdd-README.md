@@ -6,9 +6,20 @@ These docs were installed by the SDLC-SPDD orchestrator. **Start with the six pa
 
 `/sdlc-spdd-init` and other `/sdlc-spdd-*` lines are **AI chat prompts**, not terminal commands. Run them in Cursor Chat, Copilot Chat, or Claude Code.
 
-**Shell scripts in this project** live under `scripts/sdlc-spdd/` (for example `start-agent-session.sh`). Install/upgrade run once from the orchestrator repo (`./scripts/setup-agent-prompts.sh --target ...`), not from here.
+**Daily workflow CLI** (terminal):
 
-[How to run assistant commands](initialization-and-invocation.md#how-to-run-assistant-commands)
+    ./scripts/sdlc-spdd/sdlc.sh next          # what to do now
+    ./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>
+    ./scripts/sdlc-spdd/sdlc.sh start         # open session brief
+    ./scripts/sdlc-spdd/sdlc.sh capture --summary "..."
+
+In chat: `/sdlc-spdd-whereami` — same orientation as `next`, plus team registry context.
+
+**Other shell scripts** live under `scripts/sdlc-spdd/` (for example `start-agent-session.sh`). Install/upgrade run once from the orchestrator repo (`./scripts/setup-agent-prompts.sh --target ...`), not from here.
+
+Local agent state (gitignored): `.sdlc/pointer`, `.sdlc/workflows/`. Team claims (committed): `agent-context/work-registry.tsv`.
+
+[How to run assistant commands](initialization-and-invocation.md#how-to-run-assistant-commands) · [Workflow CLI reference](../../agent-context/README.md#sdlc-pointer-current-choretask)
 
 ## Read in order
 
@@ -26,7 +37,7 @@ These docs were installed by the SDLC-SPDD orchestrator. **Start with the six pa
 | One-page command sheet (print/PDF) | [Cheat sheet](sdlc-spdd-cheat-sheet.md) |
 | Concept definitions (Work ID, canvas, sync…) | [Top useful concepts and commands](useful-concepts-and-commands.md) |
 | Cursor / Copilot / Claude Code slash commands | [Initialization and invocation](initialization-and-invocation.md) |
-| Runtime scripts | [Agent session scripts](agent-session-scripts.md) |
+| Runtime scripts + workflow CLI | [Agent session scripts](agent-session-scripts.md) |
 
 ## What each part brings
 
@@ -36,4 +47,4 @@ These docs were installed by the SDLC-SPDD orchestrator. **Start with the six pa
 
 ## Runtime scripts
 
-Installed under `scripts/sdlc-spdd/` in this project.
+Installed under `scripts/sdlc-spdd/` in this project. Prefer `sdlc.sh` for daily rhythm; use individual scripts when you need low-level control.

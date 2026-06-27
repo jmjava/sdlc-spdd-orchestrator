@@ -6,6 +6,12 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- SDLC pointer manager (`agent-context/sdlc-pointer.sh`): persistent Work ID in `.sdlc/pointer`, guarded execution wrappers ([#20](https://github.com/jmjava/sdlc-spdd-orchestrator/pull/20), closes [#19](https://github.com/jmjava/sdlc-spdd-orchestrator/issues/19))
+- Workflow CLI (`scripts/sdlc.sh` / `scripts/sdlc-spdd/sdlc.sh`): phase/gate tracking, `next`/`advance`/`skip`/`shelf`/`resume`/`sync`, guarded `capture` ([#21](https://github.com/jmjava/sdlc-spdd-orchestrator/pull/21))
+- Team Work ID registry (`agent-context/work-registry.tsv`, `sdlc-team-registry.sh`): `claim`/`release`/`team`/`list-work`, stale TTL, branch/PR/Jira notes ([#21](https://github.com/jmjava/sdlc-spdd-orchestrator/pull/21))
+- `/sdlc-spdd-whereami` assistant command (Cursor, Copilot, Claude) — chat orientation aligned with `sdlc.sh next` ([#21](https://github.com/jmjava/sdlc-spdd-orchestrator/pull/21))
+- Milestone `## Jira` draft convention in `requirements/milestones/<WORK-ID>.md`; auto-link on claim
+- CI regression harnesses: `tests/test-sdlc-pointer.sh`, `tests/test-sdlc-workflow.sh`
 - Claude Code support as a third assistant adapter: `templates/claude/` command pack
   and `CLAUDE.md`, `scripts/install-claude-commands.sh`, `--claude` flags on
   setup/init/upgrade, `--require-claude` install verification, Claude command-pack

@@ -119,7 +119,36 @@ Current session:
 
 Create one:
 
-    ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase>
+    ./scripts/sdlc-spdd/sdlc.sh start
+    # or: ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase>
+
+### SDLC Pointer
+
+The active Work ID on **this machine**. Stored in `.sdlc/pointer` (gitignored). Guarded commands (for example `sdlc.sh capture`) refuse to run when the pointer does not match the requested Work ID.
+
+    ./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>    # sets pointer + team registry
+    ./agent-context/sdlc-pointer.sh get
+
+See [agent-context/README.md](../agent-context/README.md#sdlc-pointer-current-choretask).
+
+### Workflow CLI
+
+Phase and gate tracking for the active Work ID. State lives in `.sdlc/workflows/` (gitignored). Committed artifacts (canvas, progress log) remain the audit trail.
+
+    ./scripts/sdlc-spdd/sdlc.sh next       # what to do now
+    ./scripts/sdlc-spdd/sdlc.sh advance    # move to next phase
+    ./scripts/sdlc-spdd/sdlc.sh shelf --reason "..."
+
+In chat: `/sdlc-spdd-whereami`.
+
+### Team Registry
+
+Shared coordination via git. Who owns which Work ID, phase, branch, PR, and Jira key.
+
+    ./scripts/sdlc-spdd/sdlc.sh team
+    ./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>    # commit agent-context/work-registry.tsv
+
+File: `agent-context/work-registry.tsv`.
 
 ### Durable Memory
 
@@ -144,6 +173,8 @@ Common files:
 - `milestone-2.md`
 - `session-notes/YYYY-MM-DD.md`
 
+Milestone requirements may include a `## Jira` draft section (`requirements/milestones/<WORK-ID>.md`). On claim, `./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>` auto-links the Jira Key into the team registry. See [requirements/milestones/README.md](../requirements/milestones/README.md).
+
 Use roadmap and milestone docs to give planning agents delivery context. Use REASONS Canvas files to govern each Work ID.
 
 ## Commands and Prompts
@@ -160,7 +191,9 @@ Copy-paste prompts: [Session prompt standard](session-prompt-standard.md) — se
 - Asking "continue" without a Work ID or session brief.
 - Implementing multiple operations in one coding pass.
 - Using `/sdlc-spdd-sync` for a new behavior requirement.
-- Forgetting to capture memory at the end of a session.
+- Forgetting to capture memory at the end of a session (use `sdlc.sh capture`).
+- Running capture against the wrong Work ID (pointer mismatch — use `sdlc.sh claim`/`resume` first).
+- Claiming work without committing `agent-context/work-registry.tsv` on shared repos.
 - Editing application behavior after Jira acceptance criteria changed without prompt-update.
 
 ## Read Next

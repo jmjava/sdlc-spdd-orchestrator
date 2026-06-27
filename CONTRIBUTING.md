@@ -125,6 +125,10 @@ SDLC (`agent-context/sessions/`, `agent-context/memory/`) artifacts.
 
 Before merging doc or script changes that touch the three-part model (Planning, SPDD, SDLC), verify:
 
+- [ ] **Workflow CLI** — daily runbook, first-day walkthrough, cheat sheet, and session prompt standard teach `sdlc.sh` (`next`, `claim`, `capture`) not raw scripts alone
+- [ ] **Pointer + team registry** — docs explain `.sdlc/pointer` / `.sdlc/workflows/` (local) vs `work-registry.tsv` (committed); claim/release commit reminder present
+- [ ] **Whereami** — `/sdlc-spdd-whereami` in assistant command tables (README, cheat sheet, cursor/copilot/claude usage)
+- [ ] **Jira draft** — milestone `## Jira` convention referenced from runbook, cheat sheet, planning prompts where Jira drafts appear
 - [ ] **Three-part mandate** — no Planning, SPDD, or SDLC artifacts removed or conflated; see [design mandate](docs/three-part-operating-path.md#three-part-design-mandate)
 
 - [ ] **Operating path** — behavior matches [three-part-operating-path.md](docs/three-part-operating-path.md)

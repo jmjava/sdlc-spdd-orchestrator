@@ -11,6 +11,8 @@ Runtime scripts in a target app live at `scripts/sdlc-spdd/`. When developing th
 Run these checks regularly:
 
 - [ ] Framework prompts and scripts are current.
+- [ ] `agent-context/work-registry.tsv` reflects active team claims (committed on shared repos).
+- [ ] Local pointer and workflow state are sane (`.sdlc/pointer`, `.sdlc/workflows/` — gitignored).
 - [ ] `ROADMAP.md` and active `milestone-*.md` files reflect current progress.
 - [ ] daily session notes are captured under `session-notes/`.
 - [ ] `agent-context/sessions/current-session.md` reflects the active work.
@@ -39,8 +41,13 @@ Do not rely on chat history alone.
 
 From the target app:
 
+    ./scripts/sdlc-spdd/sdlc.sh next
+    ./scripts/sdlc-spdd/sdlc.sh resume <WORK-ID> [--phase <phase>]
+    ./scripts/sdlc-spdd/sdlc.sh start
+
+Optional canvas sync before resuming stale work:
+
     ./scripts/sdlc-spdd/resync-agent-session.sh --target . --work-id <WORK-ID> --check-only
-    ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase>
 
 Then **paste the Resume Prompt** from `agent-context/sessions/current-session.md`. See [Session prompt standard](session-prompt-standard.md).
 
@@ -65,14 +72,9 @@ Use sync carefully:
 
 ## Capture Session Memory
 
-At the end of meaningful work, capture - the script parses session content
-(summary/session-notes + current artifacts) for code areas and grows
-`code-areas.md` automatically:
+At the end of meaningful work, capture — prefer guarded capture via the workflow CLI:
 
-    ./scripts/sdlc-spdd/capture-session-memory.sh \
-      --target . \
-      --work-id <WORK-ID> \
-      --phase <phase> \
+    ./scripts/sdlc-spdd/sdlc.sh capture \
       --summary "<what changed; include paths like src/billing or com.acme.order>" \
       --validation "<tests or checks>" \
       --decisions "<decisions, if any>" \
@@ -97,10 +99,7 @@ See [Bootstrap and index-based loading](context-loading-and-scaling.md#bootstrap
 
 To tie a session to roadmap and milestone progress:
 
-    ./scripts/sdlc-spdd/capture-session-memory.sh \
-      --target . \
-      --work-id <WORK-ID> \
-      --phase <phase> \
+    ./scripts/sdlc-spdd/sdlc.sh capture \
       --summary "<what changed>" \
       --validation "<tests or checks>" \
       --milestone milestone-1.md \
@@ -161,6 +160,7 @@ Use these boundaries:
 | `.github/copilot-instructions.md` | framework-owned Copilot instructions; update through upgrade script |
 | `.claude/commands/` | framework-owned Claude Code commands; update through upgrade script |
 | `CLAUDE.md` | project-owned Claude Code memory; SDLC-SPDD manages only the marked grounding block |
+| `agent-context/work-registry.tsv` | team Work ID claims; update via `sdlc.sh claim`/`release`, then commit |
 | `scripts/sdlc-spdd/` | framework-owned runtime scripts; update through upgrade script |
 | `agent-context/playbooks/` | team workflow guidance; safe place for team process notes |
 | `agent-context/memory/` | durable project knowledge; preserve and append |

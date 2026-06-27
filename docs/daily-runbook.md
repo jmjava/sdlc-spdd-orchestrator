@@ -9,10 +9,11 @@ Use this runbook for **operational rhythm**: rules, script sequences, phase chec
 | Step order (1–13) | [Workflow](workflow.md) |
 | Planning → SPDD → SDLC loop | [Three-part operating path](three-part-operating-path.md) |
 | **Rules, scripts, checklists** | **This page** |
+| Workflow CLI + team registry (reference) | [agent-context/README.md](../agent-context/README.md#sdlc-pointer-current-choretask) |
 
 ## Daily Operating Rules
 
-1. Keep one active Work ID per unit of work.
+1. Keep one active Work ID per unit of work (local pointer + optional team claim).
 2. Keep the REASONS Canvas as the design contract.
 3. Ask questions with explicit artifact references.
 4. Code one approved operation at a time.
@@ -25,15 +26,36 @@ Use this runbook for **operational rhythm**: rules, script sequences, phase chec
 
 Goal: recover context before asking the assistant to act.
 
-1. Check canvas sync (no session brief yet):
+**Fast path** — orientation without opening files:
+
+    ./scripts/sdlc-spdd/sdlc.sh next
+
+In chat: `/sdlc-spdd-whereami` (same answer as `next`, plus team registry context).
+
+**Team coordination** — before claiming work on a shared repo:
+
+    ./scripts/sdlc-spdd/sdlc.sh team
+    ./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>    # commit agent-context/work-registry.tsv after
+
+If you already have an active pointer, resume or switch:
+
+    ./scripts/sdlc-spdd/sdlc.sh resume <WORK-ID> [--phase <phase>]
+
+**Full session loop** (recommended daily rhythm):
+
+1. Orient: `./scripts/sdlc-spdd/sdlc.sh next` (or `/sdlc-spdd-whereami` in chat).
+2. Check canvas sync when resuming stale work:
 
        ./scripts/sdlc-spdd/resync-agent-session.sh --target . --work-id <WORK-ID> --check-only
 
-2. Create the session brief:
+3. Open the session brief (sets pointer + workflow phase):
 
-       ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase>
+       ./scripts/sdlc-spdd/sdlc.sh start
+       # or: ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase>
 
-3. **Paste the Resume Prompt** from `agent-context/sessions/current-session.md`. That generated prompt is the source of truth — it directs the agent to load only the files listed under **Resolved Context** in the same brief (phase extensions, Work ID artifacts, and area-filtered index rows).
+4. **Paste the Resume Prompt** from `agent-context/sessions/current-session.md`. That generated prompt is the source of truth — it directs the agent to load only the files listed under **Resolved Context** in the same brief (phase extensions, Work ID artifacts, and area-filtered index rows).
+
+5. After completing a phase step: `./scripts/sdlc-spdd/sdlc.sh advance`
 
 Optional — ask for a status summary after pasting the resume prompt:
 
@@ -137,9 +159,15 @@ Do not use sync for a new behavior requirement. Update the source issue and canv
 
 Use [jira-runbook.md](jira-runbook.md) when work is tracked in Jira.
 
-Create new Jira issue draft:
+Create new Jira issue draft in the milestone requirement file first:
 
-    Draft a Jira issue for this request. Include issue type, summary, business value, scope in, scope out, Given/When/Then acceptance criteria, labels, components, and links.
+    requirements/milestones/<WORK-ID>.md   →   ## Jira section (Key, Summary, Type, …)
+
+See [requirements/milestones/README.md](../requirements/milestones/README.md) and [jira-runbook.md](jira-runbook.md). On claim, `./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>` auto-links the Key into `agent-context/work-registry.tsv`.
+
+Then draft for Jira UI or automation:
+
+    Draft a Jira issue from requirements/milestones/<WORK-ID>.md ## Jira. Include issue type, summary, business value, scope in, scope out, Given/When/Then acceptance criteria, labels, components, and links.
 
 Daily Jira comment:
 
@@ -166,6 +194,20 @@ Retro updates:
 
 Prompts and script: [End of session](session-prompt-standard.md#end-of-session) in Session prompt standard.
 
+**Preferred capture** — guarded against pointer mismatch (refuses wrong Work ID):
+
+    ./scripts/sdlc-spdd/sdlc.sh capture --summary "<what changed>" --validation "<tests>" --next "<next command>"
+
+With milestone progress:
+
+    ./scripts/sdlc-spdd/sdlc.sh capture --summary "..." --validation "..." \
+      --milestone milestone-1.md --roadmap-note "..." --next "/sdlc-spdd-review @spdd/canvas/<WORK-ID>.md"
+
+Park work for later:
+
+    ./scripts/sdlc-spdd/sdlc.sh shelf --reason "blocked on review"
+    ./scripts/sdlc-spdd/sdlc.sh list-shelved
+
 The handoff should include:
 
 - Work ID
@@ -175,6 +217,8 @@ The handoff should include:
 - Current review result
 - Tests run
 - Next recommended command
+
+If you used `claim`, commit `agent-context/work-registry.tsv` so teammates see your status.
 
 ## Common Daily Loops
 
@@ -208,4 +252,22 @@ Quick command sequences. Full prompt wording: [Session prompt standard](session-
 
 ### Continue interrupted work
 
+    ./scripts/sdlc-spdd/sdlc.sh resume <WORK-ID>
+    ./scripts/sdlc-spdd/sdlc.sh next
+
 Script sequence: [Morning or Start-of-Session Check](#morning-or-start-of-session-check) above. Resume prompt and follow-up: [Continue interrupted work](session-prompt-standard.md#continue-interrupted-work) in Session prompt standard.
+
+### Daily workflow CLI reference
+
+| Goal | Command |
+|------|---------|
+| What now? | `./scripts/sdlc-spdd/sdlc.sh next` or `/sdlc-spdd-whereami` |
+| Open session brief | `./scripts/sdlc-spdd/sdlc.sh start` |
+| Move to next phase | `./scripts/sdlc-spdd/sdlc.sh advance` |
+| Skip a phase | `./scripts/sdlc-spdd/sdlc.sh skip <phase> --reason "..."` |
+| Re-read artifacts | `./scripts/sdlc-spdd/sdlc.sh sync` |
+| See all Work IDs | `./scripts/sdlc-spdd/sdlc.sh list-work` |
+| Team who-is-on-what | `./scripts/sdlc-spdd/sdlc.sh team` |
+| Claim for team | `./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>` → commit `work-registry.tsv` |
+
+Local state (gitignored): `.sdlc/pointer`, `.sdlc/workflows/`. Shared via git: `agent-context/work-registry.tsv`.

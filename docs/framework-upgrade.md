@@ -23,16 +23,20 @@ It does not overwrite:
 
 It can update:
 
-- `.cursor/commands/sdlc-spdd-*.md`
+- `.cursor/commands/sdlc-spdd-*.md` (includes `sdlc-spdd-whereami`)
 - `.cursor/rules/sdlc-spdd.mdc`
 - `.github/copilot-instructions.md`
 - `.github/prompts/sdlc-spdd-*.prompt.md`
 - `.claude/commands/sdlc-spdd-*.md`
+- `agent-context/sdlc-pointer.sh`
+- `agent-context/sdlc-workflow.sh`
+- `agent-context/sdlc-team-registry.sh`
+- `agent-context/work-registry.tsv` (template merge — review local claims after upgrade)
 - `agent-context/playbooks/*.md`
 - `agent-context/harness/*.md`
 - `agent-context/README.md`
 - `docs/sdlc-spdd/*.md`
-- `scripts/sdlc-spdd/*.sh`
+- `scripts/sdlc-spdd/*.sh` (including `sdlc.sh`)
 
 This includes mapping tools:
 
@@ -102,7 +106,7 @@ Use these backups to recover local customizations or compare old prompts with ne
 
 From the target application:
 
-    ./scripts/sdlc-spdd/start-agent-session.sh --target . --phase init
+    ./scripts/sdlc-spdd/sdlc.sh next
 
 Then invoke:
 
@@ -110,8 +114,8 @@ Then invoke:
 
 For existing work:
 
-    ./scripts/sdlc-spdd/resync-agent-session.sh --target . --work-id <WORK-ID> --check-only
-    ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase resume
+    ./scripts/sdlc-spdd/sdlc.sh resume <WORK-ID>
+    ./scripts/sdlc-spdd/sdlc.sh start
 
 ## What To Review
 

@@ -104,8 +104,8 @@ Session notes are the **human-readable daily log**. Durable agent memory (`agent
 | `create-work-from-milestone.sh` | milestone → SPDD | Create Work IDs, requirements, draft canvases from checklist items |
 | `sync-roadmap-from-spdd.sh` | SPDD → roadmap | Refresh managed roadmap summary from canvas metadata |
 | `summarize-session-notes.sh` | session notes → memory | Import historical notes into durable agent memory |
-| `capture-session-memory.sh` | session → all layers | Write memory, progress log, session notes, milestone, roadmap |
-| `start-agent-session.sh` | all layers → session brief | Include roadmap, milestone, session-note status in resume prompt |
+| `capture-session-memory.sh` / `sdlc.sh capture` | session → all layers | Write memory, progress log, session notes, milestone, roadmap |
+| `start-agent-session.sh` / `sdlc.sh start` | all layers → session brief | Include roadmap, milestone, session-note status in resume prompt |
 
 ## Typical Planning Flow
 
@@ -139,17 +139,14 @@ Use phase commands (plan → architect → code → review → sync). See [What 
 
 ### 5. Capture session to all layers
 
-    ./scripts/sdlc-spdd/capture-session-memory.sh \
-      --target . \
-      --work-id <WORK-ID> \
-      --phase code \
+    ./scripts/sdlc-spdd/sdlc.sh capture \
       --summary "Implemented T01." \
       --validation "mvn test" \
       --milestone milestone-1.md \
       --roadmap-note "FEAT-001 completed first operation." \
       --next "/sdlc-spdd-review @spdd/canvas/<WORK-ID>.md"
 
-When `--milestone` is omitted, `capture-session-memory.sh` searches `milestone-*.md` for the Work ID.
+When `--milestone` is omitted, capture auto-detects from `milestone-*.md` when the Work ID appears there.
 
 ### 6. Refresh roadmap summary from SPDD
 
@@ -161,7 +158,8 @@ When `--milestone` is omitted, `capture-session-memory.sh` searches `milestone-*
 
 ## Starting a Session with Planning Context
 
-    ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase code --milestone milestone-1.md
+    ./scripts/sdlc-spdd/sdlc.sh resume <WORK-ID> --phase code
+    ./scripts/sdlc-spdd/sdlc.sh start
 
 The generated resume prompt includes `@ROADMAP.md`, `@milestone-*.md`, and today's `@session-notes/YYYY-MM-DD.md` when those files exist.
 

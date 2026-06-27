@@ -20,6 +20,8 @@ In orchestrator repo:
 
 - `validate-command-adapters` (`.github/workflows/validate-command-adapters.yml`)
 - `test-adapter-install` (`.github/workflows/test-adapter-install.yml`)
+- `test-sdlc-pointer` (`.github/workflows/test-sdlc-pointer.yml`)
+- `test-sdlc-workflow` (`.github/workflows/test-sdlc-workflow.yml`)
 - `test-session-memory` (`.github/workflows/test-session-memory.yml`)
 - `test-index-spdd-analysis` (`.github/workflows/test-index-spdd-analysis.yml`)
 - `test-resolve-agent-context` (`.github/workflows/test-resolve-agent-context.yml`)
@@ -56,6 +58,26 @@ Copilot, Claude Code) into throwaway target directories and asserts:
 Run it locally before changing any install/upgrade script or command template.
 The CI workflow also runs `bash -n` over shell scripts before executing the
 regression harness.
+
+### SDLC pointer harness
+
+`./tests/test-sdlc-pointer.sh` exercises `agent-context/sdlc-pointer.sh`:
+
+- CLI round-trip (`set`/`get`/`reset`)
+- Guarded run (`run_against_pointer`) refusal on mismatch
+- `SDLC_POINTER_OVERRIDE` bootstrap
+- Integration with `start-agent-session.sh` pointer auto-set
+- Install path copies the script to target projects
+
+### SDLC workflow + team registry harness
+
+`./tests/test-sdlc-workflow.sh` exercises `agent-context/sdlc-workflow.sh` and team registry:
+
+- Phase/gate tracking, `next`/`advance`/`skip`/`shelf`/`resume`/`sync`
+- `sdlc.sh` wrapper delegation
+- Guarded `capture` (pointer must match)
+- Team `claim`/`release`, stale TTL, branch/PR/Jira notes in `work-registry.tsv`
+- Jira Key auto-link from `requirements/milestones/<WORK-ID>.md` on claim
 
 ### Session memory index + rotation harness
 

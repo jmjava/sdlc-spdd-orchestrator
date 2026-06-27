@@ -56,9 +56,49 @@ Upgrade older install:
 
     ./scripts/upgrade-project.sh --target /path/to/app --all
 
+## Workflow CLI (daily rhythm)
+
+Orient first:
+
+    ./scripts/sdlc-spdd/sdlc.sh next
+    /sdlc-spdd-whereami
+
+Claim and resume:
+
+    ./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>
+    ./scripts/sdlc-spdd/sdlc.sh resume <WORK-ID> [--phase <phase>]
+    ./scripts/sdlc-spdd/sdlc.sh start
+
+Phase transitions:
+
+    ./scripts/sdlc-spdd/sdlc.sh advance
+    ./scripts/sdlc-spdd/sdlc.sh skip <phase> --reason "..."
+    ./scripts/sdlc-spdd/sdlc.sh shelf --reason "..."
+    ./scripts/sdlc-spdd/sdlc.sh list-shelved
+    ./scripts/sdlc-spdd/sdlc.sh sync
+
+Team coordination (commit `agent-context/work-registry.tsv` after claim/release):
+
+    ./scripts/sdlc-spdd/sdlc.sh team
+    ./scripts/sdlc-spdd/sdlc.sh list-work
+    ./scripts/sdlc-spdd/sdlc.sh release --reason "..."
+
+Guarded capture (pointer must match Work ID):
+
+    ./scripts/sdlc-spdd/sdlc.sh capture --summary "..." --validation "..." --next "..."
+
+Local state (gitignored): `.sdlc/pointer`, `.sdlc/workflows/`.
+
+In the orchestrator repo, use `./scripts/sdlc.sh` instead of `./scripts/sdlc-spdd/sdlc.sh`.
+
 ## Session Handoff
 
-Start or resume:
+Start or resume (prefer workflow CLI):
+
+    ./scripts/sdlc-spdd/sdlc.sh resume <WORK-ID> --phase <phase>
+    ./scripts/sdlc-spdd/sdlc.sh start
+
+Low-level equivalent:
 
     ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase> [--milestone milestone-1.md]
 
@@ -73,7 +113,11 @@ Check previous work:
 
     ./scripts/sdlc-spdd/resync-agent-session.sh --target . --work-id <WORK-ID> --check-only
 
-Capture memory:
+Capture memory (prefer guarded capture):
+
+    ./scripts/sdlc-spdd/sdlc.sh capture --summary "<summary>" --validation "<tests>" --next "<next command>"
+
+Low-level equivalent:
 
     ./scripts/sdlc-spdd/capture-session-memory.sh --target . --work-id <WORK-ID> --phase <phase> --summary "<summary>" --validation "<tests>" --next "<next command>"
 
@@ -129,6 +173,7 @@ and continue to planning:
 
 | Need | Command |
 |------|---------|
+| What now? (orientation) | `/sdlc-spdd-whereami` or `./scripts/sdlc-spdd/sdlc.sh next` |
 | Initialize repo context | `/sdlc-spdd-init` |
 | Analyze requirement + scope code areas | `/sdlc-spdd-analysis @requirements/file.md` |
 | Turn analysis into canvas | `/sdlc-spdd-plan @spdd/analysis/WORK-ID-analysis.md` |
@@ -165,9 +210,15 @@ Canvas Metadata should include:
 
 Use Jira for status and ownership. Use GitHub Pages for published docs and runbooks.
 
-Create Jira draft:
+Create Jira draft in the milestone requirement file:
 
-    Draft a Jira issue with summary, business value, scope in/out, Given/When/Then acceptance criteria, labels, components, and links.
+    requirements/milestones/<WORK-ID>.md   →   ## Jira (Key, Summary, Type, Acceptance, …)
+
+See [requirements/milestones/README.md](../requirements/milestones/README.md). On claim, `./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>` auto-links the Key into `work-registry.tsv`.
+
+Draft for Jira UI:
+
+    Draft a Jira issue from requirements/milestones/<WORK-ID>.md ## Jira. Include summary, business value, scope in/out, Given/When/Then acceptance criteria, labels, components, and links.
 
 Sync Jira:
 

@@ -79,9 +79,9 @@ Use when work is already on `milestone-*.md` or `ROADMAP.md`.
 | A3 | **SPDD** | `/sdlc-spdd-analysis @requirements/milestones/<WORK-ID>.md @ROADMAP.md @milestone-1.md`, then `./scripts/sdlc-spdd/index-spdd-analysis.sh --target . --work-id <WORK-ID>` |
 | A4 | **SPDD** | `/sdlc-spdd-plan @spdd/analysis/<WORK-ID>-analysis.md` (requires the analysis artifact from A3) |
 | A5 | **SPDD** | `/sdlc-spdd-architect @spdd/canvas/<WORK-ID>.md` — wait for Ready For Coding |
-| A6 | **SDLC** | `./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase code --milestone milestone-1.md` — session brief at **code** phase because analysis/plan/architect may span earlier chats; re-run with the matching `--phase` whenever the phase changes |
+| A6 | **SDLC** | `./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>` then `sdlc.sh resume <WORK-ID> --phase code` and `sdlc.sh start` — session brief at **code** phase because analysis/plan/architect may span earlier chats; re-run with the matching phase whenever it changes |
 | A7 | **SDLC + SPDD** | `/sdlc-spdd-code @spdd/canvas/<WORK-ID>.md operation T01` → api-test → review → sync |
-| A8 | **SDLC + Planning** | `capture-session-memory.sh` with `--milestone` and `--roadmap-note` |
+| A8 | **SDLC + Planning** | `./scripts/sdlc-spdd/sdlc.sh capture ...` with `--milestone` and `--roadmap-note` |
 | A9 | **Planning ← SPDD** | `./scripts/sdlc-spdd/sync-roadmap-from-spdd.sh --target .` |
 
 ### Entry B — Start from an ad-hoc requirement
@@ -91,7 +91,7 @@ Use when a bug, feature request, or spike arrives without a milestone item yet.
 | Step | Part | Action |
 |------|------|--------|
 | B1 | **SDLC** | Triage: propose Work ID and whether `/sdlc-spdd-analysis` is safe |
-| B2 | **SDLC** | `./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase analysis` |
+| B2 | **SDLC** | `./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>` then `sdlc.sh resume <WORK-ID> --phase analysis` and `sdlc.sh start` |
 | B3 | **SPDD** (+ Planning if applicable) | `/sdlc-spdd-analysis @requirements/<file>.md` or with `@ROADMAP.md @milestone-1.md`, then `./scripts/sdlc-spdd/index-spdd-analysis.sh --target . --work-id <WORK-ID>` |
 | B4 | **SPDD** | `/sdlc-spdd-plan @spdd/analysis/<WORK-ID>-analysis.md` (requires the analysis artifact from B3) |
 | B5 | **SPDD** | `/sdlc-spdd-architect @spdd/canvas/<WORK-ID>.md` |
@@ -105,14 +105,14 @@ Once initialized, repeat this loop every agent session:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  SDLC: resync + start-agent-session (session brief)         │
+│  SDLC: sdlc.sh next/whereami → claim/resume → start (session brief) │
 │         ↓ paste Resume Prompt (Session prompt standard)     │
 ├─────────────────────────────────────────────────────────────┤
 │  SPDD: work one phase — plan / architect / code / review      │
 │         ↓ canvas governs scope; prompt-update if intent     │
 │           changed; sync if implementation drifted           │
 ├─────────────────────────────────────────────────────────────┤
-│  SDLC + Planning: capture-session-memory                    │
+│  SDLC + Planning: sdlc.sh capture (guarded)                 │
 │         ↓ session-notes + milestone + roadmap note          │
 ├─────────────────────────────────────────────────────────────┤
 │  Planning: sync-roadmap-from-spdd (when summary stale)      │
@@ -123,7 +123,7 @@ Once initialized, repeat this loop every agent session:
 
 | Part | Do this |
 |------|---------|
-| SDLC | `resync-agent-session.sh --check-only` then `start-agent-session.sh` |
+| SDLC | `./scripts/sdlc-spdd/sdlc.sh next` or `/sdlc-spdd-whereami`, then `claim`/`resume` + `start` |
 | SDLC | Paste **Resume Prompt** from `current-session.md` |
 | Planning | Resume prompt includes `@ROADMAP.md`, `@milestone-*.md`, `@session-notes/` when present |
 
@@ -139,7 +139,7 @@ Once initialized, repeat this loop every agent session:
 
 | Part | Do this |
 |------|---------|
-| SDLC | `capture-session-memory.sh` — writes durable memory + progress log |
+| SDLC | `./scripts/sdlc-spdd/sdlc.sh capture` — writes durable memory + progress log |
 | Planning | Same script writes `session-notes/`, optional `--milestone`, `--roadmap-note` |
 | SPDD | Set `--next` to the next phase command (review, sync, next operation) |
 
@@ -152,7 +152,7 @@ Maps the [15-step workflow](workflow.md) to the three parts:
 | 1 | Setup prompts and memory | SDLC | Planning scaffolding created |
 | 2 | `/sdlc-spdd-init` | SDLC | Detects stack into memory |
 | 3 | `create-work-from-milestone.sh` | Planning | Creates SPDD draft canvas |
-| 4 | `start-agent-session.sh` | SDLC | Reads Planning + SPDD status |
+| 4 | `sdlc.sh claim` + `start` (or `resume` + `start`) | SDLC | Reads Planning + SPDD status; sets pointer |
 | 5 | `/sdlc-spdd-analysis` + `index-spdd-analysis.sh` | SPDD | Keywords + code areas into memory |
 | 6 | `/sdlc-spdd-plan` | SPDD | Planning context in prompt |
 | 7 | `/sdlc-spdd-architect` | SPDD | SDLC architecture-first gate |
@@ -162,7 +162,7 @@ Maps the [15-step workflow](workflow.md) to the three parts:
 | 11 | `/sdlc-spdd-prompt-update` | SPDD | When intent changes |
 | 12 | `/sdlc-spdd-retro` | SDLC | Writes reusable memory |
 | 13 | `/sdlc-spdd-sync` | SPDD | Reconciles canvas with code |
-| 14 | `capture-session-memory.sh` | SDLC + Planning | Session notes, milestone |
+| 14 | `sdlc.sh capture` | SDLC + Planning | Session notes, milestone |
 | 15 | `sync-roadmap-from-spdd.sh` | Planning | Summary from SPDD metadata |
 
 ## Decision Guide: Which Part Right Now?
@@ -174,7 +174,7 @@ Maps the [15-step workflow](workflow.md) to the three parts:
       -> SPDD (canvas, operations, prompt-update, sync)
 
     Am I running a session, phase, or handoff?
-      -> SDLC (start-agent-session, phase commands, capture-memory)
+      -> SDLC (sdlc.sh, phase commands, whereami)
 
     Not sure?
       -> Start SDLC session brief, then let the canvas and milestone files guide you
@@ -191,7 +191,7 @@ Open **Session** first. Open **SPDD** or **Planning** when your question narrows
 
 ## Session Brief Timing
 
-Run `start-agent-session.sh` with `--phase` set to the phase you are **about to run**, then paste the generated Resume Prompt.
+Run `./scripts/sdlc-spdd/sdlc.sh claim` / `resume` + `start` with the phase you are **about to run**, then paste the generated Resume Prompt. Re-run `sdlc.sh advance` when you complete a phase step.
 
 | Entry | When to create the first brief |
 |-------|-------------------------------|
@@ -199,7 +199,7 @@ Run `start-agent-session.sh` with `--phase` set to the phase you are **about to 
 | **B** (ad-hoc) / **First day** | At **analysis** phase, before `/sdlc-spdd-analysis` |
 | **Daily resume** | At whatever phase you are resuming today |
 
-Re-run the script whenever the phase changes so `current-session.md` stays accurate.
+Re-run `sdlc.sh start` (or `start-agent-session.sh`) whenever the phase changes so `current-session.md` stays accurate.
 
 ## Conflict Resolution (single rule)
 
@@ -225,9 +225,9 @@ When layers disagree, use this order:
 | Mistake | Wrong part emphasis | Fix |
 |---------|---------------------|-----|
 | Coding without a canvas | Skipped SPDD | Plan + architect first |
-| Putting implementation detail only in chat | Skipped SDLC capture | `capture-session-memory.sh` |
+| Putting implementation detail only in chat | Skipped SDLC capture | `sdlc.sh capture` |
 | Replacing canvas with milestone checklist | Planning replaced SPDD | Milestone informs; canvas governs |
-| "Continue" without session brief | Skipped SDLC handoff | `start-agent-session.sh` + resume prompt |
+| "Continue" without session brief | Skipped SDLC handoff | `sdlc.sh start` + resume prompt |
 | Updating roadmap but not canvas | Planning without SPDD | `prompt-update` then `sync-roadmap-from-spdd` |
 
 ## First Time vs Daily Use

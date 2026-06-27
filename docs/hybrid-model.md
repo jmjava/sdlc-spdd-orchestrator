@@ -101,9 +101,10 @@ The hybrid model is operationalized with scripts:
 | Need | Script | Hybrid role |
 |------|--------|-------------|
 | Install prompts and artifacts | `scripts/setup-agent-prompts.sh` | Creates assistant adapters plus SPDD artifact folders and SDLC memory/playbooks |
-| Start a new session | `scripts/sdlc-spdd/start-agent-session.sh` | Builds an SDLC handoff brief anchored to SPDD artifacts |
+| Start a new session | `scripts/sdlc-spdd/sdlc.sh start` (or `start-agent-session.sh`) | Builds an SDLC handoff brief anchored to SPDD artifacts; sets pointer |
+| Orient / team | `scripts/sdlc-spdd/sdlc.sh next`, `team`, `claim` | Local phase tracking + committed team registry |
 | Resync previous work | `scripts/sdlc-spdd/resync-agent-session.sh` | Checks or reconciles canvas copies and validates the REASONS contract |
-| Capture session learning | `scripts/sdlc-spdd/capture-session-memory.sh` | Persists retro-style memory for future agents |
+| Capture session learning | `scripts/sdlc-spdd/sdlc.sh capture` (or `capture-session-memory.sh`) | Guarded persist of retro-style memory for future agents |
 | Create work from milestones | `scripts/sdlc-spdd/create-work-from-milestone.sh` | Maps project planning items into SDLC-SPDD Work IDs and draft canvases |
 | Refresh roadmap | `scripts/sdlc-spdd/sync-roadmap-from-spdd.sh` | Summarizes governed canvas state back into `ROADMAP.md` |
 | Import session notes | `scripts/sdlc-spdd/summarize-session-notes.sh` | Converts existing narrative session notes into durable memory |

@@ -24,6 +24,7 @@ Open the **target project** in Cursor. Open **Chat** or **Agent**. Type `/` and 
 
 | Command | Purpose |
 |---------|---------|
+| `/sdlc-spdd-whereami` | Orient: team registry, active Work ID, phase, gates, next command |
 | `/sdlc-spdd-init` | Bootstrap project folders and memory |
 | `/sdlc-spdd-analysis` | Fowler Step 3: domain keywords, scoped code scan, analysis artifact |
 | `/sdlc-spdd-plan` | Create REASONS Canvas from accepted analysis |
@@ -37,6 +38,7 @@ Open the **target project** in Cursor. Open **Chat** or **Agent**. Type `/` and 
 
 ## Tips
 
+- Run `/sdlc-spdd-whereami` or `./scripts/sdlc-spdd/sdlc.sh next` at session start for orientation.
 - Reference files with `@` paths in Cursor prompts.
 - Keep planning and architect phases free of application code changes.
 - Run review after each coding operation when possible.

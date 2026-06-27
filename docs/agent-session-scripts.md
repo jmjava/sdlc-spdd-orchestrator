@@ -15,6 +15,7 @@ They solve three operational needs:
 |--------|---------|
 | `scripts/setup-agent-prompts.sh` | Integrated setup for folders, memory, sessions, playbooks, Cursor prompts, Copilot prompts, and Claude Code commands |
 | `scripts/upgrade-project.sh` | Framework-only upgrade for older initialized projects without overwriting implementation files or existing memory |
+| `scripts/sdlc-spdd/sdlc.sh` | Workflow CLI: `next`, `claim`, `resume`, `advance`, `skip`, `shelf`, `sync`, `capture`, `team`, `list-work` |
 | `scripts/sdlc-spdd/start-agent-session.sh` | Target-local script that creates a session brief for a new agent |
 | `scripts/sdlc-spdd/resync-agent-session.sh` | Target-local script that checks or reconciles feature/canonical canvases, validates the canvas, and creates a session brief |
 | `scripts/sdlc-spdd/capture-session-memory.sh` | Target-local script that persists current session summary, validation, decisions, pitfalls, patterns, and next steps |
@@ -64,6 +65,11 @@ The target app receives:
 - `.github/prompts/`
 - `CLAUDE.md` when missing
 - `.claude/commands/`
+- `agent-context/sdlc-pointer.sh` (local Work ID pointer)
+- `agent-context/sdlc-workflow.sh` (phase/gate tracking)
+- `agent-context/sdlc-team-registry.sh` (team claims)
+- `agent-context/work-registry.tsv` (committed team registry)
+- `scripts/sdlc-spdd/sdlc.sh` (workflow CLI wrapper)
 - `scripts/sdlc-spdd/` runtime session scripts
 
 ## Upgrade an Older Installation
@@ -195,23 +201,36 @@ areas are resolved** for the session. See [Context loading and scaling](context-
 
 ## Recommended Daily Loop
 
+Orient and claim:
+
+    ./scripts/sdlc-spdd/sdlc.sh next
+    ./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>    # commit work-registry.tsv on shared repos
+
 Start or resume:
 
+    ./scripts/sdlc-spdd/sdlc.sh resume <WORK-ID> [--phase <phase>]
+    ./scripts/sdlc-spdd/sdlc.sh start
+
+Optional canvas sync check:
+
     ./scripts/sdlc-spdd/resync-agent-session.sh --target . --work-id <WORK-ID> --check-only
-    ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase>
 
 Invoke the SDLC-SPDD skill:
 
     /sdlc-spdd-code @spdd/canvas/<WORK-ID>.md operation T01
+
+After completing a phase step:
+
+    ./scripts/sdlc-spdd/sdlc.sh advance
 
 Review and sync:
 
     /sdlc-spdd-review @spdd/canvas/<WORK-ID>.md
     /sdlc-spdd-sync @spdd/canvas/<WORK-ID>.md
 
-Capture memory:
+Capture memory (guarded):
 
-    ./scripts/sdlc-spdd/capture-session-memory.sh --target . --work-id <WORK-ID> --phase <phase> --summary "<summary>" --validation "<tests>" --next "<next command>"
+    ./scripts/sdlc-spdd/sdlc.sh capture --summary "<summary>" --validation "<tests>" --next "<next command>"
 
 Map milestone planning into SPDD work:
 

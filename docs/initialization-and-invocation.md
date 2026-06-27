@@ -44,8 +44,8 @@ The command runs as a chat message. Claude Code reads `.claude/commands/sdlc-spd
 
 | Kind | Example | Where you run it |
 |------|---------|------------------|
-| **Shell** (terminal) | `./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id FEAT-001 --phase plan` | Terminal in the target project |
-| **Assistant** (chat) | `/sdlc-spdd-init`, `/sdlc-spdd-plan @requirements/foo.md` | Cursor, Copilot, or Claude Code **chat** input |
+| **Shell** (terminal) | `./scripts/sdlc-spdd/sdlc.sh next`, `./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>` | Terminal in the target project |
+| **Assistant** (chat) | `/sdlc-spdd-whereami`, `/sdlc-spdd-init`, `/sdlc-spdd-plan @requirements/foo.md` | Cursor, Copilot, or Claude Code **chat** input |
 
 All `/sdlc-spdd-*` lines in the docs are **assistant commands** unless they start with `./` or `cd`.
 
@@ -97,18 +97,24 @@ Script sequence and checklists: [Morning or Start-of-Session Check](daily-runboo
 
 Before asking a new agent to continue previous work:
 
-1. Check canvas sync (optional, does not create a session brief):
+1. Orient:
 
-       ./scripts/sdlc-spdd/resync-agent-session.sh --target . --work-id FEAT-001-order-status-api --check-only
+       ./scripts/sdlc-spdd/sdlc.sh next
 
-2. Create a session brief:
+   In chat: `/sdlc-spdd-whereami`
+
+2. Claim or resume and open a session brief:
 
        cd /path/to/your/project
-       ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id FEAT-001-order-status-api --phase code
+       ./scripts/sdlc-spdd/sdlc.sh claim FEAT-001-order-status-api
+       ./scripts/sdlc-spdd/sdlc.sh resume FEAT-001-order-status-api --phase code
+       ./scripts/sdlc-spdd/sdlc.sh start
 
 3. **Paste the Resume Prompt** from `agent-context/sessions/current-session.md`. Do not paraphrase — the brief embeds **Resolved Context** (phase files, extensions, Work ID artifacts, area-filtered index rows) and the Resume Prompt points at only those files. See [Session prompt standard](session-prompt-standard.md).
 
-To reconcile canvas drift before step 2, use `resync-agent-session.sh --from-canvas --force` or `--from-feature --force`. Default authority: canonical `spdd/canvas/<WORK-ID>.md`.
+Optional canvas sync before step 2:
+
+       ./scripts/sdlc-spdd/resync-agent-session.sh --target . --work-id FEAT-001-order-status-api --check-only
 
 ## How to Start Work
 
@@ -231,4 +237,4 @@ If a refactor changes only internal structure, review the change and then sync t
 
 End each meaningful session by persisting memory:
 
-    ./scripts/sdlc-spdd/capture-session-memory.sh --target . --work-id <WORK-ID> --phase <phase> --summary "<summary>" --validation "<tests>" --next "<next command>"
+    ./scripts/sdlc-spdd/sdlc.sh capture --summary "<summary>" --validation "<tests>" --next "<next command>"

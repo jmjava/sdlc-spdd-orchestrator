@@ -28,6 +28,8 @@ Use roadmap, milestone, and session-note files for project planning and narrativ
 5. [Top useful concepts and commands](useful-concepts-and-commands.md) — Work IDs, canvases, sessions, commands, and prompt patterns.
 6. [Maintaining your project](maintaining-your-project.md) — upgrades, memory hygiene, canvas sync, links, and session maintenance.
 
+**Workflow CLI reference** (pointer, phase tracking, team registry): [agent-context/README.md](../agent-context/README.md#sdlc-pointer-current-choretask) — installed in target projects at `agent-context/README.md`.
+
 You can treat these six pages as the canonical onboarding path.
 
 ## If You Are Installing or Upgrading
@@ -60,6 +62,7 @@ Also useful day to day:
 | [Roadmap, milestones, and session notes](roadmap-milestones-and-session-notes.md) | You use `ROADMAP.md`, `milestone-*.md`, and `session-notes/` to track project progress |
 | [Top useful concepts and commands](useful-concepts-and-commands.md) | You want definitions for Work ID, canvas, sync, memory |
 | [Cheat sheet](sdlc-spdd-cheat-sheet.md) | You want a one-page PDF-friendly **command** reference |
+| [agent-context/README.md](../agent-context/README.md) | You need workflow CLI, pointer, or team registry detail |
 
 ## If You Are Integrating with Jira or GitHub
 

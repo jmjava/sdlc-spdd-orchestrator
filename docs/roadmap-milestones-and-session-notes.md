@@ -108,12 +108,18 @@ Create one item:
 
 This creates:
 
-- `requirements/milestones/<WORK-ID>.md`
+- draft Work IDs and canvases
+- `requirements/milestones/<WORK-ID>.md` stubs with a scaffolded `## Jira` section
+- **Linked Work** rows in the milestone file
 - `agent-context/features/<WORK-ID>/` (feature workspace; `requirement.md` points to canonical milestone requirement)
 - `agent-context/features/<WORK-ID>/reasons-canvas.md`
 - `agent-context/features/<WORK-ID>/progress-log.md`
 - `spdd/canvas/<WORK-ID>.md`
 - a generated work map entry in the milestone file
+
+Claim work and commit the team registry on shared repos:
+
+    ./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>
 
 The generated canvas is a draft. Continue with:
 
@@ -123,6 +129,11 @@ The generated canvas is a draft. Continue with:
 ## Starting a Session
 
 The session-start script includes roadmap, milestone, and today's session-note status in the generated handoff:
+
+    ./scripts/sdlc-spdd/sdlc.sh resume FEAT-001-order-status-api --phase code
+    ./scripts/sdlc-spdd/sdlc.sh start
+
+Low-level equivalent:
 
     ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id FEAT-001-order-status-api --phase code
 
@@ -142,12 +153,9 @@ By default, session capture appends to:
 
     session-notes/YYYY-MM-DD.md
 
-Example:
+Example (prefer guarded capture):
 
-    ./scripts/sdlc-spdd/capture-session-memory.sh \
-      --target . \
-      --work-id FEAT-001-order-status-api \
-      --phase code \
+    ./scripts/sdlc-spdd/sdlc.sh capture \
       --summary "Implemented T01 for order status lookup." \
       --validation "mvn test" \
       --milestone milestone-1.md \

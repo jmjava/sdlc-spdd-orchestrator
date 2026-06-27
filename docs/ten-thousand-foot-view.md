@@ -91,6 +91,7 @@ This is deliberately slower than asking an assistant to "just fix it." It is mea
 
 | Skill | Role |
 |-------|------|
+| `/sdlc-spdd-whereami` | orient: team registry, phase, next command |
 | `/sdlc-spdd-init` | initialize project context |
 | `/sdlc-spdd-plan` | turn a requirement into a canvas |
 | `/sdlc-spdd-architect` | harden design before coding |
@@ -106,9 +107,10 @@ This is deliberately slower than asking an assistant to "just fix it." It is mea
 |--------|------|
 | `setup-agent-prompts.sh` | install the combined framework into a target app |
 | `upgrade-project.sh` | upgrade framework-owned files in an older install |
-| `start-agent-session.sh` | generate a session handoff brief |
+| `sdlc.sh` | daily workflow CLI: pointer, phases, claim, capture, team |
+| `start-agent-session.sh` | generate a session handoff brief (low-level; prefer `sdlc.sh start`) |
 | `resync-agent-session.sh` | check or reconcile canvas drift |
-| `capture-session-memory.sh` | persist session outcomes |
+| `capture-session-memory.sh` | persist session outcomes (low-level; prefer `sdlc.sh capture`) |
 | `validate-reasons-canvas.sh` | validate canvas structure |
 
 ## How Work Flows Through the System

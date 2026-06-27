@@ -15,7 +15,7 @@ SDLC Agents advertises six capabilities that distinguish it from undifferentiate
 | **Extension support** | Add custom skills without modifying core agent files | Load extensions only when relevant | **Adopted** | `agent-context/extensions/` + `resolve-agent-context.sh` + session brief **Resolved Context** |
 | **Dynamic skill selection** | `#SkillName` to include, `!SkillName` to exclude | On-demand loading saves tokens | **Adopted** | `resolve-agent-context.sh --text`; example skills in `extensions/skills/` |
 | **Architecture-first** | Structure validated before implementation | Prevents costly rework iterations | **Adopted** | `/sdlc-spdd-architect` → **Ready For Coding** gate before `/sdlc-spdd-code` |
-| **Multi-agent orchestration** | Specialized agents with clear handoffs | Each agent loads minimal context | **Adopted** (prompt-based) | One `/sdlc-spdd-*` command per phase; `start-agent-session.sh` Resume Prompt handoffs |
+| **Multi-agent orchestration** | Specialized agents with clear handoffs | Each agent loads minimal context | **Adopted** (prompt-based) | One `/sdlc-spdd-*` command per phase; `sdlc.sh start` + Resume Prompt handoffs |
 
 We do **not** ship SDLC Agents' compiled multi-agent runtime. Skill and extension paths are resolved by `resolve-agent-context.sh` and embedded in session briefs — not injected silently on every chat request.
 
@@ -157,7 +157,7 @@ SDLC Agents runs specialized agents with clear responsibilities. This orchestrat
 
     Analysis → Plan → Architect → Code → API Test → Review → Retro → Sync
 
-**Session glue:** `start-agent-session.sh` writes `current-session.md` with Framework Orientation + Resume Prompt — the paste-this handoff between chats. Re-run with `--phase` when the phase changes.
+**Session glue:** `./scripts/sdlc-spdd/sdlc.sh start` (backed by `start-agent-session.sh`) writes `current-session.md` with Framework Orientation + Resume Prompt — the paste-this handoff between chats. Use `sdlc.sh advance` when the phase changes, then re-run `start`.
 
 Each command pack states **do not** do the next agent's job (for example plan does not code; architect does not implement).
 
@@ -200,7 +200,7 @@ Each command pack states **do not** do the next agent's job (for example plan do
 | Multi-agent orchestration | Phase command packs; `start-agent-session.sh` handoffs |
 | Phase agents | `templates/cursor/sdlc-spdd-*.md`, Copilot/Claude command packs |
 | Index retrieval | `agent-context/memory/*-index.md` |
-| Session handoff | `start-agent-session.sh` → `current-session.md` |
+| Session handoff | `sdlc.sh start` → `current-session.md`; orient with `/sdlc-spdd-whereami` |
 | Curator-like sync | `/sdlc-spdd-sync`, `summarize-session-notes.sh` |
 
 ## Read next

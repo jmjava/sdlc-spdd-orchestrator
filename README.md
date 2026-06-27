@@ -53,7 +53,8 @@ This repo uses **two kinds** of commands. They run in different places — do no
 | -------------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------- |
 | **Assistant** (AI chat)    | `/sdlc-spdd-init`, `/sdlc-spdd-plan @requirements/foo.md`   | **Cursor Chat**, **Copilot Chat**, or **Claude Code** in your target project |
 | **Shell — install** (once) | `./scripts/setup-agent-prompts.sh --target ...`             | Terminal in the **orchestrator repo** clone                                  |
-| **Shell — daily use**      | `./scripts/sdlc-spdd/start-agent-session.sh --target . ...` | Terminal in your **installed target project**                                |
+| **Shell — daily use**      | `./scripts/sdlc-spdd/sdlc.sh next`, `./scripts/sdlc-spdd/sdlc.sh claim …` | Terminal in your **installed target project**                                |
+| **Shell — orchestrator**   | `./scripts/sdlc.sh next` (same CLI, orchestrator repo layout)             | Terminal in the **orchestrator repo** clone (dogfooding)                     |
 
 Install/upgrade/verify from the orchestrator clone use `./scripts/<name>.sh`. After install, runtime scripts live in the target at `./scripts/sdlc-spdd/`. See [Script paths](CONTRIBUTING.md#script-paths-orchestrator-vs-target).
 
@@ -162,11 +163,12 @@ The system uses a three-layer flow:
 Progressive disclosure is enforced through session briefs and indexes — not by loading whole directories.
 
 1. **Tier 1 (automatic)** — each assistant injects one small grounding file (`.cursor/rules/sdlc-spdd.mdc`, `.github/copilot-instructions.md`, or `CLAUDE.md`) on every request.
-2. **Tier 2 (on demand)** — `start-agent-session.sh` writes `agent-context/sessions/current-session.md` with a **Resolved Context** table: phase files from `phase-index.md`, SDLC Agents extensions, Work ID artifacts, and area-filtered `context-index.md` rows (via `resolve-agent-context.sh`).
+2. **Tier 2 (on demand)** — `./scripts/sdlc-spdd/sdlc.sh start` (or `start-agent-session.sh`) writes `agent-context/sessions/current-session.md` with a **Resolved Context** table: phase files from `phase-index.md`, SDLC Agents extensions, Work ID artifacts, and area-filtered `context-index.md` rows (via `resolve-agent-context.sh`). Orient first with `./scripts/sdlc-spdd/sdlc.sh next` or `/sdlc-spdd-whereami`.
 3. **Paste the Resume Prompt** from that brief into chat — load only the files listed under Resolved Context.
-4. **Close the loop** — `capture-session-memory.sh` and `index-spdd-analysis.sh` grow the indexes for the next session.
+4. **Close the loop** — `./scripts/sdlc-spdd/sdlc.sh capture` (or `capture-session-memory.sh`) and `index-spdd-analysis.sh` grow the indexes for the next session.
 
-    ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase>
+    ./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>
+    ./scripts/sdlc-spdd/sdlc.sh start
     ./scripts/sdlc-spdd/resolve-agent-context.sh --target . --phase code --work-id <WORK-ID>   # refresh after adding skills
     ./scripts/sdlc-spdd/resolve-agent-context.sh --target . --text "Implement retry #TDD #java"
 
@@ -259,6 +261,7 @@ Refresh the roadmap summary from SPDD canvases:
 
 | Command                    | Use it for                                                          |
 | -------------------------- | ------------------------------------------------------------------- |
+| `/sdlc-spdd-whereami`      | Orient: team registry, active Work ID, phase, gates, next command         |
 | `/sdlc-spdd-init`          | Initialize project context                                          |
 | `/sdlc-spdd-analysis`      | Fowler Step 3: domain keywords, scoped code scan, analysis artifact |
 | `/sdlc-spdd-plan`          | Create REASONS Canvas from accepted analysis                        |
@@ -276,6 +279,7 @@ Refresh the roadmap summary from SPDD canvases:
 | ------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
 | `scripts/setup-agent-prompts.sh`                  | Install the framework into a target project                                                           |
 | `scripts/upgrade-project.sh`                      | Upgrade framework-owned files in an existing target project                                           |
+| `scripts/sdlc-spdd/sdlc.sh`                       | Daily workflow CLI: `next`, `claim`, `resume`, `advance`, `capture`, `team`, `list-work` (orchestrator: `scripts/sdlc.sh`) |
 | `scripts/sdlc-spdd/start-agent-session.sh`        | Create `current-session.md` with **Resolved Context** and a progressive-disclosure Resume Prompt      |
 | `scripts/sdlc-spdd/resync-agent-session.sh`       | Check or reconcile feature/canonical canvas drift                                                     |
 | `scripts/sdlc-spdd/capture-session-memory.sh`     | Persist session summary, validation, decisions, pitfalls, patterns, and next steps                    |

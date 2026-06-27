@@ -37,6 +37,10 @@ This installs:
 - `agent-context/playbooks/`
 - `agent-context/features/`
 - `agent-context/sessions/`
+- `agent-context/sdlc-pointer.sh` (local Work ID pointer; `.sdlc/pointer`)
+- `agent-context/sdlc-workflow.sh` (phase/gate tracking; `.sdlc/workflows/`)
+- `agent-context/sdlc-team-registry.sh` (team claims)
+- `agent-context/work-registry.tsv` (committed team registry — claim/release/shelf)
 - `agent-context/harness/`
 - `docs/sdlc-spdd/` (start at `docs/sdlc-spdd/README.md` — lean hub for this project)
 - `.cursor/commands/`
@@ -50,6 +54,7 @@ This installs:
 
 The target-local `scripts/sdlc-spdd/` folder includes session scripts and mapping tools:
 
+- `sdlc.sh` (workflow CLI wrapper — `next`, `claim`, `capture`, etc.)
 - `start-agent-session.sh`
 - `resync-agent-session.sh`
 - `capture-session-memory.sh`
@@ -124,10 +129,16 @@ In **AI chat** (not the terminal), initialize project context. `/sdlc-spdd-init`
 
     /sdlc-spdd-init
 
-Optional — create a first session brief from the **terminal**:
+Optional — orient and claim from the **terminal**:
 
     cd /path/to/app
-    ./scripts/sdlc-spdd/start-agent-session.sh --target . --phase init
+    ./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>
+    ./scripts/sdlc-spdd/sdlc.sh next
+
+Or create a first session brief:
+
+    ./scripts/sdlc-spdd/sdlc.sh start
+    # or: ./scripts/sdlc-spdd/start-agent-session.sh --target . --phase init
 
 Then ask:
 
@@ -158,7 +169,7 @@ The script asserts the **three-part scaffold**, with emphasis on Planning artifa
 |------|----------------|
 | **Planning** | `requirements/`, `requirements/milestones/`, `session-notes/`, `ROADMAP.md`, `milestone-*.md` |
 | **SPDD** | `spdd/canvas/`, `spdd/tasks/`, `spdd/reviews/`, `spdd/sync/` |
-| **SDLC** | `agent-context/memory/`, `sessions/`, `playbooks/`, harness, runtime scripts |
+| **SDLC** | `agent-context/memory/`, `sessions/`, `playbooks/`, harness, `sdlc-pointer.sh`, `sdlc-workflow.sh`, `sdlc-team-registry.sh`, `work-registry.tsv`, runtime scripts including `sdlc.sh` |
 
 Exit code `0` means the install is complete. Non-zero lists missing items and suggests re-running setup.
 
@@ -166,7 +177,7 @@ Exit code `0` means the install is complete. Non-zero lists missing items and su
 
 Avoid hand-editing generated framework prompt files unless you intend to keep local customizations:
 
-- `.cursor/commands/sdlc-spdd-*.md`
+- `.cursor/commands/sdlc-spdd-*.md` (includes `sdlc-spdd-whereami`)
 - `.cursor/rules/sdlc-spdd.mdc`
 - `.github/prompts/sdlc-spdd-*.prompt.md`
 - `.github/copilot-instructions.md`
@@ -179,7 +190,10 @@ Team-specific process guidance should usually live in:
 
 - `agent-context/playbooks/`
 - `agent-context/memory/`
+- `agent-context/work-registry.tsv` (team claims — edit via `sdlc.sh claim`/`release`, then commit)
 - project docs
+
+**Local agent state** (gitignored, do not commit): `.sdlc/pointer` and `.sdlc/workflows/` under the repo root.
 
 Keep application-specific documentation outside `docs/sdlc-spdd/` so framework upgrades can refresh SDLC-SPDD docs safely.
 

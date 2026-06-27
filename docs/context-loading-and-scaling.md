@@ -88,13 +88,15 @@ point at the few artifacts that matter for the current Work ID, phase, or code a
 |-------|------|------------|
 | **1 — Install** | Once (`setup-agent-prompts.sh` / `init-project.sh`) | Tier 1 grounding files, memory seeds, `phase-index.md`, runtime scripts under `scripts/sdlc-spdd/`, framework docs under `docs/sdlc-spdd/` |
 | **2 — Every request** | Automatic (no script) | Tier 1 grounding injects operating model, artifact locations, and index-based loading rules on **every** chat request |
-| **3 — Every session** | `start-agent-session.sh` before work | `agent-context/sessions/current-session.md` — Framework Orientation, **Resolved Context** (from `resolve-agent-context.sh`), artifact status, **Resume Prompt** (paste verbatim into chat) |
-| **4 — Cold start** | Chat opened without a fresh brief | Tier 2 still applies; read existing `current-session.md` or re-run `start-agent-session.sh` — do not guess Work ID or scan directories |
-| **Close the loop** | `capture-session-memory.sh` at session end | Indexes grow (`context-index`, `session-index`, `code-areas`) so the next bootstrap into the same area finds prior context immediately |
+| **3 — Every session** | `sdlc.sh start` (or `start-agent-session.sh`) before work | `agent-context/sessions/current-session.md` — Framework Orientation, **Resolved Context** (from `resolve-agent-context.sh`), artifact status, **Resume Prompt** (paste verbatim into chat) |
+| **4 — Cold start** | Chat opened without a fresh brief | Tier 2 still applies; run `./scripts/sdlc-spdd/sdlc.sh next` or `/sdlc-spdd-whereami`, then read existing `current-session.md` or re-run `sdlc.sh start` — do not guess Work ID or scan directories |
+| **Close the loop** | `sdlc.sh capture` at session end | Indexes grow (`context-index`, `session-index`, `code-areas`) so the next bootstrap into the same area finds prior context immediately |
 
 **Layer 3 detail** — before meaningful work in a new chat:
 
-    ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase>
+    ./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>
+    ./scripts/sdlc-spdd/sdlc.sh resume <WORK-ID> --phase <phase>
+    ./scripts/sdlc-spdd/sdlc.sh start
 
 The brief opens with **Framework Orientation** (pointers to grounding, framework
 docs, and retrieval indexes), then **Resolved Context** (phase files, extensions,
@@ -105,11 +107,11 @@ combine — load only files listed under Resolved Context.
 ```mermaid
 flowchart TD
   Install["setup-agent-prompts.sh (once)"] --> Grounding["Tier 1 grounding\n(every request)"]
-  Grounding --> SessionStart["start-agent-session.sh\n(each new chat)"]
+  Grounding --> SessionStart["sdlc.sh start\n(each new chat)"]
   SessionStart --> Brief["current-session.md\nFramework Orientation + Resume Prompt"]
   Brief --> Indexes["Load via indexes\n(not directory scans)"]
   Indexes --> Work["Work ID canvas + matched context"]
-  Work --> Capture["capture-session-memory.sh"]
+  Work --> Capture["sdlc.sh capture"]
   Capture --> Grow["context-index, session-index,\ncode-areas grow"]
   Grow --> SessionStart
 ```

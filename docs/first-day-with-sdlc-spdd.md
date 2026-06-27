@@ -6,7 +6,7 @@ For the full Planning → SPDD → SDLC path beyond day one, see [Three-part ope
 
 The goal for day one is not to automate everything. The goal is to create a small, reviewable loop:
 
-    Install -> Initialize -> Analysis -> Plan -> Architect -> Code one operation -> API Test -> Review -> Capture memory
+    Install -> Initialize -> Claim/Resume -> Analysis -> Plan -> Architect -> Code one operation -> API Test -> Review -> Capture memory
 
 ## Before You Start
 
@@ -93,15 +93,29 @@ If you are not sure which ID to use, ask:
 
     ./scripts/sdlc-spdd/create-work-from-milestone.sh --target . --milestone milestone-1.md --all
 
-This creates draft Work IDs, canvases, and **Linked Work** rows in the milestone file. Follow the **Next SPDD prompts** the script prints.
+This creates draft Work IDs, canvases, **Linked Work** rows in the milestone file, and a scaffolded `## Jira` section in each `requirements/milestones/<WORK-ID>.md` stub. Follow the **Next SPDD prompts** the script prints.
 
 Skip this step for ad-hoc requirements — go to step 5.
 
-## 5. Start a Session Brief
+## 5. Claim Work and Start a Session Brief
 
 | Part | Action |
 |------|--------|
-| SDLC | In the target application, set `--phase` to the phase you are about to run. On day one that is usually `analysis`: |
+| SDLC | Claim the Work ID (sets local pointer + team registry row). **Commit** `agent-context/work-registry.tsv` when working on a shared repo: |
+
+    ./scripts/sdlc-spdd/sdlc.sh claim FEAT-001-order-status-api
+
+Quick orientation (shell or chat):
+
+    ./scripts/sdlc-spdd/sdlc.sh next
+    /sdlc-spdd-whereami
+
+Open the session brief for the phase you are about to run. On day one that is usually `analysis`:
+
+    ./scripts/sdlc-spdd/sdlc.sh resume FEAT-001-order-status-api --phase analysis
+    ./scripts/sdlc-spdd/sdlc.sh start
+
+Equivalent low-level path:
 
     ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id FEAT-001-order-status-api --phase analysis
 
@@ -168,7 +182,8 @@ If readiness is blocked or unclear, update the canvas first.
 |------|--------|
 | SDLC + SPDD | Refresh the session brief for the code phase, then run one operation: |
 
-    ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id FEAT-001-order-status-api --phase code
+    ./scripts/sdlc-spdd/sdlc.sh advance --to code
+    ./scripts/sdlc-spdd/sdlc.sh start
     /sdlc-spdd-code @spdd/canvas/FEAT-001-order-status-api.md operation T01
 
 The coding agent should:
@@ -210,12 +225,9 @@ Review checks whether the implementation matches:
 
 | Part | Action |
 |------|--------|
-| SDLC + Planning | At the end of the session: |
+| SDLC + Planning | At the end of the session (guarded capture — pointer must match Work ID): |
 
-    ./scripts/sdlc-spdd/capture-session-memory.sh \
-      --target . \
-      --work-id FEAT-001-order-status-api \
-      --phase code \
+    ./scripts/sdlc-spdd/sdlc.sh capture \
       --summary "Implemented T01 for order status lookup." \
       --validation "Tests run: <command/result>" \
       --milestone milestone-1.md \
@@ -230,6 +242,7 @@ Review checks whether the implementation matches:
 - [ ] `/sdlc-spdd-init` completed.
 - [ ] Work ID chosen.
 - [ ] Milestone work mapped (if applicable).
+- [ ] Work claimed (`sdlc.sh claim`); team registry committed if shared repo.
 - [ ] Session brief created; Resume Prompt pasted.
 - [ ] Requirement analyzed into `spdd/analysis/<WORK-ID>-analysis.md` and indexed.
 - [ ] Analysis planned into a REASONS Canvas.
@@ -237,7 +250,7 @@ Review checks whether the implementation matches:
 - [ ] One operation implemented.
 - [ ] API tests generated.
 - [ ] Review run.
-- [ ] Memory captured.
+- [ ] Memory captured via `sdlc.sh capture`.
 
 ## Where to Go Next
 

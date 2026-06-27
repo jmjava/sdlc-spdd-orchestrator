@@ -43,6 +43,7 @@ Each phase has a dedicated command. Run `/sdlc-spdd-*` in **AI chat** (Cursor/Co
 
 | Phase | Command |
 |-------|---------|
+| Orient | `/sdlc-spdd-whereami` |
 | Initialize | `/sdlc-spdd-init` |
 | Analysis | `/sdlc-spdd-analysis` |
 | Plan | `/sdlc-spdd-plan` |
@@ -91,13 +92,18 @@ A new session can resume from files instead of reconstructing context from chat.
 - Quality gates and validation rules live in `agent-context/harness/`.
 - Playbooks provide repeatable workflows by work type.
 
-### 7. Session persistence
+### 7. Session persistence and workflow CLI
 
-Session scripts create handoff briefs and resume prompts:
+Session scripts create handoff briefs and resume prompts. The workflow CLI (`scripts/sdlc-spdd/sdlc.sh`) tracks phase, gates, and the active Work ID pointer:
 
-    ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase>
+    ./scripts/sdlc-spdd/sdlc.sh next
+    ./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>
+    ./scripts/sdlc-spdd/sdlc.sh start
+    ./scripts/sdlc-spdd/sdlc.sh capture --summary "..."
 
-Output: `agent-context/sessions/current-session.md` with artifact status, planning context, and a copy-paste resume prompt.
+Output: `agent-context/sessions/current-session.md` with artifact status, planning context, and a copy-paste resume prompt. Local state: `.sdlc/pointer`, `.sdlc/workflows/` (gitignored). Team claims: `agent-context/work-registry.tsv` (committed).
+
+In chat: `/sdlc-spdd-whereami`.
 
 ### 8. Multi-assistant adapters
 
@@ -136,7 +142,8 @@ Scripts bridge planning and governance:
 | `create-work-from-milestone.sh` | milestone -> SPDD work artifacts |
 | `sync-roadmap-from-spdd.sh` | SPDD canvas metadata -> roadmap summary |
 | `summarize-session-notes.sh` | session notes -> durable memory |
-| `capture-session-memory.sh` | session -> memory, notes, milestone, roadmap |
+| `capture-session-memory.sh` / `sdlc.sh capture` | session -> memory, notes, milestone, roadmap |
+| `sdlc.sh claim` / `team` | team Work ID registry (committed) |
 
 ## How the Three Concepts Connect in a Session
 
@@ -146,12 +153,13 @@ Typical flow:
 2. **Mapping** — `create-work-from-milestone.sh` creates Work IDs and draft canvases.
 3. **SDLC lifecycle** — plan, architect, code one operation, review.
 4. **SPDD governance** — canvas governs scope; prompt-update before behavior changes; sync after accepted drift.
-5. **Capture** — `capture-session-memory.sh` writes memory, session notes, and optional milestone/roadmap updates.
+5. **Capture** — `./scripts/sdlc-spdd/sdlc.sh capture` writes memory, session notes, and optional milestone/roadmap updates.
 6. **Summary** — `sync-roadmap-from-spdd.sh` refreshes the managed roadmap section from canvas metadata.
 
 Start-of-session bridge:
 
-    ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase code --milestone milestone-1.md
+    ./scripts/sdlc-spdd/sdlc.sh resume <WORK-ID> --phase code
+    ./scripts/sdlc-spdd/sdlc.sh start
 
 The generated resume prompt includes SDLC phase context, SPDD canvas references, and planning-layer files when present.
 

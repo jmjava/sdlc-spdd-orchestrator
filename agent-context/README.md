@@ -86,12 +86,19 @@ sdlc_init
 
 ```bash
 ./scripts/sdlc.sh              # what to do now (default)
-./scripts/sdlc.sh status       # full dashboard (auto-syncs)
-./scripts/sdlc.sh start        # open session brief at current phase
+./scripts/sdlc.sh next           # concise orientation
+./scripts/sdlc.sh status         # full dashboard (auto-syncs)
+./scripts/sdlc.sh status --json  # machine-readable status
+./scripts/sdlc.sh start          # open session brief at current phase
 ./scripts/sdlc.sh resume FEAT-001-order-status-api
 ./scripts/sdlc.sh advance
+./scripts/sdlc.sh skip api-test --reason "no HTTP surface"
+./scripts/sdlc.sh sync           # re-read artifacts into workflow state
 ./scripts/sdlc.sh shelf --reason "blocked"
+./scripts/sdlc.sh list-shelved
+./scripts/sdlc.sh list-work      # discover Work IDs in the repo
 ./scripts/sdlc.sh capture --summary "finished T02"   # pointer-guarded
+./scripts/sdlc.sh sync-team      # mark done from canvas Final Status
 ```
 
 In **code** phase, the next canvas operation (`T01`, `T02`, …) is inferred automatically from the REASONS Canvas.

@@ -27,6 +27,7 @@ This installs:
 - `.github/prompts/sdlc-spdd-prompt-update.prompt.md`
 - `.github/prompts/sdlc-spdd-retro.prompt.md`
 - `.github/prompts/sdlc-spdd-sync.prompt.md`
+- `.github/prompts/sdlc-spdd-whereami.prompt.md`
 
 ## Invoke SDLC-SPDD Skills
 
@@ -34,6 +35,7 @@ Run these in **Copilot Chat** — not in a terminal. See [How to run assistant c
 
 In GitHub Copilot Chat, invoke prompt files with slash commands:
 
+    /sdlc-spdd-whereami
     /sdlc-spdd-init
     /sdlc-spdd-analysis @requirements/order-status-api.md
     /sdlc-spdd-plan @spdd/analysis/FEAT-001-order-status-api-analysis.md

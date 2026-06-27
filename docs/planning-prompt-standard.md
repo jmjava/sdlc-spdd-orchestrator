@@ -22,7 +22,7 @@ For REASONS Canvas governance, see [SPDD prompt standard](spdd-prompt-standard.m
 |----------|------------|
 | `ROADMAP.md` | Current focus, milestone list, managed SPDD work summary |
 | `milestone-*.md` | Goal, scope checklist, linked Work IDs, milestone summaries |
-| `requirements/milestones/<WORK-ID>.md` | Milestone-derived requirement stub for plan prompts |
+| `requirements/milestones/<WORK-ID>.md` | Milestone-derived requirement stub; includes optional `## Jira` draft section |
 | `session-notes/YYYY-MM-DD.md` | Daily agent-session narrative |
 
 ## Milestone → Governed Work
@@ -35,7 +35,7 @@ Single item:
 
     ./scripts/sdlc-spdd/create-work-from-milestone.sh --target . --milestone milestone-1.md --item "Add order status API" --type feature
 
-The script prints **Next SPDD prompts** for each created Work ID.
+The script prints **Next SPDD prompts** for each created Work ID. Each stub includes a scaffolded `## Jira` section — see [requirements/milestones/README.md](../requirements/milestones/README.md).
 
 ### Plan with milestone context
 
@@ -53,11 +53,16 @@ Metadata prompt:
 
 Generate session brief (includes planning files in resume prompt when present):
 
+    ./scripts/sdlc-spdd/sdlc.sh resume <WORK-ID> --phase <phase>
+    ./scripts/sdlc-spdd/sdlc.sh start --milestone milestone-1.md
+
+Low-level equivalent:
+
     ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase> --milestone milestone-1.md
 
-Morning status with planning layer:
+Morning status with planning layer (prefer orientation first):
 
-    For <WORK-ID>, read @agent-context/sessions/current-session.md first.
+    /sdlc-spdd-whereami
 
     For <WORK-ID>, read @spdd/canvas/<WORK-ID>.md and @agent-context/features/<WORK-ID>/progress-log.md. Summarize current status, next operation, and open risks.
 

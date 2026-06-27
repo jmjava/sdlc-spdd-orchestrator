@@ -25,6 +25,7 @@ This installs:
 - `.claude/commands/sdlc-spdd-prompt-update.md`
 - `.claude/commands/sdlc-spdd-retro.md`
 - `.claude/commands/sdlc-spdd-sync.md`
+- `.claude/commands/sdlc-spdd-whereami.md`
 
 To install Cursor commands or GitHub Copilot prompt files instead, see [cursor-usage.md](cursor-usage.md) and [copilot-usage.md](copilot-usage.md). To install all three at once, use `./scripts/setup-agent-prompts.sh --target /path/to/your/project --all`.
 
@@ -38,6 +39,7 @@ Project-scoped commands installed under `.claude/commands/` are available in any
 
 | Command | Purpose |
 |---------|---------|
+| `/sdlc-spdd-whereami` | Orient: team registry, active Work ID, phase, gates, next command |
 | `/sdlc-spdd-init` | Bootstrap project folders and memory |
 | `/sdlc-spdd-analysis` | Fowler Step 3: domain keywords, scoped code scan, analysis artifact |
 | `/sdlc-spdd-plan` | Create REASONS Canvas from accepted analysis |
