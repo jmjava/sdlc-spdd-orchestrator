@@ -91,7 +91,10 @@ sdlc_init
 ./scripts/sdlc.sh resume FEAT-001-order-status-api
 ./scripts/sdlc.sh advance
 ./scripts/sdlc.sh shelf --reason "blocked"
+./scripts/sdlc.sh capture --summary "finished T02"   # pointer-guarded
 ```
+
+In **code** phase, the next canvas operation (`T01`, `T02`, …) is inferred automatically from the REASONS Canvas.
 
 The workflow manager builds on the pointer to answer **where am I?**, **what is next?**,
 and **how do I shelf or resume work?** State lives under `.sdlc/workflows/` (local,

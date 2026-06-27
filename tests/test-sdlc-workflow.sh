@@ -167,6 +167,48 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+echo "== Test 12: infers next canvas operation from REASONS Canvas =="
+T="${WORK}/ops"
+work_id="FEAT-007-ops"
+setup_feature "${T}" "${work_id}"
+cp "${REPO_ROOT}/examples/spring-boot-order-api/spdd/canvas/FEAT-001-order-status-api.md" \
+  "${T}/spdd/canvas/${work_id}.md"
+wf "${T}" resume "${work_id}" >/dev/null
+wf "${T}" sync "${work_id}" >/dev/null
+op="$(grep '^operation=' "${T}/.sdlc/workflows/${work_id}.state" | cut -d= -f2)"
+if [[ "${op}" == "T03" ]]; then ok "sync infers next operation T03"; else bad "expected T03, got ${op}"; fi
+out="$(wf "${T}" next)"
+if grep -q 'operation T03' <<< "${out}"; then ok "next recommends T03 in code command"; else bad "next missing T03 command"; fi
+json="$(wf "${T}" status --json)"
+if grep -q '"operation":"T03"' <<< "${json}" && grep -q '"operation_title"' <<< "${json}"; then
+  ok "json includes operation and title"
+else
+  bad "json missing operation fields"
+fi
+
+# ---------------------------------------------------------------------------
+echo "== Test 13: capture wrapper guards pointer =="
+T="${WORK}/capture-guard"
+work_id="FEAT-008-cap"
+setup_feature "${T}" "${work_id}"
+mkdir -p "${T}/scripts/sdlc-spdd"
+cp "${REPO_ROOT}/scripts/sdlc.sh" "${T}/scripts/sdlc-spdd/sdlc.sh"
+cp "${CAPTURE}" "${T}/scripts/sdlc-spdd/capture-session-memory.sh"
+chmod +x "${T}/scripts/sdlc-spdd/sdlc.sh" "${T}/scripts/sdlc-spdd/capture-session-memory.sh"
+SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" resume "${work_id}" >/dev/null
+if SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" capture --summary "ok" >/dev/null 2>&1; then
+  ok "capture succeeds when pointer matches"
+else
+  bad "capture should succeed for active pointer"
+fi
+SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" resume FEAT-999-other >/dev/null 2>&1 || true
+if SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" capture --work-id "${work_id}" --summary "bad" >/dev/null 2>&1; then
+  bad "capture should refuse mismatched work-id"
+else
+  ok "capture refuses stale work-id"
+fi
+
+# ---------------------------------------------------------------------------
 echo
 echo "Results: ${pass} passed, ${fail} failed"
 if [[ "${fail}" -gt 0 ]]; then

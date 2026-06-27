@@ -204,12 +204,16 @@ _wf_ensure_state() {
 sdlc_workflow_recommended_command() {
   local phase="${1:-init}"
   local work_id="${2:-}"
+  local operation="${3:-}"
+  if [[ -z "${operation}" && -n "${work_id}" ]]; then
+    operation="$(_wf_resolve_operation "${work_id}" "${phase}")"
+  fi
   case "${phase}" in
     init) echo "/sdlc-spdd-init" ;;
     analysis) echo "/sdlc-spdd-analysis @requirements/<requirement>.md" ;;
     plan) echo "/sdlc-spdd-plan @spdd/analysis/${work_id:-<WORK-ID>}-analysis.md" ;;
     architect) echo "/sdlc-spdd-architect @spdd/canvas/${work_id:-<WORK-ID>}.md" ;;
-    code) echo "/sdlc-spdd-code @spdd/canvas/${work_id:-<WORK-ID>}.md operation <T##>" ;;
+    code) echo "/sdlc-spdd-code @spdd/canvas/${work_id:-<WORK-ID>}.md operation ${operation:-<T##>}" ;;
     api-test) echo "/sdlc-spdd-api-test @spdd/canvas/${work_id:-<WORK-ID>}.md" ;;
     review) echo "/sdlc-spdd-review @spdd/canvas/${work_id:-<WORK-ID>}.md" ;;
     prompt-update) echo "/sdlc-spdd-prompt-update @spdd/canvas/${work_id:-<WORK-ID>}.md" ;;
@@ -244,21 +248,19 @@ sdlc_workflow_shell_start() {
 sdlc_workflow_shell_capture() {
   local work_id="${1:-}"
   local phase="${2:-}"
+  local helper
+  helper="$(_wf_shell_helper_path)"
   if [[ -z "${work_id}" ]]; then
     work_id="$(sdlc_get_pointer)"
   fi
   if [[ -z "${work_id}" ]]; then
-    echo "<WORK-ID>"
+    echo "${helper} capture --summary \"<summary>\""
     return 0
   fi
   if [[ -z "${phase}" ]]; then
     phase="$(_wf_read_state_var "$(_wf_state_file "${work_id}")" phase resume)"
   fi
-  if [[ -x "${SDLC_ROOT}/scripts/sdlc-spdd/capture-session-memory.sh" ]]; then
-    echo "./scripts/sdlc-spdd/capture-session-memory.sh --target . --work-id ${work_id} --phase ${phase} --summary \"<summary>\""
-  else
-    echo "./scripts/capture-session-memory.sh --target . --work-id ${work_id} --phase ${phase} --summary \"<summary>\""
-  fi
+  echo "${helper} capture --phase ${phase} --summary \"<summary>\""
 }
 
 _wf_gates_for_phase() {
@@ -323,12 +325,16 @@ sdlc_workflow_brief_markdown() {
   fi
 
   _wf_ensure_state "${work_id}"
-  local file phase operation active pending
+  local file phase operation active pending op_title
   file="$(_wf_state_file "${work_id}")"
   phase="$(_wf_read_state_var "${file}" phase init)"
   operation="$(_wf_read_state_var "${file}" operation)"
   active="$(_wf_read_state_var "${file}" active 1)"
   pending="$(_wf_pending_gates "${file}")"
+  op_title=""
+  if [[ -n "${operation}" ]]; then
+    op_title="$(_wf_operation_title "${work_id}" "${operation}")"
+  fi
 
   cat <<EOF
 | Field | Value |
@@ -336,9 +342,10 @@ sdlc_workflow_brief_markdown() {
 | Work ID | ${work_id} |
 | Workflow status | $([[ "${active}" == "1" ]] && echo active || echo shelved) |
 | Phase | ${phase} ($(( $(_wf_phase_index "${phase}") + 1 ))/${#SDLC_PHASE_ORDER[@]}) |
-| Operation | ${operation:-none} |
-| Assistant command | $(sdlc_workflow_recommended_command "${phase}" "${work_id}") |
+| Next operation | ${op_title:-${operation:-none}} |
+| Assistant command | $(sdlc_workflow_recommended_command "${phase}" "${work_id}" "${operation}") |
 | After this phase | \`./scripts/sdlc.sh advance\` |
+| Capture (guarded) | \`$(_wf_shell_helper_path) capture --summary "<summary>"\` |
 | Orient / status | \`./scripts/sdlc.sh next\` or \`/sdlc-spdd-whereami\` |
 
 $(if [[ -n "${pending}" ]]; then
@@ -371,20 +378,28 @@ sdlc_workflow_next() {
   sdlc_workflow_sync "${work_id}" >/dev/null
   _wf_ensure_state "${work_id}"
 
-  local file phase operation pending next_phase
+  local file phase operation pending next_phase op_title
   file="$(_wf_state_file "${work_id}")"
   phase="$(_wf_read_state_var "${file}" phase init)"
   operation="$(_wf_read_state_var "${file}" operation)"
   pending="$(_wf_pending_gates "${file}")"
   next_phase="$(_wf_next_phase "${phase}")"
+  op_title=""
+  if [[ -n "${operation}" ]]; then
+    op_title="$(_wf_operation_title "${work_id}" "${operation}")"
+  fi
 
   echo "== SDLC: what to do now =="
   echo "Work ID: ${work_id}"
   echo "Phase: ${phase} ($(( $(_wf_phase_index "${phase}") + 1 ))/${#SDLC_PHASE_ORDER[@]})"
-  [[ -n "${operation}" ]] && echo "Operation: ${operation}"
+  if [[ -n "${operation}" ]]; then
+    echo "Next operation: ${op_title}"
+  elif [[ "${phase}" == "code" ]]; then
+    echo "Next operation: (all canvas operations complete — advance or review)"
+  fi
   echo
   echo "Do now (assistant):"
-  echo "  $(sdlc_workflow_recommended_command "${phase}" "${work_id}")"
+  echo "  $(sdlc_workflow_recommended_command "${phase}" "${work_id}" "${operation}")"
   echo
   echo "Or run in terminal:"
   echo "  $(sdlc_workflow_shell_start "${work_id}" "${phase}")"
@@ -469,6 +484,11 @@ sdlc_workflow_status_json() {
     done
     gates_json+="}"
 
+    local op_title=""
+    if [[ -n "${operation}" ]]; then
+      op_title="$(_wf_operation_title "${work_id}" "${operation}")"
+    fi
+
     printf '{'
     printf '"pointer":"%s",' "$(_wf_json_escape "${pointer}")"
     printf '"work_id":"%s",' "$(_wf_json_escape "${work_id}")"
@@ -477,7 +497,8 @@ sdlc_workflow_status_json() {
     printf '"phase_index":%s,' "$(_wf_phase_index "${phase}")"
     printf '"phase_total":%s,' "${#SDLC_PHASE_ORDER[@]}"
     printf '"operation":"%s",' "$(_wf_json_escape "${operation}")"
-    printf '"recommended_command":"%s",' "$(_wf_json_escape "$(sdlc_workflow_recommended_command "${phase}" "${work_id}")")"
+    printf '"operation_title":"%s",' "$(_wf_json_escape "${op_title}")"
+    printf '"recommended_command":"%s",' "$(_wf_json_escape "$(sdlc_workflow_recommended_command "${phase}" "${work_id}" "${operation}")")"
     printf '"shell_start":"%s",' "$(_wf_json_escape "$(sdlc_workflow_shell_start "${work_id}" "${phase}")")"
     printf '"shell_capture":"%s",' "$(_wf_json_escape "$(sdlc_workflow_shell_capture "${work_id}" "${phase}")")"
     printf '"phases":[%s],' "${phases_json}"
@@ -506,6 +527,7 @@ SDLC workflow helper — short paths for humans and agents
   ./scripts/sdlc.sh              # full status (auto-syncs from artifacts)
   ./scripts/sdlc.sh next         # concise "what do I do now?"
   ./scripts/sdlc.sh start        # open session brief at current phase
+  ./scripts/sdlc.sh capture --summary "..."   # guarded capture (pointer must match)
   ./scripts/sdlc.sh status --json
 
   ./scripts/sdlc.sh resume <WORK-ID> [--phase PHASE]
@@ -521,7 +543,9 @@ Typical loop:
   1. ./scripts/sdlc.sh next
   2. run the assistant command (or ./scripts/sdlc.sh start)
   3. ./scripts/sdlc.sh advance
-  4. capture-session-memory.sh
+  4. ./scripts/sdlc.sh capture --summary "..."
+
+Code phase: next operation (T01, T02, ...) is read from the REASONS Canvas automatically.
 EOF
 }
 
@@ -639,6 +663,104 @@ _wf_resolve_phase() {
   fi
 }
 
+_wf_canvas_path() {
+  local work_id="$1"
+  local root="${SDLC_ROOT}"
+  local canvas="${root}/spdd/canvas/${work_id}.md"
+  if [[ ! -f "${canvas}" ]]; then
+    canvas="${root}/agent-context/features/${work_id}/reasons-canvas.md"
+  fi
+  if [[ -f "${canvas}" ]]; then
+    printf '%s' "${canvas}"
+  fi
+}
+
+_wf_infer_next_operation() {
+  local work_id="$1"
+  local canvas
+  canvas="$(_wf_canvas_path "${work_id}")"
+  [[ -n "${canvas}" ]] || return 0
+
+  awk '
+    BEGIN { op = ""; have_status = 0; complete = 0 }
+    /^### T[0-9]{2}/ {
+      if (op != "" && (!have_status || !complete)) {
+        print op
+        exit
+      }
+      op = $2
+      sub(/-.*/, "", op)
+      have_status = 0
+      complete = 0
+      next
+    }
+    op != "" && /^- Status:/ {
+      have_status = 1
+      line = tolower($0)
+      if (line ~ /complete|: done/) {
+        complete = 1
+      } else {
+        complete = 0
+      }
+      next
+    }
+    END {
+      if (op != "" && (!have_status || !complete)) {
+        print op
+      }
+    }
+  ' "${canvas}"
+}
+
+_wf_operation_title() {
+  local work_id="$1"
+  local operation="$2"
+  local canvas line
+  canvas="$(_wf_canvas_path "${work_id}")"
+  [[ -n "${canvas}" && -n "${operation}" ]] || return 0
+  line="$(grep -m1 "^### ${operation} " "${canvas}" 2>/dev/null || true)"
+  if [[ -n "${line}" ]]; then
+    printf '%s' "${line#### }"
+  else
+    printf '%s' "${operation}"
+  fi
+}
+
+_wf_sync_operation() {
+  local work_id="$1"
+  local phase="$2"
+  local next_op=""
+  case "${phase}" in
+    code|review|architect)
+      next_op="$(_wf_infer_next_operation "${work_id}")"
+      ;;
+  esac
+  if [[ -n "${next_op}" ]]; then
+    _wf_set_state_var "${work_id}" operation "${next_op}"
+  else
+    _wf_set_state_var "${work_id}" operation ""
+  fi
+}
+
+_wf_resolve_operation() {
+  local work_id="$1"
+  local phase="$2"
+  local operation
+  operation="$(_wf_read_state_var "$(_wf_state_file "${work_id}")" operation)"
+  if [[ -z "${operation}" && "${phase}" == "code" ]]; then
+    operation="$(_wf_infer_next_operation "${work_id}")"
+  fi
+  printf '%s' "${operation}"
+}
+
+_wf_shell_helper_path() {
+  if [[ -x "${SDLC_ROOT}/scripts/sdlc-spdd/sdlc.sh" ]]; then
+    echo "./scripts/sdlc-spdd/sdlc.sh"
+  else
+    echo "./scripts/sdlc.sh"
+  fi
+}
+
 _wf_sync_impl() {
   local work_id="$1"
   local file stored inferred resolved gate_line gate value current
@@ -659,7 +781,8 @@ _wf_sync_impl() {
     fi
   done < <(_wf_infer_gates_from_artifacts "${work_id}")
 
-  _wf_log_history "${work_id}" sync "phase=${resolved}"
+  _wf_sync_operation "${work_id}" "${resolved}"
+  _wf_log_history "${work_id}" sync "phase=${resolved} operation=$(_wf_read_state_var "${file}" operation)"
 }
 
 sdlc_workflow_sync() {
@@ -710,6 +833,63 @@ sdlc_workflow_record_capture() {
   local work_id="$1"
   local phase="${2:-resume}"
   _wf_with_workflow_lock _wf_record_capture_impl "${work_id}" "${phase}"
+}
+
+sdlc_workflow_capture() {
+  local work_id=""
+  local phase=""
+  local -a passthrough=()
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --work-id)
+        work_id="${2:-}"
+        shift 2
+        ;;
+      --phase)
+        phase="${2:-}"
+        shift 2
+        ;;
+      *)
+        passthrough+=("$1")
+        shift
+        ;;
+    esac
+  done
+
+  local pointer
+  pointer="$(sdlc_get_pointer)"
+  if [[ -z "${work_id}" ]]; then
+    work_id="${pointer}"
+  elif [[ -n "${pointer}" && "${pointer}" != "${work_id}" ]]; then
+    echo "sdlc_workflow_capture: --work-id '${work_id}' does not match pointer '${pointer}'" >&2
+    echo "Run: $(_wf_shell_helper_path) resume ${work_id}" >&2
+    return 3
+  fi
+
+  if [[ -z "${work_id}" ]]; then
+    echo "sdlc_workflow_capture: no active pointer — run: $(_wf_shell_helper_path) resume <WORK-ID>" >&2
+    return 2
+  fi
+
+  if [[ -z "${phase}" ]]; then
+    phase="$(_wf_read_state_var "$(_wf_state_file "${work_id}")" phase resume)"
+  fi
+
+  local capture_script="${SDLC_ROOT}/scripts/sdlc-spdd/capture-session-memory.sh"
+  if [[ ! -x "${capture_script}" ]]; then
+    capture_script="${SDLC_ROOT}/scripts/capture-session-memory.sh"
+  fi
+  if [[ ! -x "${capture_script}" ]]; then
+    echo "sdlc_workflow_capture: capture-session-memory.sh not found" >&2
+    return 1
+  fi
+
+  run_against_pointer "${work_id}" -- "${capture_script}" \
+    --target "${SDLC_ROOT}" \
+    --work-id "${work_id}" \
+    --phase "${phase}" \
+    "${passthrough[@]}"
 }
 
 sdlc_workflow_resume() {
@@ -1100,8 +1280,11 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     list-shelved|/sdlc-workflow-list-shelved)
       sdlc_workflow_list_shelved
       ;;
+    capture|/sdlc-workflow-capture)
+      sdlc_workflow_capture "$@"
+      ;;
     *)
-      echo "Usage: $0 {status|next|start|resume|advance|skip|shelf|sync|list-shelved|help} ..." >&2
+      echo "Usage: $0 {status|next|start|capture|resume|advance|skip|shelf|sync|list-shelved|help} ..." >&2
       echo "Try: $0 help" >&2
       exit 2
       ;;
