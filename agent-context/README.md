@@ -77,6 +77,46 @@ sdlc_init
 
 `start-agent-session.sh` sets the pointer automatically when `--work-id` is provided.
 
+## SDLC Workflow (phase + gate tracking)
+
+The workflow manager builds on the pointer to answer **where am I?**, **what is next?**,
+and **how do I shelf or resume work?** State lives under `.sdlc/workflows/` (local,
+gitignored). Committed artifacts (`progress-log.md`, canvas, reviews) remain the audit trail;
+run `sync` to reconcile workflow state from those files.
+
+```bash
+# Where am I on the current task?
+./agent-context/sdlc-workflow.sh status
+
+# Pick up a shelved task (auto-shelves the current pointer if different)
+./agent-context/sdlc-workflow.sh resume FEAT-001-order-status-api
+
+# Resume at a specific phase (e.g. after intentionally skipping ahead)
+./agent-context/sdlc-workflow.sh resume FEAT-001-order-status-api --phase code
+
+# Move to the next phase after finishing a step
+./agent-context/sdlc-workflow.sh advance
+
+# Jump ahead to a later phase
+./agent-context/sdlc-workflow.sh advance --to review
+
+# Skip a phase with a recorded reason
+./agent-context/sdlc-workflow.sh skip api-test --reason "no HTTP surface"
+
+# Park current work and clear the pointer
+./agent-context/sdlc-workflow.sh shelf --reason "blocked on dependency"
+
+# Re-read canvas, progress log, and session brief into workflow state
+./agent-context/sdlc-workflow.sh sync
+
+# List shelved work ids
+./agent-context/sdlc-workflow.sh list-shelved
+```
+
+`start-agent-session.sh` and `capture-session-memory.sh` update workflow timestamps
+automatically. After shelving, run `resume <WORK-ID>` then `start-agent-session.sh`
+with the suggested phase to sync back into the chat workflow.
+
 ## Session Persistence
 
 Use scripts to keep agent sessions durable across chat boundaries:

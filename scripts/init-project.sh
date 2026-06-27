@@ -223,6 +223,13 @@ if [[ "${DRY_RUN}" -eq 0 && -f "${TARGET}/agent-context/sdlc-pointer.sh" ]]; the
 fi
 
 copy_if_missing \
+  "${REPO_ROOT}/agent-context/sdlc-workflow.sh" \
+  "${TARGET}/agent-context/sdlc-workflow.sh"
+if [[ "${DRY_RUN}" -eq 0 && -f "${TARGET}/agent-context/sdlc-workflow.sh" ]]; then
+  chmod +x "${TARGET}/agent-context/sdlc-workflow.sh"
+fi
+
+copy_if_missing \
   "${REPO_ROOT}/agent-context/README.md" \
   "${TARGET}/agent-context/README.md"
 

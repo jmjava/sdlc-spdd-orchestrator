@@ -1,0 +1,50 @@
+name: Test SDLC Workflow
+
+on:
+  pull_request:
+    paths:
+      - 'agent-context/sdlc-workflow.sh'
+      - 'agent-context/sdlc-pointer.sh'
+      - 'agent-context/README.md'
+      - 'scripts/start-agent-session.sh'
+      - 'scripts/capture-session-memory.sh'
+      - 'scripts/init-project.sh'
+      - 'scripts/upgrade-project.sh'
+      - 'scripts/verify-project-install.sh'
+      - 'tests/test-sdlc-workflow.sh'
+      - 'tests/test-sdlc-pointer.sh'
+      - '.github/workflows/test-sdlc-workflow.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'agent-context/sdlc-workflow.sh'
+      - 'agent-context/sdlc-pointer.sh'
+      - 'agent-context/README.md'
+      - 'scripts/start-agent-session.sh'
+      - 'scripts/capture-session-memory.sh'
+      - 'scripts/init-project.sh'
+      - 'scripts/upgrade-project.sh'
+      - 'scripts/verify-project-install.sh'
+      - 'tests/test-sdlc-workflow.sh'
+      - 'tests/test-sdlc-pointer.sh'
+      - '.github/workflows/test-sdlc-workflow.yml'
+
+jobs:
+  test-sdlc-workflow:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check shell syntax
+        run: |
+          bash -n agent-context/sdlc-pointer.sh
+          bash -n agent-context/sdlc-workflow.sh
+          bash -n tests/test-sdlc-workflow.sh
+          bash -n scripts/start-agent-session.sh
+          bash -n scripts/capture-session-memory.sh
+
+      - name: Run SDLC pointer regression tests
+        run: ./tests/test-sdlc-pointer.sh
+
+      - name: Run SDLC workflow regression tests
+        run: ./tests/test-sdlc-workflow.sh

@@ -77,6 +77,14 @@ if [[ -f "${pointer_script}" && -n "${WORK_ID}" ]]; then
   sdlc_set_pointer "${WORK_ID}" >/dev/null
 fi
 
+workflow_script="${TARGET}/agent-context/sdlc-workflow.sh"
+if [[ -f "${workflow_script}" && -n "${WORK_ID}" ]]; then
+  SDLC_ROOT="${TARGET}"
+  # shellcheck source=/dev/null
+  source "${workflow_script}"
+  sdlc_workflow_touch_session "${WORK_ID}" "${PHASE}" "${MILESTONE}"
+fi
+
 timestamp="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 safe_timestamp="$(date -u +"%Y%m%dT%H%M%SZ")"
 session_dir="${TARGET}/agent-context/sessions"

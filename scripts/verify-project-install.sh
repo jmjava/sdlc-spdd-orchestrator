@@ -154,7 +154,8 @@ run_part "SDLC (sessions, memory, playbooks)" \
   SDLC "project memory file" "agent-context/memory/project-memory.md" file \
   SDLC "session handoff playbook" "agent-context/playbooks/session-handoff-playbook.md" file \
   SDLC "quality gates" "agent-context/harness/quality-gates.md" file \
-  SDLC "pointer manager script" "agent-context/sdlc-pointer.sh" executable
+  SDLC "pointer manager script" "agent-context/sdlc-pointer.sh" executable \
+  SDLC "workflow manager script" "agent-context/sdlc-workflow.sh" executable
 
 run_part "Runtime scripts and docs" \
   Runtime "runtime scripts directory" "scripts/sdlc-spdd" dir \
