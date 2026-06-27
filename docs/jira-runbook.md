@@ -18,6 +18,17 @@ Jira should not replace the canvas. The canvas should not replace Jira workflow 
 
 Use this flow when a request starts outside Jira.
 
+### 0. Draft in the milestone requirement (recommended)
+
+For Work IDs created from milestones, store Jira field syntax in:
+
+    requirements/milestones/<WORK-ID>.md
+
+under `## Jira` (scaffolded by `create-work-from-milestone.sh`). Fill Summary, Description,
+and Given/When/Then acceptance criteria there first — it is the copy-paste source for Jira UI,
+MCP, or API creation. After Jira returns a key, set `- Key: ABC-123` in that section and commit.
+`./scripts/sdlc.sh claim <WORK-ID>` then auto-links `jira:ABC-123` in `work-registry.tsv`.
+
 ### 1. Triage the request
 
 Prompt:

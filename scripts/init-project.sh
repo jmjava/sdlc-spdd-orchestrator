@@ -223,6 +223,28 @@ if [[ "${DRY_RUN}" -eq 0 && -f "${TARGET}/agent-context/sdlc-pointer.sh" ]]; the
 fi
 
 copy_if_missing \
+  "${REPO_ROOT}/agent-context/sdlc-workflow.sh" \
+  "${TARGET}/agent-context/sdlc-workflow.sh"
+if [[ "${DRY_RUN}" -eq 0 && -f "${TARGET}/agent-context/sdlc-workflow.sh" ]]; then
+  chmod +x "${TARGET}/agent-context/sdlc-workflow.sh"
+fi
+
+copy_if_missing \
+  "${REPO_ROOT}/agent-context/sdlc-team-registry.sh" \
+  "${TARGET}/agent-context/sdlc-team-registry.sh"
+if [[ "${DRY_RUN}" -eq 0 && -f "${TARGET}/agent-context/sdlc-team-registry.sh" ]]; then
+  chmod +x "${TARGET}/agent-context/sdlc-team-registry.sh"
+fi
+
+copy_if_missing \
+  "${REPO_ROOT}/templates/agent-context/work-registry.tsv" \
+  "${TARGET}/agent-context/work-registry.tsv"
+
+copy_if_missing \
+  "${REPO_ROOT}/templates/agent-context/hooks/notify-team-registry.example.sh" \
+  "${TARGET}/agent-context/hooks/notify-team-registry.example.sh"
+
+copy_if_missing \
   "${REPO_ROOT}/agent-context/README.md" \
   "${TARGET}/agent-context/README.md"
 
@@ -261,7 +283,8 @@ for file in \
   validate-command-adapters.sh \
   verify-agent-command-effects.sh \
   validate-reasons-canvas.sh \
-  verify-project-install.sh; do
+  verify-project-install.sh \
+  sdlc.sh; do
   copy_if_missing \
     "${REPO_ROOT}/scripts/${file}" \
     "${TARGET}/scripts/sdlc-spdd/${file}"

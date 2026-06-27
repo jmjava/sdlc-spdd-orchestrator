@@ -801,6 +801,14 @@ if [[ -f "${current_session}" ]]; then
   } >> "${current_session}"
 fi
 
+workflow_script="${TARGET}/agent-context/sdlc-workflow.sh"
+if [[ -f "${workflow_script}" ]]; then
+  SDLC_ROOT="${TARGET}"
+  # shellcheck source=/dev/null
+  source "${workflow_script}"
+  sdlc_workflow_record_capture "${WORK_ID}" "${PHASE}"
+fi
+
 echo "Captured session memory:"
 echo "  ${session_history}"
 echo "  ${session_entry_file}"

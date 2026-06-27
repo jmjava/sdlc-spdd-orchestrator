@@ -154,7 +154,10 @@ run_part "SDLC (sessions, memory, playbooks)" \
   SDLC "project memory file" "agent-context/memory/project-memory.md" file \
   SDLC "session handoff playbook" "agent-context/playbooks/session-handoff-playbook.md" file \
   SDLC "quality gates" "agent-context/harness/quality-gates.md" file \
-  SDLC "pointer manager script" "agent-context/sdlc-pointer.sh" executable
+  SDLC "pointer manager script" "agent-context/sdlc-pointer.sh" executable \
+  SDLC "workflow manager script" "agent-context/sdlc-workflow.sh" executable \
+  SDLC "team registry script" "agent-context/sdlc-team-registry.sh" executable \
+  SDLC "team work registry" "agent-context/work-registry.tsv" file
 
 run_part "Runtime scripts and docs" \
   Runtime "runtime scripts directory" "scripts/sdlc-spdd" dir \
@@ -169,7 +172,8 @@ run_part "Runtime scripts and docs" \
   Runtime "validate command adapters script" "scripts/sdlc-spdd/validate-command-adapters.sh" executable \
   Runtime "verify command effects script" "scripts/sdlc-spdd/verify-agent-command-effects.sh" executable \
   Runtime "validate canvas script" "scripts/sdlc-spdd/validate-reasons-canvas.sh" executable \
-  Runtime "verify install script" "scripts/sdlc-spdd/verify-project-install.sh" executable
+  Runtime "verify install script" "scripts/sdlc-spdd/verify-project-install.sh" executable \
+  Runtime "workflow helper script" "scripts/sdlc-spdd/sdlc.sh" executable
 
 if [[ "${REQUIRE_CURSOR}" -eq 1 && "${REQUIRE_COPILOT}" -eq 1 ]]; then
   run_part "Adapter parity workflow" \

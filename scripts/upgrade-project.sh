@@ -395,6 +395,22 @@ copy_executable_framework_file \
   "${REPO_ROOT}/agent-context/sdlc-pointer.sh" \
   "${TARGET}/agent-context/sdlc-pointer.sh"
 
+copy_executable_framework_file \
+  "${REPO_ROOT}/agent-context/sdlc-workflow.sh" \
+  "${TARGET}/agent-context/sdlc-workflow.sh"
+
+copy_executable_framework_file \
+  "${REPO_ROOT}/agent-context/sdlc-team-registry.sh" \
+  "${TARGET}/agent-context/sdlc-team-registry.sh"
+
+copy_framework_file \
+  "${REPO_ROOT}/templates/agent-context/work-registry.tsv" \
+  "${TARGET}/agent-context/work-registry.tsv"
+
+copy_framework_file \
+  "${REPO_ROOT}/templates/agent-context/hooks/notify-team-registry.example.sh" \
+  "${TARGET}/agent-context/hooks/notify-team-registry.example.sh"
+
 for file in \
   quality-gates.md \
   validation-rules.md; do
@@ -441,7 +457,8 @@ for file in \
   validate-command-adapters.sh \
   verify-agent-command-effects.sh \
   validate-reasons-canvas.sh \
-  verify-project-install.sh; do
+  verify-project-install.sh \
+  sdlc.sh; do
   copy_executable_framework_file \
     "${REPO_ROOT}/scripts/${file}" \
     "${TARGET}/scripts/sdlc-spdd/${file}"

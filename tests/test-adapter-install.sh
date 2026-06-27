@@ -85,7 +85,7 @@ expect_fail() {
   if "$@" >/dev/null 2>&1; then bad "expected FAIL but passed: ${label}"; else ok "correctly fails: ${label}"; fi
 }
 
-commands=(init analysis plan architect code api-test review prompt-update retro sync)
+commands=(init analysis plan architect code api-test review prompt-update retro sync whereami)
 
 assert_cursor_pack() {
   local t="$1"

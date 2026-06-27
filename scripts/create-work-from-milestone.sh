@@ -382,6 +382,27 @@ ${title}
 
 - [ ] Define acceptance criteria before coding.
 
+## Jira
+
+Draft for issue creation — paste the fields below into Jira UI, MCP, or your approved API.
+After the issue exists, set **Key** and commit; \`claim\` auto-links \`jira:<KEY>\` in the team registry.
+
+- Key: TBD
+- Issue type: Story
+- Summary: ${title}
+- Labels: sdlc-spdd
+- Components:
+
+### Description
+
+${title}
+
+Derived from ${milestone_rel}.
+
+### Acceptance criteria (Given/When/Then)
+
+- Given ... When ... Then ...
+
 ## Next Step
 
 Run:
