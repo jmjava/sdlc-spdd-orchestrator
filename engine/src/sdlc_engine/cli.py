@@ -265,13 +265,36 @@ def cmd_issues(args: argparse.Namespace) -> int:
         if args.system == "both":
             print("issues push requires --system jira|github", file=sys.stderr)
             return 2
-        print(svc.push(args.work_id, args.system, apply=args.apply))
+        desc_fmt = getattr(args, "description_format", None)
+        print(
+            svc.push(
+                args.work_id,
+                args.system,
+                apply=args.apply,
+                description_format=desc_fmt,
+            )
+        )
         return 0
     if action == "pull":
         if args.system == "both":
             print("issues pull requires --system jira|github", file=sys.stderr)
             return 2
         print(svc.pull(args.work_id, args.system, apply=args.apply))
+        return 0
+    if action == "upload-adf":
+        issue_key = getattr(args, "issue", None) or args.work_id
+        adf_file = getattr(args, "adf_file", None)
+        if not adf_file:
+            print("issues upload-adf requires --file PATH", file=sys.stderr)
+            return 2
+        print(
+            svc.upload_adf(
+                issue_key,
+                Path(adf_file),
+                apply=args.apply,
+                description_format=getattr(args, "description_format", None),
+            )
+        )
         return 0
     return 2
 
@@ -476,9 +499,15 @@ def build_parser() -> argparse.ArgumentParser:
     sr.add_argument("--dry-run", action="store_true")
     sr.set_defaults(func=cmd_sync_roadmap)
 
-    iss = sub.add_parser("issues", help="Draft/push/pull Jira or GitHub issues from milestone requirements")
-    iss.add_argument("issues_cmd", choices=["draft", "push", "pull"])
-    iss.add_argument("work_id")
+    iss = sub.add_parser(
+        "issues",
+        help="Draft/push/pull/upload-adf for Jira or GitHub (explicit CLI; never auto-sync)",
+    )
+    iss.add_argument("issues_cmd", choices=["draft", "push", "pull", "upload-adf"])
+    iss.add_argument(
+        "work_id",
+        help="Work ID for draft/push/pull, or Jira issue key for upload-adf",
+    )
     iss.add_argument(
         "--system",
         default="both",
@@ -490,6 +519,25 @@ def build_parser() -> argparse.ArgumentParser:
         default="markdown",
         choices=["markdown", "adf", "wiki"],
         help="For `issues draft --system jira`: render body as markdown, ADF JSON, or wiki markup",
+    )
+    iss.add_argument(
+        "--description-format",
+        choices=["adf", "wiki"],
+        default=None,
+        help=(
+            "For push/upload-adf: send raw ADF (default on Cloud v3) or run the "
+            "optional ADF→wiki shim. Env: JIRA_DESCRIPTION_FORMAT. "
+            "Auto-fallback ADF→wiki is off unless JIRA_DESCRIPTION_FALLBACK=1."
+        ),
+    )
+    iss.add_argument(
+        "--file",
+        dest="adf_file",
+        help="For upload-adf: path to ADF JSON file",
+    )
+    iss.add_argument(
+        "--issue",
+        help="For upload-adf: Jira issue key (defaults to work_id positional)",
     )
     iss.add_argument(
         "--apply",

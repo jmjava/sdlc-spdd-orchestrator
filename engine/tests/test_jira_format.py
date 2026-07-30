@@ -277,3 +277,230 @@ old desc
     assert "Summary: Pulled title" in text
     assert "From Jira" in text or "Pulled" in text
     assert "ADF" in text
+
+
+def test_adf_to_wiki_headings_and_marks() -> None:
+    from sdlc_engine.jira_format import adf_to_wiki
+
+    adf = {
+        "type": "doc",
+        "version": 1,
+        "content": [
+            {
+                "type": "heading",
+                "attrs": {"level": 2},
+                "content": [{"type": "text", "text": "Summary"}],
+            },
+            {
+                "type": "paragraph",
+                "content": [
+                    {"type": "text", "text": "bold", "marks": [{"type": "strong"}]},
+                    {"type": "text", "text": " and "},
+                    {"type": "text", "text": "code", "marks": [{"type": "code"}]},
+                ],
+            },
+        ],
+    }
+    wiki = adf_to_wiki(adf)
+    assert "h2. Summary" in wiki
+    assert "*bold*" in wiki
+    assert "{{code}}" in wiki
+
+
+def test_adf_to_wiki_gwt_scenarios() -> None:
+    from sdlc_engine.jira_format import adf_to_wiki
+
+    adf = {
+        "type": "doc",
+        "version": 1,
+        "content": [
+            {
+                "type": "bulletList",
+                "content": [
+                    {
+                        "type": "listItem",
+                        "content": [
+                            {
+                                "type": "paragraph",
+                                "content": [
+                                    {
+                                        "type": "text",
+                                        "text": "Given a requirement",
+                                        "marks": [{"type": "strong"}],
+                                    },
+                                    {"type": "hardBreak"},
+                                    {
+                                        "type": "text",
+                                        "text": "When push runs",
+                                        "marks": [{"type": "strong"}],
+                                    },
+                                    {"type": "hardBreak"},
+                                    {
+                                        "type": "text",
+                                        "text": "Then ADF is sent",
+                                        "marks": [{"type": "strong"}],
+                                    },
+                                ],
+                            }
+                        ],
+                    }
+                ],
+            }
+        ],
+    }
+    wiki = adf_to_wiki(adf)
+    assert "*Scenario 1*" in wiki
+    assert "**" in wiki
+    assert "Given a requirement" in wiki
+
+
+def test_jira_push_updates_existing_key_with_raw_adf(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setenv("JIRA_BASE_URL", "https://example.atlassian.net")
+    monkeypatch.setenv("JIRA_EMAIL", "bot@example.com")
+    monkeypatch.setenv("JIRA_API_TOKEN", "token")
+    monkeypatch.setenv("JIRA_PROJECT", "ORCH")
+    monkeypatch.delenv("JIRA_DESCRIPTION_FALLBACK", raising=False)
+    work_id = "FEAT-405-update-adf"
+    req = tmp_path / "requirements" / "milestones" / f"{work_id}.md"
+    req.parent.mkdir(parents=True)
+    req.write_text(
+        f"""# Requirement: {work_id}
+
+## Summary
+
+Update me.
+
+## Jira
+
+- Key: ORCH-99
+- Summary: Update me
+
+### Description
+
+New body with **ADF**.
+""",
+        encoding="utf-8",
+    )
+    seen: dict = {}
+
+    class _Resp:
+        def read(self) -> bytes:
+            return b""
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return None
+
+    def fake_urlopen(req, timeout=30):  # noqa: ANN001
+        seen["method"] = req.get_method()
+        seen["url"] = req.full_url
+        seen["payload"] = json.loads(req.data.decode())
+        seen["auth"] = req.get_header("Authorization")
+        return _Resp()
+
+    out = IssueSyncService(Project(tmp_path), urlopen=fake_urlopen).push(
+        work_id, "jira", apply=True
+    )
+    assert "Updated" in out
+    assert seen["method"] == "PUT"
+    assert "/rest/api/3/issue/ORCH-99" in seen["url"]
+    desc = seen["payload"]["fields"]["description"]
+    assert isinstance(desc, dict)
+    assert desc["type"] == "doc"
+    assert seen["auth"].startswith("Basic ")
+
+
+def test_upload_adf_raw_vs_wiki_shim(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setenv("JIRA_BASE_URL", "https://example.atlassian.net")
+    monkeypatch.setenv("JIRA_EMAIL", "bot@example.com")
+    monkeypatch.setenv("JIRA_API_TOKEN", "token")
+    adf_path = tmp_path / "sample.adf.json"
+    adf_path.write_text(
+        json.dumps(
+            {
+                "type": "doc",
+                "version": 1,
+                "content": [
+                    {
+                        "type": "paragraph",
+                        "content": [{"type": "text", "text": "Hello ADF"}],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    seen: dict = {}
+
+    class _Resp:
+        def read(self) -> bytes:
+            return b""
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return None
+
+    def fake_urlopen(req, timeout=30):  # noqa: ANN001
+        seen["url"] = req.full_url
+        seen["desc"] = json.loads(req.data.decode())["fields"]["description"]
+        return _Resp()
+
+    svc = IssueSyncService(Project(tmp_path), urlopen=fake_urlopen)
+    dry = svc.upload_adf("ORCH-77", adf_path, apply=False, description_format="adf")
+    assert "[dry-run]" in dry
+    assert "raw ADF" in dry.lower() or "description_format: adf" in dry
+
+    out = svc.upload_adf("ORCH-77", adf_path, apply=True, description_format="adf")
+    assert "Updated" in out
+    assert isinstance(seen["desc"], dict)
+    assert seen["desc"]["type"] == "doc"
+
+    out_wiki = svc.upload_adf("ORCH-77", adf_path, apply=True, description_format="wiki")
+    assert "description=wiki" in out_wiki
+    assert isinstance(seen["desc"], str)
+    assert "Hello ADF" in seen["desc"]
+
+
+def test_no_silent_adf_to_wiki_fallback_by_default(tmp_path: Path, monkeypatch) -> None:
+    import urllib.error
+
+    monkeypatch.setenv("JIRA_BASE_URL", "https://example.atlassian.net")
+    monkeypatch.setenv("JIRA_EMAIL", "bot@example.com")
+    monkeypatch.setenv("JIRA_API_TOKEN", "token")
+    monkeypatch.setenv("JIRA_PROJECT", "ORCH")
+    monkeypatch.delenv("JIRA_DESCRIPTION_FALLBACK", raising=False)
+    work_id = "FEAT-406-no-fallback"
+    req = tmp_path / "requirements" / "milestones" / f"{work_id}.md"
+    req.parent.mkdir(parents=True)
+    req.write_text(
+        f"""# Requirement: {work_id}
+
+## Jira
+
+- Key: TBD
+- Summary: No fallback
+
+### Description
+
+Body
+""",
+        encoding="utf-8",
+    )
+
+    def fake_urlopen(req, timeout=30):  # noqa: ANN001
+        raise urllib.error.HTTPError(
+            req.full_url, 400, "Bad Request", hdrs=None, fp=__import__("io").BytesIO(b"bad adf")
+        )
+
+    try:
+        IssueSyncService(Project(tmp_path), urlopen=fake_urlopen).push(
+            work_id, "jira", apply=True
+        )
+        assert False, "expected RuntimeError"
+    except RuntimeError as exc:
+        assert "400" in str(exc)
+        assert "Fallback" not in str(exc)

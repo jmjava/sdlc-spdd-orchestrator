@@ -7,7 +7,9 @@ main pain point when syncing from `requirements/milestones/ ## Jira`.
 
 from __future__ import annotations
 
+import json
 import re
+from pathlib import Path
 from typing import Any
 
 # ---------------------------------------------------------------------------
@@ -304,6 +306,214 @@ def markdown_to_wiki(markdown: str) -> str:
         out.append(_inline_wiki(stripped))
         i += 1
     return "\n".join(out).strip() + "\n"
+
+
+# ---------------------------------------------------------------------------
+# ADF → wiki markup (optional Server/DC shim)
+# Prefer raw ADF for Cloud v3; convert only when description_format=wiki.
+# Adapted from an external ADF upload helper — no product-specific keys/hosts.
+# ---------------------------------------------------------------------------
+
+
+def _wiki_apply_marks(text: str, marks: list) -> str:
+    """Apply ADF marks to a text string, producing wiki markup."""
+    for mark in marks or []:
+        mt = mark.get("type", "")
+        if mt == "strong":
+            inner = text.strip()
+            trailing = text[len(text.rstrip()) :]
+            leading = text[: len(text) - len(text.lstrip())]
+            text = f"{leading}*{inner}*{trailing}"
+        elif mt == "em":
+            inner = text.strip()
+            trailing = text[len(text.rstrip()) :]
+            leading = text[: len(text) - len(text.lstrip())]
+            text = f"{leading}_{inner}_{trailing}"
+        elif mt == "code":
+            # Escape { } so wiki does not treat {param} as a macro.
+            escaped = text.replace("{", r"\{").replace("}", r"\}")
+            text = f"{{{{{escaped}}}}}"
+        elif mt == "underline":
+            text = f"+{text}+"
+        elif mt == "strike":
+            text = f"-{text}-"
+        elif mt == "link":
+            href = (mark.get("attrs") or {}).get("href", "")
+            text = f"[{text}|{href}]" if href else text
+    return text
+
+
+def _adf_inline_wiki(node: dict) -> str:
+    t = node.get("type", "")
+    if t == "hardBreak":
+        return "\n"
+    if t == "text":
+        return _wiki_apply_marks(node.get("text", ""), node.get("marks") or [])
+    return "".join(_adf_inline_wiki(c) for c in node.get("content") or [])
+
+
+def _para_segments_wiki(para_node: dict) -> list[str]:
+    """Split a paragraph's inline content on hardBreaks."""
+    segments: list[str] = []
+    buf: list[str] = []
+    for child in para_node.get("content") or []:
+        if child.get("type") == "hardBreak":
+            segments.append("".join(buf))
+            buf = []
+        else:
+            buf.append(_adf_inline_wiki(child))
+    if buf:
+        segments.append("".join(buf))
+    return [s for s in segments if s.strip()]
+
+
+def _is_gwt_list_item(list_item_node: dict) -> bool:
+    """True when a listItem paragraph uses hardBreaks (Given/When/Then pattern)."""
+    for child in list_item_node.get("content") or []:
+        if child.get("type") == "paragraph":
+            if any(c.get("type") == "hardBreak" for c in child.get("content") or []):
+                return True
+    return False
+
+
+def _adf_list_item_wiki(node: dict, marker: str, depth: int = 1) -> str:
+    prefix = marker * depth
+    lines: list[str] = []
+    for child in node.get("content") or []:
+        ct = child.get("type", "")
+        if ct == "paragraph":
+            text = "".join(_adf_inline_wiki(c) for c in child.get("content") or [])
+            lines.append(f"{prefix} {text}")
+        elif ct in ("bulletList", "orderedList"):
+            sub_marker = "*" if ct == "bulletList" else "#"
+            for sub_item in child.get("content") or []:
+                lines.append(_adf_list_item_wiki(sub_item, sub_marker, depth + 1))
+    return "\n".join(lines)
+
+
+def _adf_bullet_list_to_wiki(node: dict, marker: str = "*") -> str:
+    """
+    Convert bulletList/orderedList to wiki.
+
+    List items with hardBreaks (GWT) become numbered scenarios with sub-bullets:
+      * *Scenario 1*
+      ** *Given* ...
+      ** *When* ...
+      ** *Then* ...
+    """
+    items = node.get("content") or []
+    scenario_num = 0
+    lines: list[str] = []
+    for item in items:
+        if _is_gwt_list_item(item):
+            scenario_num += 1
+            lines.append(f"{marker} *Scenario {scenario_num}*")
+            for child in item.get("content") or []:
+                if child.get("type") == "paragraph":
+                    for seg in _para_segments_wiki(child):
+                        lines.append(f"{marker * 2} {seg}")
+        else:
+            lines.append(_adf_list_item_wiki(item, marker))
+    return "\n".join(lines)
+
+
+def _panel_to_wiki_section(content: list) -> str:
+    """Render an ADF panel as bold-label lines (avoids table pipe escaping)."""
+    lines: list[str] = []
+    for child in content:
+        if child.get("type") != "paragraph":
+            lines.append(adf_to_wiki(child))
+            continue
+        inline_nodes = child.get("content") or []
+        if (
+            inline_nodes
+            and inline_nodes[0].get("type") == "text"
+            and any(m.get("type") == "strong" for m in inline_nodes[0].get("marks") or [])
+        ):
+            label = inline_nodes[0].get("text", "").rstrip(": ").strip()
+            value = "".join(_adf_inline_wiki(c) for c in inline_nodes[1:]).strip()
+            lines.append(f"*{label}:* {value}")
+        else:
+            lines.append("".join(_adf_inline_wiki(c) for c in inline_nodes))
+    return "\n".join(lines)
+
+
+def adf_to_wiki(node: Any) -> str:
+    """Convert an ADF document/node tree to Atlassian wiki markup (Server/DC v2).
+
+    This is an **optional shim**. Jira Cloud v3 should receive raw ADF via
+    ``description_format=adf`` (default). Only call this when the operator
+    explicitly chooses wiki output.
+    """
+    if node is None:
+        return ""
+    if isinstance(node, str):
+        return node
+    if not isinstance(node, dict):
+        return str(node)
+
+    t = node.get("type", "")
+    content = node.get("content") or []
+
+    if t == "doc":
+        parts = [adf_to_wiki(c) for c in content]
+        return "\n\n".join(p for p in parts if p.strip()) + ("\n" if parts else "")
+
+    if t == "heading":
+        level = int((node.get("attrs") or {}).get("level") or 1)
+        level = max(1, min(level, 6))
+        text = "".join(_adf_inline_wiki(c) for c in content)
+        return f"h{level}. {text}"
+
+    if t == "paragraph":
+        return "".join(_adf_inline_wiki(c) for c in content)
+
+    if t == "bulletList":
+        return _adf_bullet_list_to_wiki(node, "*")
+
+    if t == "orderedList":
+        return _adf_bullet_list_to_wiki(node, "#")
+
+    if t == "codeBlock":
+        lang = (node.get("attrs") or {}).get("language") or ""
+        text = "".join(c.get("text", "") for c in content)
+        tag = f"code:{lang}" if lang else "code"
+        return f"{{{tag}}}\n{text}\n{{code}}"
+
+    if t == "panel":
+        return _panel_to_wiki_section(content)
+
+    if t == "blockquote":
+        return "bq. " + "".join(adf_to_wiki(c) for c in content)
+
+    if t == "rule":
+        return "----"
+
+    nested = [adf_to_wiki(c) for c in content]
+    return "\n\n".join(p for p in nested if p.strip())
+
+
+def load_adf_document(data: Any) -> dict[str, Any]:
+    """Validate a parsed ADF object (version=1, type=doc)."""
+    if not isinstance(data, dict):
+        raise ValueError("ADF must be a JSON object")
+    if data.get("version") != 1 or data.get("type") != "doc":
+        raise ValueError(
+            "ADF root must be {\"type\": \"doc\", \"version\": 1, ...}; "
+            f"got type={data.get('type')!r} version={data.get('version')!r}"
+        )
+    if "content" not in data:
+        raise ValueError("ADF doc requires a content array")
+    return data
+
+
+def load_adf_file(path: Path) -> dict[str, Any]:
+    """Load and validate ADF JSON from a file."""
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"Invalid JSON in '{path}': {exc}") from exc
+    return load_adf_document(data)
 
 
 # ---------------------------------------------------------------------------

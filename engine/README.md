@@ -56,7 +56,8 @@ SDLC_ENGINE=auto ./scripts/sdlc.sh next   # python if importable, else shell
 | `canvas` | Final Status + next-operation inference |
 | `links` / `sync_local` | Milestone↔canvas↔registry drift check/repair + ROADMAP sync |
 | `issues` | Draft/push/pull Jira (`JIRA_*`) or GitHub (`gh`) from milestone sections |
-| `jira_format` | Markdown ↔ ADF / wiki markup for Jira Cloud/Server descriptions |
+| `jira_format` | Markdown ↔ ADF; optional ADF→wiki shim (`adf_to_wiki`) for Server/DC — raw ADF is default on Cloud v3 |
+| `issues` CLI | `draft` / `push` / `pull` / `upload-adf` — explicit only; `--description-format adf\|wiki` |
 | `local_sessions` | `LOCAL-*` offline sessions + promote into documented Work IDs |
 | `db` | Regenerable local SQLite index (`.sdlc/index.sqlite`) before GUIDE |
 | `commit_message` | Staged/unstaged/ahead-of-base diff report for commit-message drafts |

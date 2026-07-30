@@ -304,7 +304,12 @@ Default CLI posture stays fail-closed: `push` without `--apply` is dry-run only.
 | Markdown → ADF | Yes (`jira_format.markdown_to_adf`) | Keep; tighten G/W/T + Jinja |
 | Markdown → wiki | Yes | Keep as fallback |
 | Create issue | Yes (`issues push --apply`) | Keep |
-| Update issue when Key exists | **No** (skips) | **Required** |
+| Update issue when Key exists | **Yes** (`PUT` when Key present) | Keep / harden |
+| Upload raw ADF file | Yes (`issues upload-adf KEY --file …`) | Keep |
+| ADF→wiki shim | Yes (`adf_to_wiki`) — **opt-in only** | Keep optional |
+| Raw ADF (no wiki conversion) | **Default** on Cloud v3 (`JIRA_DESCRIPTION_FORMAT=adf`) | Keep |
+| Silent ADF→wiki on HTTP 400 | **Off by default** (`JIRA_DESCRIPTION_FALLBACK=0`) | Keep off |
+| Auth bearer (Server PAT) / basic (Cloud) | Yes (`JIRA_AUTH_MODE`) | Keep |
 | Jinja templates for description/AC | **No** (hardcoded `build_jira_markdown`) | **Required** |
 | Enforce Given/When/Then structure | Partial (subsection title only) | Parse + validate + render |
 | CHORE-specific path under `requirements/` | Generic milestone parser | First-class CHORE template + sync |
@@ -392,14 +397,32 @@ One-line form also supported as a fallback:
 
 | Env | Purpose |
 |---|---|
-| `JIRA_BASE_URL` | e.g. `https://your-site.atlassian.net` |
-| `JIRA_EMAIL` | Atlassian account email |
-| `JIRA_API_TOKEN` | API token |
-| `JIRA_PROJECT` | Project key |
+| `JIRA_BASE_URL` or `JIRA_URL` | e.g. `https://your-site.atlassian.net` |
+| `JIRA_EMAIL` | Required for `JIRA_AUTH_MODE=basic` (Cloud) |
+| `JIRA_API_TOKEN` | API token or Server/DC PAT |
+| `JIRA_AUTH_MODE` | `basic` (Cloud email+token) or `bearer` (Server/DC PAT) |
+| `JIRA_PROJECT` | Project key (create only) |
 | `JIRA_API_VERSION` | Force `2` or `3` |
-| `JIRA_DESCRIPTION_FORMAT` | Force `adf` / `wiki` / `plain` |
+| `JIRA_DESCRIPTION_FORMAT` | `adf` (raw ADF, default on v3) or `wiki` (run ADF→wiki shim) |
+| `JIRA_DESCRIPTION_FALLBACK` | `0` default — do **not** auto-convert ADF→wiki on 400; set `1` to enable |
 
-Cloud default in engine today: v3 + ADF when host contains `atlassian.net`.
+Cloud default: v3 + **raw ADF**. Wiki shim is never implied — pass `--description-format wiki` or set `JIRA_DESCRIPTION_FORMAT=wiki`.
+
+Explicit CLI examples:
+
+```bash
+# Dry-run create/update from requirement (prints ADF; no API call)
+./scripts/sdlc.sh issues push CHORE-010-example --system jira
+
+# Apply with raw ADF (default on Cloud)
+./scripts/sdlc.sh issues push CHORE-010-example --system jira --apply
+
+# Opt into ADF→wiki shim (Server/DC)
+./scripts/sdlc.sh issues push CHORE-010-example --system jira --description-format wiki --apply
+
+# Upload a pre-built ADF JSON file to an existing key (raw ADF)
+./scripts/sdlc.sh issues upload-adf ORCH-123 --file engine/fixtures/jira/chore-given-when-then.adf.json --apply
+```
 
 ---
 
