@@ -256,20 +256,44 @@ requirements/**/*.md          ← ROOT source of truth (CHOREs included)
         │
         ├── Jinja templates (description + AC Given/When/Then)
         │         │
-        │         ├──→ ADF (Cloud v3 create/update)
-        │         └──→ wiki (Server/DC v2 create/update)
-        │
-        └── derived sync
-                  ├── spdd/canvas/<WORK-ID>.md   (REASONS; regenerated/updated from requirement)
+        │         ├──→ ADF (Cloud v3 create/update)   ⎫
+        │         └──→ wiki (Server/DC v2 create/update) ⎬ only on explicit CLI
+        │                                                   ⎭
+        └── derived artifacts (also explicit CLI, not watchers)
+                  ├── spdd/canvas/<WORK-ID>.md   (REASONS from requirement)
                   └── Jira issue fields           (create or update by Key)
 ```
+
+### Execution model — explicit script only (no continuous sync)
+
+**Hard constraint:** requirements are never pushed to Jira (or canvas) automatically on save, commit, PR, or agent turn.
+
+| Surface | Allowed behavior |
+|---|---|
+| Engine / `sdlc.sh issues …` | **Only** place that may call Jira create/update (and only when the operator runs it, typically with `--apply`) |
+| Slash command (Cursor/Copilot/Claude) | May **prepare** a paste-ready CLI invocation (dry-run preview + exact command line). **Must not** execute `push --apply`, open network calls to Jira, or write Keys back |
+| CI / git hooks / file watchers | **Must not** sync requirements → Jira |
+| Agents | Same as slash command: print the command; human (or explicit follow-up shell) runs it |
+
+Example slash-command output (prepare only):
+
+```text
+Dry-run preview (no Jira API calls made by this command):
+  ./scripts/sdlc.sh issues draft CHORE-010-example --system jira
+
+To create or update in Jira, run explicitly:
+  ./scripts/sdlc.sh issues push CHORE-010-example --system jira --apply
+```
+
+Default CLI posture stays fail-closed: `push` without `--apply` is dry-run only.
 
 **Rules:**
 
 1. Requirement markdown owns scope, acceptance criteria, and Jira draft fields (`## Jira`).
-2. REASONS canvas is **derived/synced** from the requirement (not a second inventing surface for AC).
+2. REASONS canvas is **derived from** the requirement when an explicit sync command is run (not a second inventing surface for AC).
 3. Jira description is **rendered** from the requirement via Jinja → ADF/wiki — not hand-edited as source.
-4. If Jira Key exists → **UPDATE** description/summary; if absent → **CREATE** and write Key back into the requirement.
+4. If Jira Key exists → explicit `push --apply` **UPDATEs** description/summary; if absent → **CREATEs** and writes Key back into the requirement.
+5. No background, webhook, or “always sync” loop — operator-driven script execution only.
 
 ---
 
@@ -284,7 +308,9 @@ requirements/**/*.md          ← ROOT source of truth (CHOREs included)
 | Jinja templates for description/AC | **No** (hardcoded `build_jira_markdown`) | **Required** |
 | Enforce Given/When/Then structure | Partial (subsection title only) | Parse + validate + render |
 | CHORE-specific path under `requirements/` | Generic milestone parser | First-class CHORE template + sync |
-| Requirements → REASONS canvas sync | Manual / separate | Engine operation |
+| Requirements → REASONS canvas sync | Manual / separate | Explicit engine CLI op (not automatic) |
+| Slash command prepares CLI only | N/A | New command: preview + print invocation; never `--apply` |
+| Continuous / hook-based Jira sync | Absent (keep it that way) | **Do not add** |
 | ADF schema validation in CI | No | Validate fixtures against official schema |
 
 Existing code entry points:
@@ -383,10 +409,10 @@ Cloud default in engine today: v3 + ADF when host contains `atlassian.net`.
 
 1. T01 — Freeze requirement CHORE schema + G/W/T parser tests  
 2. T02 — Jinja templates + render pipeline  
-3. T03 — Jira **update** path (`PUT /rest/api/3/issue/{key}`)  
-4. T04 — Requirements → REASONS canvas sync operation  
-5. T05 — CI: validate ADF fixtures against official schema  
-6. T06 — Docs + dry-run UX (`sdlc.sh issues draft|push|pull`)
+3. T03 — Jira **update** path (`PUT /rest/api/3/issue/{key}`) on explicit `push --apply`  
+4. T04 — Explicit requirements → REASONS canvas sync CLI (opt-in; never automatic)  
+5. T05 — Slash command that **prints** draft/push invocation only (no network, no `--apply`)  
+6. T06 — CI: validate ADF fixtures against official schema + docs
 
 ---
 
@@ -397,7 +423,8 @@ Cloud default in engine today: v3 + ADF when host contains `atlassian.net`.
 - Send ADF JSON for Cloud v3 `description`
 - Use `heading` + `bulletList` for AC
 - Keep `text` nodes non-empty
-- Treat requirements as root; regenerate Jira + canvas
+- Treat requirements as root; regenerate Jira + canvas **via explicit CLI**
+- Let slash commands prepare the exact `sdlc.sh issues …` line for the operator to run
 
 **Don’t**
 
@@ -405,3 +432,5 @@ Cloud default in engine today: v3 + ADF when host contains `atlassian.net`.
 - Rely on UI copy-paste from requirement files
 - Hand-edit Jira as source of truth
 - Invent acceptance criteria in the canvas that are not in the requirement
+- Auto-sync on save/commit/PR/agent turn
+- Let a slash command (or agent) execute `push --apply` / call Jira APIs itself
