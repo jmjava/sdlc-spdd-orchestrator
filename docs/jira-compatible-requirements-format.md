@@ -44,8 +44,8 @@ Place optional YAML frontmatter at the top of each requirement file:
 ```yaml
 ---
 work_id: "CHORE-DB-001-schema-design"
-jira_key: "ECQ-21620"
-jira_epic: "ECQ-21000"
+jira_key: "ORCH-21620"
+jira_epic: "ORCH-21000"
 jira_type: "Story"
 jira_status: "In Progress"
 jira_assignee: "team-backend"
@@ -83,7 +83,7 @@ Claim auto-link still reads `- Key: ABC-123` under `## Jira`. Prefer setting bot
 ```markdown
 ---
 work_id: "CHORE-DB-001-schema-design"
-jira_key: "ECQ-21620"
+jira_key: "ORCH-21620"
 jira_status: "In Progress"
 milestone: "milestone-2"
 blocks:
@@ -119,7 +119,7 @@ depends_on: []
 
 ## Jira
 
-- Key: ECQ-21620
+- Key: ORCH-21620
 - Issue type: Story
 - Summary: …
 ```
@@ -139,7 +139,7 @@ number: 2
 start_date: "2026-07-01"
 end_date: "2026-07-31"
 related_epics:
-  - "ECQ-21000"
+  - "ORCH-21000"
 status: "in_progress"
 notes: "Schema + Liquibase + CRUD validation"
 ```

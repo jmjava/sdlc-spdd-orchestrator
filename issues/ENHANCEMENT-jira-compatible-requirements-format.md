@@ -129,8 +129,8 @@ START → JIRA (Create/Link Epic/Stories) → Export Requirements (JIRA → Mark
 
 ```yaml
 ---
-jira_key: "ECQ-21620"
-jira_epic: "ECQ-21000"
+jira_key: "ORCH-21620"
+jira_epic: "ORCH-21000"
 jira_type: "Story"
 jira_status: "In Progress"
 jira_assignee: "team-backend"
@@ -191,7 +191,7 @@ NOT IN SCOPE:
 ### Phase 4: Migration & Testing (2-3 hours)
 
 **Tasks:**
-1. Migrate existing requirements (ECQ-21617, CHORE-DB-001, CHORE-API-001, CHORE-API-002, CHORE-DB-002)
+1. Migrate existing requirements (ORCH-21617, CHORE-DB-001, CHORE-API-001, CHORE-API-002, CHORE-DB-002)
 2. Create milestone.yml files for Milestone 1 and Milestone 2
 3. Test validation script on migrated requirements
 4. Run workflow on migrated requirements (verify analysis phase works)

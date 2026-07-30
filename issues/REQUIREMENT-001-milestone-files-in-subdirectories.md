@@ -5,7 +5,7 @@
 **Priority:** HIGH  
 **Reported:** 2026-06-24  
 **Implemented:** 2026-07-15  
-**Reporter:** ecq-auth-service project  
+**Reporter:** example-auth-service project  
 
 ---
 
@@ -134,7 +134,7 @@ project-root/
 ## Affected Projects
 
 **Currently Affected:**
-- `ecq-auth-service` — Milestone files at root, requirement stubs in subdirectories (mixed pattern)
+- `example-auth-service` — Milestone files at root, requirement stubs in subdirectories (mixed pattern)
 
 **May Be Affected:**
 - Any new projects created after this change should use subdirectory pattern
