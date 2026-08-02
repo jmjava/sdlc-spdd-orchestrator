@@ -1,0 +1,160 @@
+# docgen.yaml — updated by docgen yaml-generate
+# Source: /home/ubuntu/github/jmjava/sdlc-spdd-orchestrator/docs/demos/docgen.yaml
+# Note: PyYAML rewrite drops comments; review diff in Git.
+
+repo_root: ../..
+dirs:
+  narration: narration
+  audio: audio
+  animations: animations
+  recordings: recordings
+segments:
+  default: &id001
+  - '01'
+  - '02'
+  - '03'
+  all: *id001
+segment_names:
+  '01': 01-sdlc-spdd-intro
+  '02': 02-install-and-workflow
+  '03': 03-guide-rag-dogfood
+visual_map:
+  '01':
+    type: manim
+    class: SdlcSpddIntroScene
+  '02':
+    type: manim
+    class: InstallWorkflowScene
+  '03':
+    type: manim
+    class: GuideRagDogfoodScene
+compose:
+  ffmpeg_timeout_sec: 300
+tts:
+  model: gpt-4o-mini-tts
+  voice: coral
+  instructions: You are narrating a technical demo video about sdlc-spdd-orchestrator. Speak in a calm, professional tone.
+    Pronounce technical terms clearly.
+concat:
+  full-demo: *id001
+validation:
+  max_drift_sec: 2.75
+  narration_lint:
+    pre_tts_deny_patterns:
+    - target duration
+    - intended length
+    - 'visual:'
+    - edit for voice
+wizard:
+  llm_model: gpt-4o
+  system_prompt: You are a technical writer creating narration scripts for demo videos about sdlc-spdd-orchestrator. Write
+    in plain spoken English suitable for text-to-speech. No markdown formatting, no headings, no bullet points. Conversational
+    but professional tone, like a senior engineer presenting at a conference.
+  exclude_patterns:
+  - '**/node_modules/**'
+  - '**/.pytest_cache/**'
+  - '**/__pycache__/**'
+  - '**/.venv/**'
+  - '**/archive/**'
+narration_from_source:
+  model: gpt-4o-mini
+  temperature: 0.65
+  max_context_bytes: 120000
+  hints: []
+  context:
+    paths:
+    - README.md
+    globs: []
+  segments:
+    '01':
+      hints:
+      - 'Open with the core problem: AI coding context lives in chat and disappears. SDLC-SPDD moves requirements, REASONS
+        canvases, tasks, reviews, memory, and session handoffs into version-controlled files so a new agent session can resume
+        from artifacts.'
+      - 'Explain the three parts: Planning (roadmap, milestones, session notes) informs and summarizes; SPDD (REASONS Canvas)
+        governs what artifact owns the work; SDLC Agents supplies role-separated lifecycle and session handoffs.'
+      - Introduce the REASONS Canvas briefly — Requirements, Entities, Approach, Structure, Operations, Norms, Safeguards
+        — as the fixed prompt contract before code.
+      - Close by pointing to segment 02 for installing into a target project and the daily workflow sequence.
+      context:
+        paths:
+        - README.md
+        - docs/ten-thousand-foot-view.md
+        - docs/what-spdd-brings.md
+        - docs/three-part-operating-path.md
+    '02':
+      hints:
+      - 'Walk the adoption path: clone the orchestrator, run setup-agent-prompts.sh against a target app, verify with verify-project-install.sh,
+        then open the target in Cursor, Copilot, or Claude Code. Shell scripts remain the supported consumer install path.'
+      - 'Mention the experimental ops console (sdlc.sh console on port 5051) for dogfood installs, SQLite, rollback, and Guide lifecycle,
+        and the separate ADF Viewer on port 5050 for editing adf JSON and Jira sync — see docs/ops-console.md. Editing does not happen in the console.'
+      - 'Cover the first-session loop from first-day-with-sdlc-spdd.md: init, analysis, plan, architect, code one operation,
+        API test, review, capture memory — one small increment.'
+      - 'Reference workflow.md steps 1–6: set up prompts, initialize, map milestone work, start session with Resume Prompt,
+        run analysis with index-spdd-analysis.sh, then plan.'
+      - Mention Work ID prefixes (FEAT, BUG, REF, SPIKE, DOC, TEST, CHORE) and that canvases must reach Ready For Coding before
+        /sdlc-spdd-code.
+      - Close by noting deeper guides live in docs/README.md and docs/sdlc-spdd/ in target projects after install.
+      context:
+        paths:
+        - docs/first-day-with-sdlc-spdd.md
+        - docs/installing-into-your-project.md
+        - docs/ops-console.md
+        - docs/adf-viewer.md
+        - docs/workflow.md
+        - docs/initialization-and-invocation.md
+        - README.md
+    '03':
+      hints:
+      - Explain why this repo uses Embabel Guide + Neo4j as an optional local research / DICE context backend during /sdlc-spdd-analysis
+        instead of pasting large external docs into every prompt. Files stay canonical; Guide is runtime-resolved.
+      - 'Note SPIKE-001 provisional go on main, Guide pin tag sdlc-spdd-projection-v1, and that the ops console Guide tab can start Neo4j + Guide for dogfood.'
+      - 'Summarize dual ingest: RAG chunks plus typed entity projection (WorkId, Area, Decision, Pitfall, Pattern) and spdd_* retrieval tools.'
+      - 'Describe MCP usage: docs_vectorSearch for concepts, docs_textSearch for exact CLI flags; cite chunk URIs in spdd/analysis
+        artifacts.'
+      - 'Present the dogfood table: SPDD on self, docgen on self (this bundle), Guide on self, posture guard keeping templates
+        clean. Clarify ADF Viewer is separate and does not talk to Guide.'
+      - 'State clearly what does not ship to target projects: Guide YAML, Neo4j, MCP wiring, .venv, regenerable docgen outputs. Opt-in is --with-guide / guide-dice harness only.'
+      context:
+        paths:
+        - docs/guide-flow.md
+        - docs/ops-console.md
+        - docs/guide-rag-research-and-dogfooding.md
+        - docs/dice-projection-runbook.md
+        - spdd/canvas/SPIKE-001-guide-rag-context-backend.md
+        - docs/context-loading-and-scaling.md
+        - README.md
+manim_scene_generation:
+  model: gpt-4o
+  temperature: 0.4
+  max_context_bytes: 80000
+  hints:
+  - 'DEFAULT path is declarative animations/specs/*.scene.yaml (not hand-edited scenes.py).'
+  - 'Every paced box label MUST be a short phrase spoken in the narration (match timing.json words). Prefer 2-5 word clips from the script.'
+  - 'Paginate: ~3 rows per page, compact heights 0.75-0.9, palette tokens only (C_ACCENT, C_GREEN, C_BLUE, C_TEAL, C_ORANGE, C_WHITE).'
+  - 'Cover subject-topic shifts; do not invent unspoken marketing slogans.'
+  context:
+    paths:
+    - docs/demos/hints/manim-scene-specs.md
+    globs: []
+  segments:
+    '01':
+      class_name: SdlcSpddIntroScene
+      hints:
+      - 'Title text: SDLC-SPDD Orchestrator. Pages for: context lives in chat; version-controlled files; Planning / SPDD / SDLC Agents; REASONS Canvas; ops console and ADF Viewer.'
+      - 'Use spoken phrases as labels, e.g. "context lives in chat", "version-controlled files", "Planning", "SPDD", "SDLC Agents", "REASONS Canvas", "ops console".'
+    '02':
+      class_name: InstallWorkflowScene
+      hints:
+      - 'Title: Install and workflow. Cover setup-agent-prompts.sh, verify-project-install.sh, ops console on port 5051, ADF Viewer on port 5050, first session loop, workflow steps.'
+      - 'Spoken labels only — e.g. "setup-agent-prompts.sh", "verify-project-install.sh", "ops console", "ADF Viewer", "first session", "Ready For Coding".'
+    '03':
+      class_name: GuideRagDogfoodScene
+      hints:
+      - 'Title: Guide RAG and dogfooding. Cover intentional dogfooding, optional Guide backend, sdlc-spdd-projection-v1, dual ingest, MCP tools, what does not ship.'
+      - 'Spoken labels — e.g. "intentional dogfooding", "optional local backend", "sdlc-spdd-projection-v1", "RAG chunks", "typed domain entities", "does not talk to Guide".'
+manim:
+  scenes:
+  - SdlcSpddIntroScene
+  - InstallWorkflowScene
+  - GuideRagDogfoodScene

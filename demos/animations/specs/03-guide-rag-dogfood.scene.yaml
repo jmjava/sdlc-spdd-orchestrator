@@ -1,0 +1,142 @@
+segment_id: "03"
+class_name: GuideRagDogfoodScene
+title:
+  text: Guide RAG & Dogfooding
+  font_size: 32
+  color: C_TEAL
+layout:
+  first_row_title_buff: 0.45
+  row_gap: 0.32
+  column_gap: 0.28
+  page_transition: fade
+  page_transition_run_time: 0.45
+pages:
+  - rows:
+      - run_time: 1.1
+        boxes:
+          - label: publish a framework
+            color: C_ACCENT
+            width: 5.5
+            height: 0.85
+            font_size: 20
+          - label: intentional dogfooding
+            color: C_ORANGE
+            width: 5.5
+            height: 0.85
+            font_size: 20
+      - run_time: 1.1
+        boxes:
+          - label: Embabel Guide
+            color: C_GREEN
+            width: 4.2
+            height: 0.85
+            font_size: 20
+          - label: Neo4j
+            color: C_BLUE
+            width: 3.0
+            height: 0.85
+            font_size: 20
+          - label: optional local backend
+            color: C_TEAL
+            width: 4.5
+            height: 0.85
+            font_size: 18
+      - run_time: 1.1
+        boxes:
+          - label: Markdown files
+            color: C_WHITE
+            width: 4.0
+            height: 0.85
+            font_size: 20
+          - label: file indexes
+            color: C_ACCENT
+            width: 4.0
+            height: 0.85
+            font_size: 20
+          - label: not an error
+            color: C_GREEN
+            width: 3.5
+            height: 0.85
+            font_size: 18
+  - rows:
+      - run_time: 1.1
+        boxes:
+          - label: provisional go
+            color: C_TEAL
+            width: 5.0
+            height: 0.85
+            font_size: 20
+          - label: sdlc-spdd-projection-v1
+            color: C_ACCENT
+            width: 5.5
+            height: 0.85
+            font_size: 18
+      - run_time: 1.1
+        boxes:
+          - label: ops console
+            color: C_BLUE
+            width: 4.5
+            height: 0.85
+            font_size: 20
+          - label: Guide tab
+            color: C_BLUE
+            width: 4.5
+            height: 0.85
+            font_size: 20
+      - run_time: 1.1
+        boxes:
+          - label: RAG chunks
+            color: C_ORANGE
+            width: 4.5
+            height: 0.85
+            font_size: 20
+          - label: typed domain entities
+            color: C_GREEN
+            width: 5.5
+            height: 0.85
+            font_size: 18
+  - rows:
+      - run_time: 1.1
+        boxes:
+          - label: MCP tools
+            color: C_BLUE
+            width: 4.5
+            height: 0.85
+            font_size: 20
+          - label: posture guard
+            color: C_PURPLE
+            width: 4.5
+            height: 0.85
+            font_size: 20
+      - run_time: 1.1
+        boxes:
+          - label: ADF Viewer
+            color: C_ORANGE
+            width: 4.5
+            height: 0.85
+            font_size: 20
+          - label: does not talk
+            color: C_TEAL
+            width: 4.5
+            height: 0.85
+            font_size: 20
+  - rows:
+      - run_time: 1.1
+        boxes:
+          - label: research infrastructure
+            color: C_WHITE
+            width: 5.5
+            height: 0.85
+            font_size: 18
+          - label: target projects
+            color: C_GREEN
+            width: 4.5
+            height: 0.85
+            font_size: 18
+      - run_time: 1.1
+        boxes:
+          - label: guide-dice
+            color: C_ACCENT
+            width: 5.5
+            height: 0.85
+            font_size: 20

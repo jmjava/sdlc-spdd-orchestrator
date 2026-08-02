@@ -1,0 +1,141 @@
+segment_id: "02"
+class_name: InstallWorkflowScene
+title:
+  text: Install & Workflow
+  font_size: 32
+  color: C_BLUE
+layout:
+  first_row_title_buff: 0.45
+  row_gap: 0.32
+  column_gap: 0.28
+  page_transition: fade
+  page_transition_run_time: 0.45
+pages:
+  - rows:
+      - run_time: 1.1
+        boxes:
+          - label: orchestrator repository
+            color: C_ACCENT
+            width: 6.5
+            height: 0.85
+            font_size: 20
+      - run_time: 1.1
+        boxes:
+          - label: setup-agent-prompts.sh
+            color: C_GREEN
+            width: 5.2
+            height: 0.85
+            font_size: 18
+          - label: verify-project-install.sh
+            color: C_GREEN
+            width: 5.2
+            height: 0.85
+            font_size: 18
+      - run_time: 1.1
+        boxes:
+          - label: three-part scaffold
+            color: C_TEAL
+            width: 4.0
+            height: 0.85
+            font_size: 18
+          - label: Cursor
+            color: C_BLUE
+            width: 2.2
+            height: 0.85
+            font_size: 18
+          - label: GitHub Copilot
+            color: C_BLUE
+            width: 3.2
+            height: 0.85
+            font_size: 16
+          - label: Claude Code
+            color: C_BLUE
+            width: 2.8
+            height: 0.85
+            font_size: 16
+  - rows:
+      - run_time: 1.1
+        boxes:
+          - label: ops console
+            color: C_TEAL
+            width: 5.0
+            height: 0.85
+            font_size: 20
+          - label: port 5051
+            color: C_TEAL
+            width: 4.0
+            height: 0.85
+            font_size: 20
+      - run_time: 1.1
+        boxes:
+          - label: dogfood installs
+            color: C_GREEN
+            width: 4.0
+            height: 0.85
+            font_size: 18
+          - label: SQLite management
+            color: C_GREEN
+            width: 4.0
+            height: 0.85
+            font_size: 18
+          - label: Guide lifecycle
+            color: C_GREEN
+            width: 3.8
+            height: 0.85
+            font_size: 18
+      - run_time: 1.1
+        boxes:
+          - label: ADF Viewer
+            color: C_PURPLE
+            width: 5.0
+            height: 0.85
+            font_size: 20
+          - label: port 5050
+            color: C_PURPLE
+            width: 4.0
+            height: 0.85
+            font_size: 20
+  - rows:
+      - run_time: 1.1
+        boxes:
+          - label: Shell scripts
+            color: C_ORANGE
+            width: 6.5
+            height: 0.85
+            font_size: 20
+      - run_time: 1.1
+        boxes:
+          - label: first session
+            color: C_BLUE
+            width: 5.0
+            height: 0.85
+            font_size: 20
+          - label: workflow table
+            color: C_GREEN
+            width: 5.0
+            height: 0.85
+            font_size: 20
+      - run_time: 1.1
+        boxes:
+          - label: setting up prompts
+            color: C_ACCENT
+            width: 5.0
+            height: 0.85
+            font_size: 20
+          - label: sdlc-spdd-init
+            color: C_ACCENT
+            width: 5.0
+            height: 0.85
+            font_size: 20
+      - run_time: 1.1
+        boxes:
+          - label: Work IDs
+            color: C_BLUE
+            width: 4.5
+            height: 0.85
+            font_size: 20
+          - label: Ready For Coding
+            color: C_TEAL
+            width: 5.5
+            height: 0.85
+            font_size: 20

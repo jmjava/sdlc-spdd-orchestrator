@@ -1,0 +1,21 @@
+# Regenerable docgen outputs (never commit on main — publish via deploy-docs-pages-local.sh)
+.venv/
+audio/*.mp3
+animations/media/
+animations/timing.json
+animations/.scene-spec-drafts/
+.docgen-state.json
+__pycache__/
+*.pyc
+# docgen: intermediate objects (regenerable)
+.venv/
+slides/node_modules/
+slides/dist/
+animations/media/partial_movie_files/
+animations/media/videos/
+audio/*.mp3
+__pycache__/
+*.pyc
+.docgen-state.json
+
+# recordings/*.mp4 — COMMITTED (tracked via LFS for README/Pages links)

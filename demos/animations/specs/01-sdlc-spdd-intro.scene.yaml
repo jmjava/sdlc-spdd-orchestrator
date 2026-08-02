@@ -1,0 +1,149 @@
+segment_id: "01"
+class_name: SdlcSpddIntroScene
+title:
+  text: SDLC-SPDD Orchestrator
+  font_size: 34
+  color: C_ACCENT
+layout:
+  first_row_title_buff: 0.45
+  row_gap: 0.35
+  column_gap: 0.3
+  page_transition: fade
+  page_transition_run_time: 0.45
+pages:
+  - rows:
+      - run_time: 1.2
+        boxes:
+          - label: AI-assisted coding
+            color: C_RED
+            width: 5.2
+            height: 0.85
+            font_size: 20
+          - label: context lives in chat
+            color: C_BLUE
+            width: 5.2
+            height: 0.85
+            font_size: 20
+      - run_time: 1.2
+        boxes:
+          - label: next agent
+            color: C_ORANGE
+            width: 5.2
+            height: 0.85
+            font_size: 20
+          - label: partial conversation
+            color: C_ORANGE
+            width: 5.2
+            height: 0.85
+            font_size: 20
+      - run_time: 1.2
+        boxes:
+          - label: SDLC-SPDD Orchestrator
+            color: C_GREEN
+            width: 6.5
+            height: 0.9
+            font_size: 22
+  - rows:
+      - run_time: 1.2
+        boxes:
+          - label: version-controlled files
+            color: C_TEAL
+            width: 6.0
+            height: 0.85
+            font_size: 20
+          - label: deliberately hybrid
+            color: C_ACCENT
+            width: 5.0
+            height: 0.85
+            font_size: 20
+      - run_time: 1.2
+        boxes:
+          - label: Planning
+            color: C_BLUE
+            width: 3.5
+            height: 0.85
+            font_size: 20
+          - label: SPDD
+            color: C_GREEN
+            width: 3.5
+            height: 0.85
+            font_size: 20
+          - label: SDLC Agents
+            color: C_TEAL
+            width: 3.5
+            height: 0.85
+            font_size: 20
+      - run_time: 1.2
+        boxes:
+          - label: REASONS Canvas
+            color: C_ORANGE
+            width: 6.5
+            height: 0.9
+            font_size: 22
+  - rows:
+      - run_time: 1.0
+        boxes:
+          - label: Requirements
+            color: C_WHITE
+            width: 3.5
+            height: 0.75
+            font_size: 18
+          - label: Entities
+            color: C_WHITE
+            width: 3.5
+            height: 0.75
+            font_size: 18
+          - label: Approach
+            color: C_WHITE
+            width: 3.5
+            height: 0.75
+            font_size: 18
+      - run_time: 1.0
+        boxes:
+          - label: Structure
+            color: C_WHITE
+            width: 3.5
+            height: 0.75
+            font_size: 18
+          - label: Operations
+            color: C_WHITE
+            width: 3.5
+            height: 0.75
+            font_size: 18
+          - label: Norms and Safeguards
+            color: C_WHITE
+            width: 4.2
+            height: 0.75
+            font_size: 16
+      - run_time: 1.0
+        boxes:
+          - label: align on that artifact
+            color: C_ORANGE
+            width: 6.5
+            height: 0.8
+            font_size: 18
+  - rows:
+      - run_time: 1.2
+        boxes:
+          - label: ops console
+            color: C_BLUE
+            width: 5.2
+            height: 0.85
+            font_size: 20
+          - label: ADF Viewer
+            color: C_GREEN
+            width: 5.2
+            height: 0.85
+            font_size: 20
+      - run_time: 1.2
+        boxes:
+          - label: following steps
+            color: C_TEAL
+            width: 5.2
+            height: 0.85
+            font_size: 20
+          - label: target project
+            color: C_ACCENT
+            width: 5.2
+            height: 0.85
+            font_size: 20
