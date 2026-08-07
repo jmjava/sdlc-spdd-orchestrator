@@ -94,4 +94,5 @@ Git-alone must answer the #82 matrix from stay-set + this ledger.
 - [x] Schema + kinds documented  
 - [x] Storage + write triggers documented  
 - [x] Reconstruct story for git-alone documented  
-- [ ] Reviewed against #83/#84/#85 before coding append API  
+- [x] `PointerLedger` implemented (`sdlc_engine/pointers.py`) + `engine/tests/test_pointers.py`  
+- [ ] Reviewed against #83/#84/#85 before wiring capture fan-out (#90)
