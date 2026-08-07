@@ -116,3 +116,5 @@ without either Work ID knowing about the other.
 | Ops console Guide + ADF launch | `docs/ops-console.md` |
 | A/B evidence (resolver vs embedding vs domain graph) | `spdd/analysis/SPIKE-001-retrieval-ab-ledger.md` |
 | Canvas / spike status | `spdd/canvas/SPIKE-001-guide-rag-context-backend.md` |
+| Fork vs upstream absorption (SPIKE-003) | `spdd/analysis/SPIKE-003-embabel-context-graph-absorption-research.md` — **Complete** (hybrid accepted) |
+| Upstream git-incremental slice (FEAT-013) | `spdd/canvas/FEAT-013-guide-git-incremental-upstream.md` |

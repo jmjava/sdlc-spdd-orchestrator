@@ -30,3 +30,5 @@ Canonical code-area categories. Populated from session capture and analysis inde
 - (external) embabel guide usermodelfactory / application.yml
 - (external) ollama
 - agent-context/memory/prompt-optimization-log.md
+- com.embabel.guide.spdd
+- com.embabel.guide.rag

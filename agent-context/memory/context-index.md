@@ -3,9 +3,32 @@
 Maps code areas to indexed project context. Filter by Area to find prior sessions,
 analysis artifacts, architecture decisions, known pitfalls, and reusable patterns
 for the code you are about to touch — across any Work ID or date. Newest first.
+Kinds: analysis, session, decision, pitfall, pattern, metric.
 
 | Area | Kind | Work ID | Phase | Timestamp | Source | Entry |
 |------|------|---------|-------|-----------|--------|-------|
+| scripts/sdlc-spdd | metric | SPIKE-003-embabel-context-graph-absorption | sync | 2026-08-07T21:08:56Z | capture-metrics | readiness=reviewed |
+| scripts/lib | metric | SPIKE-003-embabel-context-graph-absorption | sync | 2026-08-07T21:08:56Z | capture-metrics | readiness=reviewed |
+| docs/context-loading-and-scaling.md | metric | SPIKE-003-embabel-context-graph-absorption | sync | 2026-08-07T21:08:56Z | capture-metrics | readiness=reviewed |
+| spec/commands | metric | SPIKE-003-embabel-context-graph-absorption | sync | 2026-08-07T21:08:56Z | capture-metrics | readiness=reviewed |
+| agent-context/sdlc-workflow.sh | metric | SPIKE-003-embabel-context-graph-absorption | sync | 2026-08-07T21:08:56Z | capture-metrics | readiness=reviewed |
+| spdd/canvas | metric | SPIKE-003-embabel-context-graph-absorption | sync | 2026-08-07T21:08:56Z | capture-metrics | readiness=reviewed |
+| requirements/milestones | metric | SPIKE-003-embabel-context-graph-absorption | sync | 2026-08-07T21:08:56Z | capture-metrics | readiness=reviewed |
+| agent-context/memory | metric | SPIKE-003-embabel-context-graph-absorption | sync | 2026-08-07T21:08:56Z | capture-metrics | readiness=reviewed |
+| agent-context/memory/prompt-optimization-log.md | metric | SPIKE-003-embabel-context-graph-absorption | sync | 2026-08-07T21:08:56Z | capture-metrics | readiness=reviewed |
+| com.embabel.guide.spdd | metric | SPIKE-003-embabel-context-graph-absorption | sync | 2026-08-07T21:08:56Z | capture-metrics | readiness=reviewed |
+| com.embabel.guide.rag | metric | SPIKE-003-embabel-context-graph-absorption | sync | 2026-08-07T21:08:56Z | capture-metrics | readiness=reviewed |
+| scripts/sdlc-spdd | session | SPIKE-003-embabel-context-graph-absorption | sync | 2026-08-07T21:08:56Z | spdd/canvas/SPIKE-003-embabel-context-graph-absorption.md | sessions/20260807T210856Z-SPIKE-003-embabel-context-graph-absorption-sync.md |
+| scripts/lib | session | SPIKE-003-embabel-context-graph-absorption | sync | 2026-08-07T21:08:56Z | spdd/canvas/SPIKE-003-embabel-context-graph-absorption.md | sessions/20260807T210856Z-SPIKE-003-embabel-context-graph-absorption-sync.md |
+| docs/context-loading-and-scaling.md | session | SPIKE-003-embabel-context-graph-absorption | sync | 2026-08-07T21:08:56Z | spdd/canvas/SPIKE-003-embabel-context-graph-absorption.md | sessions/20260807T210856Z-SPIKE-003-embabel-context-graph-absorption-sync.md |
+| spec/commands | session | SPIKE-003-embabel-context-graph-absorption | sync | 2026-08-07T21:08:56Z | spdd/canvas/SPIKE-003-embabel-context-graph-absorption.md | sessions/20260807T210856Z-SPIKE-003-embabel-context-graph-absorption-sync.md |
+| agent-context/sdlc-workflow.sh | session | SPIKE-003-embabel-context-graph-absorption | sync | 2026-08-07T21:08:56Z | spdd/canvas/SPIKE-003-embabel-context-graph-absorption.md | sessions/20260807T210856Z-SPIKE-003-embabel-context-graph-absorption-sync.md |
+| spdd/canvas | session | SPIKE-003-embabel-context-graph-absorption | sync | 2026-08-07T21:08:56Z | spdd/canvas/SPIKE-003-embabel-context-graph-absorption.md | sessions/20260807T210856Z-SPIKE-003-embabel-context-graph-absorption-sync.md |
+| requirements/milestones | session | SPIKE-003-embabel-context-graph-absorption | sync | 2026-08-07T21:08:56Z | spdd/canvas/SPIKE-003-embabel-context-graph-absorption.md | sessions/20260807T210856Z-SPIKE-003-embabel-context-graph-absorption-sync.md |
+| agent-context/memory | session | SPIKE-003-embabel-context-graph-absorption | sync | 2026-08-07T21:08:56Z | spdd/canvas/SPIKE-003-embabel-context-graph-absorption.md | sessions/20260807T210856Z-SPIKE-003-embabel-context-graph-absorption-sync.md |
+| agent-context/memory/prompt-optimization-log.md | session | SPIKE-003-embabel-context-graph-absorption | sync | 2026-08-07T21:08:56Z | spdd/canvas/SPIKE-003-embabel-context-graph-absorption.md | sessions/20260807T210856Z-SPIKE-003-embabel-context-graph-absorption-sync.md |
+| com.embabel.guide.spdd | session | SPIKE-003-embabel-context-graph-absorption | sync | 2026-08-07T21:08:56Z | spdd/canvas/SPIKE-003-embabel-context-graph-absorption.md | sessions/20260807T210856Z-SPIKE-003-embabel-context-graph-absorption-sync.md |
+| com.embabel.guide.rag | session | SPIKE-003-embabel-context-graph-absorption | sync | 2026-08-07T21:08:56Z | spdd/canvas/SPIKE-003-embabel-context-graph-absorption.md | sessions/20260807T210856Z-SPIKE-003-embabel-context-graph-absorption-sync.md |
 | (external) embabel guide usermodelfactory / application.yml | analysis | SPIKE-002-local-llm-and-embedding-format | analysis | 2026-07-15T23:22:33Z | analysis | spdd/analysis/SPIKE-002-local-llm-and-embedding-format-analysis.md |
 | (external) ollama | analysis | SPIKE-002-local-llm-and-embedding-format | analysis | 2026-07-15T23:22:33Z | analysis | spdd/analysis/SPIKE-002-local-llm-and-embedding-format-analysis.md |
 | agent-context/memory/prompt-optimization-log.md | analysis | SPIKE-002-local-llm-and-embedding-format | analysis | 2026-07-15T23:22:33Z | analysis | spdd/analysis/SPIKE-002-local-llm-and-embedding-format-analysis.md |

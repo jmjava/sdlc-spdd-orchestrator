@@ -60,3 +60,12 @@ Older entries may be rotated into `agent-context/memory/archive/` (same pattern 
 - Hypothesis: Parsing existing Metadata Readiness + optional YAML would be enough without migrating all canvases
 - Signal: tests/test-canvas-readiness.sh 6/6; posture OK
 - Outcome: improved — leading indicators + machine-parseable readiness without breaking older canvases
+
+### 2026-08-07 — SPIKE-003 absorption research close-out
+
+- Date: 2026-08-07
+- Work ID: SPIKE-003-embabel-context-graph-absorption
+- Change: Dual-repo Guide+orchestrator session for fork-vs-upstream inventory; pin vs tip diffs; absorption matrix in research + Guide docs
+- Hypothesis: Separating SPDD-coupled package from Embabel-general git-incremental ingest would yield a clear hybrid recommendation without opening an upstream PR
+- Signal: Review Approved With Notes; Guide PR #4 merged; tip refresh (Layer D cloud env) did not change recommendation; human accept/reject still open
+- Outcome: improved — decision artifacts and upstreamability matrix are reusable; dual-env reduced context-switch cost
