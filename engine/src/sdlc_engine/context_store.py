@@ -15,7 +15,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from .context_model import CONTEXT_KINDS, FEATURE_MIRROR_KIND
+from .context_model import CONTEXT_KINDS
 from .db import LocalIndex
 from .pointers import PointerLedger, PointerRecord
 from .project import Project
@@ -290,7 +290,7 @@ class ContextStore:
         ts: str,
     ) -> dict[str, Any]:
         """Lean-git write for non-lesson context entries (+ dual-write index)."""
-        # Prefer stay-set ledger under spdd/memory; keep feature mirror for progress/retro.
+        # Stay-set ledger only — no agent-context/features mirrors (#86).
         mem_dir = self.project.root / "spdd" / "memory" / "entries"
         mem_dir.mkdir(parents=True, exist_ok=True)
         rel = Path("spdd/memory/entries") / f"{kind}.md"
@@ -306,17 +306,6 @@ class ContextStore:
         )
         with path.open("a", encoding="utf-8") as fh:
             fh.write(block)
-
-        mirror_name = next(
-            (fname for fname, k in FEATURE_MIRROR_KIND.items() if k == kind),
-            "",
-        )
-        if mirror_name:
-            feat = self.project.root / "agent-context" / "features" / work_id
-            feat.mkdir(parents=True, exist_ok=True)
-            mpath = feat / mirror_name
-            with mpath.open("a", encoding="utf-8") as fh:
-                fh.write(block)
 
         index_path = self.project.root / CONTEXT_INDEX
         index_path.parent.mkdir(parents=True, exist_ok=True)

@@ -49,6 +49,7 @@ class Project:
         return self.root / "agent-context" / "work-registry.tsv"
 
     def canvas_path(self, work_id: str) -> Path:
+        """Canonical REASONS canvas (stay-set). Legacy feature mirror is fallback only."""
         primary = self.root / "spdd" / "canvas" / f"{work_id}.md"
         if primary.is_file():
             return primary
@@ -56,6 +57,7 @@ class Project:
         return alt if alt.is_file() else primary
 
     def feature_dir(self, work_id: str) -> Path:
+        """Legacy mirror dir (deprecated #86). Prefer stay-set paths."""
         return self.root / "agent-context" / "features" / work_id
 
     def analysis_path(self, work_id: str) -> Path:
@@ -70,7 +72,28 @@ class Project:
     def milestone_path(self, work_id: str) -> Path:
         return self.root / "requirements" / "milestones" / f"{work_id}.md"
 
+    def hot_session_dir(self) -> Path:
+        """Hot session briefs live under gitignored `.sdlc/sessions/` (#85)."""
+        return self.sdlc_dir / "sessions"
+
+    def legacy_session_dir(self) -> Path:
+        return self.root / "agent-context" / "sessions"
+
+    def current_session_path(self) -> Path:
+        """Prefer hot `.sdlc/sessions/current-session.md`, else legacy fallback."""
+        hot = self.hot_session_dir() / "current-session.md"
+        if hot.is_file():
+            return hot
+        legacy = self.legacy_session_dir() / "current-session.md"
+        return legacy if legacy.is_file() else hot
+
+    def progress_log_path(self, work_id: str) -> Path:
+        """Lean progress ledger (not feature mirror)."""
+        return self.root / "spdd" / "memory" / "entries" / "progress.md"
+
     def ensure_runtime_dirs(self) -> None:
         self.sdlc_dir.mkdir(parents=True, exist_ok=True)
         self.workflows_dir.mkdir(parents=True, exist_ok=True)
+        self.hot_session_dir().mkdir(parents=True, exist_ok=True)
         (self.root / "agent-context").mkdir(parents=True, exist_ok=True)
+        (self.root / "spdd" / "memory" / "entries").mkdir(parents=True, exist_ok=True)
