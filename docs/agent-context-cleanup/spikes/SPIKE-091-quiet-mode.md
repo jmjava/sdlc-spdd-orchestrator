@@ -1,7 +1,7 @@
 # SPIKE-091: Quiet / product-test mode
 
 GitHub: [#91](https://github.com/jmjava/sdlc-spdd-orchestrator/issues/91)  
-Status: **proposal accepted for implementation**
+Status: **implemented**
 
 ## Decision
 
@@ -14,5 +14,7 @@ Enable when any of:
 Effects:
 
 - Do not inject next T## / dogfood gravity into briefs  
+- `sdlc_workflow_recommended_command` returns quiet blurb  
 - Still allow on-demand retrieve of lessons/graph via ContextStore  
-- Prefer product-test resume text (Guide E2E ports/commands) when Guide live  
+
+CLI: `sdlc-engine agent-context quiet-status`
