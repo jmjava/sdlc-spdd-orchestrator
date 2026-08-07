@@ -223,3 +223,10 @@ Add notes here during the session, then persist them with:
 - Summary: FEAT-005 sync complete
 - Validation: Not recorded
 - Next: Not recorded
+
+## Captured Memory
+
+- Captured at: 2026-08-07T21:08:56Z
+- Summary: SPIKE-003 dual-env: tip refresh Layer D; review Approved With Notes; retro+sync; await human accept/reject
+- Validation: validate-reasons-canvas green; tip e487220 vs upstream 44 files
+- Next: Human accept/reject of hybrid recommendation; then optional FEAT for git-incremental upstream

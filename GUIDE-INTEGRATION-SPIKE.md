@@ -12,7 +12,7 @@ Guide fork (durable pin): https://github.com/jmjava/guide (tag `sdlc-spdd-projec
 |---------|----------|--------|
 | [SPIKE-001-guide-rag-context-backend](requirements/milestones/SPIKE-001-guide-rag-context-backend.md) | Does DICE hybrid retrieval justify optional Guide? | Provisional GO — field dogfood |
 | [SPIKE-002-local-llm-and-embedding-format](requirements/milestones/SPIKE-002-local-llm-and-embedding-format.md) | Local LLM + embedding format defaults? | Shelved / blocked on Guide+Ollama |
-| [SPIKE-003-embabel-context-graph-absorption](requirements/milestones/SPIKE-003-embabel-context-graph-absorption.md) | Where should the context graph live long-term? | Research complete — await accept/reject |
+| [SPIKE-003-embabel-context-graph-absorption](requirements/milestones/SPIKE-003-embabel-context-graph-absorption.md) | Where should the context graph live long-term? | Research + review complete — await accept/reject |
 
 ## Branch policy
 

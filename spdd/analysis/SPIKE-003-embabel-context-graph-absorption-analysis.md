@@ -112,6 +112,12 @@ git-incremental ingest and ops hardening.**
 - No required Guide dependency.
 - No SPIKE-002 scope creep.
 
+## Dual-env tip refresh (2026-08-07)
+
+Re-ran `upstream/main...HEAD` on the dual-repo Cloud Agent checkout. Tip `e487220`
+adds absorption docs + Cloud Agent env (44 files, +3073/−22) beyond pin `a6e3246`.
+Layer D classified fork-local. Decision table unchanged. Review: Approved With Notes.
+
 ## Next
 
 1. Human accept/reject of hybrid recommendation.

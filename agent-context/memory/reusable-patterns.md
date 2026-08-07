@@ -15,3 +15,10 @@ Capture patterns that worked well and should be reused.
 ## Sync
 
 - Reconcile feature workspace canvas and canonical `spdd/canvas` copy after major changes.
+
+## Guide fork absorption
+
+- Classify fork deltas into layers (SPDD-coupled package, Embabel-general ingest/ops,
+  version pins, Cursor-only env) before proposing upstream PRs.
+- Prefer small upstreamable slices (e.g. git-incremental directory ingest) over one
+  giant fork PR; keep SPDD markdown conventions on `jmjava/guide`.

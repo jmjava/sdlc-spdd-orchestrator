@@ -12,11 +12,14 @@ RAG ingest or re-run SPIKE-001 A/B.
 | Ref | Commit / tip | Notes |
 |-----|--------------|-------|
 | Upstream | `embabel/guide` `main` @ `67f5e9d` | No `com.embabel.guide.spdd`, no git-incremental directory ingest |
-| Fork tip / pin | `jmjava/guide` `main` / tag `sdlc-spdd-projection-v1` @ `a6e3246` | SPIKE-001 projection + ops deltas |
-| Diff | `upstream/main...a6e3246` | **39 files, +2838 / −22** |
+| Orchestrator pin | tag `sdlc-spdd-projection-v1` @ `a6e3246` | SPIKE-001 projection + ops deltas (dogfood pin) |
+| Diff at pin | `upstream/main...a6e3246` | **39 files, +2838 / −22** |
+| Fork tip (dual-env refresh) | `jmjava/guide` `main` @ `e487220` | Pin + absorption docs (PR #4) + Cloud Agent dual-repo env (PR #3) |
+| Diff at tip | `upstream/main...e487220` | **44 files, +3073 / −22** |
 
 Orchestrator pin and dogfood path remain documented in
-`docs/dice-projection-runbook.md`.
+`docs/dice-projection-runbook.md`. Tip growth after the pin does **not** change the
+absorption recommendation — see Layer D below.
 
 ## Layer inventory
 
@@ -62,6 +65,16 @@ Orchestrator pin and dogfood path remain documented in
 | `pom.xml` neo-drivine timestamp pin + enforcer KSP files | Agent 0.3.5 vs floating 0.1.2-SNAPSHOT; build fail-fast |
 | Docs `spdd-*.md` | Fork developer / operator docs |
 
+### Layer D — Dual-repo Cloud Agent environment (tip-only, post-pin)
+
+| Path | Role |
+|------|------|
+| `.cursor/environment.json`, `install.sh`, `start.sh`, `ensure-docker.sh` | Dual checkout: `jmjava/guide` + `jmjava/sdlc-spdd-orchestrator` |
+| Script CWD / Docker socket hardening | Cloud Agent ergonomics for local Neo4j/Testcontainers |
+
+**Coupling:** Cursor Cloud Agent + this fork’s dogfood workflow — **not** Embabel product surface.
+**Recommendation:** keep fork-local; never include in an upstream PR.
+
 ## Upstreamability matrix
 
 | Slice | Embabel-general value | SPDD coupling | Upstream friction | Recommendation |
@@ -71,6 +84,7 @@ Orchestrator pin and dogfood path remain documented in
 | B. Git-incremental directory ingest + maintenance | **High** | None | Low–medium | **Best first upstream PR** from the fork |
 | C. Neo4j Spring auth alignment / KSP enforcer / persona resilience | Medium–high (ops) | None | Low | Upstream with B or as small ops PRs |
 | C′. neo-drivine timestamp pin | Low (version lag) | None | **High** (upstream may already move) | Keep fork-local until Guide agent version catches up |
+| D. Dual-repo Cloud Agent env | Low (Cursor-specific) | None (ops) | N/A | **Keep on `jmjava/guide`** |
 | Gaps: entity↔chunk join on HTTP/MCP | High for DICE story | Medium | Medium | Implement on fork first; strengthens any future upstream narrative |
 | Gaps: Operation / Keyword / Session projection | Medium | High | Low (fork-only) | Fork FEAT after dogfood demand |
 
@@ -123,8 +137,12 @@ git diff --stat upstream/main...HEAD
 git diff --name-status upstream/main...HEAD
 ```
 
-Observed (2026-08-07): `HEAD=a6e3246`, `upstream/main=67f5e9d`, 39 files,
+Observed (2026-08-07 research): pin `a6e3246` vs `upstream/main=67f5e9d` → 39 files,
 +2838/−22.
+
+Observed (2026-08-07 dual-env refresh): tip `e487220` vs same upstream → 44 files,
++3073/−22. Added layers: absorption docs + Cloud Agent dual-repo env. Recommendation
+unchanged.
 
 ## Explicit non-goals confirmed
 

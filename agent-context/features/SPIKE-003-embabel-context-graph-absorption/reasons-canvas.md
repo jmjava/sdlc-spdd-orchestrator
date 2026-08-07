@@ -7,7 +7,7 @@
 - Status: In Progress
 - Readiness: reviewed
 - Created: 2026-08-07
-- Updated: 2026-08-07
+- Updated: 2026-08-07 (dual-env review/retro/sync)
 - Owner: Cursor Agent
 - Target Project: sdlc-spdd-orchestrator (self / dogfood) + `jmjava/guide` durable checkout
 - Stack: Bash + Markdown harness ↔ JVM (Embabel guide fork) + Neo4j `__Entity__` graph + MCP
@@ -188,23 +188,27 @@ answers “where should that graph capability live?”:
 
 ## Sync Notes
 
-2026-08-07 research: `jmjava/guide` @ `sdlc-spdd-projection-v1` (`a6e3246`) vs
+2026-08-07 research: pin `sdlc-spdd-projection-v1` (`a6e3246`) vs
 `embabel/guide` `main` (`67f5e9d`) = 39 files, +2838/−22. Full notes in
 `spdd/analysis/SPIKE-003-embabel-context-graph-absorption-research.md` and
 `spdd/analysis/SPIKE-003-embabel-context-graph-absorption-analysis.md`.
 
 **Recommendation:** keep `com.embabel.guide.spdd` on the fork; upstream candidate #1
 is git-incremental directory ingest + RAG maintenance; defer generic entity MCP and
-library extract. Guide docs: `docs/spdd-upstream-absorption.md` on
-`cursor/embabel-context-graph-absorption-fdca`.
+library extract. Guide docs: `docs/spdd-upstream-absorption.md` on Guide `main`
+(merged PR #4).
+
+2026-08-07 dual-env refresh: tip `e487220` vs same upstream = 44 files, +3073/−22.
+Layer D (Cloud Agent dual-repo env) classified fork-local. Review: Approved With
+Notes. Retro + sync artifacts written. Recommendation unchanged.
 
 Sibling spikes: SPIKE-001 field dogfood continues independently; SPIKE-002 remains
 shelved (model layer).
 
 ## Final Status
 
-- Status: In Progress (research complete; awaiting human accept/reject)
+- Status: In Progress (research + review complete; awaiting human accept/reject)
 - Completed Date:
-- PR: orchestrator draft; Guide draft (absorption docs)
+- PR: orchestrator https://github.com/jmjava/sdlc-spdd-orchestrator/pull/76 ; Guide absorption docs merged (#4)
 - Completed Operations: T01–T04
 - Follow-Up Tasks: human accept/reject; optional FEAT intake for git-incremental upstream

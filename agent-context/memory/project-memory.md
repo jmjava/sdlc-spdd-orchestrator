@@ -62,3 +62,15 @@ Add retro outputs here over time.
 - Phase: sync
 - Summary: FEAT-005 sync complete
 - Next: Not recorded
+
+### 2026-08-07 — SPIKE-003-embabel-context-graph-absorption
+
+- Phase: review / retro / sync
+- Summary: Hybrid absorption recommendation holds after dual-env tip refresh; Guide PR #4 merged; await human accept/reject before git-incremental upstream FEAT
+- Next: Human accept/reject of recommendation
+
+### 2026-08-07T21:08:56Z - SPIKE-003-embabel-context-graph-absorption
+
+- Phase: sync
+- Summary: SPIKE-003 dual-env: tip refresh Layer D; review Approved With Notes; retro+sync; await human accept/reject
+- Next: Human accept/reject of hybrid recommendation; then optional FEAT for git-incremental upstream

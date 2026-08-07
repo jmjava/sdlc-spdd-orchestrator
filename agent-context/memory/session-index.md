@@ -8,6 +8,7 @@ agent-context/memory/sessions/<entry>.
 
 | Timestamp | Work ID | Phase | Areas | Summary | Entry |
 |-----------|---------|-------|-------|---------|-------|
+| 2026-08-07T21:08:56Z | SPIKE-003-embabel-context-graph-absorption | sync | scripts/sdlc-spdd, scripts/lib, docs/context-loading-and-scaling.md, spec/comman... | SPIKE-003 dual-env: tip refresh Layer D; review Approved With Notes; retro+sync; await human accept/... | sessions/20260807T210856Z-SPIKE-003-embabel-context-graph-absorption-sync.md |
 | 2026-07-15T23:21:59Z | FEAT-005-canvas-readiness-indicators | sync | scripts/sdlc-spdd, scripts/lib, scripts/capture-session-memory.sh, scripts/lib/c... | FEAT-005 sync complete | sessions/20260715T232159Z-FEAT-005-canvas-readiness-indicators-sync.md |
 | 2026-07-15T23:21:59Z | FEAT-005-canvas-readiness-indicators | retro | scripts/sdlc-spdd, scripts/lib, scripts/capture-session-memory.sh, scripts/lib/c... | FEAT-005 retro complete | sessions/20260715T232159Z-FEAT-005-canvas-readiness-indicators-retro.md |
 | 2026-07-15T23:21:58Z | FEAT-005-canvas-readiness-indicators | code | scripts/sdlc-spdd, scripts/lib, scripts/capture-session-memory.sh, scripts/lib/c... | FEAT-005 T01-T04: readiness vocab + validate + cycle metrics + docs | sessions/20260715T232158Z-FEAT-005-canvas-readiness-indicators-code.md |
