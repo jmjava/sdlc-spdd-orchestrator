@@ -142,12 +142,16 @@ class ContextStore:
                 payload={"lesson_id": lid, "area": area, "subtype": kind_n},
                 ts=ts,
             )
-            rows = self.index.lessons_for_work(wid)
+            graph = self.index.graph_for_work(wid)
             result.sqlite = {
                 "ok": True,
                 "lesson_id": lid,
-                "lessons_for_work": len(rows),
-                "schema": "2",
+                "lessons_for_work": len(graph.get("lessons") or []),
+                "requirements": len(graph.get("requirements") or []),
+                "canvases": len(graph.get("canvases") or []),
+                "areas": len(graph.get("areas") or []),
+                "edges": len(graph.get("edges") or []),
+                "schema": "3",
             }
         except Exception as exc:  # noqa: BLE001
             result.sqlite = {"ok": False, "error": str(exc)}
@@ -292,6 +296,7 @@ class ContextStore:
             "area": area,
             "git_pointers": [],
             "sqlite_lessons": [],
+            "sqlite_graph": None,
             "guide": None,
             "errors": [],
         }
@@ -307,6 +312,8 @@ class ContextStore:
                 out["sqlite_lessons"] = self.index.lessons_for_area(area)
             elif work_id:
                 out["sqlite_lessons"] = self.index.lessons_for_work(work_id)
+            if work_id:
+                out["sqlite_graph"] = self.index.graph_for_work(work_id)
         except Exception as exc:  # noqa: BLE001
             out["errors"].append(f"sqlite: {exc}")
         if work_id:

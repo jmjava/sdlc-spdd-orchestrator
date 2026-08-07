@@ -16,14 +16,19 @@ Soft-fail is about **availability** of a backend, not about shipping different f
 
 ## Link model (same edges, two machine stores)
 
+The SQLite schema (v3) encompasses **all sections**: requirements, REASONS canvases, and context parts, with typed edges between them.
+
 | Concern | SQLite | Guide (DICE) |
 |---------|--------|--------------|
-| Work ↔ canvas / requirements | FKs / joins | WorkId —`canvas`→ Canvas (+ doc refs) |
-| Work ↔ areas | join table | WorkId —`area`→ Area |
-| Lessons | lesson rows + work_id + area_id | Decision / Pitfall / Pattern; WorkId —lesson→; lesson —`about`→ Area |
-| Cross-run area lessons | `WHERE area = ?` | `spdd_areaLessons` / incoming `about` |
-| Registry / claim | claim table or columns | WorkId (+ claim model per #84) |
-| Resume / session | session tables (hot path) | optional; SQLite-first per #85 |
+| Work ↔ requirement | `requirements` + edge `requirement` | (doc path today; first-class Requirement TBD) |
+| Work ↔ REASONS canvas | `canvases` + edge `canvas` | WorkId —`canvas`→ Canvas |
+| Requirement ↔ REASONS | edge `reasons` | (orchestrator graph; Guide may follow) |
+| Work / req / canvas ↔ areas | `areas` + edges `area` | WorkId —`area`→ Area |
+| Lessons ↔ area / sections | `lessons` + edges `about` | Decision / Pitfall / Pattern —`about`→ Area |
+| Lessons ↔ work | edge `recorded_for` + `work_id` | lesson —`recorded for`→ WorkId |
+| Cross-run area lessons | `WHERE area = ?` / edge walk | `spdd_areaLessons` / incoming `about` |
+| Registry / claim | `claims` + edge `for_work` | WorkId (+ claim model per #84) |
+| Resume / session / pointer | session/pointer tables + `for_work` | optional; SQLite-first per #85 |
 
 ## Explicitly not the end-state
 

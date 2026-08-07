@@ -22,8 +22,27 @@ from .links import collect_links, note_token, parse_canvas_metadata, parse_miles
 from .project import Project
 from .registry import TeamRegistry
 
-SCHEMA_VERSION = "2"
+SCHEMA_VERSION = "3"
 DEFAULT_DB_NAME = "index.sqlite"
+
+# Typed edge kinds (src/dst) and relationship names — aligned with Guide DICE
+# plus requirement↔REASONS and context-part links.
+NODE_WORK = "work"
+NODE_REQUIREMENT = "requirement"
+NODE_CANVAS = "canvas"
+NODE_AREA = "area"
+NODE_LESSON = "lesson"
+NODE_CLAIM = "claim"
+NODE_SESSION = "session"
+NODE_POINTER = "pointer"
+
+REL_CANVAS = "canvas"  # work —has canvas→ REASONS
+REL_REQUIREMENT = "requirement"  # work —has requirement→ requirement
+REL_REASONS = "reasons"  # requirement —reasons→ canvas
+REL_AREA = "area"  # work|requirement|canvas —in area→ area
+REL_ABOUT = "about"  # lesson —about→ area|requirement|canvas
+REL_RECORDED_FOR = "recorded_for"  # lesson —recorded for→ work
+REL_FOR_WORK = "for_work"  # claim|session|pointer —for→ work
 
 # Safe read-only query surface for `db query` convenience filters.
 _SELECT_RE = re.compile(r"^\s*select\b", re.IGNORECASE | re.DOTALL)
@@ -42,6 +61,9 @@ class RebuildStats:
     work_items: int = 0
     artifacts: int = 0
     local_sessions: int = 0
+    requirements: int = 0
+    canvases: int = 0
+    edges: int = 0
     path: str = ""
     rebuilt_at: str = ""
     source_commit: str = ""
@@ -50,6 +72,9 @@ class RebuildStats:
         return (
             f"Rebuilt SQLite index: {self.path}\n"
             f"  work_items: {self.work_items}\n"
+            f"  requirements: {self.requirements}\n"
+            f"  canvases: {self.canvases}\n"
+            f"  edges: {self.edges}\n"
             f"  artifacts: {self.artifacts}\n"
             f"  local_sessions: {self.local_sessions}\n"
             f"  source_commit: {self.source_commit or '(unknown)'}\n"
@@ -86,6 +111,7 @@ class LocalIndex:
         conn.executescript(
             """
             DROP TABLE IF EXISTS work_search;
+            DROP TABLE IF EXISTS edges;
             DROP TABLE IF EXISTS artifacts;
             DROP TABLE IF EXISTS local_sessions;
             DROP TABLE IF EXISTS pointers;
@@ -93,6 +119,9 @@ class LocalIndex:
             DROP TABLE IF EXISTS claims;
             DROP TABLE IF EXISTS work_areas;
             DROP TABLE IF EXISTS lessons;
+            DROP TABLE IF EXISTS areas;
+            DROP TABLE IF EXISTS canvases;
+            DROP TABLE IF EXISTS requirements;
             DROP TABLE IF EXISTS work_items;
             DROP TABLE IF EXISTS meta;
 
@@ -126,6 +155,36 @@ class LocalIndex:
               updated TEXT
             );
 
+            -- Stay-set section nodes (schema v3): requirements + REASONS canvases.
+            CREATE TABLE requirements (
+              id TEXT PRIMARY KEY,
+              work_id TEXT NOT NULL,
+              path TEXT NOT NULL DEFAULT '',
+              title TEXT NOT NULL DEFAULT '',
+              summary TEXT NOT NULL DEFAULT '',
+              jira_key TEXT NOT NULL DEFAULT '',
+              updated TEXT NOT NULL DEFAULT '',
+              FOREIGN KEY(work_id) REFERENCES work_items(work_id)
+            );
+
+            CREATE TABLE canvases (
+              id TEXT PRIMARY KEY,
+              work_id TEXT NOT NULL,
+              path TEXT NOT NULL DEFAULT '',
+              title TEXT NOT NULL DEFAULT '',
+              status TEXT NOT NULL DEFAULT '',
+              readiness TEXT NOT NULL DEFAULT '',
+              final_status TEXT NOT NULL DEFAULT '',
+              updated TEXT NOT NULL DEFAULT '',
+              FOREIGN KEY(work_id) REFERENCES work_items(work_id)
+            );
+
+            CREATE TABLE areas (
+              id TEXT PRIMARY KEY,
+              name TEXT NOT NULL,
+              description TEXT NOT NULL DEFAULT ''
+            );
+
             CREATE TABLE artifacts (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
               work_id TEXT,
@@ -147,7 +206,7 @@ class LocalIndex:
               path TEXT
             );
 
-            -- Relational graph tables (schema v2 / SPIKE-088): same link model as Guide DICE.
+            -- Context-part nodes + typed edges (Guide DICE + requirement↔REASONS).
             CREATE TABLE lessons (
               id TEXT PRIMARY KEY,
               kind TEXT NOT NULL,
@@ -196,9 +255,23 @@ class LocalIndex:
               ts TEXT NOT NULL DEFAULT ''
             );
 
+            CREATE TABLE edges (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              src_kind TEXT NOT NULL,
+              src_id TEXT NOT NULL,
+              rel TEXT NOT NULL,
+              dst_kind TEXT NOT NULL,
+              dst_id TEXT NOT NULL,
+              UNIQUE(src_kind, src_id, rel, dst_kind, dst_id)
+            );
+
             CREATE INDEX idx_lessons_area ON lessons(area);
             CREATE INDEX idx_lessons_work ON lessons(work_id);
             CREATE INDEX idx_claims_work ON claims(work_id);
+            CREATE INDEX idx_requirements_work ON requirements(work_id);
+            CREATE INDEX idx_canvases_work ON canvases(work_id);
+            CREATE INDEX idx_edges_src ON edges(src_kind, src_id, rel);
+            CREATE INDEX idx_edges_dst ON edges(dst_kind, dst_id, rel);
             """
         )
         # FTS5 when available; otherwise search falls back to LIKE.
@@ -305,6 +378,67 @@ class LocalIndex:
                     ),
                 )
                 stats.work_items += 1
+
+                # First-class stay-set nodes + linkage edges (requirement ↔ REASONS).
+                req_id = ""
+                canvas_id = ""
+                if req_rel:
+                    req_id = f"{wid}:requirement"
+                    conn.execute(
+                        "INSERT INTO requirements(id, work_id, path, title, summary, jira_key, updated) "
+                        "VALUES (?,?,?,?,?,?,?)",
+                        (
+                            req_id,
+                            wid,
+                            req_rel,
+                            title,
+                            req_parsed.get("summary") or req_parsed.get("jira_summary") or "",
+                            jira,
+                            reg.updated if reg else stats.rebuilt_at,
+                        ),
+                    )
+                    stats.requirements += 1
+                    self._insert_edge(
+                        conn,
+                        NODE_WORK,
+                        wid,
+                        REL_REQUIREMENT,
+                        NODE_REQUIREMENT,
+                        req_id,
+                    )
+                    stats.edges += 1
+                if canvas_rel:
+                    canvas_id = f"{wid}:canvas"
+                    conn.execute(
+                        "INSERT INTO canvases("
+                        "id, work_id, path, title, status, readiness, final_status, updated) "
+                        "VALUES (?,?,?,?,?,?,?,?)",
+                        (
+                            canvas_id,
+                            wid,
+                            canvas_rel,
+                            title,
+                            meta.get("status") or "",
+                            meta.get("readiness") or "",
+                            final,
+                            reg.updated if reg else stats.rebuilt_at,
+                        ),
+                    )
+                    stats.canvases += 1
+                    self._insert_edge(
+                        conn, NODE_WORK, wid, REL_CANVAS, NODE_CANVAS, canvas_id
+                    )
+                    stats.edges += 1
+                if req_id and canvas_id:
+                    self._insert_edge(
+                        conn,
+                        NODE_REQUIREMENT,
+                        req_id,
+                        REL_REASONS,
+                        NODE_CANVAS,
+                        canvas_id,
+                    )
+                    stats.edges += 1
 
                 body_bits = [title, meta.get("status") or "", jira, gh, reg.note if reg else ""]
                 if links.milestone_req and links.milestone_req.is_file():
@@ -420,6 +554,11 @@ class LocalIndex:
             "rebuilt_at": None,
             "source_commit": None,
             "work_items": 0,
+            "requirements": 0,
+            "canvases": 0,
+            "areas": 0,
+            "lessons": 0,
+            "edges": 0,
             "artifacts": 0,
             "local_sessions": 0,
             "by_registry_status": {},
@@ -443,6 +582,19 @@ class LocalIndex:
                 base["fts"] = self._meta(conn, "fts") or None
                 base["rebuilt_at"] = self._meta(conn, "rebuilt_at") or None
                 base["source_commit"] = self._meta(conn, "source_commit") or None
+                for key, table in (
+                    ("requirements", "requirements"),
+                    ("canvases", "canvases"),
+                    ("areas", "areas"),
+                    ("lessons", "lessons"),
+                    ("edges", "edges"),
+                ):
+                    try:
+                        base[key] = conn.execute(
+                            f"SELECT COUNT(*) AS n FROM {table}"
+                        ).fetchone()["n"]
+                    except sqlite3.Error:
+                        base[key] = 0
                 rows = conn.execute(
                     "SELECT COALESCE(NULLIF(registry_status, ''), '(none)') AS s, "
                     "COUNT(*) AS n FROM work_items GROUP BY s ORDER BY n DESC"
@@ -471,6 +623,11 @@ class LocalIndex:
             f"  rebuilt_at: {info['rebuilt_at'] or '?'}\n"
             f"  source_commit: {info['source_commit'] or '?'}\n"
             f"  work_items: {info['work_items']}\n"
+            f"  requirements: {info.get('requirements', 0)}\n"
+            f"  canvases: {info.get('canvases', 0)}\n"
+            f"  areas: {info.get('areas', 0)}\n"
+            f"  lessons: {info.get('lessons', 0)}\n"
+            f"  edges: {info.get('edges', 0)}\n"
             f"  artifacts: {info['artifacts']}\n"
             f"  local_sessions: {info['local_sessions']}\n"
             "\n"
@@ -505,6 +662,266 @@ class LocalIndex:
             )
             conn.commit()
 
+    @staticmethod
+    def _insert_edge(
+        conn: sqlite3.Connection,
+        src_kind: str,
+        src_id: str,
+        rel: str,
+        dst_kind: str,
+        dst_id: str,
+    ) -> None:
+        conn.execute(
+            "INSERT OR IGNORE INTO edges(src_kind, src_id, rel, dst_kind, dst_id) "
+            "VALUES (?,?,?,?,?)",
+            (src_kind, src_id, rel, dst_kind, dst_id),
+        )
+
+    def upsert_edge(
+        self,
+        *,
+        src_kind: str,
+        src_id: str,
+        rel: str,
+        dst_kind: str,
+        dst_id: str,
+    ) -> None:
+        """Insert a typed graph edge (idempotent)."""
+        self.ensure_schema()
+        if not all(
+            [
+                (src_kind or "").strip(),
+                (src_id or "").strip(),
+                (rel or "").strip(),
+                (dst_kind or "").strip(),
+                (dst_id or "").strip(),
+            ]
+        ):
+            raise ValueError("src_kind, src_id, rel, dst_kind, dst_id are required")
+        with self.connect() as conn:
+            self._insert_edge(
+                conn,
+                src_kind.strip(),
+                src_id.strip(),
+                rel.strip(),
+                dst_kind.strip(),
+                dst_id.strip(),
+            )
+            conn.commit()
+
+    def upsert_area(self, area: str, *, description: str = "") -> str:
+        """Ensure a first-class area node exists; returns area id."""
+        self.ensure_schema()
+        name = (area or "").strip()
+        if not name:
+            raise ValueError("area is required")
+        with self.connect() as conn:
+            conn.execute(
+                "INSERT INTO areas(id, name, description) VALUES (?,?,?) "
+                "ON CONFLICT(id) DO UPDATE SET "
+                "name=excluded.name, "
+                "description=CASE WHEN excluded.description != '' "
+                "THEN excluded.description ELSE areas.description END",
+                (name, name, description or ""),
+            )
+            conn.commit()
+        return name
+
+    def upsert_requirement(
+        self,
+        *,
+        work_id: str,
+        path: str = "",
+        title: str = "",
+        summary: str = "",
+        jira_key: str = "",
+        ts: str = "",
+        link_canvas: bool = True,
+    ) -> str:
+        """Upsert requirement node and work→requirement (+ optional reasons) edges."""
+        self.ensure_work_item(work_id, title=title)
+        wid = work_id.strip()
+        req_id = f"{wid}:requirement"
+        when = ts or _utc_now()
+        with self.connect() as conn:
+            conn.execute(
+                "INSERT INTO requirements(id, work_id, path, title, summary, jira_key, updated) "
+                "VALUES (?,?,?,?,?,?,?) "
+                "ON CONFLICT(id) DO UPDATE SET "
+                "path=excluded.path, title=excluded.title, summary=excluded.summary, "
+                "jira_key=excluded.jira_key, updated=excluded.updated",
+                (req_id, wid, path or "", title or "", summary or "", jira_key or "", when),
+            )
+            if path:
+                conn.execute(
+                    "UPDATE work_items SET requirement_path=?, has_requirement=1, "
+                    "title=CASE WHEN ? != '' THEN ? ELSE title END, updated=? "
+                    "WHERE work_id=?",
+                    (path, title, title or wid, when, wid),
+                )
+            self._insert_edge(
+                conn, NODE_WORK, wid, REL_REQUIREMENT, NODE_REQUIREMENT, req_id
+            )
+            if link_canvas:
+                canvas_id = f"{wid}:canvas"
+                row = conn.execute(
+                    "SELECT id FROM canvases WHERE id = ?", (canvas_id,)
+                ).fetchone()
+                if row:
+                    self._insert_edge(
+                        conn,
+                        NODE_REQUIREMENT,
+                        req_id,
+                        REL_REASONS,
+                        NODE_CANVAS,
+                        canvas_id,
+                    )
+            conn.commit()
+        return req_id
+
+    def upsert_canvas(
+        self,
+        *,
+        work_id: str,
+        path: str = "",
+        title: str = "",
+        status: str = "",
+        readiness: str = "",
+        final_status: str = "",
+        ts: str = "",
+        link_requirement: bool = True,
+    ) -> str:
+        """Upsert REASONS canvas node and work→canvas (+ optional reasons) edges."""
+        self.ensure_work_item(work_id, title=title)
+        wid = work_id.strip()
+        canvas_id = f"{wid}:canvas"
+        when = ts or _utc_now()
+        with self.connect() as conn:
+            conn.execute(
+                "INSERT INTO canvases("
+                "id, work_id, path, title, status, readiness, final_status, updated) "
+                "VALUES (?,?,?,?,?,?,?,?) "
+                "ON CONFLICT(id) DO UPDATE SET "
+                "path=excluded.path, title=excluded.title, status=excluded.status, "
+                "readiness=excluded.readiness, final_status=excluded.final_status, "
+                "updated=excluded.updated",
+                (
+                    canvas_id,
+                    wid,
+                    path or "",
+                    title or "",
+                    status or "",
+                    readiness or "",
+                    final_status or "",
+                    when,
+                ),
+            )
+            if path:
+                conn.execute(
+                    "UPDATE work_items SET canvas_path=?, has_canvas=1, "
+                    "canvas_status=?, final_status=?, "
+                    "title=CASE WHEN ? != '' THEN ? ELSE title END, updated=? "
+                    "WHERE work_id=?",
+                    (
+                        path,
+                        status or "",
+                        final_status or "",
+                        title,
+                        title or wid,
+                        when,
+                        wid,
+                    ),
+                )
+            self._insert_edge(
+                conn, NODE_WORK, wid, REL_CANVAS, NODE_CANVAS, canvas_id
+            )
+            if link_requirement:
+                req_id = f"{wid}:requirement"
+                row = conn.execute(
+                    "SELECT id FROM requirements WHERE id = ?", (req_id,)
+                ).fetchone()
+                if row:
+                    self._insert_edge(
+                        conn,
+                        NODE_REQUIREMENT,
+                        req_id,
+                        REL_REASONS,
+                        NODE_CANVAS,
+                        canvas_id,
+                    )
+            conn.commit()
+        return canvas_id
+
+    def link_section_to_area(
+        self,
+        *,
+        section_kind: str,
+        section_id: str,
+        area: str,
+        work_id: str = "",
+    ) -> None:
+        """Link a requirement or REASONS canvas (and optionally work) to a context area."""
+        kind = (section_kind or "").strip().lower()
+        if kind not in {NODE_REQUIREMENT, NODE_CANVAS, NODE_WORK}:
+            raise ValueError("section_kind must be work|requirement|canvas")
+        sid = (section_id or "").strip()
+        if not sid:
+            raise ValueError("section_id is required")
+        area_id = self.upsert_area(area)
+        with self.connect() as conn:
+            self._insert_edge(conn, kind, sid, REL_AREA, NODE_AREA, area_id)
+            if work_id:
+                self._insert_edge(
+                    conn, NODE_WORK, work_id.strip(), REL_AREA, NODE_AREA, area_id
+                )
+                conn.execute(
+                    "INSERT OR IGNORE INTO work_areas(work_id, area) VALUES (?,?)",
+                    (work_id.strip(), area_id),
+                )
+            conn.commit()
+
+    def sync_stay_set(self, work_id: str) -> dict[str, Any]:
+        """Sync requirement + REASONS canvas nodes/edges from on-disk stay-set for one work id."""
+        self.ensure_schema()
+        wid = (work_id or "").strip()
+        if not wid:
+            raise ValueError("work_id is required")
+        reg = None
+        try:
+            registry = TeamRegistry(self.project)
+            reg = next((r for r in registry.rows() if r.work_id == wid), None)
+        except Exception:  # noqa: BLE001
+            reg = None
+        links = collect_links(self.project, wid, reg)
+        out: dict[str, Any] = {"work_id": wid, "requirement_id": "", "canvas_id": ""}
+        meta: dict[str, str] = {}
+        if links.canvas and links.canvas.is_file():
+            meta = parse_canvas_metadata(links.canvas)
+        req_parsed: dict[str, str] = {}
+        if links.milestone_req and links.milestone_req.is_file():
+            req_parsed = parse_milestone_requirement(links.milestone_req)
+        title = meta.get("title") or req_parsed.get("jira_summary") or wid
+        jira = links.jira_key or ""
+        if links.milestone_req and links.milestone_req.is_file():
+            out["requirement_id"] = self.upsert_requirement(
+                work_id=wid,
+                path=self._rel(links.milestone_req),
+                title=title,
+                summary=req_parsed.get("summary") or req_parsed.get("jira_summary") or "",
+                jira_key=jira,
+            )
+        if links.canvas and links.canvas.is_file():
+            final = canvas_mod.final_kind(links.canvas) or ""
+            out["canvas_id"] = self.upsert_canvas(
+                work_id=wid,
+                path=self._rel(links.canvas),
+                title=title,
+                status=meta.get("status") or "",
+                readiness=meta.get("readiness") or "",
+                final_status=final,
+            )
+        return out
+
     def upsert_lesson(
         self,
         *,
@@ -516,7 +933,7 @@ class LocalIndex:
         source: str = "",
         ts: str = "",
     ) -> None:
-        """Persist a lesson row and work↔area link (relational graph)."""
+        """Persist a lesson and link it to work, area, requirement, and REASONS canvas."""
         self.ensure_work_item(work_id)
         kind_n = (kind or "").strip().lower()
         if kind_n not in {"decision", "pitfall", "pattern"}:
@@ -525,6 +942,11 @@ class LocalIndex:
         if not lid:
             raise ValueError("lesson_id is required")
         when = ts or _utc_now()
+        # Best-effort stay-set sync so lesson can attach to requirement/REASONS.
+        try:
+            self.sync_stay_set(work_id)
+        except Exception:  # noqa: BLE001 - stubs still allow lesson rows
+            pass
         with self.connect() as conn:
             conn.execute(
                 "INSERT INTO lessons(id, kind, work_id, area, body, source, ts) "
@@ -534,11 +956,47 @@ class LocalIndex:
                 "body=excluded.body, source=excluded.source, ts=excluded.ts",
                 (lid, kind_n, work_id, area or "", body or "", source or "", when),
             )
+            self._insert_edge(
+                conn, NODE_LESSON, lid, REL_RECORDED_FOR, NODE_WORK, work_id
+            )
+            req_id = f"{work_id}:requirement"
+            canvas_id = f"{work_id}:canvas"
+            if conn.execute(
+                "SELECT 1 FROM requirements WHERE id = ?", (req_id,)
+            ).fetchone():
+                self._insert_edge(
+                    conn, NODE_LESSON, lid, REL_ABOUT, NODE_REQUIREMENT, req_id
+                )
+            if conn.execute(
+                "SELECT 1 FROM canvases WHERE id = ?", (canvas_id,)
+            ).fetchone():
+                self._insert_edge(
+                    conn, NODE_LESSON, lid, REL_ABOUT, NODE_CANVAS, canvas_id
+                )
             if area:
+                conn.execute(
+                    "INSERT INTO areas(id, name, description) VALUES (?,?,?) "
+                    "ON CONFLICT(id) DO NOTHING",
+                    (area, area, ""),
+                )
                 conn.execute(
                     "INSERT OR IGNORE INTO work_areas(work_id, area) VALUES (?,?)",
                     (work_id, area),
                 )
+                self._insert_edge(conn, NODE_WORK, work_id, REL_AREA, NODE_AREA, area)
+                self._insert_edge(conn, NODE_LESSON, lid, REL_ABOUT, NODE_AREA, area)
+                if conn.execute(
+                    "SELECT 1 FROM requirements WHERE id = ?", (req_id,)
+                ).fetchone():
+                    self._insert_edge(
+                        conn, NODE_REQUIREMENT, req_id, REL_AREA, NODE_AREA, area
+                    )
+                if conn.execute(
+                    "SELECT 1 FROM canvases WHERE id = ?", (canvas_id,)
+                ).fetchone():
+                    self._insert_edge(
+                        conn, NODE_CANVAS, canvas_id, REL_AREA, NODE_AREA, area
+                    )
             conn.commit()
 
     def lessons_for_area(self, area: str) -> list[dict[str, Any]]:
@@ -579,13 +1037,17 @@ class LocalIndex:
                 "VALUES (?,?,?,?,?,?)",
                 (work_id, owner, status, phase, note, when),
             )
+            claim_id = int(cur.lastrowid)
             conn.execute(
                 "UPDATE work_items SET registry_status=?, registry_owner=?, "
                 "registry_phase=?, registry_note=?, updated=? WHERE work_id=?",
                 (status, owner, phase, note, when, work_id),
             )
+            self._insert_edge(
+                conn, NODE_CLAIM, str(claim_id), REL_FOR_WORK, NODE_WORK, work_id
+            )
             conn.commit()
-            return int(cur.lastrowid)
+            return claim_id
 
     def upsert_context_session(
         self,
@@ -611,6 +1073,10 @@ class LocalIndex:
                 "summary=excluded.summary, ts=excluded.ts",
                 (sid, work_id, phase, path, summary, when),
             )
+            if work_id:
+                self._insert_edge(
+                    conn, NODE_SESSION, sid, REL_FOR_WORK, NODE_WORK, work_id
+                )
             conn.commit()
 
     def upsert_pointer_row(
@@ -646,7 +1112,135 @@ class LocalIndex:
                     when,
                 ),
             )
+            if work_id:
+                self._insert_edge(
+                    conn, NODE_POINTER, pid, REL_FOR_WORK, NODE_WORK, work_id
+                )
             conn.commit()
+
+    def graph_for_work(self, work_id: str) -> dict[str, Any]:
+        """Full subgraph: work + requirement + REASONS + areas + lessons + typed edges."""
+        self.ensure_schema()
+        wid = (work_id or "").strip()
+        with self.connect() as conn:
+            work = conn.execute(
+                "SELECT * FROM work_items WHERE work_id = ?", (wid,)
+            ).fetchone()
+            reqs = [
+                dict(r)
+                for r in conn.execute(
+                    "SELECT * FROM requirements WHERE work_id = ?", (wid,)
+                ).fetchall()
+            ]
+            canvases = [
+                dict(r)
+                for r in conn.execute(
+                    "SELECT * FROM canvases WHERE work_id = ?", (wid,)
+                ).fetchall()
+            ]
+            lessons = [
+                dict(r)
+                for r in conn.execute(
+                    "SELECT * FROM lessons WHERE work_id = ? ORDER BY ts DESC, id",
+                    (wid,),
+                ).fetchall()
+            ]
+            areas = [
+                dict(r)
+                for r in conn.execute(
+                    "SELECT a.id, a.name, a.description FROM areas a "
+                    "JOIN work_areas wa ON wa.area = a.id WHERE wa.work_id = ? "
+                    "ORDER BY a.name",
+                    (wid,),
+                ).fetchall()
+            ]
+            # Edges touching this work or its section / lesson nodes.
+            node_ids = {wid}
+            node_ids.update(r["id"] for r in reqs)
+            node_ids.update(c["id"] for c in canvases)
+            node_ids.update(l["id"] for l in lessons)
+            node_ids.update(a["id"] for a in areas)
+            edges = [
+                dict(r)
+                for r in conn.execute(
+                    "SELECT src_kind, src_id, rel, dst_kind, dst_id FROM edges"
+                ).fetchall()
+                if r["src_id"] in node_ids or r["dst_id"] in node_ids
+            ]
+            return {
+                "work_id": wid,
+                "work": dict(work) if work else None,
+                "requirements": reqs,
+                "canvases": canvases,
+                "areas": areas,
+                "lessons": lessons,
+                "edges": edges,
+            }
+
+    def context_linked_to_section(
+        self, *, section_kind: str, section_id: str
+    ) -> dict[str, Any]:
+        """Context parts (areas/lessons) linked to a requirement or REASONS canvas."""
+        self.ensure_schema()
+        kind = (section_kind or "").strip().lower()
+        sid = (section_id or "").strip()
+        with self.connect() as conn:
+            area_ids = [
+                r["dst_id"]
+                for r in conn.execute(
+                    "SELECT dst_id FROM edges WHERE src_kind = ? AND src_id = ? "
+                    "AND rel = ? AND dst_kind = ?",
+                    (kind, sid, REL_AREA, NODE_AREA),
+                ).fetchall()
+            ]
+            lesson_ids = [
+                r["src_id"]
+                for r in conn.execute(
+                    "SELECT src_id FROM edges WHERE src_kind = ? AND rel = ? "
+                    "AND dst_kind = ? AND dst_id = ?",
+                    (NODE_LESSON, REL_ABOUT, kind, sid),
+                ).fetchall()
+            ]
+            areas = []
+            if area_ids:
+                placeholders = ",".join("?" * len(area_ids))
+                areas = [
+                    dict(r)
+                    for r in conn.execute(
+                        f"SELECT * FROM areas WHERE id IN ({placeholders})",
+                        area_ids,
+                    ).fetchall()
+                ]
+            lessons = []
+            if lesson_ids:
+                placeholders = ",".join("?" * len(lesson_ids))
+                lessons = [
+                    dict(r)
+                    for r in conn.execute(
+                        f"SELECT * FROM lessons WHERE id IN ({placeholders}) "
+                        "ORDER BY ts DESC, id",
+                        lesson_ids,
+                    ).fetchall()
+                ]
+            reasons = []
+            if kind == NODE_REQUIREMENT:
+                reasons = [
+                    dict(r)
+                    for r in conn.execute(
+                        "SELECT c.* FROM canvases c "
+                        "JOIN edges e ON e.dst_id = c.id "
+                        "WHERE e.src_kind = ? AND e.src_id = ? AND e.rel = ? "
+                        "AND e.dst_kind = ?",
+                        (NODE_REQUIREMENT, sid, REL_REASONS, NODE_CANVAS),
+                    ).fetchall()
+                ]
+            return {
+                "section_kind": kind,
+                "section_id": sid,
+                "areas": areas,
+                "lessons": lessons,
+                "reasons_canvases": reasons,
+            }
 
     LOOKUP_COLUMNS = (
         "work_id",
