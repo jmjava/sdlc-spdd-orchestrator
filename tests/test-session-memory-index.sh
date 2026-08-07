@@ -114,16 +114,24 @@ assert_absent "$(mem context-index.md)"
 assert_absent "$(mem sessions)"
 
 # ---------------------------------------------------------------------------
-echo "== Test 8: start-agent-session brief bootstraps the framework =="
+echo "== Test 8: start-agent-session brief bootstraps the framework (hot .sdlc/sessions) =="
 T="${WORK}/brief"; mkdir -p "${T}"
 "${START}" --target "${T}" --work-id FEAT-070-brief --phase plan >/dev/null 2>&1
-current="${T}/agent-context/sessions/current-session.md"
+current="${T}/.sdlc/sessions/current-session.md"
 assert_file "${current}"
 assert_contains "${current}" "## Framework Orientation" "Framework Orientation section"
 assert_contains "${current}" "loaded on every request" "always-on grounding pointer"
 assert_contains "${current}" "context-loading-and-scaling.md" "context-loading doc pointer"
 assert_contains "${current}" "context-index.md" "context index pointer in brief"
 assert_contains "${current}" "code-areas.md" "code areas registry pointer in brief"
+assert_contains "${current}" ".sdlc/sessions/current-session.md" "hot session resume path"
+# Must not write new hot brief into legacy sessions path as current-session.
+if [[ -f "${T}/agent-context/sessions/current-session.md" ]] \
+  && grep -Fq "## Framework Orientation" "${T}/agent-context/sessions/current-session.md"; then
+  bad "wrote new brief into legacy agent-context/sessions/current-session.md"
+else
+  ok "no new legacy current-session brief"
+fi
 # The reverted canvas-file-parsing section must not reappear.
 if grep -Fq "Initial Files To Create" "${current}"; then bad "reverted 'Initial Files To Create' section present"; else ok "no canvas file-list section in brief"; fi
 
@@ -276,14 +284,14 @@ assert_contains "${phase_index}" "quality-gates.md" "review phase harness entry"
 assert_contains "${phase_index}" "java-feature-playbook.md" "code phase playbook entry"
 
 # ---------------------------------------------------------------------------
-echo "== Test 21: start-agent-session rotates old briefs into sessions/archive =="
+echo "== Test 21: start-agent-session rotates old briefs into .sdlc/sessions/archive =="
 T="${WORK}/sess-rot"; mkdir -p "${T}"
 "${START}" --target "${T}" --work-id FEAT-100-a --phase plan --session-limit 2 >/dev/null 2>&1
 sleep 1
 "${START}" --target "${T}" --work-id FEAT-100-b --phase plan --session-limit 2 >/dev/null 2>&1
 sleep 1
 "${START}" --target "${T}" --work-id FEAT-100-c --phase plan --session-limit 2 >/dev/null 2>&1
-sess="${T}/agent-context/sessions"
+sess="${T}/.sdlc/sessions"
 assert_file "${sess}/current-session.md"
 active_count="$(ls -1 "${sess}"/[0-9]*T*.md 2>/dev/null | wc -l | tr -d ' ')"
 if [[ "${active_count}" == "2" ]]; then ok "keeps 2 timestamped briefs"; else bad "expected 2 active briefs, got ${active_count}"; fi
@@ -391,6 +399,23 @@ cap --work-id FEAT-004-rot --phase code --summary "rotate ledger" --history-limi
 assert_count "${ledger}" '^### ' 2 "ledger keeps recent window"
 assert_file "$(mem archive/prompt-optimization-log.md)"
 assert_count "$(mem archive/prompt-optimization-log.md)" '^### ' 1 "older ledger entry archived"
+
+# ---------------------------------------------------------------------------
+echo "== Test lean: capture reads hot session + writes lean indexes (#85/#86) =="
+T="${WORK}/lean-hot"; mkdir -p "${T}/.sdlc/sessions" "${T}/spdd/canvas"
+cat > "${T}/.sdlc/sessions/current-session.md" <<'HOT'
+# Hot session
+Working under scripts/lib for lean capture proof.
+HOT
+printf '# canvas\n' > "${T}/spdd/canvas/FEAT-085-lean.md"
+cap --work-id FEAT-085-lean --phase sync --summary "Hot session lean capture under scripts/lib" --areas "scripts/lib"
+assert_file "${T}/spdd/memory/context-index.md"
+assert_count "${T}/spdd/memory/context-index.md" '^\| scripts/lib \| session \|' 1 "lean context-index session row"
+assert_file "${T}/spdd/memory/entries/progress.md"
+assert_contains "${T}/spdd/memory/entries/progress.md" "FEAT-085-lean" "lean progress append"
+lean_sess="$(ls "${T}/spdd/memory/sessions"/*.md 2>/dev/null | head -n 1 || true)"
+if [[ -n "${lean_sess}" && -f "${lean_sess}" ]]; then ok "lean session entry exists"; else bad "missing lean session entry"; fi
+assert_absent "${T}/agent-context/features"
 
 # ---------------------------------------------------------------------------
 echo
