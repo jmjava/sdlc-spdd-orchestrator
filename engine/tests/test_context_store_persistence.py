@@ -96,7 +96,7 @@ def test_persist_lesson_enters_git_and_sqlite(tmp_path: Path) -> None:
         (wid,),
     )
     assert areas[0]["area"] == area
-    assert result.sqlite.get("schema") == "3"
+    assert result.sqlite.get("schema") == "4"
     assert result.sqlite.get("requirements") == 1
     assert result.sqlite.get("canvases") == 1
     graph = idx.graph_for_work(wid)
@@ -105,6 +105,31 @@ def test_persist_lesson_enters_git_and_sqlite(tmp_path: Path) -> None:
     assert ("lesson", "about", "requirement") in edge_rels
     assert ("lesson", "about", "canvas") in edge_rels
     assert ("lesson", "about", "area") in edge_rels
+
+
+def test_persist_context_entry_progress_enters_git_and_sqlite(tmp_path: Path) -> None:
+    wid = "FEAT-922-progress-entry"
+    _seed_canvas(tmp_path, wid)
+    store = ContextStore(Project(tmp_path), guide_base_url="http://127.0.0.1:9")
+    result = store.persist_context_entry(
+        kind="progress",
+        work_id=wid,
+        area="scripts/lib",
+        body="Progress note for full context model",
+        phase="code",
+        source="unit-test",
+        project_guide=False,
+    )
+    assert result.git.get("ok") is True
+    assert result.sqlite.get("ok") is True
+    assert result.sqlite.get("schema") == "4"
+    entry_file = tmp_path / "spdd" / "memory" / "entries" / "progress.md"
+    assert entry_file.is_file()
+    assert "Progress note for full context model" in entry_file.read_text(encoding="utf-8")
+    idx = LocalIndex(Project(tmp_path))
+    graph = idx.graph_for_work(wid)
+    assert any(e["kind"] == "progress" for e in graph["context_entries"])
+    assert graph["requirements"] and graph["canvases"]
 
 
 def test_cli_persist_lesson_no_guide(tmp_path: Path) -> None:

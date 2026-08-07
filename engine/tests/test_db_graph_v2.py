@@ -12,7 +12,7 @@ def test_schema_version_is_current_after_rebuild(tmp_path: Path) -> None:
     idx = LocalIndex(Project(tmp_path))
     idx.rebuild()
     assert idx.status_dict()["schema"] == SCHEMA_VERSION
-    assert SCHEMA_VERSION == "3"
+    assert SCHEMA_VERSION == "4"
 
 
 def test_upsert_lesson_creates_relational_links(tmp_path: Path) -> None:

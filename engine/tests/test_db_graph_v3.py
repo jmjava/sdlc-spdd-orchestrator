@@ -59,7 +59,7 @@ def test_schema_version_is_v3_after_rebuild(tmp_path: Path) -> None:
     idx = LocalIndex(Project(tmp_path))
     idx.rebuild()
     assert idx.status_dict()["schema"] == SCHEMA_VERSION
-    assert SCHEMA_VERSION == "3"
+    assert SCHEMA_VERSION == "4"
 
 
 def test_rebuild_links_requirement_to_reasons_canvas(tmp_path: Path) -> None:
