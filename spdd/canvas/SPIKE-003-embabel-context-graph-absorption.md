@@ -175,8 +175,36 @@ answers “where should that graph capability live?”:
 - Do not open Embabel upstream PR from this spike without human go-ahead.
 - Keep SPIKE-002 shelved/independent.
 
+## Review Checklist
+
+- [x] Fork delta inventoried vs `embabel/guide` `main`
+- [x] Upstreamability matrix written (SPDD-specific vs reusable)
+- [x] Absorption recommendation recorded with trade-offs
+- [x] Remaining graph gaps listed with severity
+- [x] Guide durable-checkout docs updated
+- [x] No production wiring / default-flag changes left behind
+- [x] No secrets committed
+- [ ] Human accept/reject of recommendation
+
+## Sync Notes
+
+2026-08-07 research: `jmjava/guide` @ `sdlc-spdd-projection-v1` (`a6e3246`) vs
+`embabel/guide` `main` (`67f5e9d`) = 39 files, +2838/−22. Full notes in
+`spdd/analysis/SPIKE-003-embabel-context-graph-absorption-research.md` and
+`spdd/analysis/SPIKE-003-embabel-context-graph-absorption-analysis.md`.
+
+**Recommendation:** keep `com.embabel.guide.spdd` on the fork; upstream candidate #1
+is git-incremental directory ingest + RAG maintenance; defer generic entity MCP and
+library extract. Guide docs: `docs/spdd-upstream-absorption.md` on
+`cursor/embabel-context-graph-absorption-fdca`.
+
+Sibling spikes: SPIKE-001 field dogfood continues independently; SPIKE-002 remains
+shelved (model layer).
+
 ## Final Status
 
 - Status: In Progress (research complete; awaiting human accept/reject)
+- Completed Date:
+- PR: orchestrator draft; Guide draft (absorption docs)
 - Completed Operations: T01–T04
-- Outstanding: human decision on recommendation; optional follow-on FEAT intake
+- Follow-Up Tasks: human accept/reject; optional FEAT intake for git-incremental upstream
