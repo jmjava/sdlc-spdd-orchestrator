@@ -157,6 +157,39 @@ Describe expected documentation updates.
 - Tests:
 - Validation:
 
+## V - Verification (freeform agent probes)
+
+Optional. Freeform checks the agent may run **any time** to verify design,
+inventory, or environment — without advancing a coding Operation (`T##`).
+
+Does **not** replace Operations, unit/integration tests, or `/sdlc-spdd-api-test`.
+Use when the rigid op list is not enough (dual-repo dogfood, design sanity,
+"does this still match upstream?", smoke checks).
+
+### How to use
+
+1. Pick a suggested probe below or invent one; state the question first.
+2. Run commands / inspect files; keep the change set tiny (docs/log only unless
+   the user asked for a fix).
+3. Append a row to **Probe log** (newest last). Longer transcripts may go in
+   `spdd/tasks/<WORK-ID>-agent-probes.md`.
+4. If a finding changes intent → `/sdlc-spdd-prompt-update` before more code.
+5. If a finding only clarifies reality → note it; reconcile later with
+   `/sdlc-spdd-sync` if needed.
+
+### Suggested probes
+
+| ID | Probe | When | Pass looks like |
+|----|-------|------|-----------------|
+| V01 | (example) Diff scope vs Structure allowlist | Before coding / before PR | No unexpected paths |
+| V02 | (example) Run focused tests for this Work ID | After an Operation | Green or documented blocker |
+
+### Probe log
+
+| When | Probe | Result | Notes |
+|------|-------|--------|-------|
+| | | | |
+
 ## N - Norms
 
 ### General
@@ -168,6 +201,8 @@ Describe expected documentation updates.
 - Update this canvas if implementation reality changes.
 - Do not invent requirements that were not requested.
 - Prefer explicit assumptions over hidden assumptions.
+- Freeform probes (section V) may run anytime; they do not count as a coding
+  Operation and must not silently expand scope.
 
 ### Java / Spring Boot
 

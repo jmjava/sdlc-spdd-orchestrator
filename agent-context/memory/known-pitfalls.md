@@ -10,12 +10,15 @@ Document project-specific mistakes to avoid in future agent runs.
 
 ## Guide / Embabel absorption
 
+- **Never** open a PR, push, or merge to `embabel/guide`. Pull/fetch into
+  `jmjava/guide` only. (Always-on agent rule; see `.cursor/rules`.)
 - Do not treat Cursor Cloud Agent `.cursor/environment.json` (or dual-repo install
-  scripts) as Embabel-upstreamable product surface.
+  scripts) as something to contribute to Embabel.
 - Do not rename `spdd_*` MCP tools into a “generic” graph API without a separate FEAT
-  and Embabel-shaped design (schema-agnostic label/id/rel walk).
+  and an explicit human decision.
 - When inventorying `jmjava/guide` vs `embabel/guide`, record **pin** and **tip**
-  diffs separately — tip may carry ops/docs that must not inflate the upstream slice.
+  diffs for fork maintainability — not as an Embabel PR packing list.
+- Ignore stale SPIKE-003 / FEAT-013 text that still says “upstream Layer B to Embabel”.
 
 ## Java / Spring Boot
 

@@ -128,6 +128,25 @@ Existing tests must continue to pass; add coverage if gaps exist.
 - Tests:
 - Validation:
 
+## V - Verification (freeform agent probes)
+
+Optional. Freeform behavior or structure checks without advancing a coding
+Operation (`T##`). Append results to **Probe log**; longer notes in
+`spdd/tasks/<WORK-ID>-agent-probes.md`.
+
+### Suggested probes
+
+| ID | Probe | When | Pass looks like |
+|----|-------|------|-----------------|
+| V01 | Baseline test suite before refactor | Before T01 | Green baseline recorded |
+| V02 | Same suite after each Operation | After each T## | No new failures |
+
+### Probe log
+
+| When | Probe | Result | Notes |
+|------|-------|--------|-------|
+| | | | |
+
 ## N - Norms
 
 ### General
@@ -135,6 +154,8 @@ Existing tests must continue to pass; add coverage if gaps exist.
 - Preserve behavior unless explicitly changing it.
 - Prefer small, reviewable steps.
 - Run tests after each operation.
+- Freeform probes (section V) may run anytime; they do not count as a coding
+  Operation and must not silently expand scope.
 
 ### Java / Spring Boot
 

@@ -333,6 +333,22 @@ fi
 
 resume_prompt+=$'\n\n'"Continue in the ${PHASE} phase using the hybrid SDLC Agents + SPDD workflow."
 resume_prompt+=$'\n'"Recommended command: ${recommended_command}"
+
+verify_command=""
+canonical_for_verify=""
+if [[ -n "${WORK_ID}" ]]; then
+  if [[ -f "${TARGET}/spdd/canvas/${WORK_ID}.md" ]]; then
+    canonical_for_verify="${TARGET}/spdd/canvas/${WORK_ID}.md"
+  elif [[ -f "${TARGET}/agent-context/features/${WORK_ID}/reasons-canvas.md" ]]; then
+    canonical_for_verify="${TARGET}/agent-context/features/${WORK_ID}/reasons-canvas.md"
+  fi
+fi
+if [[ -n "${canonical_for_verify}" ]] \
+  && grep -Eq '^##[[:space:]]+V[[:space:]]*-[[:space:]]*Verification' "${canonical_for_verify}"; then
+  verify_command="/sdlc-spdd-verify @spdd/canvas/${WORK_ID}.md"
+  resume_prompt+=$'\n'"Optional freeform verify (does not advance T##): ${verify_command}"
+fi
+
 if [[ -n "${jira_ask_prompt}" ]]; then
   resume_prompt+=$'\n\n'"${jira_ask_prompt}"
 elif [[ -n "${jira_status}" && "${jira_status}" != "missing" && "${jira_status}" != "draft" ]]; then
@@ -353,6 +369,7 @@ cat > "${session_file}" <<EOF
 - Jira: ${jira_status:-unknown}
 - Active milestone: ${active_milestone:-none}
 - Recommended command: ${recommended_command}
+- Optional verify: ${verify_command:-none (no canvas section V)}
 - Canvas sync state: ${canvas_sync_state}
 - Previous session brief: ${latest_session}
 

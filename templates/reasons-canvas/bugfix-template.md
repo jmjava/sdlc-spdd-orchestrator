@@ -144,6 +144,25 @@ Note any release notes or runbook updates.
 - Tests:
 - Validation:
 
+## V - Verification (freeform agent probes)
+
+Optional. Freeform reproduction or design checks without advancing a coding
+Operation (`T##`). Append results to **Probe log**; longer notes in
+`spdd/tasks/<WORK-ID>-agent-probes.md`.
+
+### Suggested probes
+
+| ID | Probe | When | Pass looks like |
+|----|-------|------|-----------------|
+| V01 | Reproduce failure on clean checkout | Before fix | Failure matches report |
+| V02 | Confirm fix does not regress sibling paths | After fix | Focused tests green |
+
+### Probe log
+
+| When | Probe | Result | Notes |
+|------|-------|--------|-------|
+| | | | |
+
 ## N - Norms
 
 ### General
@@ -152,6 +171,8 @@ Note any release notes or runbook updates.
 - Do not perform unrelated refactors.
 - Add a regression test when feasible.
 - Document root cause in the canvas or progress log.
+- Freeform probes (section V) may run anytime; they do not count as a coding
+  Operation and must not silently expand scope.
 
 ### Java / Spring Boot
 

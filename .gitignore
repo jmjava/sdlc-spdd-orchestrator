@@ -31,3 +31,6 @@ docs/demos/recordings/
 # Block accidental media (regenerate locally; deploy via scripts/deploy-docs-pages-local.sh)
 *.mp3
 *.mp4
+
+# Ephemeral SPDD registry lock (agent runtime)
+agent-context/.work-registry.lock

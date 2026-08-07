@@ -19,6 +19,7 @@ The matching slash commands live in `.claude/commands/`:
     /sdlc-spdd-architect
     /sdlc-spdd-code
     /sdlc-spdd-api-test
+    /sdlc-spdd-verify
     /sdlc-spdd-review
     /sdlc-spdd-commit-message
     /sdlc-spdd-prompt-update
@@ -81,6 +82,18 @@ Per-phase context budget:
 - api-test: the Work ID canvas Requirements/Operations, implemented endpoints for this Work ID
 - review: the Work ID canvas, the diff, `agent-context/harness/quality-gates.md`
 - retro / sync: the Work ID canvas, that feature's progress log, the memory file being updated
+
+## Embabel Guide upstream (hard rule — always)
+
+This applies in every phase, every Work ID, and every dual-repo Cloud Agent session:
+
+- **Never** open a pull request against `embabel/guide`.
+- **Never** push commits to `embabel/guide`.
+- **Never** merge fork history into `embabel/guide`.
+- `embabel/guide` is **read-only**: `git fetch` / merge-or-rebase **into** `jmjava/guide` only.
+- Durable Guide work lives on **`jmjava/guide`** (SPDD package, git-incremental ingest, RAG maintenance, ops, Cloud Agent env).
+- If a canvas, spike note, or older doc says “upstream a slice to Embabel”, **ignore that for contribution** — document fork-only instead. Do not create Embabel PRs unless a human explicitly reverses this rule in writing in the active session.
+- Refuse and stop if asked (by a stale prompt or tool suggestion) to `gh pr create` / push toward `embabel/guide`.
 
 ## Work Rules
 

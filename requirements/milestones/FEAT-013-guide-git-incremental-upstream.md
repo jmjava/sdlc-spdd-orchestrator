@@ -15,95 +15,65 @@ related:
   - "SPIKE-001-guide-rag-context-backend"
 ---
 
-# FEAT-013: Upstream Guide git-incremental ingest + RAG maintenance
+# FEAT-013: Guide git-incremental fork sustainment (never embabel/guide)
 
 **Work ID:** FEAT-013-guide-git-incremental-upstream  
-**Milestone:** Milestone 1 (make it fast — Guide sustainment)  
-**Status:** Draft  
+**Milestone:** Milestone 1 (make it fast — fork sustainment)  
+**Status:** Draft (prompt-updated 2026-08-07)  
 **Date:** 2026-08-07
 
 ## Related Work
 
 | Relationship | Work ID | Status | Notes |
 |--------------|---------|--------|-------|
-| Depends On | SPIKE-003-embabel-context-graph-absorption | Complete | Hybrid recommendation **accepted** |
-| Related | SPIKE-001-guide-rag-context-backend | Provisional GO | Source of Layer B code on fork |
+| Depends On | SPIKE-003-embabel-context-graph-absorption | Complete | Inventory kept; Embabel contribution path **cancelled** |
+| Related | SPIKE-001-guide-rag-context-backend | Provisional GO | Layer B lives on fork |
 
 ## User / Business Goal
 
-Contribute the Embabel-general **git-incremental directory ingest** and **RAG
-maintenance** operator APIs from `jmjava/guide` to upstream `embabel/guide` as a
-small, reviewable PR series — without upstreaming the SPDD context-graph package.
+Sustain git-incremental ingest + RAG maintenance on **`jmjava/guide`**, with a hard
+rule that we **never** open a PR or merge into `embabel/guide`. Upstream is
+pull-only.
 
 ## Scope
 
 ### IN SCOPE
 
-- Extract / package Layer B from the fork for an upstream PR:
-  `GitIncrementalDirectorySupport`, `GitIngestionRevisionStore`, `DataManager`
-  hooks, `guide.git-ingestion.*` config (default **off**).
-- RAG maintenance operator APIs: content-element purge preview/purge + git
-  revision reset (same local-ops posture as `load-references`).
-- Related tests and operator docs suitable for Embabel reviewers.
-- Optional small ops hardening that unblocks the slice (only if required for the
-  PR to compile/run against upstream `main`).
+- Document never-contribute / pull-only sync policy (Guide + orchestrator).
+- Keep Layer B inventory/allowlist accurate for fork maintainers.
+- Run or record focused Layer B tests on the fork tip.
+- Confirm defaults stay opt-in (`guide.git-ingestion.enabled` default false).
 
 ### NOT IN SCOPE
 
-- `com.embabel.guide.spdd` package / `spdd_*` MCP (stays on `jmjava/guide`).
-- Generic entity MCP redesign (separate FEAT if Embabel engages).
-- Entity↔chunk join on projection HTTP/MCP (fork FEAT).
-- SPIKE-002 local LLM / embedding format work.
-- Cloud Agent dual-repo `.cursor/*` environment files.
-- neo-drivine timestamp pin unless upstream already needs the same pin.
+- Any PR, push, or merge to `embabel/guide`.
+- Contributing `com.embabel.guide.spdd` / `spdd_*` anywhere outside the fork.
+- Generic entity MCP, SPIKE-002, Cloud Agent env “upstreaming”.
 
 ## Acceptance Criteria
 
-- [ ] Upstreamable slice identified as a clean diff vs `embabel/guide` `main`
-      (no SPDD package files in the PR).
-- [ ] Unit/WebMvc tests for git-incremental + maintenance travel with the slice.
-- [ ] Flags remain opt-in (`guide.git-ingestion.enabled` default false).
-- [ ] Draft PR opened against `embabel/guide` (or documented blocker if Embabel
-      process requires an issue first).
-- [ ] Fork sync notes updated: what landed upstream vs what remains fork-local.
-- [ ] Orchestrator pin/docs unchanged unless a new Guide tag is cut after merge.
+- [ ] Never-contribute policy explicit in Guide absorption docs + orchestrator links.
+- [ ] Layer B fork map (allowlist) remains accurate.
+- [ ] Focused Guide tests green or env-blocker recorded.
+- [ ] No `embabel/guide` PR created for this Work ID.
 
 ## Non-Goals
 
-- Do not force SPDD conventions into upstream Guide defaults.
-- Do not open a giant “entire fork” PR.
-- Do not change orchestrator markdown-first defaults or require Guide.
+- Do not contribute to Embabel Guide.
+- Do not force SPDD conventions into Embabel defaults (N/A — we are not contributing).
 
 ## Implementation home
 
-Primary code changes: **`jmjava/guide`** → PR to **`embabel/guide`**.  
-This orchestrator Work ID governs the decision artifacts, cross-links, and
-acceptance tracking.
+**`jmjava/guide` only.** Orchestrator tracks governance.  
+Work ID slug retains `upstream` historically; meaning is fork-local.
 
 ## Jira
 
-Draft for issue creation — paste into Jira UI, MCP, or API. After create, set
-**Key** (and matching `jira_key` frontmatter) and commit.
-
 - Key: TBD
 - Issue type: Story
-- Summary: Upstream Guide git-incremental directory ingest + RAG maintenance
-- Labels: sdlc-spdd, guide, upstream, feat-013
-
-### Description
-
-SPIKE-003 accepted hybrid absorption: keep SPDD projection on `jmjava/guide`;
-upstream git-incremental ingest + RAG maintenance as the first Embabel-general
-slice.
-
-### Acceptance criteria (Given/When/Then)
-
-- Given `embabel/guide` `main` without git-incremental directory ingest  
-  When the FEAT-013 PR lands  
-  Then operators can enable `guide.git-ingestion.enabled` and reprocess only
-  changed files under configured directories, with purge/reset maintenance APIs,
-  and no SPDD types are introduced.
+- Summary: Guide git-incremental fork sustainment (never embabel/guide)
+- Labels: sdlc-spdd, guide, fork-only, feat-013
 
 ## Next Step
 
-    /sdlc-spdd-analysis @requirements/milestones/FEAT-013-guide-git-incremental-upstream.md
+    /sdlc-spdd-code @spdd/canvas/FEAT-013-guide-git-incremental-upstream.md operation T02

@@ -1,4 +1,4 @@
-# REASONS Canvas: FEAT-013-guide-git-incremental-upstream - Upstream Guide git-incremental ingest + RAG maintenance
+# REASONS Canvas: FEAT-013-guide-git-incremental-upstream - Guide git-incremental fork sustainment (never embabel/guide)
 
 ## Metadata
 
@@ -7,57 +7,61 @@
 - Status: In Progress
 - Readiness: ready-for-coding
 - Created: 2026-08-07
-- Updated: 2026-08-07 (architect: allowlist + ops frozen from SPIKE-003 accept)
+- Updated: 2026-08-07 (prompt-update: **never** merge/PR to `embabel/guide`)
 - Owner: Cursor Agent
-- Target Project: jmjava/guide (implementation) → embabel/guide (upstream PR); orchestrator tracks governance
-- Stack: Java/Kotlin Spring Boot (Embabel Guide) + Neo4j RAG
-- Source System: SPIKE-003 accept (hybrid absorption)
+- Target Project: `jmjava/guide` only (orchestrator tracks governance)
+- Stack: Java/Kotlin Spring Boot (Embabel Guide fork) + Neo4j RAG
+- Source System: SPIKE-003 accept, revised 2026-08-07 (fork-only; no Embabel contribution)
 - Analysis: spdd/analysis/FEAT-013-guide-git-incremental-upstream-analysis.md
 - Roadmap: ROADMAP.md
 - Milestone: milestone-1
-- Delivery stage: make it fast (upstream sustainment slice)
+- Delivery stage: make it fast (fork sustainment)
 - Related: SPIKE-003-embabel-context-graph-absorption (Complete), SPIKE-001-guide-rag-context-backend
+- Note: Work ID slug retains `upstream` historically; **meaning is fork-local only**.
 
 ## R - Requirements
 
 ### User Goal
 
-Land git-incremental directory ingest and RAG maintenance operator APIs from the
-`jmjava/guide` fork into upstream `embabel/guide` without bringing SPDD projection.
+Keep git-incremental directory ingest + RAG maintenance healthy on **`jmjava/guide`**,
+with clear docs and tests — and a hard rule that we **never** open a PR or merge
+anything into `embabel/guide`.
 
 ### Business / Product Goal
 
-Reduce fork drift for the Embabel-general ingest ops SPIKE-003 classified as the
-best first upstream slice, while keeping the SPDD context graph on the fork.
+Sustain the Guide fork as the durable home for SPDD + Layer B ingest ops. Treat
+`embabel/guide` as a **read-only** baseline to pull from, not a contribution target.
 
 ### Acceptance Criteria
 
-- [ ] Clean upstreamable diff vs `embabel/guide` `main` with **no** `com.embabel.guide.spdd` paths.
-- [ ] Tests for git-incremental + maintenance included.
+- [ ] Hard non-contribution policy documented (orchestrator + Guide absorption docs).
+- [ ] Layer B inventory / allowlist kept accurate for fork maintainers (not for Embabel PRs).
 - [ ] `guide.git-ingestion.enabled` remains default **false**.
-- [ ] Draft PR (or documented Embabel process blocker) against `embabel/guide`.
-- [ ] Fork absorption docs updated with what was proposed / merged / rejected.
-- [ ] Orchestrator pin unchanged unless a successor Guide tag is cut after upstream merge.
+- [ ] Focused Guide tests for git-incremental + maintenance run or env-blocker recorded.
+- [ ] Sync process documented as **pull-only** from `embabel/guide` (`fetch`/`merge` in).
+- [ ] No PR, push, or merge directed at `embabel/guide` from this Work ID (or future ones
+      unless a human explicitly reverses this policy in writing).
 
 ### Non-Goals
 
-- No SPDD package / `spdd_*` upstream.
-- No generic entity MCP in this FEAT.
-- No Cloud Agent `.cursor/*` env files.
+- **Never** open a PR to `embabel/guide`.
+- **Never** merge fork commits into `embabel/guide`.
+- No SPDD package contribution to Embabel.
+- No generic entity MCP redesign.
+- No Cloud Agent `.cursor/*` contribution to Embabel.
 - No SPIKE-002 model work.
 - No required Guide dependency in orchestrator defaults.
 
 ### Assumptions
 
-- SPIKE-003 hybrid recommendation remains accepted.
-- Layer B on the fork is the reference implementation.
-- Embabel will review small ops PRs more readily than a giant fork dump.
+- SPIKE-003 inventory remains useful for classifying fork layers.
+- The earlier “upstream Layer B first” follow-on is **superseded** by this policy.
+- Pulling `embabel/guide` `main` into `jmjava/guide` remains allowed and expected.
 
 ### Open Questions
 
-- Does Embabel require a tracking issue before accepting a PR?
-- Which ops-hardening commits (Neo4j auth / persona resilience / KSP enforcer) are
-  strictly required for Layer B to build on upstream `main`?
+- Cadence for pulling `embabel/guide` into the fork (on-demand vs scheduled)?
+- When to cut successor pin tags after fork-local Layer B/docs changes?
 
 ## E - Entities
 
@@ -74,154 +78,175 @@ best first upstream slice, while keeping the SPDD context graph on the fork.
 
 - Neo4j content-element store (existing Guide RAG)
 - Git working tree for configured ingest directories
+- `embabel/guide` — **read-only upstream remote** (pull only)
 
 ### Data / Persistence
 
 - Git ingestion revision marker (file/store used by `GitIngestionRevisionStore`)
 - ContentElement purge via maintenance APIs (existing store types)
 
-### Files Likely Affected (Guide)
+### Files Likely Affected
 
-- `src/main/java/com/embabel/guide/rag/GitIncrementalDirectorySupport.java`
-- `src/main/java/com/embabel/guide/rag/GitIngestionRevisionStore.java`
-- `src/main/java/com/embabel/guide/rag/DataManager.java`
-- `src/main/java/com/embabel/guide/rag/RagMaintenanceController.java`
-- `src/main/kotlin/com/embabel/guide/rag/RagContentMaintenanceService.kt`
-- `src/main/kotlin/com/embabel/guide/rag/RagMaintenanceExceptionHandler.kt`
-- `src/main/kotlin/com/embabel/guide/GuideProperties.kt`
-- `src/main/kotlin/com/embabel/guide/chat/security/SecurityConfig.kt`
-- `src/main/resources/application.yml`
-- Matching tests under `src/test/.../rag/`
-- Docs suitable for Embabel (not SPDD-only)
+- Guide: Layer B sources/tests under `com.embabel.guide.rag`, `GuideProperties`,
+  `SecurityConfig`, `application.yml` (only if fork sustainment needs fixes)
+- Guide: `docs/spdd-upstream-absorption.md`, `docs/spdd-branch-changes.md`
+- Orchestrator: this canvas, requirement, analysis, ROADMAP, GUIDE-INTEGRATION-SPIKE
 
 ## A - Approach
 
 ### Proposed Approach
 
-1. Architect-harden this canvas (file allowlist, PR shape, validation).
-2. Create Guide branch from tip or rebase Layer B onto `upstream/main`.
-3. Strip any SPDD-coupled files from the candidate commit set.
-4. Run Guide unit/WebMvc tests for the slice.
-5. Open draft PR to `embabel/guide` with operator notes + default-off flags.
-6. Sync fork absorption docs + orchestrator cross-links with PR URL / outcome.
+1. Prompt-update this canvas (done): forbid any contribution to `embabel/guide`.
+2. Rewrite absorption docs: keep-fork for **all** SPIKE-001 layers; sync = pull-only.
+3. Keep Layer B allowlist as a **fork maintainer map** (not an Embabel PR packing list).
+4. Run focused Guide tests on the fork tip (or record Cloud Agent blocker).
+5. Leave pin/tag policy fork-local; never condition tags on Embabel merge.
 
 ### Alternatives Considered
 
-1. Upstream entire fork delta — rejected (SPIKE-003).
-2. Extract a separate library module first — deferred (no second consumer).
-3. Upstream ops hardening alone without git-incremental — lower value; bundle with B.
+1. PR Layer B to `embabel/guide` — **rejected** (human policy 2026-08-07).
+2. Upstream entire fork — already rejected (SPIKE-003).
+3. Extract library module — deferred (no second consumer).
 
 ### Trade-Offs
 
-- Smaller PR increases accept odds but may leave useful ops hardening on the fork.
-- Cherry-picking onto `upstream/main` may need conflict resolution vs shipping from tip.
+- Fork drift vs Embabel is accepted; mitigated by pull-only sync + pin tags.
+- Work ID name still says `upstream` — historical; docs must say fork-only.
 
 ### Risks
 
-- Embabel contribution process friction.
-- Accidental inclusion of SPDD paths.
-- Version pin entanglement.
+- Future agents reopen Embabel PRs from stale SPIKE-003 text — mitigate with
+  Safeguards + absorption doc banner.
+- Cloud Agent env cannot run Guide tests — record Blocked on V04/T03.
 
 ### Failure Modes
 
-- PR closed as out-of-scope → keep Layer B on fork; update absorption docs; stop.
-- Build fails on upstream without pin → document and either minimal pin PR or fork-only.
+- Accidental `gh pr create` against embabel/guide → stop; close without merge; fix docs.
 
 ## S - Structure
 
 ### Files To Add (orchestrator — governance)
 
-- `requirements/milestones/FEAT-013-guide-git-incremental-upstream.md`
-- `spdd/analysis/FEAT-013-guide-git-incremental-upstream-analysis.md`
-- `spdd/canvas/FEAT-013-guide-git-incremental-upstream.md`
-- `agent-context/features/FEAT-013-guide-git-incremental-upstream/*`
+- Already present: requirement, analysis, canvas, feature workspace, probe log
 
 ### Files To Modify (orchestrator)
 
-- `ROADMAP.md`, `GUIDE-INTEGRATION-SPIKE.md`, work-registry
+- `ROADMAP.md`, `GUIDE-INTEGRATION-SPIKE.md`, SPIKE-003 sync notes, this canvas
 
-### Files To Add/Modify (Guide — implementation)
+### Files To Add/Modify (Guide)
 
-- Layer B sources/tests/docs as listed under Entities
-- `docs/spdd-upstream-absorption.md` — mark FEAT-013 in progress / PR link
+- `docs/spdd-upstream-absorption.md` — never-contribute policy
+- `docs/spdd-branch-changes.md` — matrix: all slices keep-on-fork
 
 ### Package / Module Structure
 
-Stay in existing `com.embabel.guide.rag` package; no new top-level module.
+Stay in existing `com.embabel.guide.rag` on the fork; no Embabel packaging work.
 
 ### Test Structure
 
 - `GitIncrementalDirectorySupportTest`
 - `RagMaintenanceControllerWebMvcTest`
-- Related `DataManager` / ingestion tests as needed
 
 ### Documentation Structure
 
-- Embabel-facing operator notes (flag defaults, endpoints, local-ops posture)
-- Fork absorption matrix update after PR opened
+- Fork operator notes; absorption “never contribute” banner
 
 ## O - Operations
 
 ### T01 - Architect harden + file allowlist
 
-- Status: Complete
-- Description: Confirm readiness Ready For Coding; freeze allowlist of Guide paths
-  for the upstream PR; record Embabel PR target branch (`embabel/guide` `main`).
-- Files: this canvas; Guide absorption doc
-- Validation: canvas readiness `ready-for-coding`; no SPDD paths in allowlist
-- Allowlist (Guide):
-  - `src/main/java/com/embabel/guide/rag/GitIncrementalDirectorySupport.java`
-  - `src/main/java/com/embabel/guide/rag/GitIngestionRevisionStore.java`
-  - `src/main/java/com/embabel/guide/rag/DataManager.java` (incremental hooks only)
-  - `src/main/java/com/embabel/guide/rag/IngestionRunner.java` (only if required by B)
-  - `src/main/java/com/embabel/guide/rag/RagMaintenanceController.java`
-  - `src/main/kotlin/com/embabel/guide/rag/RagContentMaintenanceService.kt`
-  - `src/main/kotlin/com/embabel/guide/rag/RagMaintenanceExceptionHandler.kt`
-  - `src/main/kotlin/com/embabel/guide/GuideProperties.kt` (`gitIngestion` only)
-  - `src/main/kotlin/com/embabel/guide/chat/security/SecurityConfig.kt` (maintenance routes)
-  - `src/main/resources/application.yml` (`guide.git-ingestion.*` docs/defaults)
-  - Matching `src/test/.../rag/` tests for the above
-  - Embabel-facing operator doc (new or trimmed; **not** SPDD projection docs)
-  - Explicitly **excluded:** `com/embabel/guide/spdd/**`, `.cursor/**`, neo-drivine pin unless build-blocking
+- Status: Complete (superseded intent)
+- Description: Originally froze allowlist for an Embabel PR. Allowlist retained as
+  **fork Layer B map** only; Embabel PR target cancelled by prompt-update.
+- Validation: canvas readiness `ready-for-coding`; policy forbids Embabel PR
 
-### T02 - Produce clean Layer B branch vs embabel/guide main
+### T02 - Document fork-only Layer B + never-contribute policy
 
 - Status: Not Started
-- Description: Branch/cherry-pick Layer B onto upstream base; exclude `spdd` package
-  and Cursor env files.
-- Files: Guide Layer B sources/tests/config/security as allowlisted
-- Validation: `git diff --name-only upstream/main...HEAD` contains no `guide/spdd` paths
+- Description: Update Guide absorption / branch-change docs and orchestrator
+  cross-links so Layer B (and all SPIKE-001 deltas) stay on `jmjava/guide`;
+  sync = pull-only from `embabel/guide`; no PR/merge to Embabel.
+- Files: Guide `docs/spdd-upstream-absorption.md`, `docs/spdd-branch-changes.md`;
+  orchestrator ROADMAP / GUIDE-INTEGRATION-SPIKE / SPIKE-003 notes
+- Validation: docs contain explicit never-contribute language; no Embabel PR opened
 
-### T03 - Verify tests on the upstreamable slice
+### T03 - Run focused Layer B tests on the fork
 
 - Status: Not Started
-- Description: Run unit/WebMvc tests for git-incremental + maintenance on the branch.
+- Description: Run unit/WebMvc tests for git-incremental + maintenance on
+  `jmjava/guide` tip (not an Embabel-based branch).
 - Files: `src/test/.../rag/*`
-- Validation: targeted tests green (or document environment blocker)
+- Validation: targeted tests green or documented env blocker
 
-### T04 - Open draft PR to embabel/guide + sync docs
+### T04 - Close the loop (pin/docs/registry; no Embabel PR)
 
 - Status: Not Started
-- Description: Open draft upstream PR (or record process blocker); update fork
-  absorption docs and orchestrator cross-links with URL/status.
-- Files: Guide docs; orchestrator GUIDE-INTEGRATION-SPIKE / progress log
-- Validation: PR URL recorded; absorption matrix shows FEAT-013 status
+- Description: Confirm registry/roadmap/canvas Final Status language is fork-only;
+  record that FEAT-013 does not produce an `embabel/guide` PR.
+- Files: orchestrator canvas Final Status, progress log, GUIDE-INTEGRATION-SPIKE
+- Validation: no `embabel/guide` PR URL; policy lines present
+
+## V - Verification (freeform agent probes)
+
+Freeform checks for design/env — **without** advancing T02–T04. Prefer
+`/sdlc-spdd-verify`. Longer transcripts:
+`spdd/tasks/FEAT-013-guide-git-incremental-upstream-agent-probes.md`.
+
+### Dual-env orientation (read first in Cloud Agent)
+
+| Checkout | Path | Role for this FEAT |
+|----------|------|--------------------|
+| Orchestrator | `/agent/repos/sdlc-spdd-orchestrator` | Governance (canvas, allowlist, probe log) |
+| Guide | `/agent/repos/guide` | Fork home for Layer B + SPDD (**never** push to embabel) |
+
+Active Work ID: `FEAT-013-guide-git-incremental-upstream`  
+Next coding op: **T02** (docs/policy on Guide + orchestrator)  
+Do **not** resume stale FEAT-004 session briefs.
+
+### How to use
+
+1. Pick a Suggested probe (or invent one); print Probe intent first.
+2. Run read-only checks unless the user asked for a fix.
+3. Append **Probe log**; classify Pass / Fail / Blocked / Inconclusive.
+4. Intent change → `/sdlc-spdd-prompt-update` before T02+.
+
+### Suggested probes
+
+| ID | Probe | When | Pass looks like |
+|----|-------|------|-----------------|
+| V01 | Dual-env map — name both checkouts, branches, Work ID, next T## | Session start | Orientation table matches reality |
+| V02 | Allowlist vs fork tip — Layer B paths exist; SPDD is separate package | Before T02 | Allowlist present; Layer B has no `guide.spdd` imports |
+| V03 | Default-off flags — `guide.git-ingestion.enabled` default false | Anytime | Default remains false |
+| V04 | Focused Guide tests on **fork** tip | After T02 / with T03 | Green or documented env blocker |
+| V05 | Non-contribution check — docs/policy forbid PR/merge to `embabel/guide` | Before T04 | Explicit never-contribute language present |
+| V06 | Design sanity — Layer B has no compile dependency on `com.embabel.guide.spdd` | Anytime | No imports from `guide.spdd` in allowlisted sources |
+
+### Probe log
+
+| When | Probe | Result | Notes |
+|------|-------|--------|-------|
+| 2026-08-07T21:23Z | V01 Dual-env map | Pass | Orchestrator `cursor/embabel-context-graph-research-65ca` @ `8cc65ca`; Guide `cursor/spike-003-absorption-tip-refresh-decf` @ `f870b73`; Work ID FEAT-013; next **T02**; verify prompt surfaced in `sdlc.sh next`. Detail: `spdd/tasks/FEAT-013-guide-git-incremental-upstream-agent-probes.md` |
+| 2026-08-07T21:24Z | V02 Allowlist vs fork tip | Pass | All 12 allowlist paths present on Guide tip; Layer B files in `upstream/main...HEAD`; SPDD package paths also in tip diff (fork keeps both); core Layer B sources have no `guide.spdd` imports. Repo probed: **guide**. Note: “excludable for Embabel PR” framing **superseded** — we do not PR to Embabel. |
+| 2026-08-07T21:26Z | Policy | Recorded | Human: never merge/PR to `embabel/guide`. Canvas prompt-updated; T04 Embabel PR cancelled. |
 
 ## N - Norms
 
 - Implement one Operation per coding session.
-- Prefer small, Embabel-reviewable commits.
-- Keep SPDD package out of every commit in this FEAT.
+- Prefer small, reviewable commits **on `jmjava/guide` / orchestrator only**.
 - Update this canvas before behavior changes (`/sdlc-spdd-prompt-update`).
-- Record assumptions when Embabel process is unclear.
+- Freeform probes (section V / `/sdlc-spdd-verify`) may run anytime; they do not
+  count as a coding Operation and must not silently expand scope.
+- When wording says “upstream”, mean **pull from** `embabel/guide`, never push/PR.
 
 ## S - Safeguards
 
-- Do not change `guide.spdd-projection.enabled` or include SPDD sources.
-- Do not change `guide.git-ingestion.enabled` default away from false.
-- Do not include `.cursor/environment.json` or dual-repo install scripts.
+- **Never** open a pull request against `embabel/guide`.
+- **Never** push or merge fork commits into `embabel/guide`.
+- `embabel/guide` remotes are fetch/merge-in only.
+- Do not change `guide.spdd-projection.enabled` or `guide.git-ingestion.enabled` defaults.
+- Do not include `.cursor/environment.json` as something to “contribute upstream”.
 - Do not silently expand into generic entity MCP.
-- Do not retag orchestrator Guide pin until upstream merge (or explicit fork tag).
+- Do not retag orchestrator Guide pin unless the **fork** contract changed.
 
 ## Review Checklist
 
@@ -231,23 +256,24 @@ Stay in existing `com.embabel.guide.rag` package; no new top-level module.
 - [ ] Structure followed or synced
 - [ ] Operations completed
 - [ ] Norms followed
-- [ ] Safeguards respected
-- [ ] Tests added or updated
+- [ ] Safeguards respected (especially never-contribute)
+- [ ] Tests added or updated / blockers recorded
 - [ ] No unrelated refactors
 - [ ] No unexplained dependencies
 - [ ] Documentation updated if needed
-- [ ] No `com.embabel.guide.spdd` paths in upstream PR
+- [ ] No PR/push to `embabel/guide`
 
 ## Sync Notes
 
-Intake from SPIKE-003 accept (2026-08-07). Analysis written from Layer B inventory.
-T01 architect complete: readiness `ready-for-coding`; Guide path allowlist frozen;
-upstream target `embabel/guide` `main`. Next coding op: **T02** on Guide checkout.
+Intake from SPIKE-003 accept (2026-08-07) originally sketched an Embabel Layer B PR.
+**2026-08-07 prompt-update:** human policy — **never** merge/PR to `embabel/guide`.
+FEAT-013 retargeted to fork sustainment + documentation. T01 allowlist kept as fork
+map. T02–T04 rewritten; former “open draft PR to embabel/guide” cancelled.
 
 ## Final Status
 
 - Status: In Progress
 - Completed Date:
-- PR:
+- PR: none to `embabel/guide` (forbidden)
 - Completed Operations: T01
-- Follow-Up Tasks: T02–T04 on `jmjava/guide`
+- Follow-Up Tasks: T02–T04 on fork/docs only

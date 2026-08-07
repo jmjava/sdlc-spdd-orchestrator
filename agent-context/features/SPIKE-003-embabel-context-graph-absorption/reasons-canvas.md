@@ -205,9 +205,10 @@ Notes. Retro + sync artifacts written. Recommendation unchanged.
 Sibling spikes: SPIKE-001 field dogfood continues independently; SPIKE-002 remains
 shelved (model layer).
 
-2026-08-07 **Accepted:** hybrid keep-fork for `com.embabel.guide.spdd`; upstream
-first slice = git-incremental directory ingest + RAG maintenance. Follow-on Work ID
-`FEAT-013-guide-git-incremental-upstream` intake created.
+2026-08-07 **Accepted (then tightened):** keep-fork for the SPDD package. Later
+same day: human policy — **never** PR/merge/push to `embabel/guide` (all layers
+stay on `jmjava/guide`; pull-only sync). Follow-on `FEAT-013` retargeted to
+fork sustainment. Always-on agent rule: `.cursor/rules` “Embabel Guide upstream”.
 
 ## Final Status
 

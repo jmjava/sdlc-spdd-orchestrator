@@ -483,6 +483,12 @@ sdlc_workflow_next() {
   echo
   echo "Do now (assistant):"
   echo "  $(sdlc_workflow_recommended_command "${phase}" "${work_id}" "${operation}")"
+  if _wf_canvas_has_verification "${work_id}"; then
+    echo
+    echo "Optional (freeform — does not advance T##):"
+    echo "  $(sdlc_workflow_verify_command "${work_id}")"
+    echo "  # runs one probe from canvas section V; log result; stop unless asked for another"
+  fi
   if [[ "${phase}" == "code" ]]; then
     if [[ -n "${readiness}" ]] && declare -F readiness_allows_coding >/dev/null 2>&1 \
       && ! readiness_allows_coding "${readiness}"; then
@@ -826,6 +832,27 @@ _wf_canvas_path() {
     printf '%s' "${canvas}"
   fi
   return 0
+}
+
+# True when the Work ID canvas has optional freeform verification section V.
+_wf_canvas_has_verification() {
+  local work_id="$1"
+  local canvas
+  canvas="$(_wf_canvas_path "${work_id}")"
+  [[ -n "${canvas}" && -f "${canvas}" ]] || return 1
+  grep -Eq '^##[[:space:]]+V[[:space:]]*-[[:space:]]*Verification' "${canvas}"
+}
+
+sdlc_workflow_verify_command() {
+  local work_id="${1:-}"
+  if [[ -z "${work_id}" ]]; then
+    work_id="$(sdlc_get_pointer)"
+  fi
+  if [[ -z "${work_id}" ]]; then
+    echo "/sdlc-spdd-verify @spdd/canvas/<WORK-ID>.md"
+    return 0
+  fi
+  echo "/sdlc-spdd-verify @spdd/canvas/${work_id}.md"
 }
 
 _wf_infer_next_operation() {

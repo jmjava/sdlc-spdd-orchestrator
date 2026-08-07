@@ -55,8 +55,15 @@ Every Work ID has a structured canvas with required sections:
 | **A** — Approach | Strategy for satisfying the requirement |
 | **S** — Structure | Components, modules, boundaries, dependencies, file locations |
 | **O** — Operations | Concrete, testable, ordered implementation steps |
+| **V** — Verification (optional) | Freeform agent probes to verify design/env without advancing a `T##` op |
 | **N** — Norms | Reusable engineering standards and conventions |
 | **S** — Safeguards | Non-negotiable constraints, invariants, security, performance limits |
+
+**V is optional** (not required by `validate-reasons-canvas.sh`). Use it when agents
+need room to sanity-check a design, re-diff a fork, or dogfood a dual-repo
+environment without pretending that work is the next coding Operation. Log probes
+on the canvas and/or in `spdd/tasks/<WORK-ID>-agent-probes.md`. Invoke with
+`/sdlc-spdd-verify` when available.
 
 Validate structure:
 

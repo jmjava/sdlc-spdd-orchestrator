@@ -117,6 +117,30 @@ Spike summary and recommendation.
 - Tests:
 - Validation:
 
+## V - Verification (freeform agent probes)
+
+Optional. Freeform checks to verify the research question, inventory, or
+environment without advancing a spike Operation (`T##`).
+
+### How to use
+
+1. State the question; run the probe; append **Probe log** (newest last).
+2. Longer transcripts: `spdd/tasks/<WORK-ID>-agent-probes.md`.
+3. Intent change → update Requirements / recommendation before more work.
+
+### Suggested probes
+
+| ID | Probe | When | Pass looks like |
+|----|-------|------|-----------------|
+| V01 | Re-diff fork tip vs upstream | Mid-spike / before recommend | Counts match research table |
+| V02 | Dual-repo orientation (paths, branches, pins) | Cloud / dual-env sessions | Agent can name active Work ID + both checkouts |
+
+### Probe log
+
+| When | Probe | Result | Notes |
+|------|-------|--------|-------|
+| | | | |
+
 ## N - Norms
 
 ### General
@@ -124,6 +148,8 @@ Spike summary and recommendation.
 - Time-box the spike.
 - Do not merge throwaway code into production paths without a follow-up feature.
 - Document findings clearly for future agents.
+- Freeform probes (section V) may run anytime; they do not count as a coding
+  Operation and must not silently expand scope.
 
 ## S - Safeguards
 

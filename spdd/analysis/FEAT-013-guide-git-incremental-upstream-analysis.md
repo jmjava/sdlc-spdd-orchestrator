@@ -4,88 +4,58 @@
 
 - **Work ID:** FEAT-013-guide-git-incremental-upstream
 - **Requirement:** `requirements/milestones/FEAT-013-guide-git-incremental-upstream.md`
-- **Prerequisite:** SPIKE-003-embabel-context-graph-absorption (**Accepted** 2026-08-07)
-- **Research basis:** `spdd/analysis/SPIKE-003-embabel-context-graph-absorption-research.md` Layer B
-- **Timestamp:** 2026-08-07T21:12:00Z
-- **Implementation home:** `jmjava/guide` → upstream PR to `embabel/guide`
+- **Prerequisite:** SPIKE-003 (Complete) — inventory reused; contribution path cancelled
+- **Timestamp:** 2026-08-07T21:26:00Z
+- **Implementation home:** `jmjava/guide` only
+- **Policy:** **Never** PR/merge/push to `embabel/guide` (human 2026-08-07)
 
 ## Scope Lock-In
 
 ### IN SCOPE
 
-- Fork Layer B: git-incremental directory ingest + RAG maintenance APIs + tests/docs
-  needed for an Embabel-reviewable PR.
-- Minimal cross-cutting config/security permit-all for those operator routes only
-  when required for the slice to work on upstream `main`.
+- Fork-only sustainment of Layer B (git-incremental + RAG maintenance).
+- Documentation of pull-only sync from `embabel/guide`.
+- Focused tests on the fork tip.
 
-### NOT IN SCOPE (deferred)
+### NOT IN SCOPE (deferred / forbidden)
 
-| Item | Deferred to |
-|------|-------------|
-| `com.embabel.guide.spdd` / `spdd_*` | Keep on fork (SPIKE-003 accepted) |
-| Generic entity MCP | Future FEAT if Embabel engages |
-| Entity↔chunk join on HTTP/MCP | Fork FEAT after demand |
-| Cloud Agent dual-repo env | Fork-local Layer D |
-| SPIKE-002 models | Separate Work ID |
+| Item | Status |
+|------|--------|
+| PR to `embabel/guide` | **Forbidden** |
+| Merge fork → Embabel | **Forbidden** |
+| SPDD package contribution | Forbidden (also SPIKE-003) |
+| Generic entity MCP | Future FEAT only if ever wanted on fork |
+| SPIKE-002 | Separate Work ID |
 
 ## Domain Keywords
 
+- fork sustainment
+- pull-only sync
 - git-incremental ingest
-- directory ingest revision
 - RAG maintenance
-- content-element purge
-- Embabel Guide upstream
-- `guide.git-ingestion`
-- DataManager loadReferences
+- never contribute / non-contribution
+- `jmjava/guide`
 
 ## Code Areas
 
-- Guide `com.embabel.guide.rag` — git-incremental + maintenance (fork)
-- Guide `GuideProperties` / `application.yml` — `gitIngestion` config block
-- Guide `SecurityConfig` — permit-all for new operator routes
-- Guide tests under `src/test/.../rag/`
-- Guide docs: `docs/spdd-upstream-absorption.md` (posture only; not SPDD package)
-- Orchestrator cross-links: `GUIDE-INTEGRATION-SPIKE.md`, `docs/dice-projection-runbook.md`
+- Guide `com.embabel.guide.rag` — Layer B on fork
+- Guide docs `docs/spdd-upstream-absorption.md` — policy home
+- Orchestrator canvas/ROADMAP/GUIDE-INTEGRATION-SPIKE — governance
 
-## Existing Concepts (from SPIKE-003)
+## Strategic Direction (revised)
 
-| Layer | Verdict |
-|-------|---------|
-| A. SPDD package | Keep on fork |
-| B. Git-incremental + maintenance | **Best first upstream PR** (this FEAT) |
-| C. Ops hardening | Upstream with B only if needed |
-| C′. neo-drivine pin | Fork-local until versions align |
-| D. Cloud Agent env | Fork-local |
+1. Keep all SPIKE-001 layers on `jmjava/guide`.
+2. Use `embabel/guide` only as `git fetch` / merge-in baseline.
+3. Retarget FEAT-013 Operations away from Embabel PRs (prompt-update done).
+4. Agents must treat “upstream” wording as **pull-from**, never push/PR.
 
-Upstream `embabel/guide` `main` (`67f5e9d` as of SPIKE-003) has no git-incremental
-directory ingest. Fork tip carries the implementation behind
-`guide.git-ingestion.enabled` (default false).
-
-## Strategic Direction
-
-1. Branch from current `jmjava/guide` tip (or cherry-pick Layer B onto a branch
-   based on `upstream/main`).
-2. Produce a **minimal diff** against `embabel/guide` `main` containing only Layer B
-   (+ necessary config/security/test/doc files).
-3. Exclude every `com.embabel.guide.spdd.*` path and SPDD projection docs from the PR.
-4. Open draft PR to Embabel with operator walkthrough and flag defaults documented.
-5. After merge (or rejection), update fork absorption docs and orchestrator pin notes.
-
-## Risks and Gaps
+## Risks
 
 | Risk | Mitigation |
 |------|------------|
-| Upstream rejects operator purge APIs | Keep same local-ops posture as existing `load-references`; document threat model |
-| Diff entangled with SPDD package | Explicit file allowlist in canvas Operations; CI/self-check that `spdd/` paths absent |
-| Agent/neo-drivine version lag | Do not include pin unless upstream build requires it |
-| Embabel contribution process unknown | Open draft PR or issue first; record blocker in progress log |
-
-## Resolved Decisions (carried from SPIKE-003 accept)
-
-- Hybrid absorption accepted.
-- First upstreamable slice = git-incremental + RAG maintenance.
-- SPDD package stays on `jmjava/guide`.
+| Stale SPIKE-003 “upstream Layer B” text | Canvas Safeguards + absorption banner |
+| Accidental `gh pr` to embabel | Explicit Never in Ops T04 validation |
 
 ## Next
 
-`/sdlc-spdd-plan` → REASONS Canvas for FEAT-013, then `/sdlc-spdd-architect`.
+`/sdlc-spdd-code … operation T02` — document fork-only + never-contribute policy.
