@@ -4,10 +4,10 @@
 
 - Work ID: SPIKE-003-embabel-context-graph-absorption
 - Work Type: Spike
-- Status: In Progress
-- Readiness: reviewed
+- Status: Complete
+- Readiness: complete
 - Created: 2026-08-07
-- Updated: 2026-08-07 (dual-env review/retro/sync)
+- Updated: 2026-08-07 (recommendation accepted; FEAT-013 intake)
 - Owner: Cursor Agent
 - Target Project: sdlc-spdd-orchestrator (self / dogfood) + `jmjava/guide` durable checkout
 - Stack: Bash + Markdown harness ↔ JVM (Embabel guide fork) + Neo4j `__Entity__` graph + MCP
@@ -52,7 +52,7 @@ answers “where should that graph capability live?”:
 - [x] Written recommendation with trade-offs.
 - [x] Remaining graph gaps listed (severity + owner).
 - [x] Guide docs updated with absorption candidates (durable checkout).
-- [ ] Human accept/reject of recommendation (post-spike).
+- [x] Human accept/reject of recommendation (post-spike) — **Accepted** 2026-08-07.
 
 ### Non-Goals
 
@@ -184,7 +184,7 @@ answers “where should that graph capability live?”:
 - [x] Guide durable-checkout docs updated
 - [x] No production wiring / default-flag changes left behind
 - [x] No secrets committed
-- [ ] Human accept/reject of recommendation
+- [x] Human accept/reject of recommendation — **Accepted** 2026-08-07
 
 ## Sync Notes
 
@@ -205,10 +205,14 @@ Notes. Retro + sync artifacts written. Recommendation unchanged.
 Sibling spikes: SPIKE-001 field dogfood continues independently; SPIKE-002 remains
 shelved (model layer).
 
+2026-08-07 **Accepted:** hybrid keep-fork for `com.embabel.guide.spdd`; upstream
+first slice = git-incremental directory ingest + RAG maintenance. Follow-on Work ID
+`FEAT-013-guide-git-incremental-upstream` intake created.
+
 ## Final Status
 
-- Status: In Progress (research + review complete; awaiting human accept/reject)
-- Completed Date:
-- PR: orchestrator https://github.com/jmjava/sdlc-spdd-orchestrator/pull/76 ; Guide absorption docs merged (#4)
+- Status: Complete
+- Completed Date: 2026-08-07
+- PR: orchestrator https://github.com/jmjava/sdlc-spdd-orchestrator/pull/76 ; Guide absorption docs merged (#4); tip-refresh #5
 - Completed Operations: T01–T04
-- Follow-Up Tasks: human accept/reject; optional FEAT intake for git-incremental upstream
+- Follow-Up Tasks: `FEAT-013-guide-git-incremental-upstream` (Guide upstream PR for git-incremental + maintenance)

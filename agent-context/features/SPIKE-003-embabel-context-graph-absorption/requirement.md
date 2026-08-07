@@ -50,13 +50,14 @@ integration rewrite.
 
 ## Success / decision criteria
 
-- [ ] Fork delta inventory vs `embabel/guide` `main` with upstreamability matrix.
-- [ ] Explicit classification: SPDD-specific vs reusable Embabel context-graph surface.
-- [ ] Written recommendation: upstream PR / maintain fork / extract module (or hybrid).
-- [ ] Remaining graph gaps listed with severity (entity↔chunk join, Operation/Keyword,
+- [x] Fork delta inventory vs `embabel/guide` `main` with upstreamability matrix.
+- [x] Explicit classification: SPDD-specific vs reusable Embabel context-graph surface.
+- [x] Written recommendation: upstream PR / maintain fork / extract module (or hybrid).
+- [x] Remaining graph gaps listed with severity (entity↔chunk join, Operation/Keyword,
       generic entity MCP vs `spdd_*`).
-- [ ] Follow-on FEAT sketch only if recommendation says “absorb further”; otherwise
+- [x] Follow-on FEAT sketch only if recommendation says “absorb further”; otherwise
       document keep-fork posture and sync process.
+- [x] Human accept/reject — **Accepted** 2026-08-07 → `FEAT-013-guide-git-incremental-upstream`.
 
 ## Dependencies / sequencing
 
@@ -79,8 +80,9 @@ integration rewrite.
 
 ## Next Step
 
-Read research + analysis artifacts, then accept or reject the absorption recommendation
-before opening any upstream Embabel PR.
+Complete. Recommendation accepted. Continue on
+`/sdlc-spdd-analysis @requirements/milestones/FEAT-013-guide-git-incremental-upstream.md`
+(or resume that Work ID).
 
 ## Jira
 

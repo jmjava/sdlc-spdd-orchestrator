@@ -109,7 +109,8 @@ Each item names the Beck stage it serves (see [Delivery posture](#delivery-postu
 | Context-budget telemetry and enforcement | Optimization |
 | DICE hybrid context backend (SPIKE-001): guide/Neo4j — lexical index + embedding discovery + typed domain graph (Domain-Integrated Context Engineering); spike for go/no-go | Optimization (spike) |
 | Local models + embedding format (SPIKE-002): local tool-capable LLM (Ollama, OpenAI-compatible) + changed embedding format (e.g. 384→768-dim); spike for go/no-go | Optimization (spike) |
-| Embabel context-graph absorption (SPIKE-003): decide durable home for SPIKE-001 graph (`jmjava/guide` vs upstream `embabel/guide` vs module); inventory + recommendation | Optimization (spike) |
+| Embabel context-graph absorption (SPIKE-003): decide durable home for SPIKE-001 graph (`jmjava/guide` vs upstream `embabel/guide` vs module); inventory + recommendation | Optimization (spike) — **Complete** (hybrid accepted) |
+| Guide git-incremental upstream (FEAT-013): PR git-incremental directory ingest + RAG maintenance to `embabel/guide`; keep SPDD package on fork | Optimization (follow-on) |
 
 ## Dogfooding future work through SPDD
 
@@ -156,6 +157,8 @@ Milestone 1 feature track is Complete on the integration branch.
 | FEAT-005-canvas-readiness-indicators | spdd/canvas/FEAT-005-canvas-readiness-indicators.md | make it fast (measurement) | Complete (T01–T04) |
 | SPIKE-001-guide-rag-context-backend | spdd/canvas/SPIKE-001-guide-rag-context-backend.md | make it fast (spike — DICE hybrid) | Analysis ready — blocked on Guide MCP for A/B |
 | SPIKE-002-local-llm-and-embedding-format | spdd/canvas/SPIKE-002-local-llm-and-embedding-format.md | make it fast (spike — local models) | Analysis ready — blocked on Guide MCP for A/B |
+| SPIKE-003-embabel-context-graph-absorption | spdd/canvas/SPIKE-003-embabel-context-graph-absorption.md | make it fast (spike — absorption) | Complete (accepted 2026-08-07) |
+| FEAT-013-guide-git-incremental-upstream | spdd/canvas/FEAT-013-guide-git-incremental-upstream.md | make it fast (upstream slice) | Draft — analysis/plan |
 | CHORE-001-docgen-initial-documentation | spdd/canvas/CHORE-001-docgen-initial-documentation.md | make it right (docs) | Complete |
 | CHORE-002-docgen-video-generation | spdd/canvas/CHORE-002-docgen-video-generation.md | make it right (docs) | Complete |
 

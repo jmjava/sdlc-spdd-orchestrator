@@ -25,6 +25,13 @@
 - Retro + sync + prompt-optimization ledger entry written.
 - Still awaiting human accept/reject of hybrid recommendation.
 
+## 2026-08-07 — Recommendation accepted; FEAT-013 intake
+
+- Human **Accepted** hybrid keep-fork / upstream git-incremental first.
+- SPIKE-003 Final Status → Complete; readiness → complete.
+- Follow-on Work ID `FEAT-013-guide-git-incremental-upstream` created (analysis +
+  canvas; T01 architect done; next T02 on Guide).
+
 ### 2026-08-07T21:08:56Z - SPIKE-003-embabel-context-graph-absorption - sync
 
 - Summary: SPIKE-003 dual-env: tip refresh Layer D; review Approved With Notes; retro+sync; await human accept/reject

@@ -25,10 +25,9 @@
 
 ## What Remains Incomplete
 
-- Human accept/reject of hybrid recommendation (Decision Criterion / Review Checklist).
-- Optional follow-on FEAT intake for git-incremental upstream (only after accept).
-- Work ID Final Status stays **In Progress** until accept/reject.
+Nothing for SPIKE-003. Human **Accepted** 2026-08-07. Follow-on:
+`FEAT-013-guide-git-incremental-upstream`.
 
 ## Readiness After Sync
 
-`reviewed` (not Complete — human gate open)
+`complete`
