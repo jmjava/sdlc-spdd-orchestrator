@@ -51,4 +51,12 @@ Rules:
 
 ## Spike status
 
-See `spikes/` in this directory and the GitHub issues above.
+| Spike | Doc | Status |
+|-------|-----|--------|
+| #87 Git pointer protocol | `spikes/SPIKE-087-git-pointer-protocol.md` | draft proposal landed |
+| #83 Lessons lean-git | — | next |
+| #84 Registry | — | queued |
+| #85 Sessions | — | queued |
+| #86–#91 | — | queued |
+
+See `spikes/` and the GitHub issues above.
