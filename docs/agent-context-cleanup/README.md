@@ -53,8 +53,8 @@ Rules:
 
 | Spike | Doc | Status |
 |-------|-----|--------|
-| #87 Git pointer protocol | `spikes/SPIKE-087-git-pointer-protocol.md` | draft proposal landed |
-| #83 Lessons lean-git | — | next |
+| #87 Git pointer protocol | `spikes/SPIKE-087-git-pointer-protocol.md` | implemented + unit tested |
+| #83 Lessons lean-git | — | queued |
 | #84 Registry | — | queued |
 | #85 Sessions | — | queued |
 | #86–#91 | — | queued |
