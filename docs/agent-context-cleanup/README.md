@@ -55,7 +55,7 @@ Rules:
 |-------|-----|--------|
 | #87 Git pointer protocol | `spikes/SPIKE-087-git-pointer-protocol.md` | implemented + unit tested |
 | #83 Lessons lean-git | `spikes/SPIKE-083-lessons-lean-git.md` | lean persist via ContextStore |
-| #84 Registry | `spikes/SPIKE-084-registry.md` | claim rows + edges |
+| #84 Registry | `spikes/SPIKE-084-registry.md` | lean `registry.jsonl` + TSV + SQLite claims |
 | #85 Sessions | `spikes/SPIKE-085-sessions.md` | **hot path `.sdlc/sessions/`** + SQLite upsert |
 | #86 Feature mirrors | `spikes/SPIKE-086-feature-mirrors.md` | no new mirror writes; archive via upgrade |
 | #88 SQLite graph | `spikes/SPIKE-088-sqlite-v2.md` | schema v4 + coverage tests |

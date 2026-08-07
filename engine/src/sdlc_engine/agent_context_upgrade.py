@@ -87,7 +87,10 @@ class AgentContextUpgrade:
         for rel in LEAN_KEEP_DIRS:
             if (root / rel).is_dir():
                 found["lean_present"].append(str(rel))
-        found["needs_upgrade"] = bool(found["noise"])
+        found["needs_upgrade"] = bool(found["noise"]) or bool(found["memory_files"])
+        found["already_upgraded"] = (
+            self.project.root / "agent-context" / "UPGRADED.md"
+        ).is_file()
         return found
 
     def run(self, *, dry_run: bool = False, rebuild_db: bool = True) -> UpgradeResult:
@@ -95,8 +98,21 @@ class AgentContextUpgrade:
         export = self.project.sdlc_dir / "legacy-export" / _utc_stamp()
         result = UpgradeResult(ok=True, dry_run=dry_run, export_dir=str(export))
         detect = self.detect()
-        if not detect["needs_upgrade"] and not detect["memory_files"]:
-            result.notes.append("No agent-context runtime noise detected.")
+        if detect.get("already_upgraded") and not detect["noise"]:
+            hot = self.project.hot_session_dir()
+            if not dry_run:
+                hot.mkdir(parents=True, exist_ok=True)
+                (root / "spdd" / "memory" / "entries").mkdir(parents=True, exist_ok=True)
+            result.notes.append("Already upgraded (idempotent).")
+            result.created = [str(hot.relative_to(root)), "spdd/memory/entries"]
+            return result
+        if not detect["needs_upgrade"]:
+            hot = self.project.hot_session_dir()
+            if not dry_run:
+                hot.mkdir(parents=True, exist_ok=True)
+                (root / "spdd" / "memory" / "entries").mkdir(parents=True, exist_ok=True)
+            result.notes.append("No agent-context runtime noise detected (idempotent).")
+            result.created = [str(hot.relative_to(root)), "spdd/memory/entries"]
             return result
 
         if dry_run:
@@ -116,7 +132,6 @@ class AgentContextUpgrade:
                 if src.is_file():
                     shutil.copy2(src, mem_dst / name)
                     result.copied_memory.append(f"agent-context/memory/{name}")
-            # Also copy lean twin if present
         lean_mem = root / "spdd" / "memory"
         if lean_mem.is_dir():
             dst = export / "spdd-memory"

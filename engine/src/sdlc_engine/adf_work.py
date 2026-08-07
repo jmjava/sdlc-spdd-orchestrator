@@ -185,7 +185,6 @@ class AdfWorkService:
 
         canvas_rel = f"spdd/canvas/{wid}.md"
         req_rel = f"requirements/milestones/{wid}.md"
-        feature_rel = f"agent-context/features/{wid}"
         next_cmd = f"/sdlc-spdd-analysis @{req_rel}"
 
         if dry_run:
@@ -195,7 +194,7 @@ class AdfWorkService:
                 adf_path=rel_adf,
                 canvas_path=canvas_rel,
                 requirement_path=req_rel,
-                feature_dir=feature_rel,
+                feature_dir="",
                 source_issue=source_issue,
                 next_command=next_cmd,
                 dry_run=True,
@@ -437,28 +436,22 @@ class AdfWorkService:
 
         canvas_path = self.project.root / canvas_rel
         req_path = self.project.root / req_rel
-        feature_dir = self.project.root / feature_rel
-        feature_dir.mkdir(parents=True, exist_ok=True)
-        (feature_dir / "tasks").mkdir(exist_ok=True)
+        # Stay-set only (#86) — do not create agent-context/features mirrors.
         canvas_path.parent.mkdir(parents=True, exist_ok=True)
         req_path.parent.mkdir(parents=True, exist_ok=True)
+        progress = self.project.root / "spdd" / "memory" / "entries" / "progress.md"
+        progress.parent.mkdir(parents=True, exist_ok=True)
 
         canvas_path.write_text(canvas, encoding="utf-8")
-        (feature_dir / "reasons-canvas.md").write_text(canvas, encoding="utf-8")
         req_path.write_text(req, encoding="utf-8")
-        (feature_dir / "requirement.md").write_text(req, encoding="utf-8")
-        (feature_dir / "progress-log.md").write_text(
-            "\n".join(
-                [
-                    f"# Progress Log: {wid}",
-                    "",
-                    f"- {now} — Draft canvas created from ADF `{rel_adf}`",
-                    f"- Next: {next_cmd}",
-                    "",
-                ]
-            ),
-            encoding="utf-8",
-        )
+        if not progress.is_file():
+            progress.write_text("# Progress Entries\n\n", encoding="utf-8")
+        with progress.open("a", encoding="utf-8") as fh:
+            fh.write(
+                f"\n## {wid}\n\n"
+                f"- {now} — Draft canvas created from ADF `{rel_adf}`\n"
+                f"- Next: {next_cmd}\n"
+            )
 
         if claim:
             self.registry.claim(wid, note=f"init-from-adf:{rel_adf}", phase="analysis")
@@ -471,7 +464,7 @@ class AdfWorkService:
             adf_path=rel_adf,
             canvas_path=canvas_rel,
             requirement_path=req_rel,
-            feature_dir=feature_rel,
+            feature_dir="",  # deprecated; stay-set only
             source_issue=source_issue,
             next_command=next_cmd,
             dry_run=False,
