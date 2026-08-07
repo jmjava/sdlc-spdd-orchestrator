@@ -1,13 +1,16 @@
 # SPIKE-086: Eliminate agent-context/features mirrors
 
 GitHub: [#86](https://github.com/jmjava/sdlc-spdd-orchestrator/issues/86)  
-Status: **proposal accepted for implementation**
+Status: **implemented (stop new writes + archive path)**
 
 ## Decision
 
 Canonical only:
 
 - `requirements/…`  
-- `spdd/canvas/…` (+ analysis/review/sync)
+- `spdd/canvas/…` (+ analysis/review/sync)  
+- Lean ledgers under `spdd/memory/entries/`
 
-`agent-context/features/<WORK-ID>/` is **deprecated**. Tools resolve canvas/requirement from stay-set paths. Upgrade (#80) archives feature dirs under `.sdlc/legacy-export/`.
+`ContextStore.persist_context_entry` no longer appends feature mirrors.  
+Upgrade (#80) archives `agent-context/features/` under `.sdlc/legacy-export/`.  
+Rebuild still ingests existing mirrors as transitional `*_mirror` kinds until archived.

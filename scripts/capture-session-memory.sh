@@ -237,18 +237,30 @@ safe_timestamp="$(sdlc_timestamp_file)"
 session_day="$(sdlc_timestamp_day)"
 
 memory_dir="${TARGET}/agent-context/memory"
+# Prefer lean stay-set memory when present (#83/#86).
+if [[ -d "${TARGET}/spdd/memory" ]]; then
+  lean_memory_dir="${TARGET}/spdd/memory"
+else
+  lean_memory_dir="${memory_dir}"
+fi
 feature_dir="${TARGET}/agent-context/features/${WORK_ID}"
-session_dir="${TARGET}/agent-context/sessions"
+# Hot sessions (#85): .sdlc/sessions; legacy agent-context/sessions is fallback for reads.
+session_dir="${TARGET}/.sdlc/sessions"
+legacy_session_dir="${TARGET}/agent-context/sessions"
 session_notes_dir="${TARGET}/session-notes"
-session_entry_dir="${memory_dir}/sessions"
+session_entry_dir="${lean_memory_dir}/sessions"
 archive_dir="${memory_dir}/archive"
 if [[ "${DRY_RUN}" -eq 0 ]]; then
-  mkdir -p "${memory_dir}" "${feature_dir}" "${session_dir}" "${session_notes_dir}" "${session_entry_dir}"
+  mkdir -p "${memory_dir}" "${lean_memory_dir}/entries" "${session_dir}" "${session_notes_dir}" "${session_entry_dir}"
+  # Do not create feature mirrors by default (#86).
 fi
 
 session_history="${memory_dir}/session-history.md"
 session_index="${memory_dir}/session-index.md"
-code_area_index="${memory_dir}/context-index.md"
+code_area_index="${lean_memory_dir}/context-index.md"
+if [[ ! -f "${code_area_index}" ]]; then
+  code_area_index="${memory_dir}/context-index.md"
+fi
 session_entry_file="${session_entry_dir}/${safe_timestamp}-${WORK_ID}-${PHASE}.md"
 archive_history="${archive_dir}/session-history.md"
 project_memory="${memory_dir}/project-memory.md"
@@ -257,8 +269,11 @@ known_pitfalls="${memory_dir}/known-pitfalls.md"
 reusable_patterns="${memory_dir}/reusable-patterns.md"
 prompt_optimization_log="${memory_dir}/prompt-optimization-log.md"
 archive_ledger="${archive_dir}/prompt-optimization-log.md"
-progress_log="${feature_dir}/progress-log.md"
+progress_log="${lean_memory_dir}/entries/progress.md"
 current_session="${session_dir}/current-session.md"
+if [[ ! -f "${current_session}" && -f "${legacy_session_dir}/current-session.md" ]]; then
+  current_session="${legacy_session_dir}/current-session.md"
+fi
 daily_session_note="${session_notes_dir}/${session_day}.md"
 roadmap_file="${TARGET}/ROADMAP.md"
 

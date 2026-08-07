@@ -238,6 +238,12 @@ sdlc_workflow_recommended_command() {
   local work_id="${2:-}"
   local operation="${3:-}"
   local readiness=""
+  # Quiet / product-test mode (#91): no T## dogfood gravity.
+  if [[ "${SDLC_QUIET:-}" == "1" || "${SDLC_QUIET:-}" == "true" || "${SDLC_QUIET:-}" == "yes" ]] \
+    || [[ -f "${SDLC_ROOT:-.}/agent-context/harness/quiet-mode.md" ]]; then
+    echo "Quiet mode: retrieve context (SQLite/Guide/context store); no /sdlc-spdd-* T## recommendation."
+    return 0
+  fi
   if [[ -z "${operation}" && -n "${work_id}" ]]; then
     operation="$(_wf_resolve_operation "${work_id}" "${phase}")"
   fi
@@ -263,7 +269,7 @@ sdlc_workflow_recommended_command() {
     prompt-update) echo "/sdlc-spdd-prompt-update @spdd/canvas/${work_id:-<WORK-ID>}.md" ;;
     retro) echo "/sdlc-spdd-retro @spdd/canvas/${work_id:-<WORK-ID>}.md" ;;
     sync) echo "/sdlc-spdd-sync @spdd/canvas/${work_id:-<WORK-ID>}.md" ;;
-    resume) echo "Read agent-context/sessions/current-session.md, then choose the next phase command." ;;
+    resume) echo "Read .sdlc/sessions/current-session.md, then choose the next phase command." ;;
     *) echo "/sdlc-spdd-init" ;;
   esac
 }
