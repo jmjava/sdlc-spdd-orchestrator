@@ -58,9 +58,9 @@ Rules:
 | #84 Registry | `spikes/SPIKE-084-registry.md` | proposal accepted |
 | #85 Sessions | `spikes/SPIKE-085-sessions.md` | proposal accepted |
 | #86 Feature mirrors | `spikes/SPIKE-086-feature-mirrors.md` | proposal accepted |
-| #88 SQLite v2 | `spikes/SPIKE-088-sqlite-v2.md` | proposal accepted |
-| #89 Guide contract | `spikes/SPIKE-089-guide-contract.md` | proposal accepted |
-| #90 Orchestration | `spikes/SPIKE-090-orchestration.md` | proposal accepted |
+| #88 SQLite v2 | `spikes/SPIKE-088-sqlite-v2.md` | implemented + tested |
+| #89 Guide contract | `spikes/SPIKE-089-guide-contract.md` | proposal accepted (dual-write legacy index) |
+| #90 Orchestration | `spikes/SPIKE-090-orchestration.md` | ContextStore + tests (git/sqlite/guide) |
 | #91 Quiet mode | `spikes/SPIKE-091-quiet-mode.md` | proposal accepted |
 
 See `spikes/` and the GitHub issues above.
