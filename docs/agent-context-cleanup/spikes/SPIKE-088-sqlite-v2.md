@@ -1,11 +1,11 @@
-# SPIKE-088: SQLite schema (relational graph → full section graph)
+# SPIKE-088: SQLite relational graph (now schema v4)
 
 GitHub: [#88](https://github.com/jmjava/sdlc-spdd-orchestrator/issues/88)  
-Status: **implemented (schema v3)**
+Status: **implemented (schema v4) — required before main**
 
 ## Decision
 
-`SCHEMA_VERSION` is `3`. Keep regenerable rebuild of `work_items` / `artifacts`, and model the **entire stay-set + context graph**:
+`SCHEMA_VERSION` is `4`. The index is the full agent-context graph, not a filename cache and not lessons-only.
 
 ### Section nodes (stay in git)
 
@@ -15,22 +15,19 @@ Status: **implemented (schema v3)**
 ### Context-part nodes
 
 - `areas`, `lessons`, `claims`, `context_sessions`, `pointers`
-- Convenience join `work_areas` (work↔area) kept for fast queries
+- `context_entries` — analysis, review, sync, retro, progress, metric, session, memory, prompt, playbook, harness, extension, mirrors, phase_ref, …
+- `domain_keywords`, `phase_refs`, `project_facts`
+- Convenience join `work_areas`
 
-### Typed edges (`edges` table)
+### Typed edges
 
-| Edge | Meaning |
-|------|---------|
-| work —`requirement`→ requirement | Work has requirement section |
-| work —`canvas`→ canvas | Work has REASONS canvas |
-| requirement —`reasons`→ canvas | Requirement linked to REASONS |
-| work\|requirement\|canvas —`area`→ area | Sections linked to context areas |
-| lesson —`about`→ area\|requirement\|canvas | Lesson about context / sections |
-| lesson —`recorded_for`→ work | Lesson recorded for work |
-| claim\|session\|pointer —`for_work`→ work | Hot-path context parts |
+work→requirement, work→canvas, requirement→reasons→canvas,  
+work|requirement|canvas|entry→area, lesson|entry→about→area|requirement|canvas,  
+lesson→recorded_for→work, claim|session|pointer|entry→for_work→work,  
+keyword→about→area|entry
 
-Upsert APIs (`upsert_requirement`, `upsert_canvas`, `upsert_lesson`, `sync_stay_set`, …) support capture fan-out without a full rebuild. Rebuild refreshes work_items **and** requirement/canvas nodes + stay-set edges from disk.
+### Coverage gate
 
-## Prior step
+`LocalIndex.capability_coverage()` must report `complete: true` when the tree includes every kind in `context_model.CONTEXT_KINDS`. Tests: `engine/tests/test_db_graph_v4.py`.
 
-v2 added lessons/areas/claims/sessions/pointers only. v3 adds first-class requirements, REASONS canvases, `areas` nodes, and the typed `edges` table so requirement↔REASONS↔context is queryable (`graph_for_work`, `context_linked_to_section`).
+Rebuild ingests stay-set governance, legacy feature mirrors, context/domain/phase indexes, sessions, playbooks/harness/extensions, and memory ledgers.

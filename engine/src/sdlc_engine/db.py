@@ -22,11 +22,11 @@ from .links import collect_links, note_token, parse_canvas_metadata, parse_miles
 from .project import Project
 from .registry import TeamRegistry
 
-SCHEMA_VERSION = "3"
+SCHEMA_VERSION = "4"
 DEFAULT_DB_NAME = "index.sqlite"
 
 # Typed edge kinds (src/dst) and relationship names — aligned with Guide DICE
-# plus requirement↔REASONS and context-part links.
+# plus requirement↔REASONS and full agent-context part links.
 NODE_WORK = "work"
 NODE_REQUIREMENT = "requirement"
 NODE_CANVAS = "canvas"
@@ -35,14 +35,20 @@ NODE_LESSON = "lesson"
 NODE_CLAIM = "claim"
 NODE_SESSION = "session"
 NODE_POINTER = "pointer"
+NODE_ENTRY = "entry"
+NODE_KEYWORD = "keyword"
+NODE_PHASE_REF = "phase_ref"
+NODE_FACT = "fact"
 
 REL_CANVAS = "canvas"  # work —has canvas→ REASONS
 REL_REQUIREMENT = "requirement"  # work —has requirement→ requirement
 REL_REASONS = "reasons"  # requirement —reasons→ canvas
-REL_AREA = "area"  # work|requirement|canvas —in area→ area
-REL_ABOUT = "about"  # lesson —about→ area|requirement|canvas
+REL_AREA = "area"  # work|requirement|canvas|entry —in area→ area
+REL_ABOUT = "about"  # lesson|entry —about→ area|requirement|canvas
 REL_RECORDED_FOR = "recorded_for"  # lesson —recorded for→ work
-REL_FOR_WORK = "for_work"  # claim|session|pointer —for→ work
+REL_FOR_WORK = "for_work"  # claim|session|pointer|entry —for→ work
+REL_PHASE = "phase"  # entry|phase_ref —phase→ phase_ref
+REL_KEYWORD = "keyword"  # keyword —about→ area|entry
 
 # Safe read-only query surface for `db query` convenience filters.
 _SELECT_RE = re.compile(r"^\s*select\b", re.IGNORECASE | re.DOTALL)
@@ -63,6 +69,10 @@ class RebuildStats:
     local_sessions: int = 0
     requirements: int = 0
     canvases: int = 0
+    context_entries: int = 0
+    domain_keywords: int = 0
+    phase_refs: int = 0
+    project_facts: int = 0
     edges: int = 0
     path: str = ""
     rebuilt_at: str = ""
@@ -74,6 +84,10 @@ class RebuildStats:
             f"  work_items: {self.work_items}\n"
             f"  requirements: {self.requirements}\n"
             f"  canvases: {self.canvases}\n"
+            f"  context_entries: {self.context_entries}\n"
+            f"  domain_keywords: {self.domain_keywords}\n"
+            f"  phase_refs: {self.phase_refs}\n"
+            f"  project_facts: {self.project_facts}\n"
             f"  edges: {self.edges}\n"
             f"  artifacts: {self.artifacts}\n"
             f"  local_sessions: {self.local_sessions}\n"
@@ -119,6 +133,10 @@ class LocalIndex:
             DROP TABLE IF EXISTS claims;
             DROP TABLE IF EXISTS work_areas;
             DROP TABLE IF EXISTS lessons;
+            DROP TABLE IF EXISTS project_facts;
+            DROP TABLE IF EXISTS phase_refs;
+            DROP TABLE IF EXISTS domain_keywords;
+            DROP TABLE IF EXISTS context_entries;
             DROP TABLE IF EXISTS areas;
             DROP TABLE IF EXISTS canvases;
             DROP TABLE IF EXISTS requirements;
@@ -255,6 +273,41 @@ class LocalIndex:
               ts TEXT NOT NULL DEFAULT ''
             );
 
+            -- Schema v4: remaining agent-context capabilities as first-class nodes.
+            CREATE TABLE context_entries (
+              id TEXT PRIMARY KEY,
+              kind TEXT NOT NULL,
+              work_id TEXT NOT NULL DEFAULT '',
+              area TEXT NOT NULL DEFAULT '',
+              phase TEXT NOT NULL DEFAULT '',
+              path TEXT NOT NULL DEFAULT '',
+              title TEXT NOT NULL DEFAULT '',
+              body TEXT NOT NULL DEFAULT '',
+              source TEXT NOT NULL DEFAULT '',
+              ts TEXT NOT NULL DEFAULT ''
+            );
+
+            CREATE TABLE domain_keywords (
+              id TEXT PRIMARY KEY,
+              keyword TEXT NOT NULL
+            );
+
+            CREATE TABLE phase_refs (
+              id TEXT PRIMARY KEY,
+              phase TEXT NOT NULL,
+              path TEXT NOT NULL,
+              purpose TEXT NOT NULL DEFAULT ''
+            );
+
+            CREATE TABLE project_facts (
+              id TEXT PRIMARY KEY,
+              work_id TEXT NOT NULL DEFAULT '',
+              phase TEXT NOT NULL DEFAULT '',
+              summary TEXT NOT NULL DEFAULT '',
+              next_step TEXT NOT NULL DEFAULT '',
+              ts TEXT NOT NULL DEFAULT ''
+            );
+
             CREATE TABLE edges (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
               src_kind TEXT NOT NULL,
@@ -270,6 +323,9 @@ class LocalIndex:
             CREATE INDEX idx_claims_work ON claims(work_id);
             CREATE INDEX idx_requirements_work ON requirements(work_id);
             CREATE INDEX idx_canvases_work ON canvases(work_id);
+            CREATE INDEX idx_entries_kind ON context_entries(kind);
+            CREATE INDEX idx_entries_work ON context_entries(work_id);
+            CREATE INDEX idx_entries_area ON context_entries(area);
             CREATE INDEX idx_edges_src ON edges(src_kind, src_id, rel);
             CREATE INDEX idx_edges_dst ON edges(dst_kind, dst_id, rel);
             """
@@ -504,6 +560,9 @@ class LocalIndex:
                     )
                     stats.local_sessions += 1
 
+            # Full agent-context ingest (governance, mirrors, indexes, tooling).
+            self._ingest_full_context(conn, stats)
+
             conn.execute(
                 "INSERT OR REPLACE INTO meta(key, value) VALUES ('rebuilt_at', ?)",
                 (stats.rebuilt_at,),
@@ -540,6 +599,498 @@ class LocalIndex:
             out.append(("sync", sync))
         return out
 
+    def _ensure_area_row(self, conn: sqlite3.Connection, area: str) -> str:
+        name = (area or "").strip()
+        if not name:
+            return ""
+        conn.execute(
+            "INSERT INTO areas(id, name, description) VALUES (?,?,?) "
+            "ON CONFLICT(id) DO NOTHING",
+            (name, name, ""),
+        )
+        return name
+
+    def _upsert_entry_row(
+        self,
+        conn: sqlite3.Connection,
+        *,
+        kind: str,
+        work_id: str = "",
+        area: str = "",
+        phase: str = "",
+        path: str = "",
+        title: str = "",
+        body: str = "",
+        source: str = "",
+        ts: str = "",
+        entry_id: str = "",
+    ) -> str:
+        from .context_model import NODE_ENTRY as CM_ENTRY
+        from .context_model import stable_id
+
+        kind_n = (kind or "").strip().lower()
+        wid = (work_id or "").strip()
+        if wid:
+            conn.execute(
+                "INSERT OR IGNORE INTO work_items(work_id, title, updated) VALUES (?,?,?)",
+                (wid, wid, _utc_now()),
+            )
+        eid = entry_id or stable_id(kind_n, wid, area, path, title, source, ts)
+        when = ts or _utc_now()
+        conn.execute(
+            "INSERT INTO context_entries("
+            "id, kind, work_id, area, phase, path, title, body, source, ts) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?) "
+            "ON CONFLICT(id) DO UPDATE SET "
+            "kind=excluded.kind, work_id=excluded.work_id, area=excluded.area, "
+            "phase=excluded.phase, path=excluded.path, title=excluded.title, "
+            "body=excluded.body, source=excluded.source, ts=excluded.ts",
+            (
+                eid,
+                kind_n,
+                wid,
+                area or "",
+                phase or "",
+                path or "",
+                title or "",
+                body or "",
+                source or "",
+                when,
+            ),
+        )
+        if wid:
+            self._insert_edge(conn, CM_ENTRY, eid, REL_FOR_WORK, NODE_WORK, wid)
+            req_id = f"{wid}:requirement"
+            canvas_id = f"{wid}:canvas"
+            if conn.execute(
+                "SELECT 1 FROM requirements WHERE id = ?", (req_id,)
+            ).fetchone():
+                self._insert_edge(
+                    conn, CM_ENTRY, eid, REL_ABOUT, NODE_REQUIREMENT, req_id
+                )
+            if conn.execute(
+                "SELECT 1 FROM canvases WHERE id = ?", (canvas_id,)
+            ).fetchone():
+                self._insert_edge(conn, CM_ENTRY, eid, REL_ABOUT, NODE_CANVAS, canvas_id)
+        if area:
+            area_id = self._ensure_area_row(conn, area)
+            self._insert_edge(conn, CM_ENTRY, eid, REL_ABOUT, NODE_AREA, area_id)
+            if wid:
+                self._insert_edge(conn, NODE_WORK, wid, REL_AREA, NODE_AREA, area_id)
+                conn.execute(
+                    "INSERT OR IGNORE INTO work_areas(work_id, area) VALUES (?,?)",
+                    (wid, area_id),
+                )
+                if conn.execute(
+                    "SELECT 1 FROM requirements WHERE id = ?", (f"{wid}:requirement",)
+                ).fetchone():
+                    self._insert_edge(
+                        conn,
+                        NODE_REQUIREMENT,
+                        f"{wid}:requirement",
+                        REL_AREA,
+                        NODE_AREA,
+                        area_id,
+                    )
+                if conn.execute(
+                    "SELECT 1 FROM canvases WHERE id = ?", (f"{wid}:canvas",)
+                ).fetchone():
+                    self._insert_edge(
+                        conn,
+                        NODE_CANVAS,
+                        f"{wid}:canvas",
+                        REL_AREA,
+                        NODE_AREA,
+                        area_id,
+                    )
+        return eid
+
+    def _ingest_full_context(
+        self, conn: sqlite3.Connection, stats: RebuildStats
+    ) -> None:
+        """Ingest stay-set governance + legacy agent-context into graph tables."""
+        from . import context_model as cm
+
+        root = self.project.root
+
+        # 1) Stay-set governance artifacts
+        for rel_dir, kind, pattern in cm.GOVERNANCE_GLOBS:
+            d = root / rel_dir
+            if not d.is_dir():
+                continue
+            for path in sorted(d.glob(pattern)):
+                if not path.is_file():
+                    continue
+                wid = cm.work_id_from_name(path.name)
+                body = ""
+                try:
+                    body = path.read_text(encoding="utf-8")[:4000]
+                except OSError:
+                    pass
+                self._upsert_entry_row(
+                    conn,
+                    kind=kind,
+                    work_id=wid,
+                    path=self._rel(path),
+                    title=path.stem,
+                    body=body,
+                    source="stay-set",
+                )
+                stats.context_entries += 1
+                stats.edges += 1
+
+        # 2) Legacy feature mirrors
+        feat_root = root / "agent-context" / "features"
+        if feat_root.is_dir():
+            for work_dir in sorted(p for p in feat_root.iterdir() if p.is_dir()):
+                wid = work_dir.name
+                for fname, kind in cm.FEATURE_MIRROR_KIND.items():
+                    path = work_dir / fname
+                    if not path.is_file():
+                        continue
+                    body = ""
+                    try:
+                        body = path.read_text(encoding="utf-8")[:4000]
+                    except OSError:
+                        pass
+                    self._upsert_entry_row(
+                        conn,
+                        kind=kind,
+                        work_id=wid,
+                        path=self._rel(path),
+                        title=fname,
+                        body=body,
+                        source="feature-mirror",
+                    )
+                    stats.context_entries += 1
+
+        # 3) context-index.md (lean + legacy)
+        for index_rel in (
+            Path("spdd/memory/context-index.md"),
+            Path("agent-context/memory/context-index.md"),
+        ):
+            index_path = root / index_rel
+            if not index_path.is_file():
+                continue
+            try:
+                rows = cm.parse_md_table(index_path.read_text(encoding="utf-8"))
+            except OSError:
+                continue
+            for row in rows:
+                kind = (row.get("kind") or "").strip().lower()
+                if not kind:
+                    continue
+                area = (row.get("area") or "").strip()
+                wid = (row.get("work id") or row.get("work_id") or "").strip()
+                phase = (row.get("phase") or "").strip()
+                ts = (row.get("timestamp") or "").strip()
+                source = (row.get("source") or "").strip()
+                entry = (row.get("entry") or "").strip()
+                if kind in {"decision", "pitfall", "pattern"}:
+                    # Prefer lessons table for lesson kinds
+                    lesson_wid = wid or "_index"
+                    lid = f"{kind}:{lesson_wid}:{area or '(none)'}:{source or 'index'}"
+                    conn.execute(
+                        "INSERT OR IGNORE INTO work_items(work_id, title, updated) "
+                        "VALUES (?,?,?)",
+                        (lesson_wid, lesson_wid, _utc_now()),
+                    )
+                    conn.execute(
+                        "INSERT INTO lessons(id, kind, work_id, area, body, source, ts) "
+                        "VALUES (?,?,?,?,?,?,?) "
+                        "ON CONFLICT(id) DO UPDATE SET body=excluded.body, ts=excluded.ts",
+                        (lid, kind, lesson_wid, area, entry, source or "index", ts),
+                    )
+                    self._insert_edge(
+                        conn, NODE_LESSON, lid, REL_RECORDED_FOR, NODE_WORK, lesson_wid
+                    )
+                    if area:
+                        self._ensure_area_row(conn, area)
+                        self._insert_edge(
+                            conn, NODE_LESSON, lid, REL_ABOUT, NODE_AREA, area
+                        )
+                    continue
+                self._upsert_entry_row(
+                    conn,
+                    kind=kind if kind in cm.CONTEXT_KINDS else "metric",
+                    work_id=wid,
+                    area=area,
+                    phase=phase,
+                    path=str(index_rel),
+                    title=entry[:200],
+                    body=entry,
+                    source=source or str(index_rel),
+                    ts=ts,
+                )
+                stats.context_entries += 1
+
+        # 4) domain-index.md
+        for domain_rel in (
+            Path("agent-context/memory/domain-index.md"),
+            Path("spdd/memory/domain-index.md"),
+        ):
+            domain_path = root / domain_rel
+            if not domain_path.is_file():
+                continue
+            try:
+                rows = cm.parse_md_table(domain_path.read_text(encoding="utf-8"))
+            except OSError:
+                continue
+            for row in rows:
+                keyword = (row.get("keyword") or "").strip().lower()
+                if not keyword:
+                    continue
+                kid = cm.stable_id("keyword", keyword)
+                conn.execute(
+                    "INSERT INTO domain_keywords(id, keyword) VALUES (?,?) "
+                    "ON CONFLICT(id) DO UPDATE SET keyword=excluded.keyword",
+                    (kid, keyword),
+                )
+                stats.domain_keywords += 1
+                area = (row.get("area") or "").strip()
+                if area:
+                    self._ensure_area_row(conn, area)
+                    self._insert_edge(
+                        conn, cm.NODE_KEYWORD, kid, REL_ABOUT, NODE_AREA, area
+                    )
+                    stats.edges += 1
+                wid = (row.get("work id") or row.get("work_id") or "").strip()
+                entry_path = (row.get("entry") or "").strip()
+                kind = (row.get("kind") or "analysis").strip().lower()
+                if entry_path or wid:
+                    eid = self._upsert_entry_row(
+                        conn,
+                        kind=kind if kind in cm.CONTEXT_KINDS else "analysis",
+                        work_id=wid,
+                        area=area,
+                        path=entry_path,
+                        title=entry_path or keyword,
+                        source="domain-index",
+                        ts=(row.get("timestamp") or "").strip(),
+                    )
+                    self._insert_edge(
+                        conn, cm.NODE_KEYWORD, kid, REL_ABOUT, cm.NODE_ENTRY, eid
+                    )
+                    stats.context_entries += 1
+
+        # 5) phase-index.md
+        for phase_rel in (
+            Path("agent-context/memory/phase-index.md"),
+            Path("spdd/memory/phase-index.md"),
+        ):
+            phase_path = root / phase_rel
+            if not phase_path.is_file():
+                continue
+            try:
+                rows = cm.parse_md_table(phase_path.read_text(encoding="utf-8"))
+            except OSError:
+                continue
+            for row in rows:
+                phase = (row.get("phase") or "").strip()
+                path = (row.get("path") or "").strip().strip("`")
+                purpose = (row.get("purpose") or "").strip()
+                if not phase or not path:
+                    continue
+                pid = cm.stable_id("phase", phase, path)
+                conn.execute(
+                    "INSERT INTO phase_refs(id, phase, path, purpose) VALUES (?,?,?,?) "
+                    "ON CONFLICT(id) DO UPDATE SET purpose=excluded.purpose",
+                    (pid, phase, path, purpose),
+                )
+                stats.phase_refs += 1
+                # Also as context_entry kind=phase_ref for capability coverage
+                self._upsert_entry_row(
+                    conn,
+                    kind="phase_ref",
+                    phase=phase,
+                    path=path,
+                    title=purpose or path,
+                    body=purpose,
+                    source="phase-index",
+                    entry_id=pid,
+                )
+                stats.context_entries += 1
+
+        # 6) code-areas.md → areas
+        for areas_rel in (
+            Path("agent-context/memory/code-areas.md"),
+            Path("spdd/memory/code-areas.md"),
+        ):
+            areas_path = root / areas_rel
+            if not areas_path.is_file():
+                continue
+            try:
+                text = areas_path.read_text(encoding="utf-8")
+            except OSError:
+                continue
+            for area in cm.iter_code_areas(text):
+                self._ensure_area_row(conn, area)
+
+        # 7) project-memory facts
+        for mem_rel in (
+            Path("agent-context/memory/project-memory.md"),
+            Path("spdd/memory/project-memory.md"),
+        ):
+            mem_path = root / mem_rel
+            if not mem_path.is_file():
+                continue
+            try:
+                facts = cm.extract_memory_facts(mem_path.read_text(encoding="utf-8"))
+            except OSError:
+                continue
+            for fact in facts:
+                fid = cm.stable_id(
+                    "fact", fact.get("work_id", ""), fact.get("ts", ""), fact.get("summary", "")
+                )
+                conn.execute(
+                    "INSERT INTO project_facts(id, work_id, phase, summary, next_step, ts) "
+                    "VALUES (?,?,?,?,?,?) "
+                    "ON CONFLICT(id) DO UPDATE SET summary=excluded.summary",
+                    (
+                        fid,
+                        fact.get("work_id") or "",
+                        fact.get("phase") or "",
+                        fact.get("summary") or "",
+                        fact.get("next_step") or "",
+                        fact.get("ts") or "",
+                    ),
+                )
+                stats.project_facts += 1
+                self._upsert_entry_row(
+                    conn,
+                    kind="memory",
+                    work_id=fact.get("work_id") or "",
+                    phase=fact.get("phase") or "",
+                    path=str(mem_rel),
+                    title=(fact.get("summary") or "")[:200],
+                    body=fact.get("summary") or "",
+                    source="project-memory",
+                    ts=fact.get("ts") or "",
+                    entry_id=fid,
+                )
+                stats.context_entries += 1
+
+        # 8) prompt-optimization-log
+        for prompt_rel in (
+            Path("agent-context/memory/prompt-optimization-log.md"),
+            Path("spdd/memory/prompt-optimization-log.md"),
+        ):
+            prompt_path = root / prompt_rel
+            if not prompt_path.is_file():
+                continue
+            try:
+                entries = cm.extract_prompt_entries(
+                    prompt_path.read_text(encoding="utf-8")
+                )
+            except OSError:
+                continue
+            for ent in entries:
+                self._upsert_entry_row(
+                    conn,
+                    kind="prompt",
+                    path=str(prompt_rel),
+                    title=ent.get("title") or "",
+                    body=ent.get("body") or "",
+                    source="prompt-optimization-log",
+                )
+                stats.context_entries += 1
+
+        # 9) Sessions (hot + legacy)
+        session_dirs = [
+            self.project.sdlc_dir / "sessions",
+            root / "agent-context" / "sessions",
+            root / "agent-context" / "memory" / "sessions",
+        ]
+        for sdir in session_dirs:
+            if not sdir.is_dir():
+                continue
+            for path in sorted(sdir.glob("*.md")):
+                wid = cm.work_id_from_name(path.name)
+                body = ""
+                try:
+                    body = path.read_text(encoding="utf-8")[:4000]
+                except OSError:
+                    pass
+                sid = path.stem
+                conn.execute(
+                    "INSERT INTO context_sessions(id, work_id, phase, path, summary, ts) "
+                    "VALUES (?,?,?,?,?,?) "
+                    "ON CONFLICT(id) DO UPDATE SET "
+                    "work_id=excluded.work_id, path=excluded.path, summary=excluded.summary",
+                    (sid, wid, "", self._rel(path), body[:500], _utc_now()),
+                )
+                if wid:
+                    self._insert_edge(
+                        conn, NODE_SESSION, sid, REL_FOR_WORK, NODE_WORK, wid
+                    )
+                self._upsert_entry_row(
+                    conn,
+                    kind="session",
+                    work_id=wid,
+                    path=self._rel(path),
+                    title=sid,
+                    body=body,
+                    source="session",
+                    entry_id=f"session:{sid}",
+                )
+                stats.context_entries += 1
+
+        # 10) Playbooks / harness / extensions (tooling context)
+        tooling = (
+            ("agent-context/playbooks", "playbook"),
+            ("agent-context/harness", "harness"),
+            ("agent-context/extensions", "extension"),
+        )
+        for rel, kind in tooling:
+            d = root / rel
+            if not d.is_dir():
+                continue
+            for path in sorted(d.rglob("*.md")):
+                if path.name.startswith("."):
+                    continue
+                body = ""
+                try:
+                    body = path.read_text(encoding="utf-8")[:2000]
+                except OSError:
+                    pass
+                self._upsert_entry_row(
+                    conn,
+                    kind=kind,
+                    path=self._rel(path),
+                    title=path.stem,
+                    body=body,
+                    source=rel,
+                )
+                stats.context_entries += 1
+
+        # 11) Seed lesson files if present without index rows
+        for kind, rel in (
+            ("decision", Path("agent-context/memory/architecture-decisions.md")),
+            ("pitfall", Path("agent-context/memory/known-pitfalls.md")),
+            ("pattern", Path("agent-context/memory/reusable-patterns.md")),
+            ("decision", Path("spdd/memory/lessons/decisions.md")),
+            ("pitfall", Path("spdd/memory/lessons/pitfalls.md")),
+            ("pattern", Path("spdd/memory/lessons/patterns.md")),
+        ):
+            path = root / rel
+            if not path.is_file():
+                continue
+            # Ensure at least one lesson row exists so kind is covered
+            lid = f"{kind}:_file:{rel.as_posix()}"
+            try:
+                body = path.read_text(encoding="utf-8")[:500]
+            except OSError:
+                body = ""
+            conn.execute(
+                "INSERT OR IGNORE INTO work_items(work_id, title, updated) VALUES (?,?,?)",
+                ("_memory", "memory", _utc_now()),
+            )
+            conn.execute(
+                "INSERT INTO lessons(id, kind, work_id, area, body, source, ts) "
+                "VALUES (?,?,?,?,?,?,?) ON CONFLICT(id) DO NOTHING",
+                (lid, kind, "_memory", "", body, str(rel), _utc_now()),
+            )
+
     def _meta(self, conn: sqlite3.Connection, key: str) -> str:
         row = conn.execute("SELECT value FROM meta WHERE key = ?", (key,)).fetchone()
         return row["value"] if row else ""
@@ -558,6 +1109,10 @@ class LocalIndex:
             "canvases": 0,
             "areas": 0,
             "lessons": 0,
+            "context_entries": 0,
+            "domain_keywords": 0,
+            "phase_refs": 0,
+            "project_facts": 0,
             "edges": 0,
             "artifacts": 0,
             "local_sessions": 0,
@@ -587,6 +1142,10 @@ class LocalIndex:
                     ("canvases", "canvases"),
                     ("areas", "areas"),
                     ("lessons", "lessons"),
+                    ("context_entries", "context_entries"),
+                    ("domain_keywords", "domain_keywords"),
+                    ("phase_refs", "phase_refs"),
+                    ("project_facts", "project_facts"),
                     ("edges", "edges"),
                 ):
                     try:
@@ -627,6 +1186,10 @@ class LocalIndex:
             f"  canvases: {info.get('canvases', 0)}\n"
             f"  areas: {info.get('areas', 0)}\n"
             f"  lessons: {info.get('lessons', 0)}\n"
+            f"  context_entries: {info.get('context_entries', 0)}\n"
+            f"  domain_keywords: {info.get('domain_keywords', 0)}\n"
+            f"  phase_refs: {info.get('phase_refs', 0)}\n"
+            f"  project_facts: {info.get('project_facts', 0)}\n"
             f"  edges: {info.get('edges', 0)}\n"
             f"  artifacts: {info['artifacts']}\n"
             f"  local_sessions: {info['local_sessions']}\n"
@@ -1118,8 +1681,81 @@ class LocalIndex:
                 )
             conn.commit()
 
+    def upsert_context_entry(
+        self,
+        *,
+        kind: str,
+        work_id: str = "",
+        area: str = "",
+        phase: str = "",
+        path: str = "",
+        title: str = "",
+        body: str = "",
+        source: str = "",
+        ts: str = "",
+        entry_id: str = "",
+    ) -> str:
+        """Upsert any agent-context capability row + section/area edges."""
+        from .context_model import CONTEXT_KINDS
+
+        kind_n = (kind or "").strip().lower()
+        if kind_n not in CONTEXT_KINDS:
+            raise ValueError(f"kind must be one of {sorted(CONTEXT_KINDS)}")
+        self.ensure_schema()
+        if work_id:
+            self.ensure_work_item(work_id)
+            try:
+                self.sync_stay_set(work_id)
+            except Exception:  # noqa: BLE001
+                pass
+        with self.connect() as conn:
+            eid = self._upsert_entry_row(
+                conn,
+                kind=kind_n,
+                work_id=work_id,
+                area=area,
+                phase=phase,
+                path=path,
+                title=title,
+                body=body,
+                source=source,
+                ts=ts,
+                entry_id=entry_id,
+            )
+            conn.commit()
+            return eid
+
+    def capability_coverage(self) -> dict[str, Any]:
+        """Report which CONTEXT_KINDS are present in the DB (for completion tests)."""
+        from . import context_model as cm
+
+        self.ensure_schema()
+        present: set[str] = set()
+        with self.connect() as conn:
+            for row in conn.execute("SELECT DISTINCT kind FROM context_entries"):
+                present.add(row["kind"])
+            for row in conn.execute("SELECT DISTINCT kind FROM lessons"):
+                present.add(row["kind"])
+            if conn.execute("SELECT 1 FROM domain_keywords LIMIT 1").fetchone():
+                present.add("domain")
+            if conn.execute("SELECT 1 FROM phase_refs LIMIT 1").fetchone():
+                present.add("phase_ref")
+            if conn.execute("SELECT 1 FROM project_facts LIMIT 1").fetchone():
+                present.add("memory")
+            if conn.execute("SELECT 1 FROM context_sessions LIMIT 1").fetchone():
+                present.add("session")
+        missing = cm.assert_kinds_covered(present)
+        return {
+            "schema": SCHEMA_VERSION,
+            "required": sorted(cm.CONTEXT_KINDS),
+            "present": sorted(present),
+            "missing": missing,
+            "complete": not missing,
+            "matrix": cm.capability_matrix(),
+        }
+
     def graph_for_work(self, work_id: str) -> dict[str, Any]:
-        """Full subgraph: work + requirement + REASONS + areas + lessons + typed edges."""
+        """Full subgraph: sections + all agent-context entries + typed edges."""
         self.ensure_schema()
         wid = (work_id or "").strip()
         with self.connect() as conn:
@@ -1145,6 +1781,27 @@ class LocalIndex:
                     (wid,),
                 ).fetchall()
             ]
+            entries = [
+                dict(r)
+                for r in conn.execute(
+                    "SELECT * FROM context_entries WHERE work_id = ? "
+                    "ORDER BY kind, ts DESC, id",
+                    (wid,),
+                ).fetchall()
+            ]
+            facts = [
+                dict(r)
+                for r in conn.execute(
+                    "SELECT * FROM project_facts WHERE work_id = ? ORDER BY ts DESC",
+                    (wid,),
+                ).fetchall()
+            ]
+            sessions = [
+                dict(r)
+                for r in conn.execute(
+                    "SELECT * FROM context_sessions WHERE work_id = ?", (wid,)
+                ).fetchall()
+            ]
             areas = [
                 dict(r)
                 for r in conn.execute(
@@ -1154,11 +1811,11 @@ class LocalIndex:
                     (wid,),
                 ).fetchall()
             ]
-            # Edges touching this work or its section / lesson nodes.
             node_ids = {wid}
             node_ids.update(r["id"] for r in reqs)
             node_ids.update(c["id"] for c in canvases)
             node_ids.update(l["id"] for l in lessons)
+            node_ids.update(e["id"] for e in entries)
             node_ids.update(a["id"] for a in areas)
             edges = [
                 dict(r)
@@ -1174,6 +1831,9 @@ class LocalIndex:
                 "canvases": canvases,
                 "areas": areas,
                 "lessons": lessons,
+                "context_entries": entries,
+                "project_facts": facts,
+                "sessions": sessions,
                 "edges": edges,
             }
 

@@ -2,36 +2,46 @@
 
 Tracked as [#93](https://github.com/jmjava/sdlc-spdd-orchestrator/issues/93).
 
+## Gate for `main`
+
+**Do not open or merge `integration → main` until this end-state is complete with tests.**  
+Intermediate PRs target `cursor/agent-context-cleanup-integration-decf` only.
+
 ## Invariant
 
-A fact accepted into agent context (claim, resume pointer, lesson, work↔area link, …) is available from:
+A fact accepted into agent context is available from:
 
 | Path | Encoding |
 |------|----------|
 | 1. Lean git | Stay-set docs + compact pointers / ledgers |
-| 2. SQLite | Relational tables + foreign keys / join tables |
+| 2. SQLite | Relational tables + typed `edges` (schema v4) |
 | 3. Guide | Neo4j DICE `__Entity__` graph + typed relationships |
 
 Soft-fail is about **availability** of a backend, not about shipping different feature matrices (#82).
 
-## Link model (same edges, two machine stores)
+## Full graph (schema v4)
 
-The SQLite schema (v3) encompasses **all sections**: requirements, REASONS canvases, and context parts, with typed edges between them.
+Must include **all** agent-context capabilities, not only lessons:
 
 | Concern | SQLite | Guide (DICE) |
 |---------|--------|--------------|
-| Work ↔ requirement | `requirements` + edge `requirement` | (doc path today; first-class Requirement TBD) |
+| Work ↔ requirement | `requirements` + edge `requirement` | doc refs today; first-class TBD |
 | Work ↔ REASONS canvas | `canvases` + edge `canvas` | WorkId —`canvas`→ Canvas |
-| Requirement ↔ REASONS | edge `reasons` | (orchestrator graph; Guide may follow) |
-| Work / req / canvas ↔ areas | `areas` + edges `area` | WorkId —`area`→ Area |
-| Lessons ↔ area / sections | `lessons` + edges `about` | Decision / Pitfall / Pattern —`about`→ Area |
-| Lessons ↔ work | edge `recorded_for` + `work_id` | lesson —`recorded for`→ WorkId |
-| Cross-run area lessons | `WHERE area = ?` / edge walk | `spdd_areaLessons` / incoming `about` |
-| Registry / claim | `claims` + edge `for_work` | WorkId (+ claim model per #84) |
-| Resume / session / pointer | session/pointer tables + `for_work` | optional; SQLite-first per #85 |
+| Requirement ↔ REASONS | edge `reasons` | orchestrator graph (Guide may follow) |
+| Analysis / review / sync / retro / progress | `context_entries` + edges | projectable docs / entities |
+| Metrics / prompt log / project memory | `context_entries` / `project_facts` | optional projection |
+| Domain keywords / phase catalog | `domain_keywords` / `phase_refs` | optional |
+| Playbooks / harness / extensions | `context_entries` kinds | optional tooling nodes |
+| Legacy feature mirrors | ingested as `*_mirror` / entry kinds | transitional until #86/#80 |
+| Areas | `areas` + edges `area` | WorkId —`area`→ Area |
+| Lessons | `lessons` + edges `about` | Decision/Pitfall/Pattern —`about`→ Area |
+| Claims / sessions / pointers | tables + `for_work` | SQLite-first hot path |
+
+Coverage API: `LocalIndex.capability_coverage()` — must report `complete: true` on a full tree.
 
 ## Explicitly not the end-state
 
-- Committing `current-session.md` / feature mirrors as the memory bus  
+- Committing `current-session.md` / feature mirrors as the *only* memory bus  
 - SQLite as filename cache only (no relational links)  
 - Guide optional-forever while claiming parity  
+- Merging to `main` with partial capability coverage  

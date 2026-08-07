@@ -36,8 +36,8 @@ Rules:
 
 1. Keep the working tree clean: commit or discard; no long-lived dirty tabs.  
 2. Task branches merge into **integration** (agent-managed). No human approval required for those merges.  
-3. **Only** the final PR `integration → main` needs human approval.  
-4. Do not open intermediate PRs to `main`.  
+3. **Only** the final PR `integration → main` needs human approval — and **only when the program is 100% complete with tests** (full capability coverage + upgrade + quiet mode + mirror removal).  
+4. Do not open intermediate PRs to `main`. Integration-only PRs are fine.  
 5. Prefer small, focused commits per spike/feature slice.
 
 ## Work order
@@ -54,13 +54,23 @@ Rules:
 | Spike | Doc | Status |
 |-------|-----|--------|
 | #87 Git pointer protocol | `spikes/SPIKE-087-git-pointer-protocol.md` | implemented + unit tested |
-| #83 Lessons lean-git | `spikes/SPIKE-083-lessons-lean-git.md` | proposal accepted |
-| #84 Registry | `spikes/SPIKE-084-registry.md` | proposal accepted |
-| #85 Sessions | `spikes/SPIKE-085-sessions.md` | proposal accepted |
-| #86 Feature mirrors | `spikes/SPIKE-086-feature-mirrors.md` | proposal accepted |
-| #88 SQLite v2 | `spikes/SPIKE-088-sqlite-v2.md` | implemented + tested |
-| #89 Guide contract | `spikes/SPIKE-089-guide-contract.md` | proposal accepted (dual-write legacy index) |
-| #90 Orchestration | `spikes/SPIKE-090-orchestration.md` | ContextStore + tests (git/sqlite/guide) |
-| #91 Quiet mode | `spikes/SPIKE-091-quiet-mode.md` | proposal accepted |
+| #83 Lessons lean-git | `spikes/SPIKE-083-lessons-lean-git.md` | lean persist via ContextStore (partial; full lesson migration TBD) |
+| #84 Registry | `spikes/SPIKE-084-registry.md` | claim rows + edges (partial) |
+| #85 Sessions | `spikes/SPIKE-085-sessions.md` | ingested + `context_sessions` (hot-path write switch TBD) |
+| #86 Feature mirrors | `spikes/SPIKE-086-feature-mirrors.md` | ingested as mirror kinds; removal/archive TBD |
+| #88 SQLite graph | `spikes/SPIKE-088-sqlite-v2.md` | **schema v4** full capability model + coverage tests |
+| #89 Guide contract | `spikes/SPIKE-089-guide-contract.md` | dual-write legacy index; Guide dual-read still TBD |
+| #90 Orchestration | `spikes/SPIKE-090-orchestration.md` | ContextStore lesson + context_entry fan-out tests |
+| #91 Quiet mode | `spikes/SPIKE-091-quiet-mode.md` | proposal accepted — **not implemented** |
+| #80 Upgrade/re-init | (issue) | **not implemented** |
+
+### Remaining before `integration → main`
+
+1. Hot session writes to `.sdlc/sessions/` only (#85)  
+2. Mirror removal / archive + tool path resolution (#86)  
+3. Upgrade/re-init for legacy `agent-context/` (#80)  
+4. Guide dual-index read in loader (#89)  
+5. Quiet / product-test mode (#91)  
+6. `capability_coverage().complete` green on real repo rebuild + proof tests for each remaining slice  
 
 See `spikes/` and the GitHub issues above.

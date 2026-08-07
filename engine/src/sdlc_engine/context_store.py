@@ -15,6 +15,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from .context_model import CONTEXT_KINDS, FEATURE_MIRROR_KIND
 from .db import LocalIndex
 from .pointers import PointerLedger, PointerRecord
 from .project import Project
@@ -151,7 +152,7 @@ class ContextStore:
                 "canvases": len(graph.get("canvases") or []),
                 "areas": len(graph.get("areas") or []),
                 "edges": len(graph.get("edges") or []),
-                "schema": "3",
+                "schema": "4",
             }
         except Exception as exc:  # noqa: BLE001
             result.sqlite = {"ok": False, "error": str(exc)}
@@ -174,6 +175,190 @@ class ContextStore:
                 result.guide.get("ok") is True or result.guide.get("skipped") is True
             )
         return result
+
+    def persist_context_entry(
+        self,
+        *,
+        kind: str,
+        work_id: str,
+        body: str,
+        area: str = "",
+        phase: str = "",
+        source: str = "capture",
+        project_guide: bool = True,
+    ) -> PersistResult:
+        """Fan-out a non-lesson agent-context entry (progress/analysis/metric/…)."""
+        kind_n = (kind or "").strip().lower()
+        if kind_n not in CONTEXT_KINDS:
+            raise ValueError(f"kind must be one of {sorted(CONTEXT_KINDS)}")
+        if kind_n in LESSON_FILES:
+            return self.persist_lesson(
+                kind=kind_n,
+                work_id=work_id,
+                body=body,
+                area=area,
+                source=source,
+                phase=phase or "sync",
+                project_guide=project_guide,
+            )
+        wid = (work_id or "").strip()
+        if not wid:
+            raise ValueError("work_id is required")
+        text = (body or "").strip()
+        if not text:
+            raise ValueError("body is required")
+
+        result = PersistResult(ok=True)
+        ts = _utc_now()
+        try:
+            git_meta = self._persist_entry_git(
+                kind=kind_n,
+                work_id=wid,
+                body=text,
+                area=area,
+                phase=phase,
+                source=source,
+                ts=ts,
+            )
+            result.git = {"ok": True, **git_meta}
+        except Exception as exc:  # noqa: BLE001
+            result.ok = False
+            result.git = {"ok": False, "error": str(exc)}
+            result.errors.append(f"git: {exc}")
+            return result
+
+        try:
+            eid = self.index.upsert_context_entry(
+                kind=kind_n,
+                work_id=wid,
+                area=area,
+                phase=phase,
+                path=git_meta.get("path", ""),
+                title=text[:120],
+                body=text,
+                source=source,
+                ts=ts,
+            )
+            self.index.upsert_pointer_row(
+                pointer_id=git_meta["pointer_id"],
+                kind=kind_n,
+                work_id=wid,
+                intent=text[:200],
+                payload={"entry_id": eid, "area": area},
+                ts=ts,
+            )
+            graph = self.index.graph_for_work(wid)
+            cov = self.index.capability_coverage()
+            result.sqlite = {
+                "ok": True,
+                "entry_id": eid,
+                "context_entries": len(graph.get("context_entries") or []),
+                "requirements": len(graph.get("requirements") or []),
+                "canvases": len(graph.get("canvases") or []),
+                "coverage_complete": cov.get("complete"),
+                "schema": "4",
+            }
+        except Exception as exc:  # noqa: BLE001
+            result.sqlite = {"ok": False, "error": str(exc)}
+            result.errors.append(f"sqlite: {exc}")
+
+        if project_guide:
+            try:
+                guide_meta = self.project_to_guide()
+                result.guide = {"ok": True, **guide_meta}
+            except Exception as exc:  # noqa: BLE001
+                result.guide = {"ok": False, "error": str(exc)}
+                result.errors.append(f"guide: {exc}")
+        else:
+            result.guide = {"ok": False, "skipped": True}
+
+        if result.errors:
+            result.ok = result.sqlite.get("ok") is True and (
+                result.guide.get("ok") is True or result.guide.get("skipped") is True
+            )
+        return result
+
+    def _persist_entry_git(
+        self,
+        *,
+        kind: str,
+        work_id: str,
+        body: str,
+        area: str,
+        phase: str,
+        source: str,
+        ts: str,
+    ) -> dict[str, Any]:
+        """Lean-git write for non-lesson context entries (+ dual-write index)."""
+        # Prefer stay-set ledger under spdd/memory; keep feature mirror for progress/retro.
+        mem_dir = self.project.root / "spdd" / "memory" / "entries"
+        mem_dir.mkdir(parents=True, exist_ok=True)
+        rel = Path("spdd/memory/entries") / f"{kind}.md"
+        path = self.project.root / rel
+        if not path.is_file():
+            path.write_text(f"# {kind.title()} Entries\n\n", encoding="utf-8")
+        block = (
+            f"\n## {work_id} — {ts}\n\n"
+            f"- Area: {area or '(none)'}\n"
+            f"- Phase: {phase or '(none)'}\n"
+            f"- Source: {source}\n\n"
+            f"{body}\n"
+        )
+        with path.open("a", encoding="utf-8") as fh:
+            fh.write(block)
+
+        mirror_name = next(
+            (fname for fname, k in FEATURE_MIRROR_KIND.items() if k == kind),
+            "",
+        )
+        if mirror_name:
+            feat = self.project.root / "agent-context" / "features" / work_id
+            feat.mkdir(parents=True, exist_ok=True)
+            mpath = feat / mirror_name
+            with mpath.open("a", encoding="utf-8") as fh:
+                fh.write(block)
+
+        index_path = self.project.root / CONTEXT_INDEX
+        index_path.parent.mkdir(parents=True, exist_ok=True)
+        if not index_path.is_file():
+            index_path.write_text(
+                "# Context Index\n\n"
+                "| Area | Kind | Work ID | Phase | Timestamp | Source | Entry |\n"
+                "|------|------|---------|-------|-----------|--------|-------|\n",
+                encoding="utf-8",
+            )
+        entry = body[:120].replace("|", "/")
+        row = (
+            f"| {area or '(none)'} | {kind} | {work_id} | {phase or ''} | "
+            f"{ts} | {source} | {entry} |\n"
+        )
+        with index_path.open("a", encoding="utf-8") as fh:
+            fh.write(row)
+        legacy = self.project.root / LEGACY_CONTEXT_INDEX
+        legacy.parent.mkdir(parents=True, exist_ok=True)
+        if not legacy.is_file():
+            legacy.write_text(index_path.read_text(encoding="utf-8"), encoding="utf-8")
+        else:
+            with legacy.open("a", encoding="utf-8") as fh:
+                fh.write(row)
+
+        ptr = self.pointers.append(
+            PointerRecord(
+                id="",
+                kind=kind,
+                subtype=kind,
+                work_id=work_id,
+                intent=body[:200],
+                paths=[rel.as_posix(), CONTEXT_INDEX.as_posix()],
+                links={"areas": [area] if area else []},
+                ts=ts,
+            )
+        )
+        return {
+            "path": rel.as_posix(),
+            "index_path": CONTEXT_INDEX.as_posix(),
+            "pointer_id": ptr.id,
+        }
 
     def _persist_lesson_git(
         self,
