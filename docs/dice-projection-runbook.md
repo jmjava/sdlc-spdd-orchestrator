@@ -61,8 +61,10 @@ git checkout sdlc-spdd-projection-v1
 
 `main` tracks upstream `embabel/guide` plus the SPDD projection package
 (`com.embabel.guide.spdd`) — see `docs/spdd-projection-ingest.md` in that repo for the
-change summary aimed at Guide developers. The orchestrator console defaults
-`guide_git_ref` to **`sdlc-spdd-projection-v1`**. Prefer
+change summary aimed at Guide developers. Upstream-vs-fork absorption research is
+**SPIKE-003** (`spdd/analysis/SPIKE-003-embabel-context-graph-absorption-research.md`);
+Guide-side notes live in that repo’s `docs/spdd-upstream-absorption.md`. The orchestrator
+console defaults `guide_git_ref` to **`sdlc-spdd-projection-v1`**. Prefer
 `./scripts/sdlc.sh console --target .` ([ops-console.md](ops-console.md)) for day-to-day
 dogfood start/stop instead of babysitting the JVM by hand.
 

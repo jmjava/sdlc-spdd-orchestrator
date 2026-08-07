@@ -109,6 +109,7 @@ Each item names the Beck stage it serves (see [Delivery posture](#delivery-postu
 | Context-budget telemetry and enforcement | Optimization |
 | DICE hybrid context backend (SPIKE-001): guide/Neo4j — lexical index + embedding discovery + typed domain graph (Domain-Integrated Context Engineering); spike for go/no-go | Optimization (spike) |
 | Local models + embedding format (SPIKE-002): local tool-capable LLM (Ollama, OpenAI-compatible) + changed embedding format (e.g. 384→768-dim); spike for go/no-go | Optimization (spike) |
+| Embabel context-graph absorption (SPIKE-003): decide durable home for SPIKE-001 graph (`jmjava/guide` vs upstream `embabel/guide` vs module); inventory + recommendation | Optimization (spike) |
 
 ## Dogfooding future work through SPDD
 
