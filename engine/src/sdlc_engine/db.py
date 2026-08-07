@@ -22,7 +22,7 @@ from .links import collect_links, note_token, parse_canvas_metadata, parse_miles
 from .project import Project
 from .registry import TeamRegistry
 
-SCHEMA_VERSION = "1"
+SCHEMA_VERSION = "2"
 DEFAULT_DB_NAME = "index.sqlite"
 
 # Safe read-only query surface for `db query` convenience filters.
@@ -88,6 +88,11 @@ class LocalIndex:
             DROP TABLE IF EXISTS work_search;
             DROP TABLE IF EXISTS artifacts;
             DROP TABLE IF EXISTS local_sessions;
+            DROP TABLE IF EXISTS pointers;
+            DROP TABLE IF EXISTS context_sessions;
+            DROP TABLE IF EXISTS claims;
+            DROP TABLE IF EXISTS work_areas;
+            DROP TABLE IF EXISTS lessons;
             DROP TABLE IF EXISTS work_items;
             DROP TABLE IF EXISTS meta;
 
@@ -141,6 +146,59 @@ class LocalIndex:
               updated TEXT,
               path TEXT
             );
+
+            -- Relational graph tables (schema v2 / SPIKE-088): same link model as Guide DICE.
+            CREATE TABLE lessons (
+              id TEXT PRIMARY KEY,
+              kind TEXT NOT NULL,
+              work_id TEXT NOT NULL,
+              area TEXT NOT NULL DEFAULT '',
+              body TEXT NOT NULL DEFAULT '',
+              source TEXT NOT NULL DEFAULT '',
+              ts TEXT NOT NULL DEFAULT '',
+              FOREIGN KEY(work_id) REFERENCES work_items(work_id)
+            );
+
+            CREATE TABLE work_areas (
+              work_id TEXT NOT NULL,
+              area TEXT NOT NULL,
+              PRIMARY KEY (work_id, area),
+              FOREIGN KEY(work_id) REFERENCES work_items(work_id)
+            );
+
+            CREATE TABLE claims (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              work_id TEXT NOT NULL,
+              owner TEXT NOT NULL DEFAULT '',
+              status TEXT NOT NULL DEFAULT '',
+              phase TEXT NOT NULL DEFAULT '',
+              note TEXT NOT NULL DEFAULT '',
+              ts TEXT NOT NULL DEFAULT '',
+              FOREIGN KEY(work_id) REFERENCES work_items(work_id)
+            );
+
+            CREATE TABLE context_sessions (
+              id TEXT PRIMARY KEY,
+              work_id TEXT NOT NULL DEFAULT '',
+              phase TEXT NOT NULL DEFAULT '',
+              path TEXT NOT NULL DEFAULT '',
+              summary TEXT NOT NULL DEFAULT '',
+              ts TEXT NOT NULL DEFAULT ''
+            );
+
+            CREATE TABLE pointers (
+              id TEXT PRIMARY KEY,
+              kind TEXT NOT NULL DEFAULT '',
+              work_id TEXT NOT NULL DEFAULT '',
+              commit_sha TEXT NOT NULL DEFAULT '',
+              intent TEXT NOT NULL DEFAULT '',
+              payload_json TEXT NOT NULL DEFAULT '{}',
+              ts TEXT NOT NULL DEFAULT ''
+            );
+
+            CREATE INDEX idx_lessons_area ON lessons(area);
+            CREATE INDEX idx_lessons_work ON lessons(work_id);
+            CREATE INDEX idx_claims_work ON claims(work_id);
             """
         )
         # FTS5 when available; otherwise search falls back to LIKE.
@@ -423,6 +481,172 @@ class LocalIndex:
     def ensure(self) -> None:
         if not self.db_path.is_file():
             self.rebuild()
+
+    def ensure_schema(self) -> None:
+        """Ensure DB exists at current schema (full rebuild if missing/legacy)."""
+        if not self.db_path.is_file():
+            self.rebuild()
+            return
+        with self.connect() as conn:
+            ver = self._meta(conn, "schema_version")
+        if ver != SCHEMA_VERSION:
+            self.rebuild()
+
+    def ensure_work_item(self, work_id: str, *, title: str = "") -> None:
+        """Insert a stub work_items row so graph FKs can attach."""
+        self.ensure_schema()
+        wid = (work_id or "").strip()
+        if not wid:
+            raise ValueError("work_id is required")
+        with self.connect() as conn:
+            conn.execute(
+                "INSERT OR IGNORE INTO work_items(work_id, title, updated) VALUES (?,?,?)",
+                (wid, title or wid, _utc_now()),
+            )
+            conn.commit()
+
+    def upsert_lesson(
+        self,
+        *,
+        lesson_id: str,
+        kind: str,
+        work_id: str,
+        area: str = "",
+        body: str = "",
+        source: str = "",
+        ts: str = "",
+    ) -> None:
+        """Persist a lesson row and work↔area link (relational graph)."""
+        self.ensure_work_item(work_id)
+        kind_n = (kind or "").strip().lower()
+        if kind_n not in {"decision", "pitfall", "pattern"}:
+            raise ValueError("kind must be decision|pitfall|pattern")
+        lid = (lesson_id or "").strip()
+        if not lid:
+            raise ValueError("lesson_id is required")
+        when = ts or _utc_now()
+        with self.connect() as conn:
+            conn.execute(
+                "INSERT INTO lessons(id, kind, work_id, area, body, source, ts) "
+                "VALUES (?,?,?,?,?,?,?) "
+                "ON CONFLICT(id) DO UPDATE SET "
+                "kind=excluded.kind, work_id=excluded.work_id, area=excluded.area, "
+                "body=excluded.body, source=excluded.source, ts=excluded.ts",
+                (lid, kind_n, work_id, area or "", body or "", source or "", when),
+            )
+            if area:
+                conn.execute(
+                    "INSERT OR IGNORE INTO work_areas(work_id, area) VALUES (?,?)",
+                    (work_id, area),
+                )
+            conn.commit()
+
+    def lessons_for_area(self, area: str) -> list[dict[str, Any]]:
+        self.ensure_schema()
+        with self.connect() as conn:
+            rows = conn.execute(
+                "SELECT id, kind, work_id, area, body, source, ts FROM lessons "
+                "WHERE area = ? ORDER BY ts DESC, id",
+                (area,),
+            ).fetchall()
+            return [dict(r) for r in rows]
+
+    def lessons_for_work(self, work_id: str) -> list[dict[str, Any]]:
+        self.ensure_schema()
+        with self.connect() as conn:
+            rows = conn.execute(
+                "SELECT id, kind, work_id, area, body, source, ts FROM lessons "
+                "WHERE work_id = ? ORDER BY ts DESC, id",
+                (work_id,),
+            ).fetchall()
+            return [dict(r) for r in rows]
+
+    def upsert_claim(
+        self,
+        *,
+        work_id: str,
+        owner: str = "",
+        status: str = "",
+        phase: str = "",
+        note: str = "",
+        ts: str = "",
+    ) -> int:
+        self.ensure_work_item(work_id)
+        when = ts or _utc_now()
+        with self.connect() as conn:
+            cur = conn.execute(
+                "INSERT INTO claims(work_id, owner, status, phase, note, ts) "
+                "VALUES (?,?,?,?,?,?)",
+                (work_id, owner, status, phase, note, when),
+            )
+            conn.execute(
+                "UPDATE work_items SET registry_status=?, registry_owner=?, "
+                "registry_phase=?, registry_note=?, updated=? WHERE work_id=?",
+                (status, owner, phase, note, when, work_id),
+            )
+            conn.commit()
+            return int(cur.lastrowid)
+
+    def upsert_context_session(
+        self,
+        *,
+        session_id: str,
+        work_id: str = "",
+        phase: str = "",
+        path: str = "",
+        summary: str = "",
+        ts: str = "",
+    ) -> None:
+        self.ensure_schema()
+        sid = (session_id or "").strip()
+        if not sid:
+            raise ValueError("session_id is required")
+        when = ts or _utc_now()
+        with self.connect() as conn:
+            conn.execute(
+                "INSERT INTO context_sessions(id, work_id, phase, path, summary, ts) "
+                "VALUES (?,?,?,?,?,?) "
+                "ON CONFLICT(id) DO UPDATE SET "
+                "work_id=excluded.work_id, phase=excluded.phase, path=excluded.path, "
+                "summary=excluded.summary, ts=excluded.ts",
+                (sid, work_id, phase, path, summary, when),
+            )
+            conn.commit()
+
+    def upsert_pointer_row(
+        self,
+        *,
+        pointer_id: str,
+        kind: str,
+        work_id: str = "",
+        commit_sha: str = "",
+        intent: str = "",
+        payload: dict[str, Any] | None = None,
+        ts: str = "",
+    ) -> None:
+        self.ensure_schema()
+        pid = (pointer_id or "").strip()
+        if not pid:
+            raise ValueError("pointer_id is required")
+        when = ts or _utc_now()
+        with self.connect() as conn:
+            conn.execute(
+                "INSERT INTO pointers(id, kind, work_id, commit_sha, intent, payload_json, ts) "
+                "VALUES (?,?,?,?,?,?,?) "
+                "ON CONFLICT(id) DO UPDATE SET "
+                "kind=excluded.kind, work_id=excluded.work_id, commit_sha=excluded.commit_sha, "
+                "intent=excluded.intent, payload_json=excluded.payload_json, ts=excluded.ts",
+                (
+                    pid,
+                    kind,
+                    work_id,
+                    commit_sha,
+                    intent,
+                    json.dumps(payload or {}, ensure_ascii=False),
+                    when,
+                ),
+            )
+            conn.commit()
 
     LOOKUP_COLUMNS = (
         "work_id",
