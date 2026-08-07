@@ -17,6 +17,22 @@ from sdlc_engine.project import Project
 
 
 def _seed_canvas(root: Path, work_id: str) -> None:
+    req = root / "requirements" / "milestones" / f"{work_id}.md"
+    req.parent.mkdir(parents=True, exist_ok=True)
+    req.write_text(
+        f"""# Requirement: {work_id}
+
+## Summary
+
+Persistence proof for {work_id}.
+
+## Jira
+
+- Key: ORCH-900
+- Summary: Persist {work_id}
+""",
+        encoding="utf-8",
+    )
     canvas = root / "spdd" / "canvas" / f"{work_id}.md"
     canvas.parent.mkdir(parents=True, exist_ok=True)
     canvas.write_text(
@@ -69,7 +85,7 @@ def test_persist_lesson_enters_git_and_sqlite(tmp_path: Path) -> None:
     assert ptrs[0].links.get("lesson_id") == f"pitfall:{wid}:{area}:unit-test"
     assert area in (ptrs[0].links.get("areas") or [])
 
-    # --- Path 2: SQLite relational ---
+    # --- Path 2: SQLite relational (full section graph) ---
     idx = LocalIndex(Project(tmp_path))
     lessons = idx.lessons_for_area(area)
     assert len(lessons) == 1
@@ -80,6 +96,15 @@ def test_persist_lesson_enters_git_and_sqlite(tmp_path: Path) -> None:
         (wid,),
     )
     assert areas[0]["area"] == area
+    assert result.sqlite.get("schema") == "3"
+    assert result.sqlite.get("requirements") == 1
+    assert result.sqlite.get("canvases") == 1
+    graph = idx.graph_for_work(wid)
+    edge_rels = {(e["src_kind"], e["rel"], e["dst_kind"]) for e in graph["edges"]}
+    assert ("requirement", "reasons", "canvas") in edge_rels
+    assert ("lesson", "about", "requirement") in edge_rels
+    assert ("lesson", "about", "canvas") in edge_rels
+    assert ("lesson", "about", "area") in edge_rels
 
 
 def test_cli_persist_lesson_no_guide(tmp_path: Path) -> None:
