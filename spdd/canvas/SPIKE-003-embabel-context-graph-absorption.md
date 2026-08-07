@@ -5,7 +5,7 @@
 - Work ID: SPIKE-003-embabel-context-graph-absorption
 - Work Type: Spike
 - Status: In Progress
-- Readiness: Ready for Review
+- Readiness: reviewed
 - Created: 2026-08-07
 - Updated: 2026-08-07
 - Owner: Cursor Agent
