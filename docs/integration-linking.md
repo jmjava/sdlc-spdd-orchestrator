@@ -99,7 +99,7 @@ If your repository uses a stricter branch naming policy, keep the Jira key in th
 
 Use this when posting status back to Jira manually:
 
-    For FEAT-001, read @spdd/canvas/FEAT-001-order-status-api.md and @agent-context/features/FEAT-001-order-status-api/progress-log.md. Draft a Jira update for ABC-123 with status, completed work, validation, risks, and next step.
+    For FEAT-001, read @spdd/canvas/FEAT-001-order-status-api.md and run `sdlc-engine context retrieve --work-id FEAT-001-order-status-api --kind session`. Draft a Jira update for ABC-123 with status, completed work, validation, risks, and next step.
 
 ### Keep Jira and canvas in sync
 

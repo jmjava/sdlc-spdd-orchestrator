@@ -88,9 +88,8 @@ This scaffold implements Martin Fowler's [SPDD article](https://martinfowler.com
 |----------|------|
 | `spdd/analysis/<WORK-ID>-analysis.md` | Step 3 strategic analysis (domain keywords, scoped areas) |
 | `spdd/canvas/<WORK-ID>.md` | REASONS Canvas governing prompt |
-| `agent-context/memory/domain-index.md` | Keyword → area → analysis/canvas lookup |
-| `agent-context/memory/context-index.md` | Area → context (Kinds: analysis, session, decision, pitfall, pattern, metric) |
-| `agent-context/memory/code-areas.md` | Canonical code-area registry |
+| `spdd/memory/lessons.jsonl` | Committed lesson ledger (kinds: analysis, session, decision, pitfall, pattern) — queried via `sdlc-engine context retrieve` by area/keyword |
+| Guide DICE graph | Cross-work lessons per area via `spdd_areaLessons` (when enabled) |
 
 After `/sdlc-spdd-analysis`, run:
 

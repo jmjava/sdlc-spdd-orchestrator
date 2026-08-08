@@ -2,28 +2,31 @@
 
 These scripts make the hybrid SDLC Agents + SPDD workflow runnable across agent sessions.
 
-They solve three operational needs:
+They solve four operational needs:
 
-1. Set up assistant prompts, playbooks, memory, sessions, and SPDD folders.
+1. Set up assistant prompts, playbooks, contracts, and SPDD folders.
 2. Resync a new agent session with previous work.
-3. Persist current session learning into durable memory.
+3. Persist current session learning — captures stage quietly, accepts promote
+   to the committed lessons ledger ([Storage v3](storage-v3.md)).
 4. Connect session summaries to `ROADMAP.md`, `milestone-*.md`, and `session-notes/`.
 
 ## Script Overview
 
 | Script | Purpose |
 |--------|---------|
-| `scripts/setup-agent-prompts.sh` | Integrated setup for folders, memory, sessions, playbooks, Cursor prompts, Copilot prompts, and Claude Code commands |
+| `scripts/setup-agent-prompts.sh` | Integrated setup for folders, contracts, playbooks, Cursor prompts, Copilot prompts, and Claude Code commands |
 | `scripts/upgrade-project.sh` | Framework-only upgrade for older initialized projects without overwriting implementation files or existing memory |
-| `scripts/sdlc-spdd/sdlc.sh` | Workflow CLI: `next`, `claim`, `resume`, `advance`, `skip`, `shelf`, `sync`, `capture`, `team`, `list-work` |
+| `scripts/sdlc-spdd/sdlc.sh` | Workflow CLI: `next`, `claim`, `resume`, `advance`, `skip`, `shelf`, `sync`, `capture`, `accept`, `team`, `list-work`, `db` |
 | `scripts/sdlc-spdd/start-agent-session.sh` | Target-local script that creates a session brief for a new agent |
-| `scripts/sdlc-spdd/resync-agent-session.sh` | Target-local script that checks or reconciles feature/canonical canvases, validates the canvas, and creates a session brief |
-| `scripts/sdlc-spdd/capture-session-memory.sh` | Persist session summary, decisions/pitfalls/patterns, optional **metrics**, and next steps into memory indexes |
-| `scripts/sdlc-spdd/index-spdd-analysis.sh` | Index Fowler analysis artifacts into `domain-index.md` and `context-index.md` |
+| `scripts/sdlc-spdd/resync-agent-session.sh` | Target-local script that checks or reconciles the canonical canvas, validates it, and creates a session brief |
+| `scripts/sdlc-spdd/capture-session-memory.sh` | Stage session summary, decisions/pitfalls/patterns, and optional metrics as lesson records in `.sdlc/staged/lessons.jsonl` |
+| `scripts/sdlc-spdd/accept-lessons.sh` | Promote staged lesson records into the committed `spdd/memory/lessons.jsonl` (also `sdlc.sh accept`) |
+| `scripts/sdlc-spdd/index-spdd-analysis.sh` | Stage an `analysis` lesson record from a Fowler analysis artifact |
 | `scripts/sdlc-spdd/resolve-agent-context.sh` | Resolve SDLC Agents `#SkillName` / phase extensions for progressive loading |
+| `scripts/sdlc-spdd/resolve-context-backend.sh` | Runtime probe: is the Guide DICE backend enabled and reachable? |
 | `scripts/sdlc-spdd/create-work-from-milestone.sh` | Target-local script that maps milestone checklist items into SDLC-SPDD work artifacts |
 | `scripts/sdlc-spdd/sync-roadmap-from-spdd.sh` | Target-local script that refreshes a managed roadmap summary from canvas metadata |
-| `scripts/sdlc-spdd/summarize-session-notes.sh` | Target-local script that imports existing session notes into durable memory |
+| `scripts/sdlc-spdd/summarize-session-notes.sh` | Target-local script that imports existing session notes as staged lesson records |
 | `scripts/sdlc-spdd/sync-agent-context.sh` | Target-local low-level canvas copy synchronization |
 | `scripts/sdlc-spdd/validate-command-adapters.sh` | Target-local checker that validates Cursor/Copilot/Claude Code command-pack parity in the installed project |
 | `scripts/sdlc-spdd/verify-agent-command-effects.sh` | Target-local verifier for deterministic artifact side-effects after `/sdlc-spdd-*` command invocations and post-capture planning sync |
@@ -44,35 +47,23 @@ Equivalent explicit setup:
 For backward compatibility, omitting assistant flags installs Cursor and
 GitHub Copilot only. Use `--all` or `--claude` to include Claude Code.
 
-The target app receives:
+The target app receives a single framework folder plus adapter stubs at the
+repo root (see the [install layout diagram](diagrams/09-install-layout.svg) and
+[Installing into your project](installing-into-your-project.md)):
 
-- `requirements/` and `requirements/milestones/`
-- `spdd/canvas/`
-- `spdd/tasks/`
-- `spdd/reviews/`
-- `spdd/sync/`
-- `ROADMAP.md`
-- `.github/workflows/validate-sdlc-spdd-adapters.yml` when both Cursor and Copilot adapters are installed
-- `milestone-1.md` when no milestone definition exists (new installs prefer
-  `requirements/milestones/milestone-1/MILESTONE-1.md` + `_milestone.yml`)
-- `session-notes/`
-- `agent-context/memory/`
-- `agent-context/playbooks/`
-- `agent-context/features/`
-- `agent-context/sessions/`
-- `agent-context/harness/`
-- `docs/sdlc-spdd/`
-- `.cursor/commands/`
-- `.github/copilot-instructions.md`
-- `.github/prompts/`
-- `CLAUDE.md` when missing
-- `.claude/commands/`
-- `agent-context/sdlc-pointer.sh` (local Work ID pointer)
-- `agent-context/sdlc-workflow.sh` (phase/gate tracking)
-- `agent-context/sdlc-team-registry.sh` (team claims)
-- `agent-context/work-registry.tsv` (committed team registry)
-- `scripts/sdlc-spdd/sdlc.sh` (workflow CLI wrapper)
-- `scripts/sdlc-spdd/` runtime session scripts
+- `sdlc-spdd/` — the framework home:
+  - `requirements/` and `requirements/milestones/`
+  - `spdd/` — `canvas/`, `analysis/`, `tasks/`, `reviews/`, `sync/`, and
+    `memory/` (the `lessons.jsonl` ledger + `registry.jsonl`)
+  - `harness/`, `playbooks/`, `extensions/`
+  - `scripts/` — installed workflow CLI and session scripts
+  - `ROADMAP.md`, milestone definition, `session-notes/`
+  - `.sdlc/` — gitignored runtime (sessions, staged captures, optional sqlite)
+- Repo-root adapter stubs: `.cursor/commands/`, `.github/copilot-instructions.md`,
+  `.github/prompts/`, `CLAUDE.md` + `.claude/commands/`
+- `.github/workflows/validate-sdlc-spdd-adapters.yml` when both Cursor and
+  Copilot adapters are installed
+- `docs/sdlc-spdd/` — target-local copies of these docs
 
 ## Upgrade an Older Installation
 
@@ -84,15 +75,16 @@ Preview first:
 
     ./scripts/upgrade-project.sh --target /path/to/app --all --dry-run
 
-The upgrade updates framework-owned prompts, playbooks, harness files, target-local docs under `docs/sdlc-spdd/`, and target-local runtime scripts. It preserves application source, application docs outside `docs/sdlc-spdd/`, requirements, canvases, feature workspaces, reviews, sync logs, existing memory content, existing root `CLAUDE.md`, and target workflow customizations.
+The upgrade updates framework-owned prompts, playbooks, harness files, target-local docs under `docs/sdlc-spdd/`, and target-local runtime scripts. It preserves application source, application docs outside `docs/sdlc-spdd/`, requirements, canvases, reviews, sync logs, the lessons ledger, existing root `CLAUDE.md`, and target workflow customizations. Legacy memory layouts are converted by `sdlc-engine storage migrate` — see [Framework upgrade](framework-upgrade.md).
 
 ## 2. Start a New Agent Session
 
 Create a session brief before asking a new agent to continue work. This is the
 **session bootstrap**: it combines automatic Tier 1 grounding (already loaded on
-every request) with work-specific context and Framework Orientation pointers.
+every request) with work-specific context, a bounded Related Past Work digest
+from the ledger, and Framework Orientation pointers.
 
-See [Bootstrap and index-based loading](context-loading-and-scaling.md#bootstrap-and-index-based-loading).
+See [Bootstrap and retrieval-based loading](context-loading-and-scaling.md#bootstrap-and-index-based-loading).
 
     cd /path/to/app
     ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id FEAT-001-order-status-api --phase code
@@ -105,28 +97,25 @@ Session-brief rotation (keeps `.sdlc/sessions/` bounded — **hot path, gitignor
 
 - `--session-limit <n>` — keep at most N timestamped briefs; older move to
   `.sdlc/sessions/archive/` (default 20). `current-session.md` is never archived.
-- `--no-session-rotate` — leave prior timestamped briefs in place (previous behavior).
+- `--no-session-rotate` — leave prior timestamped briefs in place.
 
-This writes (`v2.0.0a6+`):
+This writes:
 
     .sdlc/sessions/<timestamp>-code-FEAT-001-order-status-api.md
     .sdlc/sessions/current-session.md
 
-Legacy `agent-context/sessions/` is no longer the write target. See
-[Hot sessions and lean memory](hot-sessions-and-lean-memory.md).
+See [Runtime and ledger](runtime-and-ledger.md).
 
 The brief includes:
 
-- **Framework Orientation** — how to operate within SDLC-SPDD (grounding, docs, indexes)
-- Work ID
-- phase
-- active milestone (explicit `--milestone` or auto-detected from milestone files)
+- **Framework Orientation** — how to operate within SDLC-SPDD (grounding, docs, retrieval)
+- Work ID, phase, active milestone (explicit `--milestone` or auto-detected)
 - recommended command (honors [quiet mode](quiet-mode.md))
-- canvas sync state
-- roadmap and milestone status
-- artifact status
-- **Resolved Context** (phase files, extensions, Work ID artifacts, scoped progress)
-- playbooks to consider
+- canvas sync state, roadmap and milestone status, artifact status
+- **Related Past Work digest** — counts + top lesson titles with ids from the
+  ledger (fetch bodies on demand; query menu included)
+- **Resolved Context** (phase files, extensions, Work ID artifacts)
+- optional **Local SQLite Index** snapshot (when the sqlite cache is enabled)
 - git status
 - copy/paste resume prompt with SDLC, SPDD, and planning-layer `@` references
 
@@ -145,7 +134,7 @@ User-facing docs use the target path. When developing here, drop the `sdlc-spdd/
 
 ### Check only (no session brief)
 
-Check whether the feature workspace canvas and canonical canvas match:
+Check the canonical canvas and validate it:
 
     ./scripts/sdlc-spdd/resync-agent-session.sh --target . --work-id FEAT-001-order-status-api --check-only
 
@@ -157,11 +146,7 @@ If drift exists, reconcile and create a session brief in one step. **Default:** 
 
     ./scripts/sdlc-spdd/resync-agent-session.sh --target . --work-id FEAT-001-order-status-api --from-canvas --force --phase code
 
-Use `--from-feature` only when the feature workspace canvas was intentionally edited:
-
-    ./scripts/sdlc-spdd/resync-agent-session.sh --target . --work-id FEAT-001-order-status-api --from-feature --force --phase code
-
-When reconciling with `--from-canvas` or `--from-feature`, you do **not** need a separate `start-agent-session.sh` call — resync creates the brief.
+When reconciling, you do **not** need a separate `start-agent-session.sh` call — resync creates the brief.
 
 The reconcile path:
 
@@ -171,11 +156,11 @@ The reconcile path:
 
 ## 4. Capture Current Session Memory
 
-At the end of a session, persist what happened. The script **parses session
-content** (summary, `session-notes/`, brief, canvas, progress log, and capture
-flags) for path and package tokens, matches known categories in `code-areas.md`,
-and registers new categories automatically. Use `--areas` only to override or
-supplement parsed areas.
+At the end of a session (or whenever something worth remembering happens),
+stage it. The script **parses session content** (summary, hot brief, canvas,
+analysis, `session-notes/`, and capture flags) for path and package tokens to
+resolve **code areas**, then writes lesson records to the gitignored stage —
+**no git noise**:
 
     ./scripts/sdlc-spdd/capture-session-memory.sh \
       --target . \
@@ -190,55 +175,43 @@ supplement parsed areas.
       --patterns "Use focused service tests for status transitions." \
       --next "/sdlc-spdd-review @spdd/canvas/FEAT-001-order-status-api.md"
 
-Optional capture metrics (Kind: `metric` in `context-index.md` when areas resolve):
+This stages:
 
-    ./scripts/sdlc-spdd/capture-session-memory.sh \
-      --target . \
-      --work-id FEAT-001-order-status-api \
-      --phase review \
-      --summary "Review passed" \
-      --areas "src/order" \
-      --readiness "ready-for-coding" \
-      --review-result pass \
-      --rework 0 \
-      --context-files 12 \
-      --validate-cycles 1 \
-      --review-cycles 1
+- a `session` record (summary, validation, next step, areas, optional metrics)
+- a `decision` / `pitfall` / `pattern` record for each corresponding flag
 
-When `--readiness` is omitted, capture auto-fills from the canvas Metadata
-`- Readiness:` or YAML `readiness:` value when present.
+into `.sdlc/staged/lessons.jsonl`, and appends a Captured Memory note to the
+hot brief. Optional committed planning updates still happen when requested:
+`--milestone` appends milestone progress, `--roadmap-note` appends to
+`ROADMAP.md`, `--session-note` writes `session-notes/YYYY-MM-DD.md`.
 
-`--history-limit` / `--no-history-rotate` bound `session-history.md` and, when
-present, `prompt-optimization-log.md` (older `###` sections →
-`agent-context/memory/archive/`).
+Optional capture metrics are recorded in the session record body:
+`--readiness`, `--review-result` (`pass|fail|mixed|blocked`), `--rework`,
+`--context-files`, `--validate-cycles`, `--review-cycles`. When `--readiness`
+is omitted, capture auto-fills from the canvas Metadata `- Readiness:` or YAML
+`readiness:` value when present. Use `--areas` only to override or supplement
+parsed areas, and `--dry-run` to preview the staged records.
 
-This updates:
+### Accept at the gate
 
-- `agent-context/memory/session-history.md` (recent window; older entries archive)
-- `agent-context/memory/sessions/<entry>.md` (immutable per-session detail)
-- `agent-context/memory/session-index.md` (newest-first, with Areas column)
-- `agent-context/memory/context-index.md` (area → session/decision/pitfall/pattern/**metric** rows)
-- `agent-context/memory/prompt-optimization-log.md` (rotated when present; ledger entries come from prompt-update/retro)
-- `agent-context/memory/code-areas.md` (appends genuinely new categories)
-- `agent-context/features/<WORK-ID>/progress-log.md`
-- `session-notes/YYYY-MM-DD.md`
-- `milestone-*.md` when `--milestone` is provided or auto-detected from `milestone-*.md`
-- `ROADMAP.md` when `--roadmap-note` is provided
-- `agent-context/memory/project-memory.md`
-- `agent-context/memory/architecture-decisions.md` when `--decisions` is provided
-- `agent-context/memory/known-pitfalls.md` when `--pitfalls` is provided
-- `agent-context/memory/reusable-patterns.md` when `--patterns` is provided
-- `agent-context/sessions/current-session.md` when present
+Staged records are promoted to the committed ledger at retro/sync via
+`/sdlc-spdd-accept`, which reviews them for consistency and coherence first:
 
-Decisions, pitfalls, and patterns are indexed in `context-index.md` **only when
-areas are resolved** for the session. See [Context loading and scaling](context-loading-and-scaling.md).
+    ./scripts/sdlc-spdd/sdlc.sh accept --list                  # what is staged
+    ./scripts/sdlc-spdd/sdlc.sh accept --work-id <WORK-ID>     # promote for one Work ID
+    ./scripts/sdlc-spdd/sdlc.sh accept --ids <a,b,c> --discard-rest
+
+Accept dedupes by id, drains the stage, re-derives the sqlite/Guide
+projections, and leaves `spdd/memory/lessons.jsonl` ready to git-stage — one
+batched human commit per gate. Never edit the ledger by hand.
+See [Storage v3 — stage-then-accept](storage-v3.md#stage-then-accept).
 
 ## Recommended Daily Loop
 
 Orient and claim:
 
     ./scripts/sdlc-spdd/sdlc.sh next
-    ./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>    # commit work-registry.tsv on shared repos
+    ./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>    # appends to spdd/memory/registry.jsonl; commit it on shared repos
 
 Start or resume:
 
@@ -263,9 +236,10 @@ Review and sync:
     /sdlc-spdd-review @spdd/canvas/<WORK-ID>.md
     /sdlc-spdd-sync @spdd/canvas/<WORK-ID>.md
 
-Capture memory (guarded):
+Capture (stages quietly) and accept at the gate:
 
     ./scripts/sdlc-spdd/sdlc.sh capture --summary "<summary>" --validation "<tests>" --next "<next command>"
+    /sdlc-spdd-accept          # review + promote staged records, git-stage the ledger
 
 Map milestone planning into SPDD work:
 
@@ -275,35 +249,31 @@ Refresh roadmap from SPDD canvases:
 
     ./scripts/sdlc-spdd/sync-roadmap-from-spdd.sh --target .
 
-Import existing session notes into memory:
-
-    ./scripts/sdlc-spdd/summarize-session-notes.sh --target . --all
+Full loop diagram: [daily loop](diagrams/11-daily-loop.svg).
 
 ## 5. Index Analysis Context (Fowler Step 3)
 
-After `/sdlc-spdd-analysis` writes `spdd/analysis/<WORK-ID>-analysis.md`, index
-domain keywords and code areas:
+After `/sdlc-spdd-analysis` writes `spdd/analysis/<WORK-ID>-analysis.md`, stage
+an `analysis` lesson record so future retrieval finds the keywords and areas:
 
     ./scripts/sdlc-spdd/index-spdd-analysis.sh --target . --work-id <WORK-ID>
 
-Updates `domain-index.md`, `context-index.md` (Kind: `analysis`), and
-`code-areas.md`. See [Chelsea Troy and the framework](chelsea-troy-and-the-framework.md).
+See [Chelsea Troy and the framework](chelsea-troy-and-the-framework.md).
 
 ## 6. Resolve Skills and Phase Extensions (SDLC Agents)
 
-Resolve which extension, playbook, and memory files to load — do not list whole directories:
+Resolve which extension, playbook, and harness files to load — do not list whole directories:
 
     ./scripts/sdlc-spdd/resolve-agent-context.sh --target . --phase code --work-id <WORK-ID>
-    ./scripts/sdlc-spdd/resolve-agent-context.sh --target . --phase code --areas src/billing,com.acme.billing
     ./scripts/sdlc-spdd/resolve-agent-context.sh --target . --text "Implement retry #TDD #java !Kafka"
     ./scripts/sdlc-spdd/resolve-agent-context.sh --list-skills
 
-Static phase files come from `agent-context/memory/phase-index.md`. With `--work-id` or
-`--areas`, `context-index.md` rows are filtered by code area (newest first); anchor-only
-index entries stay in the Resolved Context table without loading whole memory logs.
-
 `start-agent-session.sh` embeds resolve output under **Resolved Context** in
 `current-session.md` and passes `--work-id` when set. See [SDLC Agents and the framework](sdlc-agents-and-the-framework.md).
+
+For cross-work lessons, use retrieval instead of file resolution:
+`sdlc-engine context retrieve` or (when Guide is live) the `spdd_*` MCP tools —
+see [Context loading and scaling](context-loading-and-scaling.md).
 
 ## Hybrid Contract
 
@@ -312,7 +282,7 @@ The scripts enforce the combined system:
 - SDLC Agents side: phase-specific handoffs, progressive context loading, playbook selection, and persistent learning.
 - SPDD side: REASONS Canvas validation, prompt-first behavior changes, canvas sync, and reviewable artifacts.
 
-Use `capture-session-memory.sh` after meaningful work so future agents do not rely on chat history.
+Use `capture-session-memory.sh` after meaningful work so future agents do not rely on chat history — and `/sdlc-spdd-accept` at gates so the ledger stays the reviewed system of record.
 
 You can verify both command effects and planning sync:
 

@@ -83,7 +83,7 @@ Phase transitions:
     ./scripts/sdlc-spdd/sdlc.sh list-shelved
     ./scripts/sdlc-spdd/sdlc.sh sync
 
-Team coordination (commit `agent-context/work-registry.tsv` after claim/release):
+Team coordination (commit `spdd/memory/registry.jsonl` after claim/release):
 
     ./scripts/sdlc-spdd/sdlc.sh team
     /sdlc-team
@@ -111,7 +111,7 @@ Low-level equivalent:
 
     ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase> [--milestone milestone-1.md]
 
-Paste the Resume Prompt from `agent-context/sessions/current-session.md`. Load only files listed under **Resolved Context** in that brief.
+Paste the Resume Prompt from `.sdlc/sessions/current-session.md`. Load only files listed under **Resolved Context** in that brief; fetch lesson bodies on demand.
 
 Refresh context after adding extensions or `#SkillName` skills:
 
@@ -226,7 +226,7 @@ Create Jira draft in the milestone requirement file:
 
     requirements/milestones/<WORK-ID>.md   →   ## Jira (Key, Summary, Type, Acceptance, …)
 
-See [requirements/milestones/README.md](../requirements/milestones/README.md). On claim, `./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>` auto-links the Key into `work-registry.tsv`.
+See [requirements/milestones/README.md](../requirements/milestones/README.md). On claim, `./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>` auto-links the Key into the registry event note.
 
 Draft for Jira UI:
 

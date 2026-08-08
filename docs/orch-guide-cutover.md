@@ -35,6 +35,9 @@ Verified SHA parity:
 | `refs/tags/sdlc-spdd-projection-v1` | `5f29fa4dbb2e8b54d43ee7dfa3f84853721b0dcf` |
 | `refs/tags/sdlc-spdd-projection-v2` | `972cd68ef96b4224011a5c009ddb076583584a6c` |
 
+(SHA table is the seed-time record; the current projection pin is
+`spdd-projection-v3` — see [DICE projection runbook](dice-projection-runbook.md).)
+
 `orch-guide` remains `isFork=false` (standalone repo, not a GitHub fork).
 
 ## Phase 3 — Retarget orchestrator
@@ -44,7 +47,7 @@ Verified SHA parity:
 | Setting | New value |
 |---------|-----------|
 | `GUIDE_GIT_URL` / console Git URL | `https://github.com/jmjava/orch-guide.git` |
-| `GUIDE_GIT_REF` | `sdlc-spdd-projection-v2` (or `main`) |
+| `GUIDE_GIT_REF` | `spdd-projection-v3` (or `main`) — was `sdlc-spdd-projection-v2` at cutover |
 | Dual-repo Cloud Agent env | swap Guide repo → `orch-guide` (still pending env edit) |
 | Docs (`guide-flow`, dice runbook, etc.) | point at `jmjava/orch-guide` |
 

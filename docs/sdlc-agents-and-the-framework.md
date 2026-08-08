@@ -41,7 +41,7 @@ Key upstream capabilities (detail sections below):
 | Do not bloat every prompt | **Tier 1** grounding (~fixed size, auto-injected once per assistant) |
 | Load artifacts on demand | **Tier 2** on-demand only — `@`-mention, session brief, or index lookup |
 | Each phase loads minimal context | Per-phase context budget in grounding files and [context-loading-and-scaling.md](context-loading-and-scaling.md#per-phase-context-budget) |
-| Avoid whole-repo scans | Index-driven retrieval: `domain-index.md`, `context-index.md`, `session-index.md`, `phase-index.md` |
+| Avoid whole-repo scans | Query-driven retrieval: `sdlc-engine context retrieve|show|digest` over the ledger; `spdd_*` MCP tools over the Guide graph |
 | Specialized agents, clear handoffs | `/sdlc-spdd-*` command per phase; `start-agent-session.sh` Resume Prompt |
 
 See [Two tiers of context](context-loading-and-scaling.md#two-tiers-of-context).
@@ -86,7 +86,7 @@ SDLC Agents supports custom rules without modifying core agent files. After `ini
 Phase resolution (via `resolve-agent-context.sh --phase <phase>`):
 
 - Loads `_all-agents/*.md` + the matching `*-agent/*.md` folder
-- Adds phase static files by parsing `agent-context/memory/phase-index.md` (playbooks, harness, planning docs)
+- Adds phase static files (playbooks, harness, planning docs) for the phase
 
 Drop a `.md` file into the appropriate folder; `start-agent-session.sh` lists resolved paths in the session brief — agents load those files, not the whole tree.
 
@@ -128,14 +128,15 @@ SDLC Agents Retro and Curator agents accumulate knowledge so future tasks do not
 | SDLC Agents | SDLC-SPDD |
 |-------------|-----------|
 | Retro agent | `/sdlc-spdd-retro` — writes `retro.md`, updates memory files |
-| Curator agent | `/sdlc-spdd-sync` + `summarize-session-notes.sh` — reconcile drift, import narrative notes |
-| Knowledge persists across tasks | `architecture-decisions.md`, `known-pitfalls.md`, `reusable-patterns.md` |
-| Retrieve without re-explaining | `resolve-agent-context.sh --work-id` filters `context-index.md` by Code Areas; area-scoped runs skip whole memory logs and resolve **Entry** paths + **Source** anchors |
+| Curator agent | `/sdlc-spdd-accept` + `/sdlc-spdd-sync` — review staged records, promote keepers, reconcile drift |
+| Knowledge persists across tasks | Ledger records: `decision`, `pitfall`, `pattern` kinds in `spdd/memory/lessons.jsonl` |
+| Retrieve without re-explaining | `sdlc-engine context retrieve --area <A> --kind <K>`; `spdd_areaLessons` when Guide is live |
 
 **Capture loop** (every session end):
 
-    capture-session-memory.sh → session-index + context-index + code-areas grow
-    index-spdd-analysis.sh     → domain-index + analysis rows after Fowler Step 3
+    capture-session-memory.sh → lesson records staged in .sdlc/staged/lessons.jsonl
+    index-spdd-analysis.sh    → analysis record staged after Fowler Step 3
+    /sdlc-spdd-accept         → keepers promoted to the committed ledger at gates
 
 Next session: bootstrap → indexes → load only matched artifacts. You do not paste prior retro prose into every prompt.
 
@@ -181,8 +182,8 @@ Each command pack states **do not** do the next agent's job (for example plan do
 
 | Anti-pattern | Why it fails | Do instead |
 |--------------|--------------|------------|
-| Read `session-history.md` top-to-bottom | Unrelated sessions interleaved; context bloat | Filter `context-index.md` or `session-index.md` by Area |
-| List or read whole `agent-context/` or `spdd/` | Token waste; Lost in the Middle | Start at `current-session.md`; follow index pointers |
+| Bulk-read `spdd/memory/lessons.jsonl` | Unrelated records interleaved; context bloat | `sdlc-engine context retrieve` filtered by Work ID / area / kind |
+| List or read whole directories | Token waste; Lost in the Middle | Start at `current-session.md`; follow its digest and Resolved Context |
 | `@`-mention five artifacts when one suffices | Over-loads working context | Use session brief + one Work ID canvas |
 | Plan before analysis | Unscoped file reads | `/sdlc-spdd-analysis` → index → `/sdlc-spdd-plan` |
 | Load all playbooks/extensions every session | Defeats progressive disclosure | Load `#SkillName` or phase-relevant extension only |
@@ -199,7 +200,7 @@ Each command pack states **do not** do the next agent's job (for example plan do
 | Architecture-first | `/sdlc-spdd-architect`, readiness gate, harness |
 | Multi-agent orchestration | Phase command packs; `start-agent-session.sh` handoffs |
 | Phase agents | `templates/cursor/sdlc-spdd-*.md`, Copilot/Claude command packs |
-| Index retrieval | `agent-context/memory/*-index.md` |
+| Bounded retrieval | `sdlc-engine context retrieve|digest`; Guide `spdd_*` tools |
 | Session handoff | `sdlc.sh start` → `current-session.md`; orient with `/sdlc-spdd-whereami` |
 | Curator-like sync | `/sdlc-spdd-sync`, `summarize-session-notes.sh` |
 

@@ -83,7 +83,7 @@ Ad-hoc requirements (not milestone-driven) live under `requirements/` at the pro
 - What was validated?
 - What is the next step?
 
-Session notes are the **human-readable daily log**. Durable agent memory (`agent-context/memory/`) is the **machine-resumable** layer. Both are valuable; scripts bridge them.
+Session notes are the **human-readable daily log**. The lessons ledger (`spdd/memory/lessons.jsonl`) is the **machine-resumable** layer. Both are valuable; scripts bridge them.
 
 ## What SPDD and SDLC Contribute (for contrast)
 
@@ -93,7 +93,7 @@ Session notes are the **human-readable daily log**. Durable agent memory (`agent
 | Daily story | Session notes | Progress log, session history |
 | What to build | Informs plan prompts | REASONS Canvas governs scope |
 | Who acts when | Current focus in roadmap | SDLC phase commands |
-| Cross-session memory | Imported via summarize script | `agent-context/memory/` |
+| Cross-session memory | Imported via summarize script | `spdd/memory/lessons.jsonl` ledger |
 
 **The roadmap and milestones tell the agent why the work matters. The canvas tells the agent what to build.**
 

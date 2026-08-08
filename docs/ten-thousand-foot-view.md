@@ -78,10 +78,10 @@ This is deliberately slower than asking an assistant to "just fix it." It is mea
 | `spdd/canvas/` | canonical REASONS Canvas files |
 | `spdd/reviews/` | review outputs against the canvas |
 | `spdd/sync/` | implementation-to-canvas reconciliation logs |
-| `agent-context/features/` | per-work feature workspace |
-| `agent-context/memory/` | durable learnings, decisions, pitfalls, patterns |
-| `agent-context/sessions/` | current and historical session handoffs |
-| `agent-context/playbooks/` | repeatable workflows for feature, bugfix, refactor, review |
+| `spdd/memory/lessons.jsonl` | committed lesson ledger — durable learnings, decisions, pitfalls, patterns ([Storage v3](storage-v3.md)) |
+| `spdd/memory/registry.jsonl` | append-only team claim/release event log |
+| `.sdlc/sessions/` | current session handoffs (gitignored hot briefs) |
+| playbooks folder | repeatable workflows for feature, bugfix, refactor, review |
 | `agent-context/harness/` | quality gates and validation rules |
 | `scripts/sdlc-spdd/` | target-local runtime helpers |
 

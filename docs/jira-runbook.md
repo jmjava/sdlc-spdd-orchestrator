@@ -31,7 +31,7 @@ under YAML frontmatter (`jira_key`, …) and/or `## Jira` (scaffolded by
 acceptance criteria there first — it is the copy-paste source for Jira UI, MCP, or
 API creation. After Jira returns a key, set `- Key: ABC-123` (and matching
 `jira_key`) and commit. `./scripts/sdlc.sh claim <WORK-ID>` then auto-links
-`jira:ABC-123` in `work-registry.tsv`.
+`jira:ABC-123` in the registry event note (`spdd/memory/registry.jsonl`).
 
 Format specification: [jira-compatible-requirements-format.md](jira-compatible-requirements-format.md).
 Validate locally (no Jira API):
@@ -202,7 +202,7 @@ Synchronize Jira at lifecycle checkpoints. Use comments or fields according to y
 
 Use this to generate a Jira comment:
 
-    For <WORK-ID>, read @spdd/canvas/<WORK-ID>.md, @agent-context/features/<WORK-ID>/progress-log.md, @spdd/reviews/<WORK-ID>-review.md if it exists, and @spdd/sync/<WORK-ID>-sync.md if it exists. Draft a Jira update for <JIRA-KEY> with:
+    For <WORK-ID>, read @spdd/canvas/<WORK-ID>.md, @spdd/reviews/<WORK-ID>-review.md if it exists, and @spdd/sync/<WORK-ID>-sync.md if it exists; run `sdlc-engine context retrieve --work-id <WORK-ID> --kind session` for recent progress. Draft a Jira update for <JIRA-KEY> with:
     - current SDLC-SPDD state
     - completed operations
     - validation performed

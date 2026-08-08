@@ -64,7 +64,7 @@ Morning status with planning layer (prefer orientation first):
 
     /sdlc-spdd-whereami
 
-    For <WORK-ID>, read @spdd/canvas/<WORK-ID>.md and @agent-context/features/<WORK-ID>/progress-log.md. Summarize current status, next operation, and open risks.
+    For <WORK-ID>, read @spdd/canvas/<WORK-ID>.md and run `sdlc-engine context digest --work-id <WORK-ID>`. Summarize current status, next operation, and open risks.
 
     Also read @ROADMAP.md, @milestone-1.md, and @session-notes/YYYY-MM-DD.md if they exist.
 
@@ -141,7 +141,7 @@ Import one file:
 
 After import, review prompt:
 
-    Read @agent-context/memory/session-history.md entries imported from session-notes. Summarize recurring themes, open risks, and Work IDs mentioned.
+    Run `sdlc-engine context retrieve --kind session` for records imported from session-notes. Summarize recurring themes, open risks, and Work IDs mentioned.
 
 ## Suggested Roadmap Content Prompts
 

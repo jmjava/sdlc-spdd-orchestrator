@@ -126,7 +126,7 @@ printf '%s\n' '# DEMO-001-integration-smoke' '' '## Final Status' '' '- Status: 
 ```
 
 - [ ] `list-work` shows `DEMO-001-integration-smoke`
-- [ ] `claim` sets `.sdlc/pointer` and updates `work-registry.tsv`
+- [ ] `claim` sets `.sdlc/pointer` and appends a team-registry claim event
 - [ ] `next` shows phase and recommended command
 - [ ] `team` shows registry row
 - [ ] `shelf` clears pointer and marks shelved

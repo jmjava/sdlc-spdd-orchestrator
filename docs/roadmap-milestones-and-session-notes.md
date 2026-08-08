@@ -39,7 +39,7 @@ Recommended target-project layout (subdirectory milestones):
     session-notes/
       2026-06-06.md
     spdd/canvas/
-    agent-context/
+    spdd/memory/          (lessons.jsonl + registry.jsonl)
 
 Legacy root `milestone-1.md` remains supported. See
 [MIGRATION-root-to-subdirectories.md](MIGRATION-root-to-subdirectories.md) and
@@ -54,7 +54,7 @@ Legacy root `milestone-1.md` remains supported. See
 | `requirements/milestones/<WORK-ID>.md` (or under `milestone-N/`) | milestone-derived requirement stub for analysis/plan prompts |
 | `session-notes/YYYY-MM-DD.md` | daily summary of agent sessions |
 | `spdd/canvas/<WORK-ID>.md` | SPDD design contract for a work item |
-| `agent-context/memory/session-history.md` | durable cross-session memory |
+| `spdd/memory/lessons.jsonl` | durable cross-session memory (accepted lesson records — see [Storage v3](storage-v3.md)) |
 
 The roadmap and milestones tell the agent why the work matters. The canvas tells the agent what to build and what not to change.
 
@@ -62,10 +62,10 @@ The roadmap and milestones tell the agent why the work matters. The canvas tells
 
 | Script | Direction | Purpose |
 |--------|-----------|---------|
-| `create-work-from-milestone.sh` | milestone -> SPDD | Create Work IDs, requirement stubs, feature workspace, and draft canvases from milestone checklist items |
+| `create-work-from-milestone.sh` | milestone -> SPDD | Create Work IDs, requirement stubs, and draft canvases from milestone checklist items |
 | `sync-roadmap-from-spdd.sh` | SPDD -> roadmap | Update a managed roadmap summary table from `spdd/canvas/*.md` metadata |
-| `summarize-session-notes.sh` | session notes -> memory | Import existing daily notes into durable agent memory |
-| `capture-session-memory.sh` | session -> all layers | Append to memory, progress log, daily notes, and optionally milestone/roadmap |
+| `summarize-session-notes.sh` | session notes -> memory | Import existing daily notes as staged lesson records |
+| `capture-session-memory.sh` | session -> all layers | Stage lesson records, refresh the hot brief, and optionally append milestone/roadmap notes |
 
 ## Fresh Install Behavior
 
@@ -121,9 +121,6 @@ This creates:
 - draft Work IDs and canvases
 - `requirements/milestones/<WORK-ID>.md` stubs with a scaffolded `## Jira` section
 - **Linked Work** rows in the milestone file
-- `agent-context/features/<WORK-ID>/` (feature workspace; `requirement.md` points to canonical milestone requirement)
-- `agent-context/features/<WORK-ID>/reasons-canvas.md`
-- `agent-context/features/<WORK-ID>/progress-log.md`
 - `spdd/canvas/<WORK-ID>.md`
 - a generated work map entry in the milestone file
 
@@ -153,7 +150,7 @@ With an explicit milestone:
 
 When `--milestone` is omitted, the script searches `milestone-*.md` files for the Work ID.
 
-The generated `current-session.md` includes a **Resume Prompt** that references the canvas, progress log, memory, roadmap, active milestone, and today's session note when those files exist. Paste that prompt at the start of the new agent session.
+The generated `current-session.md` (under gitignored `.sdlc/sessions/`) includes a **Resume Prompt** that references the canvas, the Related Past Work digest, roadmap, active milestone, and today's session note when those files exist. Paste that prompt at the start of the new agent session.
 
 See [Session prompt standard](session-prompt-standard.md) for the full prompt contract.
 
@@ -172,17 +169,16 @@ Example (prefer guarded capture):
       --roadmap-note "FEAT-001 completed its first implementation operation." \
       --next "/sdlc-spdd-review @spdd/canvas/FEAT-001-order-status-api.md"
 
-This updates:
+This stages lesson records in `.sdlc/staged/lessons.jsonl` (promoted to the
+committed ledger at the accept gate) and updates:
 
-- `agent-context/memory/session-history.md`
-- `agent-context/features/<WORK-ID>/progress-log.md`
-- `session-notes/YYYY-MM-DD.md`
+- `session-notes/YYYY-MM-DD.md` when `--session-note` is set
 - `milestone-1.md` when `--milestone` is provided or auto-detected from `milestone-*.md`
 - `ROADMAP.md` when `--roadmap-note` is provided
 
-Skip the daily session note only when needed:
+The daily session note is opt-in:
 
-    ./scripts/sdlc-spdd/capture-session-memory.sh --target . --work-id <WORK-ID> --summary "<summary>" --no-session-note
+    ./scripts/sdlc-spdd/capture-session-memory.sh --target . --work-id <WORK-ID> --summary "<summary>" --session-note
 
 ## Suggested Roadmap Update Pattern
 
@@ -240,10 +236,9 @@ Import one file:
 
     ./scripts/sdlc-spdd/summarize-session-notes.sh --target . --file session-notes/2026-06-06.md
 
-This preserves the original note and appends an import entry to:
-
-- `agent-context/memory/session-history.md`
-- `agent-context/memory/project-memory.md`
+This preserves the original note and stages an import record in
+`.sdlc/staged/lessons.jsonl`; promote it into the committed ledger with
+`./scripts/sdlc-spdd/sdlc.sh accept`.
 
 ## Read Next
 

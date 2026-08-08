@@ -78,7 +78,7 @@ SPDD reference:
 | `/sdlc-spdd-code` | Coding Agent | Execute one approved Operation | Code, tests, progress log |
 | `/sdlc-spdd-review` | Code Review Agent | Compare implementation to REASONS contract | `spdd/reviews/` |
 | `/sdlc-spdd-prompt-update` | Planning/Architect handoff | Update prompt first when intent changes | Canvas and progress log |
-| `/sdlc-spdd-retro` | Retro Agent | Convert lessons into reusable assets | `agent-context/memory/` |
+| `/sdlc-spdd-retro` | Retro Agent | Convert lessons into reusable assets | staged lesson records → `spdd/memory/lessons.jsonl` via accept |
 | `/sdlc-spdd-sync` | Curator-like knowledge maintenance | Reconcile code reality back into prompt artifacts | `spdd/sync/`, updated canvas |
 
 ## Hybrid Workflow
@@ -120,7 +120,7 @@ Use SDLC Agents-style progressive disclosure with SPDD artifacts. Load only what
 | Phase | Load this context | Avoid loading |
 |-------|-------------------|---------------|
 | Init | Repo layout, stack markers, existing memory | Full codebase unless needed for stack detection |
-| Analysis | Requirement, `domain-index.md`, `context-index.md`, `code-areas.md`; scan only matched code areas | Unrelated modules, whole repo |
+| Analysis | Requirement, prior `analysis` records (`context retrieve --kind analysis`); scan only matched code areas | Unrelated modules, whole repo |
 | Plan | `spdd/analysis/<WORK-ID>-analysis.md`, requirement, roadmap, milestone, source issue | Unrelated source files |
 | Architect | Analysis + canvas, architecture notes, relevant interfaces, safeguards | Implementation details not needed for design |
 | Code | Canvas, selected operation, relevant files, tests | Other operations or unrelated modules |
@@ -136,7 +136,7 @@ SDLC Agents supports dynamic skill selection and extensions. This scaffold docum
 
 - Use `#SkillName` to request relevant skills, such as `#TDD`, `#java`, `#security`, or `#tekton`.
 - Use `!SkillName` to exclude irrelevant skills, such as `!Kafka`.
-- Store reusable project guidance in `agent-context/memory/` and `agent-context/playbooks/`.
+- Store reusable project guidance as ledger records (`pattern` / `decision` kinds) and in the install's playbooks folder.
 - Resolve skills and phase extensions with `./scripts/sdlc-spdd/resolve-agent-context.sh` (see [SDLC Agents and the framework](sdlc-agents-and-the-framework.md)).
 - Add project-specific rules under `agent-context/extensions/` (SDLC Agents agent folder names) — loaded via resolve script or session brief **Resolved Context**.
 - Use `ROADMAP.md`, `milestone-*.md`, and `session-notes/` for human-level planning context, not as replacements for the REASONS Canvas.

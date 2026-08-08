@@ -79,14 +79,15 @@ Examples:
 
 ### 5. Continual learning
 
-Retros and session capture write durable memory:
+Retros and session capture stage typed lesson records (`session`, `decision`,
+`pitfall`, `pattern`); `/sdlc-spdd-accept` promotes the keepers into the
+committed ledger:
 
-- `agent-context/memory/session-history.md`
-- `agent-context/memory/architecture-decisions.md`
-- `agent-context/memory/known-pitfalls.md`
-- `agent-context/memory/reusable-patterns.md`
+    spdd/memory/lessons.jsonl
 
-A new session can resume from files instead of reconstructing context from chat.
+A new session can resume from the ledger (via `sdlc-engine context
+retrieve|digest` or the Guide working store) instead of reconstructing context
+from chat. See [Storage v3](storage-v3.md).
 
 ### 6. Explicit guardrails
 
@@ -104,7 +105,7 @@ Session scripts create handoff briefs and resume prompts. The workflow CLI (`scr
     ./scripts/sdlc-spdd/sdlc.sh start
     ./scripts/sdlc-spdd/sdlc.sh capture --summary "..."
 
-Output: `agent-context/sessions/current-session.md` with artifact status, planning context, and a copy-paste resume prompt. Local state: `.sdlc/pointer`, `.sdlc/workflows/` (gitignored). Team claims: `agent-context/work-registry.tsv` (committed).
+Output: `.sdlc/sessions/current-session.md` with artifact status, planning context, a Related Past Work digest, and a copy-paste resume prompt. Local state: `.sdlc/pointer`, `.sdlc/workflows/` (gitignored). Team claims: `spdd/memory/registry.jsonl` (committed, append-only events).
 
 In chat: `/sdlc-next` or `/sdlc-spdd-whereami`.
 
@@ -180,8 +181,8 @@ SDLC owns **session continuity**, not execution scope:
 
 | Situation | SDLC role |
 |-----------|-----------|
-| What happened in today's session | Session notes and progress log |
-| Cross-session lessons | `agent-context/memory/` |
+| What happened in today's session | Session notes and staged/accepted `session` records |
+| Cross-session lessons | `spdd/memory/lessons.jsonl` — retrieved on demand, or the Guide graph |
 | How to resume after a break | Session brief + Resume Prompt from `start-agent-session.sh` |
 
 **Full conflict resolution across all three parts** — including canvas authority and planning narrative — is defined in one place: [Conflict resolution](three-part-operating-path.md#conflict-resolution-single-rule) in the three-part operating path.

@@ -16,12 +16,14 @@ Adapters and integrations are delivery mechanisms, not separate parts.
 
     ROADMAP.md / milestone-*.md / requirements/milestones/ / session-notes/
             -> inform and summarize
-    spdd/canvas/ + agent-context/
+    spdd/canvas/ + spdd/memory/ (ledger)  [+ hot .sdlc/ runtime]
             -> govern and remember
     code / reviews / sync logs
             -> execute and validate
 
 The planning narrative remains human-readable. SPDD artifacts provide governed execution. Code, reviews, and sync logs prove what actually changed.
+
+See the [C4 context](diagrams/01-context.svg) and [container](diagrams/02-container.svg) diagrams for how these pieces relate inside the single `sdlc-spdd/` install folder.
 
 ## Workflow
 
@@ -38,15 +40,24 @@ The planning narrative remains human-readable. SPDD artifacts provide governed e
 
 ## Artifact Model
 
+Committed:
+
 - Project roadmap: `ROADMAP.md`
 - Milestone docs: `milestone-*.md`
 - Daily session notes: `session-notes/YYYY-MM-DD.md`
-- Feature workspace: `agent-context/features/<WORK-ID>/`
-- Session handoffs: `agent-context/sessions/`
-- Durable session history: `agent-context/memory/session-history.md`
 - Canonical canvas: `spdd/canvas/<WORK-ID>.md`
 - Reviews: `spdd/reviews/`
 - Sync logs: `spdd/sync/`
+- Lessons ledger: `spdd/memory/lessons.jsonl` (accepted decisions, pitfalls, patterns, sessions, analysis records — never hand-edited)
+- Work registry: `spdd/memory/registry.jsonl` (append-only claim/release events)
+
+Gitignored runtime:
+
+- Hot session briefs: `.sdlc/sessions/` (`current-session.md` is the entry point)
+- Staged captures: `.sdlc/staged/lessons.jsonl` (promoted at accept gates)
+- Optional local cache: `.sdlc/index.sqlite`
+
+Derived working store: the Guide DICE graph, a regenerable projection of the ledger + canvases, queried on demand. Full model: [Storage v3](storage-v3.md).
 
 ## Mapping Scripts
 
@@ -62,9 +73,10 @@ The planning narrative remains human-readable. SPDD artifacts provide governed e
 - No-code phases stay no-code
 - One approved operation per coding session
 - Explicit assumptions and safeguards
-- Progressive context loading by Work ID and phase — see [Bootstrap and index-based loading](context-loading-and-scaling.md#bootstrap-and-index-based-loading)
+- Progressive context loading by Work ID and phase — see [Context loading and scaling](context-loading-and-scaling.md)
+- One write path for memory: captures stage quietly, accepts promote to the committed ledger, projections regenerate ([Storage v3](storage-v3.md))
 - Architecture validation before implementation
-- Retro learning captured into durable memory
+- Retro learning captured into the lessons ledger
 - Safe defaults: no overwrite without `--force`
 
 ## Hybrid Responsibilities

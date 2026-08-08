@@ -4,38 +4,50 @@
 
 Use this hub to choose the right guide for your current task. If you are new, read the first section in order. If you are already operating a project, jump to the section that matches what you are doing.
 
-**Start with the six onboarding pages below.** They are the complete path from install to daily use. The other sections are task-specific reference — open one when its description matches what you are doing.
+**Start with the seven onboarding pages below.** They are the complete path from install to daily use. The other sections are task-specific reference — open one when its description matches what you are doing.
 
 ## Core Model
 
     Planning: ROADMAP.md, milestone-*.md, requirements/, requirements/milestones/, session-notes/
             -> inform and summarize
-    spdd/canvas/ + spdd/memory/  (+ hot .sdlc/sessions/)
+    spdd/canvas/ + spdd/memory/ (lessons ledger)  [+ hot .sdlc/ runtime]
             -> govern and remember
     code / reviews / sync logs
             -> execute and validate
 
 Use roadmap, milestone, and session-note files for project planning and narrative.
-Use SDLC-SPDD artifacts for governed execution and durable agent memory. Session
-briefs are hot under `.sdlc/sessions/` (not committed).
+Use SDLC-SPDD artifacts for governed execution and durable agent memory.
+
+**One mental model everywhere:** canvas + contracts are read directly; the
+lessons ledger (`spdd/memory/lessons.jsonl`) is the committed record; the
+**Guide DICE graph is the working store** queried on demand; SQLite is an
+optional local cache; captures are staged quietly and accepted at gates.
 
 **How do Planning, SPDD, and SDLC fit together in practice?** → [Three-part operating path](three-part-operating-path.md)
 
-## What's new (`v2.0.0a6`)
+## Storage v3 — where memory and context live
 
-Start here if you are catching up after the agent-context cleanup release:
+Start here for anything about memory, sessions, retrieval, or backends:
 
 | Guide | Use it when |
 |-------|-------------|
-| [What's new in v2.0.0a6](whats-new-v2.0.0a6.md) | Tour of lean stay-set, hot sessions, triple-path, quiet mode |
-| [Hot sessions and lean memory](hot-sessions-and-lean-memory.md) | Where briefs and `spdd/memory/` live now |
-| [Triple-path context](triple-path-context.md) | Configure git / SQLite / Guide backends; persist & retrieve |
-| [Quiet mode](quiet-mode.md) | Product work without T## dogfood gravity |
-| [Local SQLite index](local-sqlite-index.md) | `db rebuild` / `lookup` / FTS |
-| [Ops console](ops-console.md) | Persistence tab + install / Guide / ADF viewer |
-| [ADF templates + Vue3 console](adf-template-library-and-vue3-console.md) | **Next** product slice (in progress) |
+| [**Storage v3**](storage-v3.md) | **The canonical storage architecture** — ledger, stage-then-accept, Guide working store, parity |
+| [Runtime and ledger](runtime-and-ledger.md) | Day-to-day view: hot briefs under `.sdlc/`, capture → accept, retrieval commands |
+| [Guide flow](guide-flow.md) | How phases query the Guide DICE working store (`spdd_*` MCP tools) |
+| [DICE projection runbook](dice-projection-runbook.md) | Run Guide + Neo4j locally (tag `spdd-projection-v3`) |
+| [Context loading and scaling](context-loading-and-scaling.md) | What loads automatically vs on demand; per-phase budgets |
+| [Triple-path context](triple-path-context.md) | Configure backends (`CONTEXT_BACKENDS`): git + guide default, sqlite opt-in |
+| [Local SQLite index](local-sqlite-index.md) | The opt-in regenerable cache (`.sdlc/index.sqlite`, schema v5) |
+| [Diagrams](diagrams/README.md) | All 14 PlantUML architecture diagrams |
 
-Program / spike archive: [agent-context-cleanup/](agent-context-cleanup/).
+Also useful: [Quiet mode](quiet-mode.md) (product work without T## dogfood
+gravity), [Ops console](ops-console.md) (persistence tab + install / Guide /
+ADF viewer), [ADF templates + Vue3 console](adf-template-library-and-vue3-console.md)
+(product slice in progress).
+
+Historical release notes: [What's new in v2.0.0a6](whats-new-v2.0.0a6.md)
+(superseded by storage v3). Program / spike archive:
+[agent-context-cleanup/](agent-context-cleanup/).
 
 ## If You Are New, Read These in Order
 
@@ -45,7 +57,7 @@ Program / spike archive: [agent-context-cleanup/](agent-context-cleanup/).
 4. [Installing into your project](installing-into-your-project.md) — fresh install, upgrade path, verification, and troubleshooting.
 5. [Top useful concepts and commands](useful-concepts-and-commands.md) — Work IDs, canvases, sessions, commands, and prompt patterns.
 6. [Maintaining your project](maintaining-your-project.md) — upgrades, memory hygiene, canvas sync, links, and session maintenance.
-7. [What's new in v2.0.0a6](whats-new-v2.0.0a6.md) — current platform paths (hot sessions, lean memory, backends).
+7. [Storage v3](storage-v3.md) — where memory lives: ledger, Guide working store, runtime, backends.
 
 **Workflow CLI reference** (pointer, phase tracking, team registry): [agent-context/README.md](../agent-context/README.md#sdlc-pointer-current-choretask) — installed in target projects at `agent-context/README.md`.
 
@@ -112,12 +124,12 @@ Also useful day to day:
 | [Extension manifest](contributing-extensions.md) | You are adding phase extensions, skills, or updating `manifest.md` |
 | [Ops console and ADF Viewer](ops-console.md) | Two local GUIs (`:5051` / `:5050`), tabs, and Guide integration map |
 | [Guide RAG research and dogfooding](guide-rag-research-and-dogfooding.md) | You use Embabel Guide + MCP for `/sdlc-spdd-analysis` or want the framework self-improvement loop explained |
-| [Local SQLite index](local-sqlite-index.md) | Zero-install `.sdlc/index.sqlite` query cache; multi-user sync stays git; optional before Guide/Neo4j |
+| [Local SQLite index](local-sqlite-index.md) | Zero-install `.sdlc/index.sqlite` query cache; opt-in, fully regenerable from the ledger |
 | [Jira ADF + requirements sync (research)](research/jira-adf-and-requirements-sync.md) | Exact Cloud ADF / Server wiki payloads; requirements as source of truth for Jira + REASONS |
 | [Engine v2 — commit-message](engine-v2.md#commit-message-diff-report) | Python engine diff report for `/sdlc-spdd-commit-message` |
 | [SPIKE guide ingest (operator notes)](spike-guide-ingest-agent-context.md) | Historical T01 operator notes; prefer [Guide flow](guide-flow.md) + [DICE runbook](dice-projection-runbook.md) on `main` |
-| [Guide flow](guide-flow.md) | End-to-end optional Guide context backend: dual ingest, runtime resolution, per-phase tools, persist loop |
-| [DICE projection runbook](dice-projection-runbook.md) | Run against Guide tag `sdlc-spdd-projection-v2` (or `GUIDE_GIT_REF=main`): typed entity persist/retrieve, `spdd_*` MCP tools |
+| [Guide flow](guide-flow.md) | End-to-end Guide working store: ledger + canvas ingest, runtime resolution, per-phase tools, persist loop |
+| [DICE projection runbook](dice-projection-runbook.md) | Run against Guide tag `spdd-projection-v3` (or `GUIDE_GIT_REF=main`): typed entity persist/retrieve, `spdd_*` MCP tools |
 | [Narrated demos bundle](demos/README.md) | You maintain or extend the docgen bundle under `docs/demos/` |
 | [TESTING.md](../TESTING.md) | You need the command-testing confidence stack (CI gates, local smoke, planning-sync verification) |
 | [Design decisions](design-decisions.md) | You need rationale for major choices (including planned-but-not-installed features) |
@@ -142,7 +154,7 @@ Read these when you need historical context, compliance detail, or repository ar
 | [Architecture](architecture.md) | You want the five delivery concerns built on the three parts |
 | [Context loading and scaling](context-loading-and-scaling.md) | Tiers, scaling, and [bootstrap + index-based loading](context-loading-and-scaling.md#bootstrap-and-index-based-loading) |
 | [SPDD compliance](spdd-compliance.md) | You need to verify against Structured Prompt-Driven Development expectations |
-| [Chelsea Troy and the framework](chelsea-troy-and-the-framework.md) | You want the LLM context/judgment rationale behind index-driven loading |
+| [Chelsea Troy and the framework](chelsea-troy-and-the-framework.md) | You want the LLM context/judgment rationale behind retrieval-driven loading |
 | [SDLC Agents and the framework](sdlc-agents-and-the-framework.md) | You want progressive disclosure, `#SkillName`, and extensions mapped to this orchestrator |
 | [Design decisions](design-decisions.md) | You want the rationale behind major choices |
 

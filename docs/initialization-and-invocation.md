@@ -112,7 +112,7 @@ Before asking a new agent to continue previous work:
        ./scripts/sdlc-spdd/sdlc.sh resume FEAT-001-order-status-api --phase code
        ./scripts/sdlc-spdd/sdlc.sh start
 
-3. **Paste the Resume Prompt** from `agent-context/sessions/current-session.md`. Do not paraphrase — the brief embeds **Resolved Context** (phase files, extensions, Work ID artifacts, area-filtered index rows) and the Resume Prompt points at only those files. See [Session prompt standard](session-prompt-standard.md).
+3. **Paste the Resume Prompt** from `.sdlc/sessions/current-session.md` (gitignored hot brief). Do not paraphrase — the brief embeds **Resolved Context** (phase files, extensions, Work ID artifacts) plus a Related Past Work digest, and the Resume Prompt points at only those files. See [Session prompt standard](session-prompt-standard.md).
 
 Optional canvas sync before step 2:
 
@@ -192,7 +192,7 @@ Always include the Work ID and point to the active artifacts. More examples and 
 
 Good (Cursor, Copilot, or Claude Code):
 
-    For FEAT-001, read @spdd/canvas/FEAT-001-order-status-api.md and @agent-context/features/FEAT-001-order-status-api/progress-log.md. What should I do next?
+    For FEAT-001, read @spdd/canvas/FEAT-001-order-status-api.md and run `sdlc-engine context digest --work-id FEAT-001-order-status-api`. What should I do next?
 
 Avoid:
 

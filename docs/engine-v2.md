@@ -8,14 +8,20 @@ the MVP, but reuse, testing, and embedding inside other tools is harder than it
 should be.
 
 **v2** introduces a Python package — `sdlc_engine` — as the reusable
-orchestration core while keeping shell as a compatibility surface.
+orchestration core while keeping shell as a compatibility surface. In storage
+v3 the engine also owns the context store: the lessons ledger, the
+stage-then-accept flow, and projection parity ([storage-v3.md](storage-v3.md)).
+
+![Engine components](diagrams/03-component-engine.svg)
 
 ## Goals
 
-- One importable API for pointer, workflow, team registry, and archive
+- One importable API for pointer, workflow, team registry, archive, and the
+  storage v3 context store (ledger, projections, parity)
 - Stable CLI (`sdlc-engine` / `python -m sdlc_engine`) with the same command
   names humans already use
-- Identical on-disk formats (`.sdlc/`, `work-registry.tsv`, canvas paths)
+- Identical on-disk formats (`.sdlc/`, `spdd/memory/lessons.jsonl` +
+  `registry.jsonl`, canvas paths)
 - Gradual migration: shell remains the default (`SDLC_ENGINE=shell`); opt into
   Python with `SDLC_ENGINE=python` or `auto`
 - Stdlib-first package (no required third-party runtime deps)
@@ -34,11 +40,15 @@ engine/
   README.md
   src/sdlc_engine/
     cli.py          # argparse CLI
-    project.py      # root + paths
+    project.py      # root + single-folder home (sdlc-spdd/) path resolution
     phases.py       # phase/gate tables
     pointer.py
     workflow.py
-    registry.py
+    registry.py     # registry.jsonl claim/release event log
+    lessons_ledger.py  # committed lessons.jsonl + gitignored stage
+    context_store.py   # persist/retrieve/accept/parity across ledger + projections
+    persistence.py     # backend config (CONTEXT_BACKENDS: git + guide default, sqlite opt-in)
+    storage_migrate.py # one-shot legacy agent-context → ledger migration
     archive.py
     canvas.py
     links.py        # milestone/canvas/registry link parsing
@@ -46,7 +56,7 @@ engine/
     issues.py       # Jira/GitHub draft|push|pull|upload-adf|download-adf
     jira_format.py  # markdown ↔ ADF / wiki for Jira descriptions
     local_sessions.py  # LOCAL-* offline sessions + promote
-    db.py           # regenerable local SQLite index (.sdlc/index.sqlite)
+    db.py           # opt-in regenerable SQLite cache (.sdlc/index.sqlite, schema v5)
     commit_message.py  # staged/unstaged/ahead-of-base diff report for commit drafts
   tests/            # pytest
 ```
@@ -103,7 +113,7 @@ Jira Cloud descriptions are sent as **ADF** (not raw markdown). See
 **Repair does (local, safe):**
 
 - Ensure `## Jira` / `## GitHub` sections exist on milestone requirements
-- Copy real Jira Key / GitHub Number into `work-registry.tsv` note tokens
+- Copy real Jira Key / GitHub Number into registry event note tokens (`spdd/memory/registry.jsonl`)
 - Align canvas Metadata `Source System` / `Source Issue` (/ URL when `JIRA_BASE_URL` set)
 - Update `milestone-*.md` Linked Work **Status** from canvas/registry
 
@@ -128,11 +138,43 @@ Always routed to the Python engine (even when `SDLC_ENGINE=shell`):
 
 Implementation: `engine/src/sdlc_engine/commit_message.py` (`CommitMessageService`).
 
-## Local SQLite index (pre-GUIDE)
+## Context store (storage v3)
 
-Zero-install query cache rebuilt from git artifacts into `.sdlc/index.sqlite`
-(gitignored). Multi-user sync remains git — not the binary DB. See
-[local-sqlite-index.md](local-sqlite-index.md).
+The engine owns the storage v3 write and query paths — one committed ledger,
+regenerable projections ([storage-v3.md](storage-v3.md)):
+
+```bash
+# Stage a lesson (gitignored .sdlc/staged/lessons.jsonl; git stays quiet)
+sdlc-engine context persist-lesson --kind pitfall --work-id FEAT-001-x \
+  --area src/billing --body "Legacy orders omit tax field"
+
+# Promote staged records to the committed ledger (at retro/sync gates)
+sdlc-engine context accept --work-id FEAT-001-x
+sdlc-engine context accept --ids <a,b,c> --discard-rest
+
+# Retrieve — bounded lists, one body at a time, bounded digest
+sdlc-engine context retrieve --work-id FEAT-001-x --kind pitfall
+sdlc-engine context show "pitfall:FEAT-001-x:src/billing:capture"
+sdlc-engine context digest --work-id FEAT-001-x
+
+# Projections: verify / repair parity with sqlite + Guide
+sdlc-engine context parity
+sdlc-engine context parity --repair
+
+# Backend set (default git + guide; sqlite opt-in)
+sdlc-engine context backends
+sdlc-engine context backends --set git-pointers,guide-dice,sqlite
+
+# Legacy install migration
+sdlc-engine storage status
+sdlc-engine storage migrate [--dry-run]
+```
+
+## Local SQLite cache (opt-in)
+
+Regenerable query cache rebuilt from the ledger + registry + contracts into
+`.sdlc/index.sqlite` (gitignored, schema v5). Multi-user sync remains git — not
+the binary DB. See [local-sqlite-index.md](local-sqlite-index.md).
 
 ```bash
 ./scripts/sdlc.sh db rebuild
@@ -163,13 +205,12 @@ the work deserves a documented feature.
 
 **Rules:**
 
-- `LOCAL-*` is never written to `work-registry.tsv` (`claim` refuses it)
+- `LOCAL-*` is never written to the team registry (`claim` refuses it)
 - `sdlc.sh next` surfaces open local sessions and promotion commands
-- Promote creates canvas + `requirements/milestones/<WORK-ID>.md` + feature
-  workspace, then claims the new Work ID (unless `--no-claim`)
-- Briefs stay under `.sdlc/` (gitignored). Opt-in committed breadcrumbs:
-  `SDLC_LOCAL_SESSION_NOTES=1` → `session-notes/YYYY-MM-DD.md`;
-  `SDLC_LOCAL_WRITE_SESSION_BRIEF=1` → `agent-context/sessions/`
+- Promote creates canvas + `requirements/milestones/<WORK-ID>.md`, then claims
+  the new Work ID (unless `--no-claim`)
+- Briefs stay under `.sdlc/` (gitignored). Opt-in committed breadcrumb:
+  `SDLC_LOCAL_SESSION_NOTES=1` → `session-notes/YYYY-MM-DD.md`
 
 ## Bridge to remaining shell scripts
 

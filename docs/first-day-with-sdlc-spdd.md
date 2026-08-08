@@ -101,7 +101,7 @@ Skip this step for ad-hoc requirements — go to step 5.
 
 | Part | Action |
 |------|--------|
-| SDLC | Claim the Work ID (sets local pointer + team registry row). **Commit** `agent-context/work-registry.tsv` when working on a shared repo: |
+| SDLC | Claim the Work ID (sets local pointer + appends a registry event). **Commit** `spdd/memory/registry.jsonl` when working on a shared repo: |
 
     ./scripts/sdlc-spdd/sdlc.sh claim FEAT-001-order-status-api
 
@@ -124,7 +124,7 @@ Equivalent low-level path:
 
 Then **paste the Resume Prompt** from `.sdlc/sessions/current-session.md` — do not paraphrase it. The brief embeds **Resolved Context** (phase files, extensions, Work ID artifacts, area-filtered index rows, work-scoped progress excerpt) and the Resume Prompt directs the agent to load only those files.
 
-> Hot path (`v2.0.0a6+`): session briefs live under **`.sdlc/sessions/`** (gitignored), not `agent-context/sessions/`. See [Hot sessions and lean memory](hot-sessions-and-lean-memory.md).
+> Session briefs live under **`.sdlc/sessions/`** (gitignored). See [Runtime and ledger](runtime-and-ledger.md).
 
 This first-day walkthrough uses the **ad-hoc entry** (you have a requirement but no prior canvas). If you mapped milestone work in step 4 and the canvas is already planned and architected, start the brief at `--phase code` instead. See [Session brief timing](three-part-operating-path.md#session-brief-timing) for the milestone-driven vs ad-hoc rule.
 

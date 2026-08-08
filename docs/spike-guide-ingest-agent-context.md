@@ -1,8 +1,12 @@
 # SPIKE — Guide ingest for agent-context store
 
-> **Historical T01 operator notes** (menke-5 / early spike branches).  
-> **Current on `main`:** [Guide flow](guide-flow.md), [DICE projection runbook](dice-projection-runbook.md)
-> (Guide tag `sdlc-spdd-projection-v2`), and [ops console](ops-console.md) Guide tab.  
+> **Historical T01 operator notes** (menke-5 / early spike branches). Paths and
+> tags below describe the **pre-storage-v3** layout (`agent-context/memory/`,
+> `context-index.md`, early projection tags) and are kept as a record — do not
+> follow them on current installs.  
+> **Current on `main`:** [Storage v3](storage-v3.md), [Guide flow](guide-flow.md),
+> [DICE projection runbook](dice-projection-runbook.md) (Guide tag
+> `spdd-projection-v3`), and [ops console](ops-console.md) Guide tab.  
 > **Canonical analysis:** `spdd/analysis/SPIKE-001-guide-rag-context-backend-analysis.md`
 
 Original exploration for [SPIKE-001](../spdd/canvas/SPIKE-001-guide-rag-context-backend.md)

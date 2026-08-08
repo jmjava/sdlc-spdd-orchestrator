@@ -97,7 +97,7 @@ Use the Work ID and `@` file references.
 
     For FEAT-001 operation T01, inspect the current diff. Are any files unrelated to the approved operation?
 
-    For BUG-003, read @agent-context/memory/known-pitfalls.md. What should I check before review?
+    For BUG-003, run `sdlc-engine context retrieve --work-id BUG-003 --kind pitfall`. What should I check before review?
 
 ## Claude-Specific Notes
 

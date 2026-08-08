@@ -35,7 +35,7 @@ In chat: `/sdlc-next` or `/sdlc-spdd-whereami` (same orientation family; `wherea
 **Team coordination** — before claiming work on a shared repo:
 
     ./scripts/sdlc-spdd/sdlc.sh team
-    ./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>    # commit agent-context/work-registry.tsv after
+    ./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>    # appends to spdd/memory/registry.jsonl; commit it after
 
 In chat: `/sdlc-team`, `/sdlc-claim <WORK-ID>`.
 
@@ -55,7 +55,7 @@ If you already have an active pointer, resume or switch:
        ./scripts/sdlc-spdd/sdlc.sh start
        # or: ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase>
 
-4. **Paste the Resume Prompt** from `.sdlc/sessions/current-session.md` (hot path; gitignored). That generated prompt is the source of truth — it directs the agent to load only the files listed under **Resolved Context** in the same brief (phase extensions, Work ID artifacts, area-filtered index rows, and work-scoped progress excerpt). See [Hot sessions and lean memory](hot-sessions-and-lean-memory.md).
+4. **Paste the Resume Prompt** from `.sdlc/sessions/current-session.md` (hot path; gitignored). That generated prompt is the source of truth — it directs the agent to load only the files listed under **Resolved Context** in the same brief (phase extensions, Work ID artifacts) and to fetch lesson bodies on demand from the **Related Past Work** digest. See [Runtime and ledger](runtime-and-ledger.md).
 
 5. After completing a phase step: `./scripts/sdlc-spdd/sdlc.sh advance` (or `/sdlc-advance` in chat). Advance into `code` refuses when canvas readiness is not Ready For Coding (`advance --force` to override). To pause: `/sdlc-shelf` or `sdlc.sh shelf --reason "..."`.
 
@@ -165,7 +165,7 @@ Create new Jira issue draft in the milestone requirement file first:
 
     requirements/milestones/<WORK-ID>.md   →   ## Jira section (Key, Summary, Type, …)
 
-See [requirements/milestones/README.md](../requirements/milestones/README.md) and [jira-runbook.md](jira-runbook.md). On claim, `./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>` auto-links the Key into `agent-context/work-registry.tsv`.
+See [requirements/milestones/README.md](../requirements/milestones/README.md) and [jira-runbook.md](jira-runbook.md). On claim, `./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>` auto-links the Key into the registry event note (`spdd/memory/registry.jsonl`).
 
 Then draft for Jira UI or automation:
 
@@ -185,18 +185,16 @@ Run retro when the feature, bugfix, refactor, or spike is complete.
 
 Prompt: [Phase-specific prompts — Retro](session-prompt-standard.md#phase-specific-standard-prompts) in Session prompt standard.
 
-Retro updates:
-
-- `agent-context/features/<WORK-ID>/retro.md`
-- `agent-context/memory/project-memory.md`
-- `agent-context/memory/known-pitfalls.md`
-- `agent-context/memory/reusable-patterns.md`
+Retro stages `decision` / `pitfall` / `pattern` / `session` lesson records via
+`sdlc.sh capture`; `/sdlc-spdd-accept` then promotes the keepers into the
+committed ledger `spdd/memory/lessons.jsonl` (never hand-edited). See
+[Storage v3 — stage-then-accept](storage-v3.md#stage-then-accept).
 
 ## End-of-Session Handoff
 
 Prompts and script: [End of session](session-prompt-standard.md#end-of-session) in Session prompt standard.
 
-**Preferred capture** — guarded against pointer mismatch (refuses wrong Work ID):
+**Preferred capture** — guarded against pointer mismatch (refuses wrong Work ID). Captures stage quietly in `.sdlc/staged/lessons.jsonl`; no git noise:
 
     ./scripts/sdlc-spdd/sdlc.sh capture --summary "<what changed>" --validation "<tests>" --next "<next command>"
 
@@ -204,6 +202,12 @@ With milestone progress:
 
     ./scripts/sdlc-spdd/sdlc.sh capture --summary "..." --validation "..." \
       --milestone milestone-1.md --roadmap-note "..." --next "/sdlc-spdd-review @spdd/canvas/<WORK-ID>.md"
+
+At the retro/sync gate, promote the staged records into the committed ledger
+(one batched commit per gate):
+
+    /sdlc-spdd-accept
+    # or: ./scripts/sdlc-spdd/sdlc.sh accept --work-id <WORK-ID>
 
 Park work for later:
 
@@ -220,7 +224,7 @@ The handoff should include:
 - Tests run
 - Next recommended command
 
-If you used `claim`, commit `agent-context/work-registry.tsv` so teammates see your status.
+If you used `claim`, commit `spdd/memory/registry.jsonl` so teammates see your status.
 
 ## Common Daily Loops
 
@@ -272,8 +276,10 @@ Script sequence: [Morning or Start-of-Session Check](#morning-or-start-of-sessio
 | Re-read artifacts | `./scripts/sdlc-spdd/sdlc.sh sync` | — |
 | See all Work IDs | `./scripts/sdlc-spdd/sdlc.sh list-work` | — |
 | Team who-is-on-what | `./scripts/sdlc-spdd/sdlc.sh team` | `/sdlc-team` |
-| Claim for team | `./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>` → commit `work-registry.tsv` | `/sdlc-claim <WORK-ID>` |
+| Claim for team | `./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>` → commit `spdd/memory/registry.jsonl` | `/sdlc-claim <WORK-ID>` |
 | Take over claim | `./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID> --force` | `/sdlc-claim <WORK-ID> --force` |
+| Stage a lesson | `./scripts/sdlc-spdd/sdlc.sh capture --summary "..."` | — |
+| Promote staged lessons | `./scripts/sdlc-spdd/sdlc.sh accept --work-id <WORK-ID>` | `/sdlc-spdd-accept` |
 
-Local state (gitignored): `.sdlc/pointer`, `.sdlc/workflows/`. Shared via git: `agent-context/work-registry.tsv`.
+Local state (gitignored): `.sdlc/pointer`, `.sdlc/workflows/`, `.sdlc/staged/`. Shared via git: `spdd/memory/registry.jsonl` + `spdd/memory/lessons.jsonl` (see [Storage v3](storage-v3.md)).
 Non-stale foreign claims block until you coordinate and re-run with `--force`.

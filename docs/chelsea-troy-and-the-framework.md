@@ -10,7 +10,7 @@ LLMs generate plausible language sequences; they are **not** a substitute for en
 
 Subject matter expertise, scoped context, and explicit evaluation still matter — especially as problems grow beyond small, greenfield functions.
 
-## “Lost in the Middle” → index-driven loading
+## “Lost in the Middle” → retrieval-driven loading
 
 Troy cites the [Lost in the Middle](https://arxiv.org/abs/2307.03172) finding: **larger context windows reduce retrieval accuracy**, and facts in the **middle** of a long prompt are easiest to miss.
 
@@ -19,11 +19,11 @@ Troy cites the [Lost in the Middle](https://arxiv.org/abs/2307.03172) finding: *
 | Troy recommendation | SDLC-SPDD mechanism |
 |---------------------|-------------------|
 | Narrow context to the relevant section | Tier 1 grounding (~fixed size) + Tier 2 on-demand only |
-| Do not dump whole directories | `context-index.md`, `domain-index.md`, `session-index.md` — filter by area or keyword |
-| Put critical facts where they are findable | Session brief + Framework Orientation at start; indexes newest-first |
-| Bound growing history | `session-history.md` rotation; immutable per-session entries |
+| Do not dump whole directories | Bounded retrieval: `sdlc-engine context retrieve` by Work ID / area / kind; `spdd_areaLessons` on the Guide graph |
+| Put critical facts where they are findable | Session brief + Framework Orientation + Related Past Work digest at start |
+| Bound growing history | Ledger queried per record; session briefs rotate under gitignored `.sdlc/sessions/` |
 
-See [Bootstrap and index-based loading](context-loading-and-scaling.md#bootstrap-and-index-based-loading).
+See [Bootstrap and retrieval-based loading](context-loading-and-scaling.md#bootstrap-and-index-based-loading).
 
 ## Scoped, cohesive slices → analysis + code areas
 
@@ -34,9 +34,9 @@ Troy observes that LLM help fails when students paste entire codebases; effectiv
 | Troy observation | SDLC-SPDD mechanism |
 |------------------|---------------------|
 | Isolate the relevant module | `/sdlc-spdd-analysis` — domain keywords → scoped file reads |
-| Record scoped areas | `## Code Areas` in analysis artifact; `code-areas.md` registry |
+| Record scoped areas | `## Code Areas` in analysis artifact; `area` labels on ledger records |
 | Reuse scope in later phases | Plan/architect/code load analysis Code Areas, not whole repo |
-| Cross-session reuse | `index-spdd-analysis.sh` → `domain-index.md` + `context-index.md` (Kind: `analysis`) |
+| Cross-session reuse | `index-spdd-analysis.sh` stages an `analysis` ledger record; retrieved later by area/keyword |
 
 Fowler Step 3 (`/spdd-analysis`) and our `/sdlc-spdd-analysis` implement the same idea Troy describes informally.
 
@@ -65,7 +65,7 @@ Scope the problem; compare assumptions to ground truth.
 |-------------------|
 | `/sdlc-spdd-analysis` — strategic scan before design |
 | `/sdlc-spdd-resync-agent-session.sh` — canvas drift checks |
-| Indexes — find prior work by area/keyword without linear history scan |
+| Bounded retrieval — find prior work by area/keyword (`context retrieve`, Guide graph) without linear history scan |
 | Session briefs — explicit Work ID, phase, artifact status |
 
 Investigation is **delivery work**, not overhead before “real” coding.
@@ -81,7 +81,7 @@ Choose among options using criteria for **this** situation; document trade-offs.
 | REASONS **Approach** — strategy and accepted trade-offs recorded in the canvas |
 | [On Code Coverage Tools](https://chelseatroy.com/2023/02/07/on-code-coverage-tools/) — treat metrics as **satisficing sentinels**, not optimizing scores → `quality-gates.md`, harness |
 
-Engineers should record **optimizing vs satisficing** criteria in the canvas or progress log when choosing between options.
+Engineers should record **optimizing vs satisficing** criteria in the canvas or a staged lesson capture when choosing between options.
 
 ### 3. Innovation skills
 
@@ -113,7 +113,7 @@ Troy closes: use AI for a **more rigorous, compassionate, thoughtful** process �
 
 - Versioned REASONS Canvas, analysis docs, reviews, sync logs (Fowler + SPDD)
 - Prompt-first on behavior change; sync after accepted refactors
-- Memory and indexes compound **decisions**, not chat transcripts
+- The lessons ledger and Guide graph compound **decisions**, not chat transcripts
 
 ## What Troy does *not* provide
 
@@ -128,14 +128,14 @@ Troy closes: use AI for a **more rigorous, compassionate, thoughtful** process �
 ```text
 Troy concern                          → Primary framework doc / mechanism
 ─────────────────────────────────────────────────────────────────────────
-Context too large / lost in middle    → context-loading-and-scaling.md, indexes
-Need cohesive scoped slice            → /sdlc-spdd-analysis, code-areas.md
+Context too large / lost in middle    → context-loading-and-scaling.md, retrieval
+Need cohesive scoped slice            → /sdlc-spdd-analysis, analysis Code Areas
 Need clear success criteria           → REASONS Canvas, /sdlc-spdd-api-test
 Investigation undervalued             → analysis phase, session scripts
 Evaluation / trade-offs               → /sdlc-spdd-architect, /sdlc-spdd-review
 Innovation / judgment                 → human retro, prompt-update (not automated)
 Verify don't trust                    → TESTING.md confidence stack, review/sync
-Avoid slop                            → Fowler governed artifacts + capture/index loop
+Avoid slop                            → Fowler governed artifacts + capture/accept loop
 ```
 
 ## Related reading
