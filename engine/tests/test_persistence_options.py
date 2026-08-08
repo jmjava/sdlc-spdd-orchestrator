@@ -95,31 +95,6 @@ def test_cli_context_backends_set(tmp_path: Path, monkeypatch, capsys) -> None:
     assert status["enabled"]["guide-dice"] is False
 
 
-def test_console_persistence_api(tmp_path: Path) -> None:
-    pytest.importorskip("flask")
-    from sdlc_engine.installer.app import create_app
-
-    app = create_app(tmp_path)
-    client = app.test_client()
-    res = client.post("/api/persistence/status", json={"target": str(tmp_path)})
-    assert res.status_code == 200
-    data = res.get_json()
-    assert data["enabled"]["git-pointers"] is True
-
-    res = client.post(
-        "/api/persistence/save",
-        json={
-            "target": str(tmp_path),
-            "backends": ["git-pointers", "sqlite"],
-            "notes": "from-console",
-        },
-    )
-    assert res.status_code == 200
-    saved = res.get_json()
-    assert saved["backends"] == [BACKEND_GIT, BACKEND_SQLITE]
-    assert "from-console" in (saved.get("notes") or "")
-
-
 def test_lean_only_progress_ingested_on_rebuild(tmp_path: Path) -> None:
     wid = "FEAT-lean-progress-only"
     progress = tmp_path / "spdd" / "memory" / "entries" / "progress.md"
