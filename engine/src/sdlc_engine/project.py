@@ -88,8 +88,44 @@ class Project:
         return legacy if legacy.is_file() else hot
 
     def progress_log_path(self, work_id: str) -> Path:
-        """Lean progress ledger (not feature mirror)."""
+        """Lean progress ledger (not feature mirror).
+
+        ``work_id`` is accepted for call-site symmetry; the ledger is shared.
+        Use :meth:`ledger_section_for_work` when reading evidence for one work item.
+        """
         return self.root / "spdd" / "memory" / "entries" / "progress.md"
+
+    @staticmethod
+    def ledger_section_for_work(text: str, work_id: str) -> str:
+        """Extract shared-ledger slices that belong to one Work ID.
+
+        Supports ``## <WORK-ID>`` sections and capture-style
+        ``### <ts> - <WORK-ID> - <phase>`` blocks.
+        """
+        import re
+
+        wid = (work_id or "").strip()
+        if not text or not wid:
+            return ""
+        parts: list[str] = []
+        for block in re.split(r"(?m)^##\s+", text):
+            if not block.strip():
+                continue
+            first = block.splitlines()[0].strip()
+            if (
+                first == wid
+                or first.startswith(f"{wid} ")
+                or first.startswith(f"{wid}—")
+                or first.startswith(f"{wid} -")
+            ):
+                parts.append(block)
+        pattern = re.compile(
+            rf"(?m)^###[^\n]*\b{re.escape(wid)}\b[^\n]*\n(?:.*?)(?=^###\s+|^##\s+|\Z)",
+            re.DOTALL,
+        )
+        for match in pattern.finditer(text):
+            parts.append(match.group(0))
+        return "\n".join(parts)
 
     def ensure_runtime_dirs(self) -> None:
         self.sdlc_dir.mkdir(parents=True, exist_ok=True)

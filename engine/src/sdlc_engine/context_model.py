@@ -133,7 +133,7 @@ def capability_matrix() -> list[dict[str, str]]:
         {"kind": "review", "sources": "spdd/reviews + feature review.md"},
         {"kind": "sync", "sources": "spdd/sync + feature sync-log.md"},
         {"kind": "retro", "sources": "feature retro.md + project-memory"},
-        {"kind": "progress", "sources": "feature progress-log.md"},
+        {"kind": "progress", "sources": "spdd/memory/entries/progress.md (+ legacy feature progress-log)"},
         {"kind": "metric", "sources": "context-index + prompt-optimization-log"},
         {"kind": "session", "sources": ".sdlc/sessions + legacy agent-context/sessions"},
         {"kind": "decision", "sources": "lessons + architecture-decisions"},

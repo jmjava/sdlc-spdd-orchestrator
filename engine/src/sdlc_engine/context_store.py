@@ -17,6 +17,13 @@ from typing import Any
 
 from .context_model import CONTEXT_KINDS
 from .db import LocalIndex
+from .persistence import (
+    BACKEND_GIT,
+    BACKEND_GUIDE,
+    BACKEND_SQLITE,
+    enabled as backend_enabled,
+    load_config as load_persistence_config,
+)
 from .pointers import PointerLedger, PointerRecord
 from .project import Project
 
@@ -46,10 +53,14 @@ class PersistResult:
     sqlite: dict[str, Any] = field(default_factory=dict)
     guide: dict[str, Any] = field(default_factory=dict)
     errors: list[str] = field(default_factory=list)
+    partial: bool = False
+    backends: list[str] = field(default_factory=list)
 
     def as_dict(self) -> dict[str, Any]:
         return {
             "ok": self.ok,
+            "partial": self.partial,
+            "backends": list(self.backends),
             "git": self.git,
             "sqlite": self.sqlite,
             "guide": self.guide,
@@ -72,10 +83,52 @@ class ContextStore:
         self.pointers = PointerLedger(self.project)
         env_url = os.environ.get("GUIDE_BASE_URL", "").strip()
         port = os.environ.get("GUIDE_PORT", "21337").strip() or "21337"
-        self.guide_base_url = (guide_base_url or env_url or f"http://localhost:{port}").rstrip(
-            "/"
-        )
+        persist_cfg = load_persistence_config(self.project)
+        cfg_url = str(persist_cfg.get("guide_base_url") or "").strip()
+        self.guide_base_url = (
+            guide_base_url or env_url or cfg_url or f"http://localhost:{port}"
+        ).rstrip("/")
         self.guide_timeout = guide_timeout
+
+    def _backends(self) -> list[str]:
+        return list(load_persistence_config(self.project).get("backends") or [])
+
+    def _finalize_persist(self, result: PersistResult) -> PersistResult:
+        """ok = required git path succeeded; partial = soft-fail secondaries."""
+        result.backends = self._backends()
+        result.ok = bool(result.git.get("ok"))
+        result.partial = bool(result.errors)
+        return result
+
+    def _fanout_sqlite_guide(
+        self,
+        result: PersistResult,
+        *,
+        want_sqlite: bool,
+        want_guide: bool,
+        sqlite_fn,
+    ) -> PersistResult:
+        """Shared soft-fail fan-out for SQLite + Guide after git succeeded."""
+        if want_sqlite:
+            try:
+                result.sqlite = {"ok": True, **(sqlite_fn() or {})}
+            except Exception as exc:  # noqa: BLE001
+                result.sqlite = {"ok": False, "error": str(exc)}
+                result.errors.append(f"sqlite: {exc}")
+        else:
+            result.sqlite = {"ok": False, "skipped": True}
+
+        if want_guide:
+            try:
+                guide_meta = self.project_to_guide()
+                result.guide = {"ok": True, **guide_meta}
+            except Exception as exc:  # noqa: BLE001
+                result.guide = {"ok": False, "error": str(exc)}
+                result.errors.append(f"guide: {exc}")
+        else:
+            result.guide = {"ok": False, "skipped": True}
+
+        return self._finalize_persist(result)
 
     # --- persist ---
 
@@ -104,8 +157,10 @@ class ContextStore:
         result = PersistResult(ok=True)
         lid = _lesson_id(kind_n, wid, area, source)
         ts = _utc_now()
+        want_sqlite = backend_enabled(self.project, BACKEND_SQLITE)
+        want_guide = project_guide and backend_enabled(self.project, BACKEND_GUIDE)
 
-        # Path 1: lean git
+        # Path 1: lean git (always required; git-pointers cannot be disabled)
         try:
             git_meta = self._persist_lesson_git(
                 kind=kind_n,
@@ -122,10 +177,9 @@ class ContextStore:
             result.ok = False
             result.git = {"ok": False, "error": str(exc)}
             result.errors.append(f"git: {exc}")
-            return result
+            return self._finalize_persist(result)
 
-        # Path 2: SQLite relational
-        try:
+        def _sqlite() -> dict[str, Any]:
             self.index.upsert_lesson(
                 lesson_id=lid,
                 kind=kind_n,
@@ -144,8 +198,7 @@ class ContextStore:
                 ts=ts,
             )
             graph = self.index.graph_for_work(wid)
-            result.sqlite = {
-                "ok": True,
+            return {
                 "lesson_id": lid,
                 "lessons_for_work": len(graph.get("lessons") or []),
                 "requirements": len(graph.get("requirements") or []),
@@ -154,27 +207,13 @@ class ContextStore:
                 "edges": len(graph.get("edges") or []),
                 "schema": "4",
             }
-        except Exception as exc:  # noqa: BLE001
-            result.sqlite = {"ok": False, "error": str(exc)}
-            result.errors.append(f"sqlite: {exc}")
 
-        # Path 3: Guide DICE projection
-        if project_guide:
-            try:
-                guide_meta = self.project_to_guide()
-                result.guide = {"ok": True, **guide_meta}
-            except Exception as exc:  # noqa: BLE001
-                result.guide = {"ok": False, "error": str(exc)}
-                result.errors.append(f"guide: {exc}")
-        else:
-            result.guide = {"ok": False, "skipped": True}
-
-        if result.errors:
-            # git succeeded; partial fan-out still reports ok=False when secondaries fail
-            result.ok = result.sqlite.get("ok") is True and (
-                result.guide.get("ok") is True or result.guide.get("skipped") is True
-            )
-        return result
+        return self._fanout_sqlite_guide(
+            result,
+            want_sqlite=want_sqlite,
+            want_guide=want_guide,
+            sqlite_fn=_sqlite,
+        )
 
     def persist_context_entry(
         self,
@@ -210,6 +249,10 @@ class ContextStore:
 
         result = PersistResult(ok=True)
         ts = _utc_now()
+        want_sqlite = backend_enabled(self.project, BACKEND_SQLITE)
+        want_guide = project_guide and backend_enabled(self.project, BACKEND_GUIDE)
+
+        # Path 1: lean git (always required; git-pointers cannot be disabled)
         try:
             git_meta = self._persist_entry_git(
                 kind=kind_n,
@@ -225,9 +268,9 @@ class ContextStore:
             result.ok = False
             result.git = {"ok": False, "error": str(exc)}
             result.errors.append(f"git: {exc}")
-            return result
+            return self._finalize_persist(result)
 
-        try:
+        def _sqlite() -> dict[str, Any]:
             eid = self.index.upsert_context_entry(
                 kind=kind_n,
                 work_id=wid,
@@ -249,8 +292,7 @@ class ContextStore:
             )
             graph = self.index.graph_for_work(wid)
             cov = self.index.capability_coverage()
-            result.sqlite = {
-                "ok": True,
+            return {
                 "entry_id": eid,
                 "context_entries": len(graph.get("context_entries") or []),
                 "requirements": len(graph.get("requirements") or []),
@@ -258,25 +300,13 @@ class ContextStore:
                 "coverage_complete": cov.get("complete"),
                 "schema": "4",
             }
-        except Exception as exc:  # noqa: BLE001
-            result.sqlite = {"ok": False, "error": str(exc)}
-            result.errors.append(f"sqlite: {exc}")
 
-        if project_guide:
-            try:
-                guide_meta = self.project_to_guide()
-                result.guide = {"ok": True, **guide_meta}
-            except Exception as exc:  # noqa: BLE001
-                result.guide = {"ok": False, "error": str(exc)}
-                result.errors.append(f"guide: {exc}")
-        else:
-            result.guide = {"ok": False, "skipped": True}
-
-        if result.errors:
-            result.ok = result.sqlite.get("ok") is True and (
-                result.guide.get("ok") is True or result.guide.get("skipped") is True
-            )
-        return result
+        return self._fanout_sqlite_guide(
+            result,
+            want_sqlite=want_sqlite,
+            want_guide=want_guide,
+            sqlite_fn=_sqlite,
+        )
 
     def _persist_entry_git(
         self,
@@ -465,9 +495,12 @@ class ContextStore:
             return json.loads(resp.read().decode("utf-8"))
 
     def retrieve(self, *, work_id: str = "", area: str = "") -> dict[str, Any]:
+        want_sqlite = backend_enabled(self.project, BACKEND_SQLITE)
+        want_guide = backend_enabled(self.project, BACKEND_GUIDE)
         out: dict[str, Any] = {
             "work_id": work_id,
             "area": area,
+            "backends": self._backends(),
             "git_pointers": [],
             "sqlite_lessons": [],
             "sqlite_graph": None,
@@ -481,18 +514,24 @@ class ContextStore:
             ]
         except Exception as exc:  # noqa: BLE001
             out["errors"].append(f"git: {exc}")
-        try:
-            if area:
-                out["sqlite_lessons"] = self.index.lessons_for_area(area)
-            elif work_id:
-                out["sqlite_lessons"] = self.index.lessons_for_work(work_id)
-            if work_id:
-                out["sqlite_graph"] = self.index.graph_for_work(work_id)
-        except Exception as exc:  # noqa: BLE001
-            out["errors"].append(f"sqlite: {exc}")
-        if work_id:
+        if want_sqlite:
+            try:
+                if area:
+                    out["sqlite_lessons"] = self.index.lessons_for_area(area)
+                elif work_id:
+                    out["sqlite_lessons"] = self.index.lessons_for_work(work_id)
+                if work_id:
+                    out["sqlite_graph"] = self.index.graph_for_work(work_id)
+            except Exception as exc:  # noqa: BLE001
+                out["errors"].append(f"sqlite: {exc}")
+        else:
+            out["sqlite_lessons"] = []
+            out["sqlite_graph"] = {"skipped": True}
+        if work_id and want_guide:
             try:
                 out["guide"] = self.guide_work(work_id)
             except Exception as exc:  # noqa: BLE001
                 out["errors"].append(f"guide: {exc}")
+        elif work_id:
+            out["guide"] = {"ok": False, "skipped": True}
         return out

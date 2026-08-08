@@ -183,8 +183,8 @@ T="${WORK}/brief"
 work_id="FEAT-006-brief"
 setup_feature "${T}" "${work_id}"
 "${START}" --target "${T}" --work-id "${work_id}" --phase plan >/dev/null
-if grep -q '## Workflow State' "${T}/agent-context/sessions/current-session.md" \
-  && grep -q 'Assistant command' "${T}/agent-context/sessions/current-session.md"; then
+if grep -q '## Workflow State' "${T}/.sdlc/sessions/current-session.md" \
+  && grep -q 'Assistant command' "${T}/.sdlc/sessions/current-session.md"; then
   ok "session brief embeds workflow state"
 else
   bad "session brief missing workflow state"
@@ -485,7 +485,7 @@ cat > "${T}/spdd/canvas/${work_id}.md" <<'EOF'
 EOF
 # Point SDLC_ROOT at T so workflow readiness lib resolves; start uses TARGET workflow copy
 out="$("${START}" --target "${T}" --work-id "${work_id}" --phase code 2>&1)"
-brief="${T}/agent-context/sessions/current-session.md"
+brief="${T}/.sdlc/sessions/current-session.md"
 if grep -q 'sdlc-spdd-architect' "${brief}" && grep -q 'Readiness | needs-analysis' "${brief}"; then
   ok "session brief readiness-gates code recommendation"
 else
@@ -732,7 +732,7 @@ else
   bad "next should ask when Jira missing"
 fi
 "${START}" --target "${T}" --work-id "${work_id}" --phase plan >/dev/null
-current="${T}/agent-context/sessions/current-session.md"
+current="${T}/.sdlc/sessions/current-session.md"
 if grep -q '^- Jira: missing$' "${current}" \
   && grep -A20 '## Resume Prompt' "${current}" | grep -q 'Tracker link: Jira key is missing'; then
   ok "session brief Resume Prompt asks when Jira missing"
@@ -759,7 +759,7 @@ else
   bad "next should ask when Jira draft"
 fi
 "${START}" --target "${T}" --work-id "${work_id}" --phase plan >/dev/null
-current="${T}/agent-context/sessions/current-session.md"
+current="${T}/.sdlc/sessions/current-session.md"
 if grep -A20 '## Resume Prompt' "${current}" | grep -q 'Jira draft exists'; then
   ok "session brief asks when Jira draft"
 else
@@ -785,7 +785,7 @@ else
   bad "next should not ask when Jira key present"
 fi
 "${START}" --target "${T}" --work-id "${work_id}" --phase plan >/dev/null
-current="${T}/agent-context/sessions/current-session.md"
+current="${T}/.sdlc/sessions/current-session.md"
 if grep -q '^- Jira: ORCH-99$' "${current}" \
   && grep -A20 '## Resume Prompt' "${current}" | grep -q 'Jira: ORCH-99' \
   && ! grep -A20 '## Resume Prompt' "${current}" | grep -q 'Ask the user for the issue key'; then
@@ -805,7 +805,7 @@ else
   bad "SDLC_SESSION_ASK_JIRA=0 should suppress ask"
 fi
 SDLC_SESSION_ASK_JIRA=0 "${START}" --target "${T}" --work-id "${work_id}" --phase plan >/dev/null
-current="${T}/agent-context/sessions/current-session.md"
+current="${T}/.sdlc/sessions/current-session.md"
 if ! grep -A20 '## Resume Prompt' "${current}" | grep -q 'Ask the user for the issue key'; then
   ok "start respects SDLC_SESSION_ASK_JIRA=0"
 else

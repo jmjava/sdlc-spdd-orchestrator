@@ -93,6 +93,13 @@ esac
 TARGET="$(sdlc_resolve_target "${TARGET}")"
 FEATURE_DIR="${TARGET}/agent-context/features/${WORK_ID}"
 CANVAS="${TARGET}/spdd/canvas/${WORK_ID}.md"
+MILESTONE_REQ="${TARGET}/requirements/milestones/${WORK_ID}.md"
+SPDD_REVIEW="${TARGET}/spdd/reviews/${WORK_ID}-review.md"
+SPDD_SYNC="${TARGET}/spdd/sync/${WORK_ID}-sync.md"
+LEAN_RETRO="${TARGET}/spdd/memory/entries/retro.md"
+# Hot path (#86): lean progress.md. Legacy feature progress-log.md is fallback.
+LEAN_PROGRESS="${TARGET}/spdd/memory/entries/progress.md"
+FEATURE_PROGRESS="${FEATURE_DIR}/progress-log.md"
 
 failures=0
 
@@ -120,6 +127,56 @@ check_contains_regex() {
     echo "  ok  ${label}: ${path}"
   else
     echo "  FAIL ${label}: ${path} (pattern not found: ${regex})" >&2
+    failures=$((failures + 1))
+  fi
+}
+
+check_progress_exists() {
+  if [[ -f "${LEAN_PROGRESS}" ]]; then
+    echo "  ok  progress log: ${LEAN_PROGRESS}"
+  elif [[ -f "${FEATURE_PROGRESS}" ]]; then
+    echo "  ok  progress log (legacy): ${FEATURE_PROGRESS}"
+  else
+    echo "  FAIL progress log: ${LEAN_PROGRESS} (or legacy ${FEATURE_PROGRESS})" >&2
+    failures=$((failures + 1))
+  fi
+}
+
+check_progress_contains_regex() {
+  local label="$1"
+  local regex="$2"
+  local path
+  for path in "${LEAN_PROGRESS}" "${FEATURE_PROGRESS}"; do
+    if [[ -f "${path}" ]] && grep -Eq "${regex}" "${path}"; then
+      echo "  ok  ${label}: ${path}"
+      return
+    fi
+  done
+  echo "  FAIL ${label}: ${LEAN_PROGRESS} (pattern not found: ${regex})" >&2
+  failures=$((failures + 1))
+}
+
+check_requirement_exists() {
+  if [[ -f "${MILESTONE_REQ}" ]]; then
+    echo "  ok  requirement: ${MILESTONE_REQ}"
+  elif [[ -f "${FEATURE_DIR}/requirement.md" ]]; then
+    echo "  ok  requirement (legacy): ${FEATURE_DIR}/requirement.md"
+  else
+    echo "  FAIL requirement: ${MILESTONE_REQ} (or legacy ${FEATURE_DIR}/requirement.md)" >&2
+    failures=$((failures + 1))
+  fi
+}
+
+check_either_exists() {
+  local label="$1"
+  local primary="$2"
+  local legacy="$3"
+  if [[ -e "${primary}" ]]; then
+    echo "  ok  ${label}: ${primary}"
+  elif [[ -e "${legacy}" ]]; then
+    echo "  ok  ${label} (legacy): ${legacy}"
+  else
+    echo "  FAIL ${label}: ${primary} (or legacy ${legacy})" >&2
     failures=$((failures + 1))
   fi
 }
@@ -155,9 +212,9 @@ fi
 
 if [[ "${STEP}" == "plan" || "${STEP}" == "architect" || "${STEP}" == "code" || "${STEP}" == "review" || "${STEP}" == "prompt-update" || "${STEP}" == "sync" || "${STEP}" == "retro" || "${STEP}" == "capture" ]]; then
   check_exists "canvas" "${CANVAS}"
-  check_exists "feature dir" "${FEATURE_DIR}"
-  check_exists "feature requirement" "${FEATURE_DIR}/requirement.md"
-  check_exists "progress log" "${FEATURE_DIR}/progress-log.md"
+  # Stay-set requirement is canonical (#86); feature mirrors are optional legacy.
+  check_requirement_exists
+  check_progress_exists
 fi
 
 if [[ "${STEP}" == "plan" || "${STEP}" == "architect" || "${STEP}" == "prompt-update" ]]; then
@@ -170,7 +227,8 @@ if [[ "${STEP}" == "architect" ]]; then
 fi
 
 if [[ "${STEP}" == "code" ]]; then
-  check_contains_regex "progress log operation evidence" "${FEATURE_DIR}/progress-log.md" "${OPERATION}|[Ii]mplement|[Cc]omplete|[Ff]iles changed"
+  check_progress_contains_regex "progress log operation evidence" \
+    "${OPERATION}|[Ii]mplement|[Cc]omplete|[Ff]iles changed"
   # Soft gate: when readiness is declared, it should be Ready For Coding.
   if grep -qE '^-[[:space:]]*[Rr]eadiness:[[:space:]]*|^readiness:[[:space:]]*' "${CANVAS}" 2>/dev/null; then
     check_contains_regex "code readiness Ready For Coding" "${CANVAS}" "Ready For Coding|ready-for-coding"
@@ -183,28 +241,39 @@ if [[ "${STEP}" == "prompt-update" ]]; then
 fi
 
 if [[ "${STEP}" == "review" ]]; then
-  check_exists "feature review" "${FEATURE_DIR}/review.md"
-  check_exists "spdd review" "${TARGET}/spdd/reviews/${WORK_ID}-review.md"
-  check_contains_regex "review status marker" "${FEATURE_DIR}/review.md" "Approved|Approved With Notes|Changes Requested|Blocked"
+  check_either_exists "review artifact" "${SPDD_REVIEW}" "${FEATURE_DIR}/review.md"
+  local_review="${SPDD_REVIEW}"
+  [[ -f "${local_review}" ]] || local_review="${FEATURE_DIR}/review.md"
+  if [[ -f "${local_review}" ]]; then
+    check_contains_regex "review status marker" "${local_review}" \
+      "Approved|Approved With Notes|Changes Requested|Blocked"
+  fi
 fi
 
 if [[ "${STEP}" == "sync" ]]; then
-  check_exists "feature sync log" "${FEATURE_DIR}/sync-log.md"
-  check_exists "spdd sync report" "${TARGET}/spdd/sync/${WORK_ID}-sync.md"
+  check_either_exists "sync report" "${SPDD_SYNC}" "${FEATURE_DIR}/sync-log.md"
 fi
 
 if [[ "${STEP}" == "retro" ]]; then
-  check_exists "feature retro" "${FEATURE_DIR}/retro.md"
-  check_exists "known pitfalls memory" "${TARGET}/agent-context/memory/known-pitfalls.md"
-  check_exists "reusable patterns memory" "${TARGET}/agent-context/memory/reusable-patterns.md"
+  if [[ -f "${LEAN_RETRO}" ]] || [[ -f "${FEATURE_DIR}/retro.md" ]]; then
+    check_either_exists "retro artifact" "${LEAN_RETRO}" "${FEATURE_DIR}/retro.md"
+  else
+    # Lessons stay-set is enough when no dedicated retro file exists yet.
+    check_either_exists "pitfalls memory" \
+      "${TARGET}/spdd/memory/lessons/pitfalls.md" \
+      "${TARGET}/agent-context/memory/known-pitfalls.md"
+  fi
+  check_either_exists "patterns memory" \
+    "${TARGET}/spdd/memory/lessons/patterns.md" \
+    "${TARGET}/agent-context/memory/reusable-patterns.md"
 fi
 
 if [[ "${STEP}" == "capture" ]]; then
   check_exists "session history memory" "${TARGET}/agent-context/memory/session-history.md"
   check_any_session_note_contains_work_id "${TARGET}/session-notes"
-  # capture-session-memory.sh always appends a "### <ts> - <WORK-ID> - <phase>"
-  # header to the progress log, so the Work ID is a deterministic anchor here.
-  check_contains_regex "progress log mention work-id" "${FEATURE_DIR}/progress-log.md" "${WORK_ID}"
+  # capture-session-memory.sh appends "### <ts> - <WORK-ID> - <phase>" to lean
+  # spdd/memory/entries/progress.md (#86); legacy feature progress-log is fallback.
+  check_progress_contains_regex "progress log mention work-id" "${WORK_ID}"
 
   if [[ -n "${MILESTONE}" ]]; then
     check_contains_regex "milestone mention work-id" "${TARGET}/${MILESTONE}" "${WORK_ID}"

@@ -24,7 +24,10 @@ else
 fi
 
 # plan — ensure feature workspace + canvas sections exist (seed canvas already has O/S)
+LEAN_PROGRESS="${ROOT}/spdd/memory/entries/progress.md"
+mkdir -p "$(dirname "${LEAN_PROGRESS}")"
 [[ -f "${FEATURE}/requirement.md" ]] || cp "${ROOT}/requirements/milestones/${WORK_ID}.md" "${FEATURE}/requirement.md"
+[[ -f "${LEAN_PROGRESS}" ]] || printf '# Progress\n\n' >"${LEAN_PROGRESS}"
 [[ -f "${FEATURE}/progress-log.md" ]] || printf '# Progress\n\n' >"${FEATURE}/progress-log.md"
 if "${VERIFY}" --target "${ROOT}" --work-id "${WORK_ID}" --step plan >/dev/null; then
   ok "effects: plan"
@@ -48,7 +51,8 @@ fi
 printf '# Analysis\n\nScope lock for %s\n' "${WORK_ID}" >"${ROOT}/spdd/analysis/${WORK_ID}-analysis.md"
 [[ -f "${ROOT}/spdd/analysis/${WORK_ID}-analysis.md" ]] && ok "effects: analysis artifact" || bad "effects: analysis artifact"
 
-# code
+# code — write operation evidence to lean progress (#86); keep legacy mirror for archive compat
+printf '\n### T01 - implement\n- Status: Complete\nImplemented greet helper.\nFiles changed: src/hello.py\n' >>"${LEAN_PROGRESS}"
 printf '\n### T01 - implement\n- Status: Complete\nImplemented greet helper.\nFiles changed: src/hello.py\n' >>"${FEATURE}/progress-log.md"
 if "${VERIFY}" --target "${ROOT}" --work-id "${WORK_ID}" --step code --operation T01 >/dev/null; then
   ok "effects: code"

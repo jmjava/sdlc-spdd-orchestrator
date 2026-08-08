@@ -739,7 +739,90 @@ class LocalIndex:
                 stats.context_entries += 1
                 stats.edges += 1
 
-        # 2) Legacy feature mirrors
+        # 2) Lean stay-set entry ledgers (canonical after #86)
+        entries_dir = root / "spdd" / "memory" / "entries"
+        if entries_dir.is_dir():
+            for path in sorted(entries_dir.glob("*.md")):
+                if not path.is_file():
+                    continue
+                kind = path.stem.strip().lower()
+                if kind not in cm.CONTEXT_KINDS:
+                    continue
+                try:
+                    text = path.read_text(encoding="utf-8")
+                except OSError:
+                    continue
+                sectioned = False
+                wid_re = (
+                    r"((?:FEAT|BUG|SPIKE|REF|DOC|TEST|CHORE|LOCAL)-[A-Za-z0-9][\w.-]*)"
+                )
+                for block in re.split(r"(?m)^##\s+", text):
+                    if not block.strip():
+                        continue
+                    first = block.splitlines()[0].strip()
+                    m = re.match(rf"^{wid_re}", first)
+                    if not m:
+                        continue
+                    sectioned = True
+                    wid = m.group(1)
+                    area_m = re.search(r"(?m)^-\s*Area:\s*(.+)$", block)
+                    phase_m = re.search(r"(?m)^-\s*Phase:\s*(.+)$", block)
+                    self._upsert_entry_row(
+                        conn,
+                        kind=kind,
+                        work_id=wid,
+                        area=(area_m.group(1).strip() if area_m else ""),
+                        phase=(phase_m.group(1).strip() if phase_m else ""),
+                        path=self._rel(path),
+                        title=first[:120],
+                        body=block[:4000],
+                        source="stay-set-entry",
+                    )
+                    stats.context_entries += 1
+                # Capture-session format: ### <ts> - <WORK-ID> - <phase>
+                for m in re.finditer(
+                    rf"(?m)^###\s+[^\n]*\b{wid_re}\b[^\n]*\n"
+                    r"(?:.*?)(?=^###\s+|^##\s+|\Z)",
+                    text,
+                    re.DOTALL,
+                ):
+                    sectioned = True
+                    wid = m.group(1)
+                    block = m.group(0)
+                    heading = block.splitlines()[0].strip()
+                    phase = ""
+                    pm = re.search(
+                        rf"\b{re.escape(wid)}\b\s*-\s*([A-Za-z0-9_-]+)\s*$",
+                        heading,
+                    )
+                    if pm:
+                        phase = pm.group(1)
+                    area_m = re.search(r"(?m)^-\s*(?:Code areas|Area):\s*(.+)$", block)
+                    self._upsert_entry_row(
+                        conn,
+                        kind=kind,
+                        work_id=wid,
+                        area=(area_m.group(1).strip() if area_m else ""),
+                        phase=phase,
+                        path=self._rel(path),
+                        title=heading[:120],
+                        body=block[:4000],
+                        source="stay-set-entry",
+                    )
+                    stats.context_entries += 1
+                if not sectioned:
+                    self._upsert_entry_row(
+                        conn,
+                        kind=kind,
+                        work_id="_entries",
+                        path=self._rel(path),
+                        title=path.stem,
+                        body=text[:4000],
+                        source="stay-set-entry",
+                    )
+                    stats.context_entries += 1
+
+        # 3) Legacy feature mirrors (transitional)
         feat_root = root / "agent-context" / "features"
         if feat_root.is_dir():
             for work_dir in sorted(p for p in feat_root.iterdir() if p.is_dir()):
@@ -764,7 +847,7 @@ class LocalIndex:
                     )
                     stats.context_entries += 1
 
-        # 3) context-index.md (lean + legacy)
+        # 4) context-index.md (lean + legacy)
         for index_rel in (
             Path("spdd/memory/context-index.md"),
             Path("agent-context/memory/context-index.md"),

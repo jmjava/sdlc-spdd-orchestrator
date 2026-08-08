@@ -60,7 +60,7 @@ Rules:
 | #86 Feature mirrors | `spikes/SPIKE-086-feature-mirrors.md` | no new mirror writes; archive via upgrade |
 | #88 SQLite graph | `spikes/SPIKE-088-sqlite-v2.md` | schema v4 + coverage tests |
 | #89 Guide contract | `spikes/SPIKE-089-guide-contract.md` | orchestrator dual-write; Guide dual-read in `jmjava/guide` |
-| #90 Orchestration | `spikes/SPIKE-090-orchestration.md` | ContextStore lesson + entry fan-out |
+| #90 Orchestration | `spikes/SPIKE-090-orchestration.md` | ContextStore fan-out + `context backends` + console Persistence tab |
 | #91 Quiet mode | `spikes/SPIKE-091-quiet-mode.md` | `SDLC_QUIET` / `--quiet` / harness file |
 | #80 Upgrade/re-init | (issue) | `sdlc-engine agent-context upgrade` → `.sdlc/legacy-export/` |
 

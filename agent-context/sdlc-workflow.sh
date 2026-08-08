@@ -233,15 +233,26 @@ _wf_work_readiness() {
   fi
 }
 
+_wf_is_quiet() {
+  local q
+  q="$(printf '%s' "${SDLC_QUIET:-}" | tr '[:upper:]' '[:lower:]')"
+  [[ "${q}" == "1" || "${q}" == "true" || "${q}" == "yes" || "${q}" == "on" ]] \
+    || [[ -f "${SDLC_ROOT:-.}/agent-context/harness/quiet-mode.md" ]]
+}
+
+_wf_quiet_blurb() {
+  # Keep in sync with sdlc_engine.quiet.quiet_resume_blurb (default, non-guide).
+  echo "Quiet mode: load resolved context and continue the product task. Skip recommended /sdlc-spdd-* T## dogfood commands unless explicitly requested."
+}
+
 sdlc_workflow_recommended_command() {
   local phase="${1:-init}"
   local work_id="${2:-}"
   local operation="${3:-}"
   local readiness=""
   # Quiet / product-test mode (#91): no T## dogfood gravity.
-  if [[ "${SDLC_QUIET:-}" == "1" || "${SDLC_QUIET:-}" == "true" || "${SDLC_QUIET:-}" == "yes" ]] \
-    || [[ -f "${SDLC_ROOT:-.}/agent-context/harness/quiet-mode.md" ]]; then
-    echo "Quiet mode: retrieve context (SQLite/Guide/context store); no /sdlc-spdd-* T## recommendation."
+  if _wf_is_quiet; then
+    _wf_quiet_blurb
     return 0
   fi
   if [[ -z "${operation}" && -n "${work_id}" ]]; then
@@ -467,6 +478,16 @@ sdlc_workflow_next() {
     op_title="$(_wf_operation_title "${work_id}" "${operation}")"
   fi
 
+  # Match Python WorkflowEngine.next_text quiet contract (#91).
+  if _wf_is_quiet; then
+    echo "== SDLC: what to do now (quiet) =="
+    echo "Work ID: ${work_id}"
+    echo "Phase: ${phase}"
+    echo
+    _wf_quiet_blurb
+    return 0
+  fi
+
   echo "== SDLC: what to do now =="
   echo "Work ID: ${work_id}"
   echo "Phase: ${phase} ($(( $(_wf_phase_index "${phase}") + 1 ))/${#SDLC_PHASE_ORDER[@]})"
@@ -600,6 +621,11 @@ sdlc_workflow_status_json() {
     printf '"operation":"%s",' "$(_wf_json_escape "${operation}")"
     printf '"operation_title":"%s",' "$(_wf_json_escape "${op_title}")"
     printf '"readiness":"%s",' "$(_wf_json_escape "$(_wf_work_readiness "${work_id}")")"
+    if _wf_is_quiet; then
+      printf '"quiet":true,'
+    else
+      printf '"quiet":false,'
+    fi
     printf '"recommended_command":"%s",' "$(_wf_json_escape "$(sdlc_workflow_recommended_command "${phase}" "${work_id}" "${operation}")")"
     printf '"shell_start":"%s",' "$(_wf_json_escape "$(sdlc_workflow_shell_start "${work_id}" "${phase}")")"
     printf '"shell_capture":"%s",' "$(_wf_json_escape "$(sdlc_workflow_shell_capture "${work_id}" "${phase}")")"
@@ -685,11 +711,47 @@ _wf_requirement_path() {
   return 0
 }
 
+# Extract shared lean-ledger slices for one Work ID (## WID sections + ### … WID … blocks).
+_wf_ledger_section_for_work() {
+  local file="$1"
+  local work_id="$2"
+  [[ -f "${file}" && -n "${work_id}" ]] || return 0
+  awk -v wid="${work_id}" '
+    BEGIN { in_h2 = 0; in_h3 = 0 }
+    /^## / {
+      rest = $0
+      sub(/^##[[:space:]]+/, "", rest)
+      in_h2 = (rest == wid || index(rest, wid " ") == 1 || index(rest, wid " -") == 1)
+      in_h3 = 0
+      if (in_h2) print
+      next
+    }
+    /^### / {
+      in_h3 = (index($0, wid) > 0)
+      if (in_h3) print
+      next
+    }
+    in_h2 || in_h3 { print }
+  ' "${file}"
+}
+
+_wf_progress_evidence_for_work() {
+  local root="$1"
+  local work_id="$2"
+  local lean="${root}/spdd/memory/entries/progress.md"
+  local legacy="${root}/agent-context/features/${work_id}/progress-log.md"
+  if [[ -f "${lean}" ]]; then
+    _wf_ledger_section_for_work "${lean}" "${work_id}"
+  elif [[ -f "${legacy}" ]]; then
+    cat "${legacy}"
+  fi
+}
+
 _wf_infer_phase_from_artifacts() {
   local work_id="$1"
   local root="${SDLC_ROOT}"
   local inferred="init"
-  local req feature_req analysis canvas review retro sync_log progress
+  local req feature_req analysis canvas review retro sync_log progress_evidence
 
   feature_req="${root}/agent-context/features/${work_id}/requirement.md"
   req="$(_wf_requirement_path "${work_id}")"
@@ -697,8 +759,9 @@ _wf_infer_phase_from_artifacts() {
   canvas="${root}/spdd/canvas/${work_id}.md"
   review="${root}/spdd/reviews/${work_id}-review.md"
   retro="${root}/agent-context/features/${work_id}/retro.md"
+  lean_retro="${root}/spdd/memory/entries/retro.md"
   sync_log="${root}/spdd/sync/${work_id}-sync.md"
-  progress="${root}/agent-context/features/${work_id}/progress-log.md"
+  progress_evidence="$(_wf_progress_evidence_for_work "${root}" "${work_id}")"
 
   if [[ -n "${req}" || -f "${feature_req}" ]]; then
     inferred="analysis"
@@ -712,20 +775,24 @@ _wf_infer_phase_from_artifacts() {
       inferred="code"
     fi
   fi
-  if [[ -f "${progress}" ]] && grep -Eqi '(T[0-9]{2}.*complete|implemented|merged)' "${progress}" 2>/dev/null; then
+  if [[ -n "${progress_evidence}" ]] && grep -Eqi '(T[0-9]{2}.*complete|implemented|merged)' <<<"${progress_evidence}" 2>/dev/null; then
     inferred="code"
   fi
   if [[ -f "${review}" ]]; then
     inferred="review"
   fi
-  if [[ -f "${retro}" ]]; then
+  if [[ -f "${retro}" ]] || { [[ -f "${lean_retro}" ]] && [[ -n "$(_wf_ledger_section_for_work "${lean_retro}" "${work_id}")" ]]; }; then
     inferred="retro"
   fi
   if [[ -f "${sync_log}" ]]; then
     inferred="sync"
   fi
 
-  local session_file="${root}/agent-context/sessions/current-session.md"
+  # Prefer hot .sdlc/sessions (#85); legacy agent-context/sessions is fallback.
+  local session_file="${root}/.sdlc/sessions/current-session.md"
+  if [[ ! -f "${session_file}" ]]; then
+    session_file="${root}/agent-context/sessions/current-session.md"
+  fi
   if [[ -f "${session_file}" ]] && grep -Fq "${work_id}" "${session_file}"; then
     local session_phase
     session_phase="$(grep -m1 '^- Phase:' "${session_file}" 2>/dev/null | sed 's/^- Phase:[[:space:]]*//' || true)"
@@ -746,7 +813,7 @@ _wf_infer_phase_from_artifacts() {
 _wf_infer_gates_from_artifacts() {
   local work_id="$1"
   local root="${SDLC_ROOT}"
-  local req feature_req analysis canvas review retro sync_log progress
+  local req feature_req analysis canvas review retro sync_log progress_evidence
   local readiness=""
 
   feature_req="${root}/agent-context/features/${work_id}/requirement.md"
@@ -755,8 +822,9 @@ _wf_infer_gates_from_artifacts() {
   canvas="${root}/spdd/canvas/${work_id}.md"
   review="${root}/spdd/reviews/${work_id}-review.md"
   retro="${root}/agent-context/features/${work_id}/retro.md"
+  lean_retro="${root}/spdd/memory/entries/retro.md"
   sync_log="${root}/spdd/sync/${work_id}-sync.md"
-  progress="${root}/agent-context/features/${work_id}/progress-log.md"
+  progress_evidence="$(_wf_progress_evidence_for_work "${root}" "${work_id}")"
 
   if [[ -n "${req}" || -f "${feature_req}" ]]; then
     echo "requirement_documented=passed"
@@ -783,7 +851,7 @@ _wf_infer_gates_from_artifacts() {
   if [[ -f "${canvas}" ]] && grep -Eqi '^###[[:space:]]+T[0-9]{2}' "${canvas}" 2>/dev/null; then
     echo "operations_task_sized=passed"
   fi
-  if [[ -f "${progress}" ]] && grep -Eqi '(T[0-9]{2}.*complete|implemented|merged|mvn test|pytest)' "${progress}" 2>/dev/null; then
+  if [[ -n "${progress_evidence}" ]] && grep -Eqi '(T[0-9]{2}.*complete|implemented|merged|mvn test|pytest)' <<<"${progress_evidence}" 2>/dev/null; then
     echo "code_maps_to_ops=passed"
     echo "tests_updated=passed"
   fi
@@ -791,7 +859,7 @@ _wf_infer_gates_from_artifacts() {
     echo "review_completed=passed"
     echo "safeguards_checked=passed"
   fi
-  if [[ -f "${retro}" ]]; then
+  if [[ -f "${retro}" ]] || { [[ -f "${lean_retro}" ]] && [[ -n "$(_wf_ledger_section_for_work "${lean_retro}" "${work_id}")" ]]; }; then
     echo "retro_completed=passed"
   fi
   if [[ -f "${sync_log}" ]]; then
