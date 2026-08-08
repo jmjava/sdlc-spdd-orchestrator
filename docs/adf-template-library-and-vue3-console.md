@@ -123,8 +123,24 @@ Flask can serve the Vite build when `SDLC_VUE_CONSOLE_DIST=console-ui/dist` (or
 | Install | ✅ | ✅ |
 | SQLite | ✅ | ✅ |
 | Rollback | ✅ | ✅ |
-| Guide | ✅ | ✅ (probe/config; no live Neo4j) |
-| ADF viewer + init-from-ADF | ✅ | ✅ (viewer stubbed) |
+| Guide | ✅ | ✅ stubbed probe + dual-env defaults; **live** via `guide_live` |
+| ADF viewer + init-from-ADF | ✅ | ✅ stubbed lifecycle; **live** via `adf_viewer_live` |
+
+### Live dual-repo gates (the former “no” gaps)
+
+```bash
+# Needs sibling ../guide + Neo4j Bolt (:7687). Starts Guide JVM (slow first time).
+SDLC_CONSOLE_E2E=1 SDLC_GUIDE_STACK_LIVE=1 \
+  pytest -q engine/tests/test_vue3_console_live_playwright.py -m guide_live \
+  --run-console-e2e --run-guide-live
+
+# Real ADF viewer process (port 5050 free).
+SDLC_CONSOLE_E2E=1 SDLC_ADF_VIEWER_LIVE=1 \
+  pytest -q engine/tests/test_vue3_console_live_playwright.py -m adf_viewer_live \
+  --run-console-e2e --run-adf-viewer-live
+```
+
+Also wired into `.github/workflows/test-guide-stack-experimental.yml`.
 
 ## Related open work
 

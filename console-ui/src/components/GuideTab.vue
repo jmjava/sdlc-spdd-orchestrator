@@ -24,11 +24,16 @@ const stGuide = ref("—");
 const stNeo = ref("—");
 const stPid = ref("—");
 const stPort = ref("—");
+const stChunks = ref("—");
+const stWorkIds = ref("—");
+const stCanvases = ref("—");
+const stAreas = ref("—");
 const guideProbe = ref("Status not loaded.");
 const actionStatus = ref("Ready.");
 const actionStatusClass = ref("");
 const actionLog = ref("No runtime action yet.");
 const busy = ref(false);
+const opDirectory = ref("");
 
 function formBody(extra = {}) {
   return {
@@ -80,6 +85,17 @@ function applyGuide(data) {
   stNeo.value = neo.bolt_open ? "UP" : "DOWN";
   stPid.value = gp.pid || "—";
   stPort.value = cfg.port || "—";
+
+  const gs = data?.guide_stats?.data || {};
+  const chunkCount =
+    gs.contentElementCount ?? gs.contentElements ?? gs.chunkCount ?? gs.totalContentElements;
+  stChunks.value = chunkCount != null ? String(chunkCount) : "—";
+  const pd = data?.projection?.data || {};
+  stWorkIds.value = pd.workIdCount != null ? String(pd.workIdCount) : "—";
+  stCanvases.value = pd.canvasCount != null ? String(pd.canvasCount) : "—";
+  stAreas.value = pd.areaCount != null ? String(pd.areaCount) : "—";
+  const dirs = data?.operator_directories || [];
+  if (!opDirectory.value && dirs[0]) opDirectory.value = dirs[0];
 
   guideProbe.value =
     (probe.tcp_open
@@ -352,5 +368,73 @@ onMounted(loadGuide);
       {{ actionStatus }}
     </p>
     <pre class="log" data-testid="guide-action-log">{{ actionLog }}</pre>
+
+    <h3>Neo4j / ingest operators</h3>
+    <p class="lead">Requires Guide running. Purge stays explicit (preview first).</p>
+    <div class="field-row">
+      <label>
+        Directory (purge / git-reset scope)
+        <input
+          v-model="opDirectory"
+          type="text"
+          spellcheck="false"
+          data-testid="op-directory"
+          placeholder="orchestrator root or subdir"
+        />
+      </label>
+    </div>
+    <div class="actions">
+      <button
+        class="btn btn-secondary"
+        type="button"
+        data-testid="btn-guide-stats"
+        :disabled="busy"
+        @click="guideAction('/api/guide/stats', {}, 'Refresh Guide stats')"
+      >
+        Refresh Guide stats
+      </button>
+      <button
+        class="btn btn-primary"
+        type="button"
+        data-testid="btn-ingest-inc"
+        :disabled="busy"
+        @click="guideAction('/api/guide/ingest', {}, 'Incremental ingest')"
+      >
+        Incremental ingest
+      </button>
+      <button
+        class="btn btn-secondary"
+        type="button"
+        data-testid="btn-purge-preview"
+        :disabled="busy"
+        @click="
+          guideAction(
+            '/api/guide/purge/preview',
+            { directory: opDirectory },
+            'Purge preview',
+          )
+        "
+      >
+        Purge preview
+      </button>
+    </div>
+    <div class="stats">
+      <div class="stat-card">
+        <div class="n" data-testid="st-chunks">{{ stChunks }}</div>
+        <div class="l">content elements</div>
+      </div>
+      <div class="stat-card">
+        <div class="n" data-testid="st-workids">{{ stWorkIds }}</div>
+        <div class="l">WorkId entities</div>
+      </div>
+      <div class="stat-card">
+        <div class="n" data-testid="st-canvases">{{ stCanvases }}</div>
+        <div class="l">Canvas entities</div>
+      </div>
+      <div class="stat-card">
+        <div class="n" data-testid="st-areas">{{ stAreas }}</div>
+        <div class="l">Area entities</div>
+      </div>
+    </div>
   </section>
 </template>

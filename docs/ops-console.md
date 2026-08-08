@@ -118,7 +118,9 @@ HTTP `7474`. Override Guide git ref with `GUIDE_GIT_REF` (default tag
 | Console Playwright — Flask HTML (opt-in) | `SDLC_CONSOLE_E2E=1 pytest -q engine/tests/test_console_playwright.py -m console_e2e` |
 | Console Playwright — Vue3 GUI (opt-in) | `cd console-ui && npm ci && npm run build && cd .. && SDLC_CONSOLE_E2E=1 pytest -q engine/tests/test_vue3_console_playwright.py -m console_e2e` |
 | Viewer Playwright (opt-in) | `SDLC_VIEWER_E2E=1 pytest -q engine/tests/test_viewer_playwright.py -m viewer_e2e` |
-| Guide + Neo4j live stack (opt-in) | `SDLC_GUIDE_STACK_LIVE=1 ./tests/test-guide-stack-live.sh` |
+| Guide + Neo4j live stack API (opt-in) | `SDLC_GUIDE_STACK_LIVE=1 ./tests/test-guide-stack-live.sh` |
+| Vue3 Playwright live Guide stack (opt-in) | `SDLC_CONSOLE_E2E=1 SDLC_GUIDE_STACK_LIVE=1 pytest -q engine/tests/test_vue3_console_live_playwright.py -m guide_live --run-console-e2e --run-guide-live` |
+| Vue3 Playwright live ADF viewer (opt-in) | `SDLC_CONSOLE_E2E=1 SDLC_ADF_VIEWER_LIVE=1 pytest -q engine/tests/test_vue3_console_live_playwright.py -m adf_viewer_live --run-console-e2e --run-adf-viewer-live` |
 
 CI: `test-sdlc-engine.yml` runs installer coverage, viewer e2e, and console e2e.
 Guide live stack stays on `test-guide-stack-experimental.yml`.

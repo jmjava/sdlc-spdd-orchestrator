@@ -31,4 +31,6 @@ markers = [
   "viewer_integration: live Jira sync via viewer (skipped unless env set)",
   "viewer_e2e: Playwright GUI tests for the ADF viewer (needs chromium)",
   "console_e2e: Playwright GUI tests for the ops console (needs chromium)",
+  "guide_live: Vue3 console against live Guide+Neo4j dual-repo stack",
+  "adf_viewer_live: Vue3 ADF tab against a real viewer process (not stubbed)",
 ]
