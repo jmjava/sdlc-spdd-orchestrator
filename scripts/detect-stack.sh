@@ -4,12 +4,15 @@ set -euo pipefail
 _SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=/dev/null
 source "${_SCRIPT_DIR}/lib/common.sh"
+# shellcheck source=/dev/null
+source "${_SCRIPT_DIR}/lib/paths.sh"
 
 usage() {
   cat <<'EOF'
 Usage: detect-stack.sh --target <path>
 
-Detect project technologies and append findings to agent-context/memory/project-memory.md
+Detect project technologies. Findings are printed and written to the
+gitignored runtime file <home>/.sdlc/stack-detection.md (regenerated each run).
 EOF
 }
 
@@ -34,17 +37,9 @@ while [[ $# -gt 0 ]]; do
 done
 
 TARGET="$(sdlc_resolve_target "${TARGET}")"
-memory_file="${TARGET}/agent-context/memory/project-memory.md"
-mkdir -p "$(dirname "${memory_file}")"
-
-if [[ ! -f "${memory_file}" ]]; then
-  cat > "${memory_file}" <<'EOF'
-# Project Memory
-
-## Stack Detection
-
-EOF
-fi
+export SDLC_ROOT="${TARGET}"
+detection_file="$(sdlc_runtime_dir "${TARGET}")/stack-detection.md"
+mkdir -p "$(dirname "${detection_file}")"
 
 detected=()
 
@@ -63,8 +58,10 @@ detected=()
 
 timestamp="$(sdlc_timestamp_iso)"
 {
+  echo "# Stack Detection"
   echo
-  echo "### Detection run: ${timestamp}"
+  echo "Last run: ${timestamp}"
+  echo
   if ((${#detected[@]} == 0)); then
     echo "- No known stack markers detected"
   else
@@ -72,9 +69,9 @@ timestamp="$(sdlc_timestamp_iso)"
       echo "- ${item}"
     done
   fi
-} >> "${memory_file}"
+} > "${detection_file}"
 
-echo "Stack detection complete. Updated: ${memory_file}"
+echo "Stack detection complete. Updated: ${detection_file}"
 if ((${#detected[@]} > 0)); then
   printf 'Detected:\n'
   printf '  - %s\n' "${detected[@]}"

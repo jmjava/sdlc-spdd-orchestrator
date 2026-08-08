@@ -9,8 +9,8 @@ active phase or a `#SkillName` directive calls for them — not on every request
 
 Resolve what to load with:
 
-    ./scripts/sdlc-spdd/resolve-agent-context.sh --target . --phase <phase>
-    ./scripts/sdlc-spdd/resolve-agent-context.sh --text "Implement #TDD #java !Kafka"
+    ./sdlc-spdd/scripts/resolve-agent-context.sh --target . --phase <phase>
+    ./sdlc-spdd/scripts/resolve-agent-context.sh --text "Implement #TDD #java !Kafka"
 
 Phase folders and skills are declared in `manifest.md` when present; otherwise the
 folder layout below is used automatically.
@@ -38,7 +38,7 @@ folder layout below is used automatically.
 3. Reference skills in prompts: `/sdlc-spdd-code @spdd/canvas/WORK-ID.md operation T01 #TDD`
 4. Exclude irrelevant skills: `#java !Kafka`
 5. Run `resolve-agent-context.sh` or read the **Resolved Context** section in
-   `agent-context/sessions/current-session.md` after `start-agent-session.sh`.
+   `.sdlc/sessions/current-session.md` after `start-agent-session.sh`.
 
 ## Progressive disclosure rules
 

@@ -14,7 +14,7 @@ usage() {
   cat <<'EOF'
 Usage: create-feature.sh --type <feature|bug|refactor|spike> --name <short-name> [--target <path>]
 
-Create stay-set REASONS canvas + milestone requirement (no agent-context/features mirrors).
+Create stay-set REASONS canvas + milestone requirement (no legacy feature mirrors).
 EOF
 }
 
@@ -106,4 +106,4 @@ echo "Created:"
 echo "  ${canvas_dir}/${work_id}.md"
 echo "  ${req_dir}/${work_id}.md"
 echo "  staged session record → ${stage_file#${TARGET}/}"
-# Hard rule: do not create agent-context/features/<WORK-ID>/
+# Hard rule: do not create per-work feature mirror directories (stay-set only).

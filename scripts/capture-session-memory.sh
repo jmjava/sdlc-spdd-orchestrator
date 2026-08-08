@@ -359,7 +359,10 @@ if [[ -n "${ROADMAP_NOTE}" ]]; then
   } >> "${roadmap_file}"
 fi
 
-workflow_script="${TARGET}/agent-context/sdlc-workflow.sh"
+workflow_script="${HOME}/scripts/sdlc-workflow.sh"
+if [[ ! -f "${workflow_script}" ]]; then
+  workflow_script="${TARGET}/agent-context/sdlc-workflow.sh"
+fi
 if [[ -f "${workflow_script}" ]]; then
   SDLC_ROOT="${TARGET}"
   # shellcheck source=/dev/null

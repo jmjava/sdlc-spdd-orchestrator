@@ -6,20 +6,30 @@ These docs were installed by the SDLC-SPDD orchestrator. **Start with the six pa
 
 `/sdlc-spdd-init` and other `/sdlc-spdd-*` lines are **AI chat prompts**, not terminal commands. Run them in Cursor Chat, Copilot Chat, or Claude Code.
 
-**Daily workflow CLI** (terminal):
+**Daily workflow CLI** (terminal, from the repo root):
 
-    ./scripts/sdlc-spdd/sdlc.sh next          # what to do now
-    ./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>
-    ./scripts/sdlc-spdd/sdlc.sh start         # open session brief
-    ./scripts/sdlc-spdd/sdlc.sh capture --summary "..."
+    ./sdlc-spdd/scripts/sdlc.sh next          # what to do now
+    ./sdlc-spdd/scripts/sdlc.sh claim <WORK-ID>
+    ./sdlc-spdd/scripts/sdlc.sh start         # open session brief
+    ./sdlc-spdd/scripts/sdlc.sh capture --summary "..."
+    ./sdlc-spdd/scripts/sdlc.sh accept --work-id <WORK-ID>   # promote staged lessons
 
 In chat: `/sdlc-spdd-whereami` — same orientation as `next`, plus team registry context.
 
-**Other shell scripts** live under `scripts/sdlc-spdd/` (for example `start-agent-session.sh`). Install/upgrade run once from the orchestrator repo (`./scripts/setup-agent-prompts.sh --target ...`), not from here.
+**Other shell scripts** live under `sdlc-spdd/scripts/` (for example `start-agent-session.sh`). Install/upgrade run once from the orchestrator repo (`./scripts/setup-agent-prompts.sh --target ...`), not from here.
 
-Local agent state (gitignored): `.sdlc/pointer`, `.sdlc/workflows/`. Team claims (committed): `agent-context/work-registry.tsv`.
+## How storage works (single folder)
 
-[How to run assistant commands](initialization-and-invocation.md#how-to-run-assistant-commands) · [Workflow CLI reference](../../agent-context/README.md#sdlc-pointer-current-choretask)
+Everything the framework owns lives under one folder: `sdlc-spdd/` at the repo root.
+
+- **Committed memory** — one lessons ledger at `sdlc-spdd/spdd/memory/lessons.jsonl` (JSONL records: decisions, pitfalls, patterns, sessions, analysis) plus the append-only work registry `sdlc-spdd/spdd/memory/registry.jsonl` (managed via `sdlc.sh claim/release`). Never edit either by hand.
+- **Stage, then accept** — `sdlc.sh capture` writes records to the gitignored `sdlc-spdd/.sdlc/staged/lessons.jsonl`; at retro/sync, `sdlc.sh accept --work-id <ID>` promotes them into the committed ledger. No script ever git-commits or pushes.
+- **Runtime state** (gitignored): `sdlc-spdd/.sdlc/` holds session briefs, the pointer, staged records, and the optional sqlite cache.
+- **Artifacts**: canvases and phase artifacts under `sdlc-spdd/spdd/`, requirements under `sdlc-spdd/requirements/`, harness/playbooks/extensions alongside them.
+
+Retrieve memory with `sdlc-engine context retrieve|show|digest` — never bulk-read the ledger.
+
+[How to run assistant commands](initialization-and-invocation.md#how-to-run-assistant-commands) · [Runtime scripts + workflow CLI](agent-session-scripts.md)
 
 ## Read in order
 
@@ -47,4 +57,4 @@ Local agent state (gitignored): `.sdlc/pointer`, `.sdlc/workflows/`. Team claims
 
 ## Runtime scripts
 
-Installed under `scripts/sdlc-spdd/` in this project. Prefer `sdlc.sh` for daily rhythm; use individual scripts when you need low-level control.
+Installed under `sdlc-spdd/scripts/` in this project. Prefer `sdlc.sh` for daily rhythm; use individual scripts when you need low-level control.

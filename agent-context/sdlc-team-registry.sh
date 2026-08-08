@@ -16,6 +16,9 @@ _TEAM_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${_TEAM_SCRIPT_DIR}/sdlc-pointer.sh"
 _paths_lib="${SDLC_ROOT}/scripts/lib/paths.sh"
 if [[ ! -f "${_paths_lib}" ]]; then
+  _paths_lib="${SDLC_ROOT}/sdlc-spdd/scripts/lib/paths.sh"
+fi
+if [[ ! -f "${_paths_lib}" ]]; then
   _paths_lib="${SDLC_ROOT}/scripts/sdlc-spdd/lib/paths.sh"
 fi
 if [[ -f "${_paths_lib}" ]]; then
@@ -25,7 +28,7 @@ fi
 
 SDLC_TEAM_REGISTRY_JSONL="$(sdlc_registry "${SDLC_ROOT}" 2>/dev/null || printf '%s/spdd/memory/registry.jsonl' "${SDLC_ROOT}")"
 SDLC_TEAM_REGISTRY_LEGACY="${SDLC_ROOT}/agent-context/work-registry.tsv"
-SDLC_TEAM_REGISTRY_LOCK="${SDLC_ROOT}/.sdlc/registry.lock"
+SDLC_TEAM_REGISTRY_LOCK="${SDLC_DIR:-${SDLC_ROOT}/.sdlc}/registry.lock"
 
 _team_stale_days() {
   printf '%s' "${SDLC_TEAM_STALE_DAYS:-7}"
@@ -161,6 +164,9 @@ _team_auto_branch() {
 _team_milestone_path() {
   local work_id="$1"
   local root="${SDLC_ROOT}"
+  if declare -F sdlc_home >/dev/null 2>&1; then
+    root="$(sdlc_home "${SDLC_ROOT}")"
+  fi
   local path dir
   # Prefer subdirectory stubs when present.
   shopt -s nullglob
@@ -350,7 +356,7 @@ _team_owner() {
 }
 
 _team_registry_init() {
-  mkdir -p "$(dirname "${SDLC_TEAM_REGISTRY_JSONL}")" "${SDLC_ROOT}/.sdlc"
+  mkdir -p "$(dirname "${SDLC_TEAM_REGISTRY_JSONL}")" "${SDLC_DIR:-${SDLC_ROOT}/.sdlc}"
   if [[ ! -f "${SDLC_TEAM_REGISTRY_JSONL}" ]]; then
     : > "${SDLC_TEAM_REGISTRY_JSONL}"
   fi
@@ -538,7 +544,7 @@ sdlc_team_sync_from_workflow() {
   local status="$2"
   local note="${3:-}"
   local phase="" operation="" file event="update"
-  file="${SDLC_ROOT}/.sdlc/workflows/${work_id}.state"
+  file="${SDLC_DIR:-${SDLC_ROOT}/.sdlc}/workflows/${work_id}.state"
   if [[ -f "${file}" ]]; then
     phase="$(grep -m1 '^phase=' "${file}" 2>/dev/null | cut -d= -f2- || true)"
     operation="$(grep -m1 '^operation=' "${file}" 2>/dev/null | cut -d= -f2- || true)"
@@ -807,6 +813,24 @@ sdlc_team_status() {
   echo "Discover all Work IDs: ./scripts/sdlc.sh list-work"
 }
 
+# Locate the workflow manager: same dir as this script (v3 installs place both
+# under <home>/scripts/), then <home>/scripts/, then legacy agent-context/.
+_team_workflow_script() {
+  local self_dir
+  self_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  local candidate
+  for candidate in \
+    "${self_dir}/sdlc-workflow.sh" \
+    "${SDLC_ROOT}/sdlc-spdd/scripts/sdlc-workflow.sh" \
+    "${SDLC_ROOT}/agent-context/sdlc-workflow.sh"; do
+    if [[ -f "${candidate}" ]]; then
+      printf '%s' "${candidate}"
+      return 0
+    fi
+  done
+  return 1
+}
+
 sdlc_team_claim() {
   local work_id="$1"
   local force="${2:-0}"
@@ -820,7 +844,8 @@ sdlc_team_claim() {
     return 2
   fi
   sdlc_team_check_claim "${work_id}" "${force}" || return $?
-  if [[ ! -f "${SDLC_ROOT}/agent-context/sdlc-workflow.sh" ]]; then
+  local _workflow_script
+  if ! _workflow_script="$(_team_workflow_script)"; then
     echo "sdlc_team_claim: sdlc-workflow.sh not installed" >&2
     return 1
   fi
@@ -830,7 +855,7 @@ sdlc_team_claim() {
   existing_note="$(_team_registry_note_for "${work_id}")"
   note="$(_team_compose_note "${existing_note}" "${branch}" "${pr}" "${jira}" "${note_extra}")"
   # shellcheck source=/dev/null
-  source "${SDLC_ROOT}/agent-context/sdlc-workflow.sh"
+  source "${_workflow_script}"
   # Pass force through so `sdlc.sh claim <ID> --force` can take over a foreign claim.
   # Mark already-checked so resume does not print "Taking over…" a second time.
   _SDLC_TEAM_CLAIM_CHECKED=1
@@ -849,12 +874,13 @@ sdlc_team_release() {
     echo "sdlc_team_release: no active pointer" >&2
     return 2
   fi
-  if [[ ! -f "${SDLC_ROOT}/agent-context/sdlc-workflow.sh" ]]; then
+  local _workflow_script
+  if ! _workflow_script="$(_team_workflow_script)"; then
     echo "sdlc_team_release: sdlc-workflow.sh not installed" >&2
     return 1
   fi
   # shellcheck source=/dev/null
-  source "${SDLC_ROOT}/agent-context/sdlc-workflow.sh"
+  source "${_workflow_script}"
   sdlc_workflow_shelf "${reason}"
   echo "Team registry updated — commit spdd/memory/registry.jsonl to share with teammates."
 }

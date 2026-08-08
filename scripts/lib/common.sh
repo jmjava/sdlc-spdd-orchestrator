@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Shared helpers for SDLC-SPDD runtime scripts (sourced, not executed).
-# Installed copies live at scripts/sdlc-spdd/lib/ in target projects.
+# Installed copies live at sdlc-spdd/scripts/lib/ in target projects.
 
 # Resolve --target to an absolute path (exits on failure).
 sdlc_resolve_target() {

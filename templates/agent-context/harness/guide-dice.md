@@ -12,14 +12,15 @@ Presence of this file is **not** a promise that Guide is running. Resolution
 is always two-step and happens at runtime:
 
 ```bash
-./scripts/sdlc-spdd/resolve-context-backend.sh --target .
+./sdlc-spdd/scripts/resolve-context-backend.sh --target .
 # CONTEXT_BACKEND=guide-dice  → Guide is live; augment with the tools below
-# CONTEXT_BACKEND=files       → use the file-based indexes only (normal, not an error)
+# CONTEXT_BACKEND=files       → use ledger retrieval only (normal, not an error)
 ```
 
-The file-based indexes under `agent-context/memory/` remain the baseline
-either way; DICE augments them, it never replaces them. No SDLC-SPDD command
-may fail because Guide is absent or down.
+The committed lessons ledger (`spdd/memory/lessons.jsonl`, queried via
+`sdlc-engine context retrieve`) remains the baseline either way; DICE augments
+it, it never replaces it. No SDLC-SPDD command may fail because Guide is
+absent or down.
 
 ## When live, prefer these for retrieval
 
@@ -32,11 +33,11 @@ may fail because Guide is absent or down.
 
 ## Keeping the graph current (persist side)
 
-After retro/sync updates the markdown artifacts, re-project so the next run
-retrieves fresh entities:
+After retro/sync accepts staged lessons into the ledger, re-project so the
+next run retrieves fresh entities:
 
 ```bash
-./scripts/sdlc-spdd/resolve-context-backend.sh --target . --project --work-id <WORK-ID>
+./sdlc-spdd/scripts/resolve-context-backend.sh --target . --project --work-id <WORK-ID>
 ```
 
 This is a no-op (exit 0) when Guide is not reachable.

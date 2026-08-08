@@ -1,14 +1,13 @@
 #!/usr/bin/env bash
 # Path and lib-sourcing helpers for SDLC-SPDD scripts (storage v3).
 
-# Lib files copied into installed targets (scripts/sdlc-spdd/lib/).
+# Lib files copied into installed targets (<home>/scripts/lib/).
 SDLC_SHIPPED_LIB_FILES=(
   common.sh
   paths.sh
   areas.sh
   work-id.sh
   milestone.sh
-  context-index.sh
   readiness.sh
 )
 
@@ -26,7 +25,7 @@ sdlc_require_lib() {
   local lib_path="${caller_dir}/lib/${lib_name}.sh"
   if [[ ! -f "${lib_path}" ]]; then
     echo "Error: missing shared library ${lib_path}" >&2
-    echo "Re-run init-project.sh or upgrade-project.sh to install scripts/sdlc-spdd/lib/." >&2
+    echo "Re-run init-project.sh or upgrade-project.sh to install sdlc-spdd/scripts/lib/." >&2
     exit 1
   fi
   # shellcheck source=/dev/null

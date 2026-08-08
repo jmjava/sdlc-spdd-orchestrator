@@ -93,7 +93,7 @@ SDLC_ENGINE=python ./scripts/sdlc.sh issues push <WORK-ID> --system github --app
 
 Validate:
 
-    ./scripts/sdlc-spdd/validate-requirements-format.sh --target .
+    ./sdlc-spdd/scripts/validate-requirements-format.sh --target .
 
 See [jira-runbook.md](../../docs/jira-runbook.md).
 

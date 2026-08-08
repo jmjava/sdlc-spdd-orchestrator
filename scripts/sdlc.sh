@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Short entry point for SDLC pointer + workflow helpers.
-# Installed to scripts/sdlc-spdd/sdlc.sh in target projects; lives at scripts/sdlc.sh in the orchestrator repo.
+# Installed to sdlc-spdd/scripts/sdlc.sh in target projects (storage v3);
+# lives at scripts/sdlc.sh in the orchestrator repo.
 #
 # Engine selection (v2):
 #   SDLC_ENGINE=shell   Legacy bash workflow scripts (default — stable)
@@ -11,11 +12,23 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 if [[ -f "${SCRIPT_DIR}/../agent-context/sdlc-workflow.sh" ]]; then
+  # Orchestrator repo: scripts/sdlc.sh next to agent-context/.
   ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-elif [[ -f "${SCRIPT_DIR}/../../agent-context/sdlc-workflow.sh" ]]; then
+  WORKFLOW="${ROOT}/agent-context/sdlc-workflow.sh"
+elif [[ -f "${SCRIPT_DIR}/sdlc-workflow.sh" ]]; then
+  # Storage v3 install: <root>/sdlc-spdd/scripts/sdlc.sh.
   ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+  WORKFLOW="${SCRIPT_DIR}/sdlc-workflow.sh"
+elif [[ -f "${SCRIPT_DIR}/../../agent-context/sdlc-workflow.sh" ]]; then
+  # Legacy sprawled install: <root>/scripts/sdlc-spdd/sdlc.sh.
+  ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+  WORKFLOW="${ROOT}/agent-context/sdlc-workflow.sh"
 else
   ROOT="$(git -C "${PWD}" rev-parse --show-toplevel 2>/dev/null || pwd)"
+  WORKFLOW="${ROOT}/sdlc-spdd/scripts/sdlc-workflow.sh"
+  if [[ ! -f "${WORKFLOW}" ]]; then
+    WORKFLOW="${ROOT}/agent-context/sdlc-workflow.sh"
+  fi
 fi
 
 export SDLC_ROOT="${ROOT}"
@@ -115,7 +128,6 @@ case "${ENGINE_MODE}" in
     ;;
 esac
 
-WORKFLOW="${ROOT}/agent-context/sdlc-workflow.sh"
 if [[ ! -x "${WORKFLOW}" ]]; then
   echo "sdlc: workflow not installed (${WORKFLOW})" >&2
   echo "Run setup-agent-prompts.sh or upgrade-project.sh from the orchestrator repo." >&2

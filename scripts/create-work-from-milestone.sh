@@ -29,8 +29,8 @@ Options:
   --help                Print this help message
 
 Examples:
-  ./scripts/sdlc-spdd/create-work-from-milestone.sh --target . --milestone milestone-1.md --all
-  ./scripts/sdlc-spdd/create-work-from-milestone.sh --target . \
+  ./sdlc-spdd/scripts/create-work-from-milestone.sh --target . --milestone milestone-1.md --all
+  ./sdlc-spdd/scripts/create-work-from-milestone.sh --target . \
     --milestone requirements/milestones/milestone-2/MILESTONE-2.md --item "Add order status API"
 EOF
 }
@@ -114,14 +114,20 @@ case "${TYPE}" in
 esac
 
 TARGET="$(sdlc_resolve_target "${TARGET}")"
+export SDLC_ROOT="${TARGET}"
+# All framework artifacts (canvas, requirements, milestones, staged records)
+# resolve through the home so nested installs (<target>/sdlc-spdd/) work.
+HOME_DIR="$(sdlc_home "${TARGET}")"
 milestone_arg="${MILESTONE}"
 if [[ "${MILESTONE}" != /* ]]; then
-  if [[ -f "${TARGET}/${MILESTONE}" ]]; then
+  if [[ -f "${HOME_DIR}/${MILESTONE}" ]]; then
+    MILESTONE="${HOME_DIR}/${MILESTONE}"
+  elif [[ -f "${TARGET}/${MILESTONE}" ]]; then
     MILESTONE="${TARGET}/${MILESTONE}"
-  elif resolved="$(resolve_milestone "${TARGET}" "" "${milestone_arg}" absolute 2>/dev/null)"; then
+  elif resolved="$(resolve_milestone "${HOME_DIR}" "" "${milestone_arg}" absolute 2>/dev/null)"; then
     MILESTONE="${resolved}"
   else
-    MILESTONE="${TARGET}/${MILESTONE}"
+    MILESTONE="${HOME_DIR}/${MILESTONE}"
   fi
 fi
 if [[ ! -f "${MILESTONE}" ]]; then
@@ -130,10 +136,13 @@ if [[ ! -f "${MILESTONE}" ]]; then
   exit 1
 fi
 
-milestone_rel="${MILESTONE#${TARGET}/}"
-roadmap_rel="${ROADMAP#${TARGET}/}"
-requirement_parent="$(requirement_dir_for_milestone "${TARGET}" "${MILESTONE}")"
-requirement_parent_rel="${requirement_parent#${TARGET}/}"
+milestone_rel="${MILESTONE#${HOME_DIR}/}"
+milestone_rel="${milestone_rel#${TARGET}/}"
+roadmap_rel="${ROADMAP#${HOME_DIR}/}"
+roadmap_rel="${roadmap_rel#${TARGET}/}"
+requirement_parent="$(requirement_dir_for_milestone "${HOME_DIR}" "${MILESTONE}")"
+requirement_parent_rel="${requirement_parent#${HOME_DIR}/}"
+requirement_parent_rel="${requirement_parent_rel#${TARGET}/}"
 
 items=()
 if [[ "${CREATE_ALL}" -eq 1 ]]; then
@@ -170,15 +179,15 @@ create_work() {
   local title="$1"
   local number slug work_id canvas_path milestone_requirement_path
   local stage_file status_date milestone_requirement_rel
-  # Number from stay-set canvases only — no agent-context/features (#86).
+  # Number from stay-set canvases only (no legacy feature mirrors, #86).
   number="$(next_work_number "${PREFIX}" "${TARGET}" \
-    "${TARGET}/spdd/canvas/${PREFIX}-"*.md)"
+    "${HOME_DIR}/spdd/canvas/${PREFIX}-"*.md)"
   slug="$(slugify "${title}" strict)"
   if [[ -z "${slug}" ]]; then
     slug="milestone-work"
   fi
   work_id="$(printf '%s-%03d-%s' "${PREFIX}" "${number}" "${slug}")"
-  canvas_path="${TARGET}/spdd/canvas/${work_id}.md"
+  canvas_path="${HOME_DIR}/spdd/canvas/${work_id}.md"
   milestone_requirement_path="${requirement_parent}/${work_id}.md"
   milestone_requirement_rel="${requirement_parent_rel}/${work_id}.md"
   stage_file="$(sdlc_stage "${TARGET}")"
@@ -196,7 +205,7 @@ create_work() {
     return
   fi
 
-  mkdir -p "${TARGET}/spdd/canvas" "${requirement_parent}"
+  mkdir -p "${HOME_DIR}/spdd/canvas" "${requirement_parent}"
 
   cat > "${canvas_path}" <<EOF
 # REASONS Canvas: ${work_id} - ${title}
@@ -318,7 +327,7 @@ TBD
 
 - Status: Not Started
 - Description: Convert the milestone item into a complete REASONS Canvas.
-- Files: ${canvas_path#${TARGET}/}
+- Files: ${canvas_path#${HOME_DIR}/}
 - Tests: Not applicable
 - Validation: Canvas review
 
@@ -478,8 +487,8 @@ if ((${#created_work_ids[@]} > 0)); then
     echo
     echo "  ${work_id}:"
     echo "    /sdlc-spdd-analysis ${req_ref}"
-    echo "    ./scripts/sdlc-spdd/index-spdd-analysis.sh --target . --work-id ${work_id}"
-    if [[ -f "${TARGET}/${roadmap_rel}" ]]; then
+    echo "    ./sdlc-spdd/scripts/index-spdd-analysis.sh --target . --work-id ${work_id}"
+    if [[ -f "${HOME_DIR}/${roadmap_rel}" || -f "${TARGET}/${roadmap_rel}" ]]; then
       echo "    /sdlc-spdd-plan @spdd/analysis/${work_id}-analysis.md @${roadmap_rel} @${milestone_rel}"
     else
       echo "    /sdlc-spdd-plan @spdd/analysis/${work_id}-analysis.md @${milestone_rel}"

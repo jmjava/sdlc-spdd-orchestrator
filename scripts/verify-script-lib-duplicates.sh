@@ -13,7 +13,7 @@ Scan scripts/*.sh for duplicate definitions of helpers that belong in scripts/li
 Exits 0 when no stray duplicates are found; exits 1 otherwise.
 
 Orchestrator-only lib helpers (framework-install, shipped-docs-boundary) are
-checked only under scripts/, not under installed scripts/sdlc-spdd/.
+checked only under scripts/, never shipped to installed targets.
 EOF
 }
 
@@ -41,8 +41,6 @@ LIB_FUNCTIONS=(
   next_work_number
   work_type_prefix
   resolve_milestone
-  context_index_header_capture
-  prepend_context_index_rows
   normalize_readiness
   extract_readiness_raw
   canvas_readiness

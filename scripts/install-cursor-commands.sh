@@ -49,6 +49,13 @@ RULES_DEST="${TARGET}/.cursor/rules"
 mkdir -p "${DEST}"
 mkdir -p "${RULES_DEST}"
 
+# shellcheck source=lib/framework-install.sh
+source "${SCRIPT_DIR}/lib/framework-install.sh"
+# Storage v3 targets keep IDE stubs at the repo root but reference paths under
+# the single-folder home sdlc-spdd/.
+REWRITE_V3=0
+[[ -d "${TARGET}/sdlc-spdd" ]] && REWRITE_V3=1
+
 installed=()
 skipped=()
 
@@ -60,6 +67,7 @@ for src in "${REPO_ROOT}"/templates/cursor/*.md; do
     continue
   fi
   cp "${src}" "${out}"
+  [[ "${REWRITE_V3}" -eq 1 ]] && framework_rewrite_adapter_paths "${out}"
   installed+=("${out}")
 done
 
@@ -71,6 +79,7 @@ for src in "${REPO_ROOT}"/templates/cursor/rules/*.mdc; do
     continue
   fi
   cp "${src}" "${out}"
+  [[ "${REWRITE_V3}" -eq 1 ]] && framework_rewrite_adapter_paths "${out}"
   installed+=("${out}")
 done
 

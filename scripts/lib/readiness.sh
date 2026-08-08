@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Canvas readiness helpers (FEAT-005). Source from scripts/lib or scripts/sdlc-spdd/lib.
+# Canvas readiness helpers (FEAT-005). Source from scripts/lib or sdlc-spdd/scripts/lib.
 
 # Canonical readiness tokens. Missing is OK; unknown warns at validation time.
 READINESS_CANONICAL=(

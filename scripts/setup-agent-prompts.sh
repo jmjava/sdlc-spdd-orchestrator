@@ -113,7 +113,7 @@ echo "Integrated SDLC-SPDD prompt setup complete."
 echo "Next steps:"
 echo "  1. Open the target project in Cursor, GitHub Copilot, or Claude Code."
 echo "  2. Start or resume context:"
-echo "     ${TARGET}/scripts/sdlc-spdd/start-agent-session.sh --target ${TARGET} --phase init"
+echo "     ${TARGET}/sdlc-spdd/scripts/start-agent-session.sh --target ${TARGET} --phase init"
 echo "  3. Invoke:"
 echo "     /sdlc-spdd-init"
 echo

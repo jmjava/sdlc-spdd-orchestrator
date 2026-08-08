@@ -17,6 +17,9 @@ fi
 SDLC_ROOT="${SDLC_ROOT:-$(git -C "${PWD}" rev-parse --show-toplevel 2>/dev/null || pwd)}"
 _paths_lib="${SDLC_ROOT}/scripts/lib/paths.sh"
 if [[ ! -f "${_paths_lib}" ]]; then
+  _paths_lib="${SDLC_ROOT}/sdlc-spdd/scripts/lib/paths.sh"
+fi
+if [[ ! -f "${_paths_lib}" ]]; then
   _paths_lib="${SDLC_ROOT}/scripts/sdlc-spdd/lib/paths.sh"
 fi
 if [[ -f "${_paths_lib}" ]]; then

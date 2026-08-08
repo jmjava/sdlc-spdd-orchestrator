@@ -58,15 +58,9 @@ for f in docs/*.md; do
   shipped_files+=("$f")
 done
 
-# 3) The specific agent-context files init-project.sh copies into targets.
+# 3) The specific agent-context files init-project.sh copies into targets
+#    (storage v3 ships only harness + playbooks; memory ledgers are seeded empty).
 for f in \
-  agent-context/memory/project-memory.md \
-  agent-context/memory/architecture-decisions.md \
-  agent-context/memory/known-pitfalls.md \
-  agent-context/memory/reusable-patterns.md \
-  agent-context/memory/session-history.md \
-  agent-context/memory/phase-index.md \
-  agent-context/memory/domain-index.md \
   agent-context/harness/quality-gates.md \
   agent-context/harness/validation-rules.md; do
   [[ -e "$f" ]] && shipped_files+=("$f")

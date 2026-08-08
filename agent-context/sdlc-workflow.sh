@@ -30,9 +30,12 @@ if [[ -f "${_SCRIPT_DIR}/sdlc-team-registry.sh" ]]; then
   source "${_SCRIPT_DIR}/sdlc-team-registry.sh"
 fi
 
-# Optional readiness helpers (installed scripts/sdlc-spdd/lib or orchestrator scripts/lib).
+# Optional readiness helpers (installed sdlc-spdd/scripts/lib, legacy
+# scripts/sdlc-spdd/lib, or orchestrator scripts/lib).
 _wf_readiness_lib=""
-if [[ -f "${SDLC_ROOT}/scripts/sdlc-spdd/lib/readiness.sh" ]]; then
+if [[ -f "${SDLC_ROOT}/sdlc-spdd/scripts/lib/readiness.sh" ]]; then
+  _wf_readiness_lib="${SDLC_ROOT}/sdlc-spdd/scripts/lib/readiness.sh"
+elif [[ -f "${SDLC_ROOT}/scripts/sdlc-spdd/lib/readiness.sh" ]]; then
   _wf_readiness_lib="${SDLC_ROOT}/scripts/sdlc-spdd/lib/readiness.sh"
 elif [[ -f "${SDLC_ROOT}/scripts/lib/readiness.sh" ]]; then
   _wf_readiness_lib="${SDLC_ROOT}/scripts/lib/readiness.sh"
@@ -299,7 +302,9 @@ sdlc_workflow_shell_start() {
   if [[ -z "${phase}" ]]; then
     phase="$(_wf_read_state_var "$(_wf_state_file "${work_id}")" phase init)"
   fi
-  if [[ -x "${root}/scripts/sdlc-spdd/start-agent-session.sh" ]]; then
+  if [[ -x "${root}/sdlc-spdd/scripts/start-agent-session.sh" ]]; then
+    echo "./sdlc-spdd/scripts/start-agent-session.sh --target . --work-id ${work_id} --phase ${phase}"
+  elif [[ -x "${root}/scripts/sdlc-spdd/start-agent-session.sh" ]]; then
     echo "./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id ${work_id} --phase ${phase}"
   else
     echo "./scripts/start-agent-session.sh --target . --work-id ${work_id} --phase ${phase}"
@@ -559,7 +564,10 @@ sdlc_workflow_start() {
   sdlc_workflow_sync "${work_id}" >/dev/null
   local phase start_script
   phase="$(_wf_read_state_var "$(_wf_state_file "${work_id}")" phase init)"
-  start_script="${SDLC_ROOT}/scripts/sdlc-spdd/start-agent-session.sh"
+  start_script="${SDLC_ROOT}/sdlc-spdd/scripts/start-agent-session.sh"
+  if [[ ! -x "${start_script}" ]]; then
+    start_script="${SDLC_ROOT}/scripts/sdlc-spdd/start-agent-session.sh"
+  fi
   if [[ ! -x "${start_script}" ]]; then
     start_script="${SDLC_ROOT}/scripts/start-agent-session.sh"
   fi
@@ -649,29 +657,31 @@ sdlc_workflow_status_json() {
 }
 
 sdlc_workflow_help() {
-  cat <<'EOF'
+  local helper
+  helper="$(_wf_shell_helper_path)"
+  cat <<EOF
 SDLC workflow helper — short paths for humans and agents
 
-  ./scripts/sdlc.sh              # full status (auto-syncs from artifacts)
-  ./scripts/sdlc.sh next         # concise "what do I do now?"
-  ./scripts/sdlc.sh start        # open session brief at current phase
-  ./scripts/sdlc.sh capture --summary "..."   # guarded capture (pointer must match)
-  ./scripts/sdlc.sh status --json
+  ${helper}              # full status (auto-syncs from artifacts)
+  ${helper} next         # concise "what do I do now?"
+  ${helper} start        # open session brief at current phase
+  ${helper} capture --summary "..."   # guarded capture (pointer must match)
+  ${helper} status --json
 
-  ./scripts/sdlc.sh resume <WORK-ID> [--phase PHASE] [--force]
-  ./scripts/sdlc.sh advance [--to PHASE] [--force]
-  ./scripts/sdlc.sh skip <PHASE> --reason "why"
-  ./scripts/sdlc.sh shelf --reason "why"
-  ./scripts/sdlc.sh sync [--work-id ID]
-  ./scripts/sdlc.sh list-shelved
-  ./scripts/sdlc.sh team              # team registry + your pointer
-  ./scripts/sdlc.sh list-work         # all Work IDs in the repo
-  ./scripts/sdlc.sh claim <WORK-ID> [--force] [--branch NAME] [--pr #N] [--jira KEY]
-  ./scripts/sdlc.sh release --reason "why"
-  ./scripts/sdlc.sh sync-team          # mark done/cancelled from canvas Final Status
-  ./scripts/sdlc.sh archive <WORK-ID>  # move Complete/Cancelled work into archive/
-  ./scripts/sdlc.sh archive --all      # archive every eligible Complete/Cancelled Work ID
-  ./scripts/sdlc.sh accept [--work-id ID] [--commit]  # promote staged lessons to ledger
+  ${helper} resume <WORK-ID> [--phase PHASE] [--force]
+  ${helper} advance [--to PHASE] [--force]
+  ${helper} skip <PHASE> --reason "why"
+  ${helper} shelf --reason "why"
+  ${helper} sync [--work-id ID]
+  ${helper} list-shelved
+  ${helper} team              # team registry + your pointer
+  ${helper} list-work         # all Work IDs in the repo
+  ${helper} claim <WORK-ID> [--force] [--branch NAME] [--pr #N] [--jira KEY]
+  ${helper} release --reason "why"
+  ${helper} sync-team          # mark done/cancelled from canvas Final Status
+  ${helper} archive <WORK-ID>  # move Complete/Cancelled work into archive/
+  ${helper} archive --all      # archive every eligible Complete/Cancelled Work ID
+  ${helper} accept [--work-id ID] [--commit]  # promote staged lessons to ledger
 
 In chat: /sdlc-next or /sdlc-spdd-whereami
 Workflow chat: /sdlc-claim, /sdlc-shelf, /sdlc-advance, /sdlc-next, /sdlc-team
@@ -682,10 +692,10 @@ SDLC_TEAM_STALE_DAYS=7 flags stale active claims. SDLC_TEAM_REGISTRY_HOOK for Sl
 Note tokens: branch:... pr:... jira:... (auto branch from git; auto jira Key from requirements/milestones/<WORK-ID>.md on claim).
 
 Typical loop:
-  1. ./scripts/sdlc.sh next
-  2. run the assistant command (or ./scripts/sdlc.sh start)
-  3. ./scripts/sdlc.sh advance
-  4. ./scripts/sdlc.sh capture --summary "..."
+  1. ${helper} next
+  2. run the assistant command (or ${helper} start)
+  3. ${helper} advance
+  4. ${helper} capture --summary "..."
 
 Code phase: next operation (T01, T02, ...) is read from the REASONS Canvas automatically.
 EOF
@@ -693,10 +703,11 @@ EOF
 
 _wf_requirement_path() {
   local work_id="$1"
-  local root="${SDLC_ROOT}"
+  local home
+  home="$(_wf_home_path)"
   local path dir
   shopt -s nullglob
-  for dir in "${root}"/requirements/milestones/milestone-*/; do
+  for dir in "${home}"/requirements/milestones/milestone-*/; do
     path="${dir}${work_id}.md"
     if [[ -f "${path}" ]]; then
       shopt -u nullglob
@@ -705,7 +716,7 @@ _wf_requirement_path() {
     fi
   done
   shopt -u nullglob
-  path="${root}/requirements/milestones/${work_id}.md"
+  path="${home}/requirements/milestones/${work_id}.md"
   if [[ -f "${path}" ]]; then
     printf '%s' "${path}"
   fi
@@ -740,6 +751,8 @@ _wf_paths_lib() {
   local root="${SDLC_ROOT}"
   if [[ -f "${root}/scripts/lib/paths.sh" ]]; then
     printf '%s' "${root}/scripts/lib/paths.sh"
+  elif [[ -f "${root}/sdlc-spdd/scripts/lib/paths.sh" ]]; then
+    printf '%s' "${root}/sdlc-spdd/scripts/lib/paths.sh"
   elif [[ -f "${root}/scripts/sdlc-spdd/lib/paths.sh" ]]; then
     printf '%s' "${root}/scripts/sdlc-spdd/lib/paths.sh"
   fi
@@ -1085,7 +1098,9 @@ _wf_resolve_operation() {
 }
 
 _wf_shell_helper_path() {
-  if [[ -x "${SDLC_ROOT}/scripts/sdlc-spdd/sdlc.sh" ]]; then
+  if [[ -x "${SDLC_ROOT}/sdlc-spdd/scripts/sdlc.sh" ]]; then
+    echo "./sdlc-spdd/scripts/sdlc.sh"
+  elif [[ -x "${SDLC_ROOT}/scripts/sdlc-spdd/sdlc.sh" ]]; then
     echo "./scripts/sdlc-spdd/sdlc.sh"
   else
     echo "./scripts/sdlc.sh"
@@ -1211,7 +1226,10 @@ sdlc_workflow_capture() {
     phase="$(_wf_read_state_var "$(_wf_state_file "${work_id}")" phase resume)"
   fi
 
-  local capture_script="${SDLC_ROOT}/scripts/sdlc-spdd/capture-session-memory.sh"
+  local capture_script="${SDLC_ROOT}/sdlc-spdd/scripts/capture-session-memory.sh"
+  if [[ ! -x "${capture_script}" ]]; then
+    capture_script="${SDLC_ROOT}/scripts/sdlc-spdd/capture-session-memory.sh"
+  fi
   if [[ ! -x "${capture_script}" ]]; then
     capture_script="${SDLC_ROOT}/scripts/capture-session-memory.sh"
   fi
@@ -1283,7 +1301,7 @@ sdlc_workflow_resume() {
       echo "Note: canvas readiness is '${readiness}' — not Ready For Coding; prefer /sdlc-spdd-architect before coding."
     fi
   fi
-  echo "Quick check: ./scripts/sdlc.sh next"
+  echo "Quick check: $(_wf_shell_helper_path) next"
   echo "Start session: $(sdlc_workflow_shell_start "${work_id}" "${resolved_phase}")"
   if declare -F sdlc_team_sync_from_workflow >/dev/null 2>&1; then
     sdlc_team_sync_from_workflow "${work_id}" "active" "${team_note}"
@@ -1346,7 +1364,7 @@ sdlc_workflow_advance() {
   fi
   echo "Advanced ${work_id}: ${current} -> ${next}"
   echo "Recommended command: $(sdlc_workflow_recommended_command "${next}" "${work_id}")"
-  echo "Quick check: ./scripts/sdlc.sh next"
+  echo "Quick check: $(_wf_shell_helper_path) next"
 }
 
 sdlc_workflow_skip() {
@@ -1670,7 +1688,10 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" && "${_SDLC_WORKFLOW_LOAD_DEPTH}" -eq 1 ]]; 
       sdlc_workflow_capture "$@"
       ;;
     accept|/sdlc-accept-lessons)
-      accept_script="${SDLC_ROOT}/scripts/sdlc-spdd/accept-lessons.sh"
+      accept_script="${SDLC_ROOT}/sdlc-spdd/scripts/accept-lessons.sh"
+      if [[ ! -x "${accept_script}" ]]; then
+        accept_script="${SDLC_ROOT}/scripts/sdlc-spdd/accept-lessons.sh"
+      fi
       if [[ ! -x "${accept_script}" ]]; then
         accept_script="${SDLC_ROOT}/scripts/accept-lessons.sh"
       fi

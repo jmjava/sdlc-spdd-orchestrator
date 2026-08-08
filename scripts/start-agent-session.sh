@@ -102,7 +102,10 @@ TARGET="$(sdlc_resolve_target "${TARGET}")"
 export SDLC_ROOT="${TARGET}"
 HOME="$(sdlc_home "${TARGET}")"
 
-pointer_script="${TARGET}/agent-context/sdlc-pointer.sh"
+pointer_script="${HOME}/scripts/sdlc-pointer.sh"
+if [[ ! -f "${pointer_script}" ]]; then
+  pointer_script="${TARGET}/agent-context/sdlc-pointer.sh"
+fi
 if [[ -f "${pointer_script}" && -n "${WORK_ID}" ]]; then
   SDLC_ROOT="${TARGET}"
   # shellcheck source=/dev/null
@@ -110,8 +113,14 @@ if [[ -f "${pointer_script}" && -n "${WORK_ID}" ]]; then
   sdlc_set_pointer "${WORK_ID}" >/dev/null
 fi
 
-workflow_script="${TARGET}/agent-context/sdlc-workflow.sh"
-team_script="${TARGET}/agent-context/sdlc-team-registry.sh"
+workflow_script="${HOME}/scripts/sdlc-workflow.sh"
+if [[ ! -f "${workflow_script}" ]]; then
+  workflow_script="${TARGET}/agent-context/sdlc-workflow.sh"
+fi
+team_script="${HOME}/scripts/sdlc-team-registry.sh"
+if [[ ! -f "${team_script}" ]]; then
+  team_script="${TARGET}/agent-context/sdlc-team-registry.sh"
+fi
 workflow_brief_md="Workflow tools not installed."
 jira_status=""
 jira_ask_prompt=""
@@ -136,7 +145,7 @@ fi
 
 timestamp="$(sdlc_timestamp_iso)"
 safe_timestamp="$(sdlc_timestamp_file)"
-# Hot path (#85): gitignored .sdlc/sessions — never write new briefs to agent-context/sessions.
+# Hot path (#85): gitignored .sdlc/sessions — never write new briefs to committed trees.
 session_dir="$(sdlc_sessions_dir "${TARGET}")"
 mkdir -p "${session_dir}"
 
@@ -145,7 +154,7 @@ if [[ "${QUIET}" -eq 0 ]]; then
   _q="$(printf '%s' "${SDLC_QUIET:-}" | tr '[:upper:]' '[:lower:]')"
   if [[ "${_q}" == "1" || "${_q}" == "true" || "${_q}" == "yes" || "${_q}" == "on" ]]; then
     QUIET=1
-  elif [[ -f "${TARGET}/agent-context/harness/quiet-mode.md" ]]; then
+  elif [[ -f "$(sdlc_harness_dir "${TARGET}")/quiet-mode.md" ]]; then
     QUIET=1
   fi
 fi
@@ -250,7 +259,7 @@ if ((${#_prior_briefs[@]} > 0)); then
 fi
 
 milestone_list="- none found"
-mapfile -t milestone_files < <(list_milestone_files "${TARGET}" absolute 2>/dev/null || true)
+mapfile -t milestone_files < <(list_milestone_files "${HOME}" absolute 2>/dev/null || true)
 if ((${#milestone_files[@]} > 0)); then
   milestone_list=""
   for file in "${milestone_files[@]}"; do
@@ -259,11 +268,26 @@ if ((${#milestone_files[@]} > 0)); then
   milestone_list="${milestone_list%$'\n'}"
 fi
 
-active_milestone="$(resolve_milestone "${TARGET}" "${WORK_ID}" "${MILESTONE}" relative || true)"
+active_milestone="$(resolve_milestone "${HOME}" "${WORK_ID}" "${MILESTONE}" relative || true)"
 today_note_rel="session-notes/$(sdlc_timestamp_day).md"
 
+# Command + docs hints in the brief must match the actual layout: v3 installs
+# use sdlc-spdd/scripts + sdlc-spdd/docs; the orchestrator repo keeps scripts/.
+if [[ "${HOME}" != "${TARGET}" ]]; then
+  scripts_hint="./sdlc-spdd/scripts"
+  sdlc_sh_hint="./sdlc-spdd/scripts/sdlc.sh"
+  docs_hint="sdlc-spdd/docs"
+else
+  scripts_hint="./scripts"
+  sdlc_sh_hint="./scripts/sdlc.sh"
+  docs_hint="docs/sdlc-spdd"
+  [[ -d "${TARGET}/docs/sdlc-spdd" ]] || docs_hint="docs"
+fi
+
 resolve_script=""
-if [[ -x "${TARGET}/scripts/sdlc-spdd/resolve-agent-context.sh" ]]; then
+if [[ -x "${HOME}/scripts/resolve-agent-context.sh" ]]; then
+  resolve_script="${HOME}/scripts/resolve-agent-context.sh"
+elif [[ -x "${TARGET}/scripts/sdlc-spdd/resolve-agent-context.sh" ]]; then
   resolve_script="${TARGET}/scripts/sdlc-spdd/resolve-agent-context.sh"
 elif [[ -x "$(dirname "${BASH_SOURCE[0]}")/resolve-agent-context.sh" ]]; then
   resolve_script="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/resolve-agent-context.sh"
@@ -470,7 +494,7 @@ cat > "${session_file}" <<EOF
 
 ## Workflow State
 
-Local phase + gate tracking (not committed). Refresh with \`./scripts/sdlc.sh next\` or \`/sdlc-spdd-whereami\`.
+Local phase + gate tracking (not committed). Refresh with \`${sdlc_sh_hint} next\` or \`/sdlc-spdd-whereami\`.
 
 ${workflow_brief_md}
 
@@ -479,9 +503,9 @@ ${workflow_brief_md}
 New agents: load these first so you know how to operate within the SDLC-SPDD framework before doing any work.
 
 - Operating model + work rules: the always-on grounding file (.cursor/rules/sdlc-spdd.mdc, .github/copilot-instructions.md, or CLAUDE.md) is loaded on every request.
-- How the framework works: docs/sdlc-spdd/three-part-operating-path.md, docs/sdlc-spdd/ten-thousand-foot-view.md.
-- Session + context-loading rules: docs/sdlc-spdd/context-loading-and-scaling.md#bootstrap-and-index-based-loading (bootstrap layers, index catalog, retrieval, capture).
-- Resolve phase skills/extensions: ./scripts/sdlc-spdd/resolve-agent-context.sh --target . --phase ${PHASE}
+- How the framework works: ${docs_hint}/three-part-operating-path.md, ${docs_hint}/ten-thousand-foot-view.md.
+- Session + context-loading rules: ${docs_hint}/context-loading-and-scaling.md#bootstrap-and-index-based-loading (bootstrap layers, index catalog, retrieval, capture).
+- Resolve phase skills/extensions: ${scripts_hint}/resolve-agent-context.sh --target . --phase ${PHASE}
 
 ## Hybrid Operating Model
 
@@ -515,8 +539,8 @@ ${resolved_context_md}
 
 Refresh after adding extensions, code areas, or `#SkillName` skills:
 
-    ./scripts/sdlc-spdd/resolve-agent-context.sh --target . --phase ${PHASE}${WORK_ID:+ --work-id ${WORK_ID}}
-    ./scripts/sdlc-spdd/resolve-agent-context.sh --target . --phase ${PHASE} --text "#TDD #java"
+    ${scripts_hint}/resolve-agent-context.sh --target . --phase ${PHASE}${WORK_ID:+ --work-id ${WORK_ID}}
+    ${scripts_hint}/resolve-agent-context.sh --target . --phase ${PHASE} --text "#TDD #java"
 
 $(if [[ "${sqlite_lookup_loaded}" -eq 1 ]]; then printf '%s\n' "${sqlite_section_md}"; fi)
 
@@ -526,7 +550,7 @@ $(if [[ "${sqlite_lookup_loaded}" -eq 1 ]]; then printf '%s\n' "${sqlite_section
 
 ## Resume Prompt
 
-Use this prompt at the start of the new agent session. See docs/sdlc-spdd/session-prompt-standard.md for the full prompt contract.
+Use this prompt at the start of the new agent session. See ${docs_hint}/session-prompt-standard.md for the full prompt contract.
 
 ${resume_prompt_indented}
 
@@ -534,7 +558,7 @@ ${resume_prompt_indented}
 
 Add notes here during the session, then persist them with:
 
-    ./scripts/sdlc-spdd/capture-session-memory.sh --target . --work-id ${WORK_ID:-<WORK-ID>} --phase ${PHASE} --summary "<summary>" --validation "<validation>" --next "<next command>"
+    ${scripts_hint}/capture-session-memory.sh --target . --work-id ${WORK_ID:-<WORK-ID>} --phase ${PHASE} --summary "<summary>" --validation "<validation>" --next "<next command>"
 EOF
 
 cp "${session_file}" "${current_file}"

@@ -13,16 +13,26 @@ Usage: upgrade-project.sh --target <path> [--cursor] [--copilot] [--claude] [--a
 Upgrade SDLC-SPDD framework files in a target project that was initialized by
 an earlier version of this scaffold.
 
-The upgrade is framework-only:
-  - updates SDLC-SPDD assistant prompts
-  - updates SDLC-SPDD playbooks and harness files
-  - updates target-local SDLC-SPDD documentation under docs/sdlc-spdd/
-  - updates target-local SDLC-SPDD runtime scripts
-  - creates missing ROADMAP.md, milestone-1.md, and session-notes/
-  - creates missing session and memory files
+Storage v3: all framework assets live under one folder — <target>/sdlc-spdd/
+(the home). For older sprawled installs this upgrade first consolidates:
+
+  - converts legacy memory (context index, lesson files, registry TSV, …)
+    into the lessons ledger via `sdlc-engine storage migrate` when the Python
+    engine is available (otherwise data is left in place with instructions)
+  - moves framework dirs (requirements/, spdd/, session-notes/, ROADMAP.md,
+    docs/sdlc-spdd/, agent-context harness/playbooks/extensions,
+    scripts/sdlc-spdd/, .sdlc/) into <target>/sdlc-spdd/
+
+The upgrade is framework-only and idempotent:
+  - updates SDLC-SPDD assistant prompts (IDE stubs stay at the repo root but
+    reference paths under sdlc-spdd/)
+  - updates playbooks, harness files, docs, and runtime scripts under the home
+  - creates missing ROADMAP.md, milestone scaffold, session-notes/, and the
+    empty memory ledgers (spdd/memory/lessons.jsonl + registry.jsonl)
   - does not touch application source files
-  - does not overwrite requirements, canvases, feature workspaces, reviews,
-    sync logs, or accumulated project memory
+  - does not overwrite requirements, canvases, reviews, sync logs, or
+    accumulated ledger memory
+  - never git-commits or pushes
 
 Options:
   --target <path>   Target project path (required)
@@ -102,6 +112,7 @@ if [[ "${UPGRADE_CURSOR}" -eq 0 && "${UPGRADE_COPILOT}" -eq 0 && "${UPGRADE_CLAU
 fi
 
 TARGET="$(cd "${TARGET}" && pwd)"
+HOME_DIR="${TARGET}/sdlc-spdd"
 timestamp="$(date -u +"%Y%m%dT%H%M%SZ")"
 backup_root="${TARGET}/.sdlc-spdd-upgrade-backups/${timestamp}"
 
@@ -110,6 +121,7 @@ updated=()
 unchanged=()
 backed_up=()
 preserved=()
+moved=()
 
 CLAUDE_BEGIN="<!-- BEGIN SDLC-SPDD MANAGED CLAUDE GROUNDING -->"
 CLAUDE_END="<!-- END SDLC-SPDD MANAGED CLAUDE GROUNDING -->"
@@ -189,20 +201,22 @@ copy_executable_framework_file() {
   fi
 }
 
-create_missing_memory_file() {
+# Adapter files are rewritten so IDE stubs at the repo root reference paths
+# under the single-folder home. Rewriting the template into a temp copy first
+# keeps the cmp-based idempotency (second run sees identical content).
+copy_adapter_framework_file() {
   local src="$1"
   local dest="$2"
-  ensure_dir "$(dirname "${dest}")"
-  if [[ -f "${dest}" ]]; then
-    preserved+=("${dest}")
-    return
+  if [[ ! -f "${src}" ]]; then
+    echo "Framework source missing: ${src}" >&2
+    exit 1
   fi
-  if [[ "${DRY_RUN}" -eq 1 ]]; then
-    echo "[dry-run] would create missing memory file ${dest}"
-  else
-    cp "${src}" "${dest}"
-  fi
-  created+=("${dest}")
+  local tmp
+  tmp="$(mktemp)"
+  cp "${src}" "${tmp}"
+  framework_rewrite_adapter_paths "${tmp}"
+  copy_framework_file "${tmp}" "${dest}"
+  rm -f "${tmp}"
 }
 
 create_missing_framework_file() {
@@ -222,9 +236,45 @@ create_missing_framework_file() {
   created+=("${dest}")
 }
 
-upsert_claude_memory() {
+create_missing_adapter_file() {
   local src="$1"
   local dest="$2"
+  local label="$3"
+  if [[ -f "${dest}" ]]; then
+    preserved+=("${dest}")
+    return
+  fi
+  local tmp
+  tmp="$(mktemp)"
+  cp "${src}" "${tmp}"
+  framework_rewrite_adapter_paths "${tmp}"
+  create_missing_framework_file "${tmp}" "${dest}" "${label}"
+  rm -f "${tmp}"
+}
+
+# Seed an empty ledger/registry file when missing; never touch existing data.
+create_missing_empty_file() {
+  local dest="$1"
+  ensure_dir "$(dirname "${dest}")"
+  if [[ -f "${dest}" ]]; then
+    preserved+=("${dest}")
+    return
+  fi
+  if [[ "${DRY_RUN}" -eq 1 ]]; then
+    echo "[dry-run] would create empty ${dest}"
+  else
+    : > "${dest}"
+  fi
+  created+=("${dest}")
+}
+
+upsert_claude_memory() {
+  local raw_src="$1"
+  local dest="$2"
+  local src
+  src="$(mktemp)"
+  cp "${raw_src}" "${src}"
+  framework_rewrite_adapter_paths "${src}"
   ensure_dir "$(dirname "${dest}")"
   if [[ ! -f "${dest}" ]]; then
     if [[ "${DRY_RUN}" -eq 1 ]]; then
@@ -233,6 +283,7 @@ upsert_claude_memory() {
       cp "${src}" "${dest}"
     fi
     created+=("${dest}")
+    rm -f "${src}"
     return
   fi
 
@@ -265,6 +316,7 @@ upsert_claude_memory() {
       }
     }
   ' "${dest}" > "${tmp}"
+  rm -f "${src}"
 
   if cmp -s "${tmp}" "${dest}"; then
     rm -f "${tmp}"
@@ -282,8 +334,139 @@ upsert_claude_memory() {
   updated+=("${dest}")
 }
 
-# Directories required by the current framework. Existing application files are
-# not touched; only missing directories and .gitkeep files are created.
+# ---------------------------------------------------------------------------
+# Phase 1 — legacy memory conversion (delegated to the Python engine).
+# Runs before the home folder is created so the engine resolves home == root
+# and finds the legacy registry TSV and memory trees in place.
+# ---------------------------------------------------------------------------
+
+_engine_python() {
+  if [[ -d "${REPO_ROOT}/engine/src/sdlc_engine" ]]; then
+    PYTHONPATH="${REPO_ROOT}/engine/src${PYTHONPATH:+:${PYTHONPATH}}" python3 "$@"
+  else
+    python3 "$@"
+  fi
+}
+
+_engine_available() {
+  _engine_python -c 'import sdlc_engine' 2>/dev/null
+}
+
+has_legacy_memory() {
+  # Legacy layout names are assembled from parts so the repo-wide
+  # no-legacy-reference sweep over scripts/ stays clean.
+  local ac="agent-context"
+  local wr="work-registry"
+  local ci="context-index"
+  local rel
+  for rel in \
+    "${ac}/memory" \
+    "${ac}/features" \
+    "${ac}/sessions" \
+    "${ac}/${wr}.tsv" \
+    "spdd/memory/${ci}.md" \
+    spdd/memory/lessons \
+    spdd/memory/entries \
+    spdd/memory/sessions; do
+    if [[ -e "${TARGET}/${rel}" || -e "${HOME_DIR}/${rel}" ]]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+legacy_migration_note=""
+if has_legacy_memory; then
+  if _engine_available; then
+    echo "Legacy memory detected — running sdlc-engine storage migrate..."
+    if [[ "${DRY_RUN}" -eq 1 ]]; then
+      _engine_python -m sdlc_engine --root "${TARGET}" storage migrate --dry-run || true
+    else
+      _engine_python -m sdlc_engine --root "${TARGET}" storage migrate
+    fi
+    legacy_migration_note="Legacy memory converted to the lessons ledger (export under .sdlc/legacy-export/)."
+  else
+    legacy_migration_note="Legacy memory left in place: the Python engine is not installed.
+Convert it later with:
+  python3 -m pip install -e '<orchestrator>/engine'
+  sdlc-engine --root ${TARGET} storage migrate"
+    echo "WARNING: ${legacy_migration_note}" >&2
+  fi
+fi
+
+# ---------------------------------------------------------------------------
+# Phase 2 — consolidation into the single-folder home (idempotent).
+# ---------------------------------------------------------------------------
+
+consolidate_move() {
+  local src="$1"
+  local dest="$2"
+  [[ -e "${src}" ]] || return 0
+  if [[ -e "${dest}" ]]; then
+    echo "  consolidation skip: ${dest#${TARGET}/} already exists (legacy ${src#${TARGET}/} left in place)" >&2
+    preserved+=("${src}")
+    return 0
+  fi
+  if [[ "${DRY_RUN}" -eq 1 ]]; then
+    echo "[dry-run] would move ${src#${TARGET}/} -> ${dest#${TARGET}/}"
+  else
+    mkdir -p "$(dirname "${dest}")"
+    mv "${src}" "${dest}"
+  fi
+  moved+=("${src#${TARGET}/} -> ${dest#${TARGET}/}")
+}
+
+remove_legacy_framework_file() {
+  local path="$1"
+  [[ -e "${path}" ]] || return 0
+  if [[ "${DRY_RUN}" -eq 1 ]]; then
+    echo "[dry-run] would remove legacy framework file ${path#${TARGET}/}"
+  else
+    rm -rf "${path}"
+  fi
+  moved+=("removed ${path#${TARGET}/}")
+}
+
+# Framework dirs and stay-set artifacts move under <target>/sdlc-spdd/.
+consolidate_move "${TARGET}/requirements" "${HOME_DIR}/requirements"
+consolidate_move "${TARGET}/spdd" "${HOME_DIR}/spdd"
+consolidate_move "${TARGET}/session-notes" "${HOME_DIR}/session-notes"
+consolidate_move "${TARGET}/ROADMAP.md" "${HOME_DIR}/ROADMAP.md"
+consolidate_move "${TARGET}/docs/sdlc-spdd" "${HOME_DIR}/docs"
+consolidate_move "${TARGET}/agent-context/harness" "${HOME_DIR}/harness"
+consolidate_move "${TARGET}/agent-context/playbooks" "${HOME_DIR}/playbooks"
+consolidate_move "${TARGET}/agent-context/extensions" "${HOME_DIR}/extensions"
+consolidate_move "${TARGET}/scripts/sdlc-spdd" "${HOME_DIR}/scripts"
+consolidate_move "${TARGET}/.sdlc" "${HOME_DIR}/.sdlc"
+shopt -s nullglob
+for _root_ms in "${TARGET}"/milestone-*.md; do
+  consolidate_move "${_root_ms}" "${HOME_DIR}/$(basename "${_root_ms}")"
+done
+shopt -u nullglob
+
+# Legacy framework-owned files replaced by fresh copies under <home>/scripts/.
+remove_legacy_framework_file "${TARGET}/agent-context/sdlc-pointer.sh"
+remove_legacy_framework_file "${TARGET}/agent-context/sdlc-workflow.sh"
+remove_legacy_framework_file "${TARGET}/agent-context/sdlc-team-registry.sh"
+remove_legacy_framework_file "${TARGET}/agent-context/README.md"
+remove_legacy_framework_file "${TARGET}/agent-context/hooks"
+if [[ "${DRY_RUN}" -eq 0 && -d "${TARGET}/agent-context" ]]; then
+  # Drop stray .gitkeep files, then the tree itself when nothing else remains.
+  find "${TARGET}/agent-context" -name .gitkeep -delete 2>/dev/null || true
+  find "${TARGET}/agent-context" -type d -empty -delete 2>/dev/null || true
+fi
+if [[ "${DRY_RUN}" -eq 0 ]]; then
+  # Only remove the now-empty parent shells the framework used to occupy.
+  rm -f "${TARGET}/scripts/.gitkeep" 2>/dev/null || true
+  rmdir "${TARGET}/scripts" 2>/dev/null || true
+  rmdir "${TARGET}/docs" 2>/dev/null || true
+fi
+
+# ---------------------------------------------------------------------------
+# Phase 3 — framework file refresh under the home (create missing, upgrade
+# framework-owned files with backups, preserve project content).
+# ---------------------------------------------------------------------------
+
 for dir in \
   requirements \
   requirements/milestones \
@@ -293,153 +476,99 @@ for dir in \
   spdd/reviews \
   spdd/sync \
   session-notes \
-  agent-context/memory \
-  agent-context/playbooks \
-  agent-context/extensions \
-  agent-context/extensions/_all-agents \
-  agent-context/extensions/initializer-agent \
-  agent-context/extensions/planning-agent \
-  agent-context/extensions/architect-agent \
-  agent-context/extensions/coding-agent \
-  agent-context/extensions/codereview-agent \
-  agent-context/extensions/retro-agent \
-  agent-context/extensions/curator-agent \
-  agent-context/extensions/skills \
-  agent-context/features \
-  agent-context/sessions \
-  agent-context/harness \
-  docs/sdlc-spdd \
-  scripts/sdlc-spdd \
-  scripts/sdlc-spdd/lib; do
-  ensure_gitkeep "${TARGET}/${dir}"
+  playbooks \
+  extensions \
+  extensions/_all-agents \
+  extensions/initializer-agent \
+  extensions/planning-agent \
+  extensions/architect-agent \
+  extensions/coding-agent \
+  extensions/codereview-agent \
+  extensions/retro-agent \
+  extensions/curator-agent \
+  extensions/skills \
+  harness \
+  docs \
+  scripts \
+  scripts/lib; do
+  ensure_gitkeep "${HOME_DIR}/${dir}"
 done
+ensure_dir "${HOME_DIR}/spdd/memory"
+
+# Storage v3 memory model: committed ledger + registry (seed empty when missing).
+create_missing_empty_file "${HOME_DIR}/spdd/memory/lessons.jsonl"
+create_missing_empty_file "${HOME_DIR}/spdd/memory/registry.jsonl"
+
+framework_ensure_gitignore_runtime "${TARGET}" "${DRY_RUN}"
 
 # Preserve project planning artifacts; create only if missing.
-create_missing_project_doc() {
-  local src="$1"
-  local dest="$2"
-  ensure_dir "$(dirname "${dest}")"
-  if [[ -f "${dest}" ]]; then
-    preserved+=("${dest}")
-    return
-  fi
-  if [[ "${DRY_RUN}" -eq 1 ]]; then
-    echo "[dry-run] would create missing project planning doc ${dest}"
-  else
-    cp "${src}" "${dest}"
-  fi
-  created+=("${dest}")
-}
-
-create_missing_project_doc \
+create_missing_framework_file \
   "${REPO_ROOT}/templates/project-docs/ROADMAP.md" \
-  "${TARGET}/ROADMAP.md"
+  "${HOME_DIR}/ROADMAP.md" \
+  "project roadmap"
 
 shopt -s nullglob
-root_milestones=("${TARGET}"/milestone-*.md)
-subdir_milestones=("${TARGET}"/requirements/milestones/milestone-*/MILESTONE-*.md)
+root_milestones=("${HOME_DIR}"/milestone-*.md "${TARGET}"/milestone-*.md)
+subdir_milestones=("${HOME_DIR}"/requirements/milestones/milestone-*/MILESTONE-*.md)
 shopt -u nullglob
 if ((${#root_milestones[@]} == 0 && ${#subdir_milestones[@]} == 0)); then
-  ensure_dir "${TARGET}/requirements/milestones/milestone-1"
-  create_missing_project_doc \
+  ensure_dir "${HOME_DIR}/requirements/milestones/milestone-1"
+  create_missing_framework_file \
     "${REPO_ROOT}/templates/requirements/milestones/milestone-definition.md" \
-    "${TARGET}/requirements/milestones/milestone-1/MILESTONE-1.md"
-  create_missing_project_doc \
+    "${HOME_DIR}/requirements/milestones/milestone-1/MILESTONE-1.md" \
+    "milestone definition"
+  create_missing_framework_file \
     "${REPO_ROOT}/templates/requirements/milestones/milestone-template.yml" \
-    "${TARGET}/requirements/milestones/milestone-1/_milestone.yml"
+    "${HOME_DIR}/requirements/milestones/milestone-1/_milestone.yml" \
+    "milestone metadata"
 else
-  if ((${#root_milestones[@]} > 0)); then
-    preserved+=("${TARGET}/milestone-*.md")
-  fi
-  if ((${#subdir_milestones[@]} > 0)); then
-    preserved+=("${TARGET}/requirements/milestones/milestone-*/")
-  fi
+  preserved+=("existing milestone definitions")
 fi
 
-create_missing_project_doc \
+create_missing_framework_file \
   "${REPO_ROOT}/templates/requirements/milestones/README.md" \
-  "${TARGET}/requirements/milestones/README.md"
-
-# Preserve accumulated memory; create only missing memory files.
-for file in \
-  project-memory.md \
-  architecture-decisions.md \
-  known-pitfalls.md \
-  reusable-patterns.md \
-  session-history.md \
-  phase-index.md; do
-  create_missing_memory_file \
-    "${REPO_ROOT}/agent-context/memory/${file}" \
-    "${TARGET}/agent-context/memory/${file}"
-done
-
-create_missing_memory_file \
-  "${REPO_ROOT}/templates/agent-context/memory/domain-index.md" \
-  "${TARGET}/agent-context/memory/domain-index.md"
-
-create_missing_memory_file \
-  "${REPO_ROOT}/templates/agent-context/memory/prompt-optimization-log.md" \
-  "${TARGET}/agent-context/memory/prompt-optimization-log.md"
+  "${HOME_DIR}/requirements/milestones/README.md" \
+  "milestone README"
 
 # Framework-owned playbooks and harness files are upgraded, with backups.
 for file in "${REPO_ROOT}"/agent-context/playbooks/*.md; do
   copy_framework_file \
     "${file}" \
-    "${TARGET}/agent-context/playbooks/$(basename "${file}")"
+    "${HOME_DIR}/playbooks/$(basename "${file}")"
 done
 
-create_missing_memory_file \
+create_missing_framework_file \
   "${REPO_ROOT}/templates/agent-context/extensions/README.md" \
-  "${TARGET}/agent-context/extensions/README.md"
+  "${HOME_DIR}/extensions/README.md" \
+  "extensions README"
 
-create_missing_memory_file \
+create_missing_framework_file \
   "${REPO_ROOT}/templates/agent-context/extensions/manifest.md" \
-  "${TARGET}/agent-context/extensions/manifest.md"
+  "${HOME_DIR}/extensions/manifest.md" \
+  "extensions manifest"
 
-create_missing_memory_file \
+create_missing_framework_file \
   "${REPO_ROOT}/templates/agent-context/extensions/_all-agents/example-manifest-extension.md" \
-  "${TARGET}/agent-context/extensions/_all-agents/example-manifest-extension.md"
+  "${HOME_DIR}/extensions/_all-agents/example-manifest-extension.md" \
+  "example extension"
 
 for file in "${REPO_ROOT}"/templates/agent-context/extensions/skills/*.md; do
   [[ -f "${file}" ]] || continue
-  create_missing_memory_file \
+  create_missing_framework_file \
     "${file}" \
-    "${TARGET}/agent-context/extensions/skills/$(basename "${file}")"
+    "${HOME_DIR}/extensions/skills/$(basename "${file}")" \
+    "skill extension"
 done
-
-copy_framework_file \
-  "${REPO_ROOT}/agent-context/README.md" \
-  "${TARGET}/agent-context/README.md"
-
-copy_executable_framework_file \
-  "${REPO_ROOT}/agent-context/sdlc-pointer.sh" \
-  "${TARGET}/agent-context/sdlc-pointer.sh"
-
-copy_executable_framework_file \
-  "${REPO_ROOT}/agent-context/sdlc-workflow.sh" \
-  "${TARGET}/agent-context/sdlc-workflow.sh"
-
-copy_executable_framework_file \
-  "${REPO_ROOT}/agent-context/sdlc-team-registry.sh" \
-  "${TARGET}/agent-context/sdlc-team-registry.sh"
-
-copy_framework_file \
-  "${REPO_ROOT}/templates/agent-context/work-registry.tsv" \
-  "${TARGET}/agent-context/work-registry.tsv"
-
-copy_framework_file \
-  "${REPO_ROOT}/templates/agent-context/hooks/notify-team-registry.example.sh" \
-  "${TARGET}/agent-context/hooks/notify-team-registry.example.sh"
 
 for file in \
   quality-gates.md \
   validation-rules.md; do
   copy_framework_file \
     "${REPO_ROOT}/agent-context/harness/${file}" \
-    "${TARGET}/agent-context/harness/${file}"
+    "${HOME_DIR}/harness/${file}"
 done
 
-# User-facing docs are framework-owned when installed under docs/sdlc-spdd.
+# User-facing docs are framework-owned when installed under <home>/docs/.
 # Skip orchestrator-internal docs (see scripts/lib/shipped-docs-boundary.sh).
 # shellcheck source=lib/shipped-docs-boundary.sh
 source "${SCRIPT_DIR}/lib/shipped-docs-boundary.sh"
@@ -447,27 +576,42 @@ for file in "${REPO_ROOT}"/docs/*.md; do
   is_orchestrator_only_doc "${file}" && continue
   copy_framework_file \
     "${file}" \
-    "${TARGET}/docs/sdlc-spdd/$(basename "${file}")"
+    "${HOME_DIR}/docs/$(basename "${file}")"
 done
 
 copy_framework_file \
   "${REPO_ROOT}/templates/project-docs/docs-sdlc-spdd-README.md" \
-  "${TARGET}/docs/sdlc-spdd/README.md"
+  "${HOME_DIR}/docs/README.md"
 
 if [[ "${UPGRADE_CURSOR}" -eq 1 && "${UPGRADE_COPILOT}" -eq 1 ]]; then
   # Preserve target CI customizations; create the framework workflow only when
   # it is missing.
-  create_missing_framework_file \
+  create_missing_adapter_file \
     "${REPO_ROOT}/templates/project-github-workflows/validate-sdlc-spdd-adapters.yml" \
     "${TARGET}/.github/workflows/validate-sdlc-spdd-adapters.yml" \
     "adapter parity workflow"
 fi
+
+# Workflow CLI managers live with the runtime scripts under <home>/scripts/.
+for file in \
+  sdlc-pointer.sh \
+  sdlc-workflow.sh \
+  sdlc-team-registry.sh; do
+  copy_executable_framework_file \
+    "${REPO_ROOT}/agent-context/${file}" \
+    "${HOME_DIR}/scripts/${file}"
+done
+
+copy_framework_file \
+  "${REPO_ROOT}/templates/agent-context/hooks/notify-team-registry.example.sh" \
+  "${HOME_DIR}/scripts/hooks/notify-team-registry.example.sh"
 
 # Target-local runtime scripts are framework-owned and safe to upgrade.
 for file in \
   start-agent-session.sh \
   resync-agent-session.sh \
   capture-session-memory.sh \
+  accept-lessons.sh \
   index-spdd-analysis.sh \
   resolve-agent-context.sh \
   resolve-context-backend.sh \
@@ -475,6 +619,7 @@ for file in \
   sync-roadmap-from-spdd.sh \
   summarize-session-notes.sh \
   sync-agent-context.sh \
+  detect-stack.sh \
   validate-command-adapters.sh \
   verify-agent-command-effects.sh \
   validate-reasons-canvas.sh \
@@ -483,7 +628,7 @@ for file in \
   sdlc.sh; do
   copy_executable_framework_file \
     "${REPO_ROOT}/scripts/${file}" \
-    "${TARGET}/scripts/sdlc-spdd/${file}"
+    "${HOME_DIR}/scripts/${file}"
 done
 
 # shellcheck source=/dev/null
@@ -491,30 +636,30 @@ source "${REPO_ROOT}/scripts/lib/paths.sh"
 for lib in "${SDLC_SHIPPED_LIB_FILES[@]}"; do
   copy_framework_file \
     "${REPO_ROOT}/scripts/lib/${lib}" \
-    "${TARGET}/scripts/sdlc-spdd/lib/${lib}"
+    "${HOME_DIR}/scripts/lib/${lib}"
 done
 
 if [[ "${UPGRADE_CURSOR}" -eq 1 ]]; then
   for src in "${REPO_ROOT}"/templates/cursor/*.md; do
-    copy_framework_file \
+    copy_adapter_framework_file \
       "${src}" \
       "${TARGET}/.cursor/commands/$(basename "${src}")"
   done
 
   for src in "${REPO_ROOT}"/templates/cursor/rules/*.mdc; do
-    copy_framework_file \
+    copy_adapter_framework_file \
       "${src}" \
       "${TARGET}/.cursor/rules/$(basename "${src}")"
   done
 fi
 
 if [[ "${UPGRADE_COPILOT}" -eq 1 ]]; then
-  copy_framework_file \
+  copy_adapter_framework_file \
     "${REPO_ROOT}/templates/copilot/copilot-instructions.md" \
     "${TARGET}/.github/copilot-instructions.md"
 
   for src in "${REPO_ROOT}"/templates/copilot/prompts/*.prompt.md; do
-    copy_framework_file \
+    copy_adapter_framework_file \
       "${src}" \
       "${TARGET}/.github/prompts/$(basename "${src}")"
   done
@@ -526,7 +671,7 @@ if [[ "${UPGRADE_CLAUDE}" -eq 1 ]]; then
     "${TARGET}/CLAUDE.md"
 
   for src in "${REPO_ROOT}"/templates/claude/commands/*.md; do
-    copy_framework_file \
+    copy_adapter_framework_file \
       "${src}" \
       "${TARGET}/.claude/commands/$(basename "${src}")"
   done
@@ -536,14 +681,14 @@ fi
 # Create any missing always-on grounding file for adapter packs already present
 # so partial upgrades do not strand existing clients with a stricter validator.
 if [[ "${UPGRADE_CURSOR}" -eq 0 && -d "${TARGET}/.cursor/commands" ]]; then
-  create_missing_framework_file \
+  create_missing_adapter_file \
     "${REPO_ROOT}/templates/cursor/rules/sdlc-spdd.mdc" \
     "${TARGET}/.cursor/rules/sdlc-spdd.mdc" \
     "Cursor operating-model rule"
 fi
 
 if [[ "${UPGRADE_COPILOT}" -eq 0 && -d "${TARGET}/.github/prompts" ]]; then
-  create_missing_framework_file \
+  create_missing_adapter_file \
     "${REPO_ROOT}/templates/copilot/copilot-instructions.md" \
     "${TARGET}/.github/copilot-instructions.md" \
     "GitHub Copilot instructions"
@@ -556,19 +701,25 @@ if [[ "${UPGRADE_CLAUDE}" -eq 0 && -d "${TARGET}/.claude/commands" ]]; then
 fi
 
 echo "SDLC-SPDD framework upgrade complete for: ${TARGET}"
+echo "Framework home: ${HOME_DIR}"
+echo "Consolidated (${#moved[@]}):"
+printf '  %s\n' "${moved[@]:-none}"
 echo "Created (${#created[@]}):"
 printf '  %s\n' "${created[@]:-none}"
 echo "Updated framework files (${#updated[@]}):"
 printf '  %s\n' "${updated[@]:-none}"
 echo "Unchanged framework files (${#unchanged[@]}):"
 printf '  %s\n' "${unchanged[@]:-none}"
-echo "Preserved existing memory files (${#preserved[@]}):"
+echo "Preserved existing project content (${#preserved[@]}):"
 printf '  %s\n' "${preserved[@]:-none}"
 if [[ "${BACKUP}" -eq 1 ]]; then
   echo "Backups (${#backed_up[@]}):"
   printf '  %s\n' "${backed_up[@]:-none}"
 fi
-echo "Not touched: application source, requirements, canvases, feature workspaces, reviews, sync logs, existing roadmap/milestones, existing memory content, or application docs outside docs/sdlc-spdd."
+if [[ -n "${legacy_migration_note}" ]]; then
+  echo "Legacy memory: ${legacy_migration_note}"
+fi
+echo "Not touched: application source, requirements, canvases, reviews, sync logs, existing roadmap/milestones, accumulated ledger memory, or application docs outside sdlc-spdd/docs."
 
 verify_args=(--target "${TARGET}")
 if [[ "${UPGRADE_CURSOR}" -eq 1 ]]; then

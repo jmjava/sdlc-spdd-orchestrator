@@ -20,8 +20,9 @@ usage() {
   cat <<'EOF'
 Usage: resolve-agent-context.sh [options]
 
-Resolve skills, phase extensions, and indexed context for progressive loading.
-Combines SDLC Agents static resolution with area-keyed context-index rows.
+Resolve skills, phase extensions, and Work ID context for progressive loading.
+Combines SDLC Agents static resolution with a ledger progress excerpt (storage
+v3): matching lesson records are summarized into .sdlc/resolved/progress-<ID>.md.
 
 Options:
   --target <path>     Target project (default: .)
@@ -30,7 +31,7 @@ Options:
   --work-id <id>      Load code areas from analysis + Work ID artifacts; scope
                       the ledger progress excerpt by those areas
   --areas <list>      Comma-separated code areas (overrides/supplements work-id)
-  --index-limit <n>   Max context-index rows to resolve (default: 12)
+  --index-limit <n>   Ignored (legacy; kept for CLI compatibility)
   --text <string>     Prompt text containing #SkillName and !SkillName tokens
   --text-file <path>  Read prompt text from a file
   --format <fmt>      Output: paths (default), markdown, json
@@ -39,10 +40,10 @@ Options:
   -h, --help          Show this help
 
 Examples:
-  ./scripts/sdlc-spdd/resolve-agent-context.sh --target . --phase code --work-id FEAT-001
-  ./scripts/sdlc-spdd/resolve-agent-context.sh --phase code --areas src/billing,com.acme.billing
-  ./scripts/sdlc-spdd/resolve-agent-context.sh --text "Implement auth #TDD #java !Kafka"
-  ./scripts/sdlc-spdd/resolve-agent-context.sh --list-skills
+  ./sdlc-spdd/scripts/resolve-agent-context.sh --target . --phase code --work-id FEAT-001
+  ./sdlc-spdd/scripts/resolve-agent-context.sh --phase code --areas src/billing,com.acme.billing
+  ./sdlc-spdd/scripts/resolve-agent-context.sh --text "Implement auth #TDD #java !Kafka"
+  ./sdlc-spdd/scripts/resolve-agent-context.sh --list-skills
 EOF
 }
 
