@@ -18,7 +18,6 @@ bad() { echo "  FAIL: $1" >&2; fail=$((fail + 1)); }
 
 setup_skills_fixture() {
   mkdir -p "${WORK}/agent-context/harness/skills" \
-    "${WORK}/agent-context/memory" \
     "${WORK}/agent-context/harness"
   cp "${REPO_ROOT}/templates/agent-context/harness/phase-index.md" \
     "${WORK}/agent-context/harness/phase-index.md"

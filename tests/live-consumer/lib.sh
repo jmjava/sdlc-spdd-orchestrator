@@ -81,8 +81,11 @@ live_install_cursor() {
 live_sdlc() {
   local root="$1"
   shift
-  SDLC_USER="${SDLC_USER}" SDLC_ROOT="${root}" \
-    "${root}/scripts/sdlc-spdd/sdlc.sh" "$@"
+  local cli="${root}/sdlc-spdd/scripts/sdlc.sh"
+  if [[ ! -x "${cli}" ]]; then
+    cli="${root}/scripts/sdlc-spdd/sdlc.sh"
+  fi
+  SDLC_USER="${SDLC_USER}" SDLC_ROOT="${root}" "${cli}" "$@"
 }
 
 live_summary() {

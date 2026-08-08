@@ -14,7 +14,7 @@ CANVAS="${ROOT}/spdd/canvas/${WORK_ID}.md"
 VERIFY="${ROOT}/scripts/sdlc-spdd/verify-agent-command-effects.sh"
 
 mkdir -p "${FEATURE}" "${ROOT}/spdd/analysis" "${ROOT}/spdd/reviews" "${ROOT}/spdd/sync" \
-  "${ROOT}/agent-context/memory" "${ROOT}/session-notes"
+  "${ROOT}/session-notes"
 
 # init
 if "${VERIFY}" --target "${ROOT}" --work-id "${WORK_ID}" --step init >/dev/null; then
@@ -80,20 +80,20 @@ fi
 
 # retro
 printf '# Retro\n' >"${FEATURE}/retro.md"
-touch "${ROOT}/agent-context/memory/known-pitfalls.md"
-touch "${ROOT}/agent-context/memory/reusable-patterns.md"
 if "${VERIFY}" --target "${ROOT}" --work-id "${WORK_ID}" --step retro >/dev/null; then
   ok "effects: retro"
 else
   bad "effects: retro"
 fi
 
-# prompt-update
-LEDGER="${ROOT}/agent-context/memory/prompt-optimization-log.md"
-if [[ ! -f "${LEDGER}" ]]; then
-  printf '# Prompt optimization log\n\n' >"${LEDGER}"
+# prompt-update — staged session evidence satisfies storage v3 verifier
+STAGE="${ROOT}/sdlc-spdd/.sdlc/staged/lessons.jsonl"
+mkdir -p "$(dirname "${STAGE}")"
+if [[ ! -f "${STAGE}" ]] || ! grep -Fq "${WORK_ID}" "${STAGE}"; then
+  printf '%s\n' \
+    "{\"id\":\"session:${WORK_ID}:(none):capture\",\"kind\":\"session\",\"work_id\":\"${WORK_ID}\",\"area\":\"\",\"phase\":\"prompt-update\",\"ts\":\"2026-08-08T00:00:00Z\",\"title\":\"prompt update\",\"body\":\"clarified acceptance criteria during live matrix\",\"source\":\"capture\",\"keywords\":[],\"schema\":1}" \
+    >>"${STAGE}"
 fi
-printf '\n- %s: clarified acceptance criteria during live matrix\n' "${WORK_ID}" >>"${LEDGER}"
 if "${VERIFY}" --target "${ROOT}" --work-id "${WORK_ID}" --step prompt-update >/dev/null; then
   ok "effects: prompt-update"
 else

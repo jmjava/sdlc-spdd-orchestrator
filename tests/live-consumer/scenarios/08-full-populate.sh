@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Fully populate every capture / memory / planning artifact and assert
-# no "Not recorded" / empty placeholder fields remain on the golden entry.
+# no "Not recorded" / empty placeholder fields remain on staged records.
 set -euo pipefail
 # shellcheck source=../lib.sh
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/lib.sh"
@@ -8,21 +8,23 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/lib.sh"
 ROOT="${1:?target root required}"
 echo "== 08 full populate (no empty capture fields) =="
 
-SCRIPTS="${ROOT}/scripts/sdlc-spdd"
-FEATURE="${ROOT}/agent-context/features/${WORK_ID}"
-CANVAS="${ROOT}/spdd/canvas/${WORK_ID}.md"
-MEM="${ROOT}/agent-context/memory"
+HOME="${ROOT}/sdlc-spdd"
+SCRIPTS="${HOME}/scripts"
+FEATURE="${HOME}/agent-context/features/${WORK_ID}"
+CANVAS="${HOME}/spdd/canvas/${WORK_ID}.md"
+STAGE="${HOME}/.sdlc/staged/lessons.jsonl"
+LEDGER="${HOME}/spdd/memory/lessons.jsonl"
 MILESTONE_REL="requirements/milestones/milestone-1/MILESTONE-1.md"
-MILESTONE="${ROOT}/${MILESTONE_REL}"
-HISTORY="${MEM}/session-history.md"
+MILESTONE="${HOME}/${MILESTONE_REL}"
+SESSION="${HOME}/.sdlc/sessions/current-session.md"
 
-mkdir -p "${FEATURE}" "${ROOT}/spdd/analysis" "${ROOT}/spdd/reviews" "${ROOT}/spdd/sync" \
-  "${MEM}" "${ROOT}/session-notes"
+mkdir -p "${FEATURE}" "${HOME}/spdd/analysis" "${HOME}/spdd/reviews" "${HOME}/spdd/sync" \
+  "${HOME}/session-notes"
 
 # --- Populate lifecycle artifacts as a real session would ---
-LEAN_PROGRESS="${ROOT}/spdd/memory/entries/progress.md"
+LEAN_PROGRESS="${HOME}/spdd/memory/entries/progress.md"
 mkdir -p "$(dirname "${LEAN_PROGRESS}")"
-[[ -f "${FEATURE}/requirement.md" ]] || cp "${ROOT}/requirements/milestones/${WORK_ID}.md" "${FEATURE}/requirement.md"
+[[ -f "${FEATURE}/requirement.md" ]] || cp "${HOME}/requirements/milestones/${WORK_ID}.md" "${FEATURE}/requirement.md"
 [[ -f "${LEAN_PROGRESS}" ]] || printf '# Progress Log: %s\n\n' "${WORK_ID}" >"${LEAN_PROGRESS}"
 [[ -f "${FEATURE}/progress-log.md" ]] || printf '# Progress Log: %s\n\n' "${WORK_ID}" >"${FEATURE}/progress-log.md"
 
@@ -34,14 +36,14 @@ if grep -q '### T01' "${CANVAS}"; then
 fi
 
 printf '# Analysis\n\nScope lock and constraints for %s.\n' "${WORK_ID}" \
-  >"${ROOT}/spdd/analysis/${WORK_ID}-analysis.md"
+  >"${HOME}/spdd/analysis/${WORK_ID}-analysis.md"
 printf '# Review\n\nStatus: Approved\n\nAll acceptance criteria met for T01.\n' \
   >"${FEATURE}/review.md"
-cp "${FEATURE}/review.md" "${ROOT}/spdd/reviews/${WORK_ID}-review.md"
+cp "${FEATURE}/review.md" "${HOME}/spdd/reviews/${WORK_ID}-review.md"
 printf '# Sync log\n\nCanvas, requirement, and milestone aligned.\n' \
   >"${FEATURE}/sync-log.md"
 printf '# Sync\n\nNo drift detected after live matrix populate.\n' \
-  >"${ROOT}/spdd/sync/${WORK_ID}-sync.md"
+  >"${HOME}/spdd/sync/${WORK_ID}-sync.md"
 printf '# Retro\n\nWhat went well: seed/flush matrix.\nWhat to improve: always pass full capture flags.\n' \
   >"${FEATURE}/retro.md"
 
@@ -52,7 +54,7 @@ printf '\n### T01 - implement greet\n- Status: Complete\nImplemented greet helpe
 
 # Ensure milestone + roadmap exist (install creates them; seed keeps FEAT req).
 [[ -f "${MILESTONE}" ]] && ok "milestone present (${MILESTONE_REL})" || bad "milestone missing"
-[[ -f "${ROOT}/ROADMAP.md" ]] && ok "ROADMAP.md present" || bad "ROADMAP.md missing"
+[[ -f "${HOME}/ROADMAP.md" ]] && ok "ROADMAP.md present" || bad "ROADMAP.md missing"
 
 # Claim + session brief so capture has rich area parsing sources.
 live_sdlc "${ROOT}" claim "${WORK_ID}" --force >/dev/null 2>&1 || true
@@ -94,93 +96,65 @@ else
   bad "full capture-session-memory"
 fi
 
-# Extract the latest session entry block from session-history.md
-latest="$(awk '
-  /^### / { buf=""; in_entry=1 }
-  in_entry { buf = buf $0 ORS }
-  END { printf "%s", buf }
-' "${HISTORY}")"
+[[ -f "${STAGE}" ]] && ok "staged lessons present" || bad "staged lessons missing"
 
-assert_field_filled() {
+session_line="$(grep '"kind": "session"' "${STAGE}" | tail -n 1 || true)"
+decision_line="$(grep '"kind": "decision"' "${STAGE}" | tail -n 1 || true)"
+pitfall_line="$(grep '"kind": "pitfall"' "${STAGE}" | tail -n 1 || true)"
+pattern_line="$(grep '"kind": "pattern"' "${STAGE}" | tail -n 1 || true)"
+
+assert_staged_field() {
   local label="$1"
-  local pattern="$2"
-  local empty_re="$3"
-  if ! grep -Eq "${pattern}" <<<"${latest}"; then
-    bad "latest entry missing ${label}"
+  local line="$2"
+  local text="$3"
+  if [[ -z "${line}" ]]; then
+    bad "staged ${label} record missing"
     return
   fi
-  if grep -Eq "${empty_re}" <<<"${latest}"; then
-    bad "latest entry ${label} still empty/placeholder"
-    return
+  if grep -Fq "${text}" <<<"${line}"; then
+    ok "staged ${label} populated"
+  else
+    bad "staged ${label} missing ${text}"
   fi
-  ok "latest entry ${label} populated"
 }
 
-assert_field_filled "Validation" '^- Validation: ' '^- Validation: (Not recorded)?$'
-assert_field_filled "Decisions" '^- Decisions: ' '^- Decisions: (None)?$'
-assert_field_filled "Pitfalls" '^- Pitfalls: ' '^- Pitfalls: (None)?$'
-assert_field_filled "Reusable patterns" '^- Reusable patterns: ' '^- Reusable patterns: (None)?$'
-assert_field_filled "Milestone" '^- Milestone: ' '^- Milestone: (None)?$'
-assert_field_filled "Roadmap note" '^- Roadmap note: ' '^- Roadmap note: (None)?$'
-assert_field_filled "Next" '^- Next: ' '^- Next: (Not recorded)?$'
-assert_field_filled "Metrics" '^- Metrics: ' '^- Metrics: $'
-assert_field_filled "Code areas" '^- Code areas: ' '^- Code areas: (none)?$'
+assert_staged_field "session" "${session_line}" "${VALIDATION}"
+assert_staged_field "session" "${session_line}" "${NEXT_STEP}"
+assert_staged_field "session" "${session_line}" "${SUMMARY}"
+grep -Fq 'readiness=Ready For Coding' <<<"${session_line}" \
+  && ok "staged session readiness metric" || bad "staged session readiness metric"
+grep -Fq 'review-result=pass' <<<"${session_line}" \
+  && ok "staged session review-result metric" || bad "staged session review-result metric"
+assert_staged_field "decision" "${decision_line}" "${DECISIONS}"
+assert_staged_field "pitfall" "${pitfall_line}" "${PITFALLS}"
+assert_staged_field "pattern" "${pattern_line}" "${PATTERNS}"
 
-# Exact content anchors
-grep -Fq "${VALIDATION}" <<<"${latest}" && ok "validation text present" || bad "validation text missing"
-grep -Fq "${DECISIONS}" <<<"${latest}" && ok "decisions text present" || bad "decisions text missing"
-grep -Fq "${PITFALLS}" <<<"${latest}" && ok "pitfalls text present" || bad "pitfalls text missing"
-grep -Fq "${PATTERNS}" <<<"${latest}" && ok "patterns text present" || bad "patterns text missing"
-grep -Fq "${MILESTONE_REL}" <<<"${latest}" && ok "milestone path recorded" || bad "milestone path missing"
-grep -Fq "${ROADMAP_NOTE}" <<<"${latest}" && ok "roadmap note recorded" || bad "roadmap note missing"
-grep -Fq "${NEXT_STEP}" <<<"${latest}" && ok "next step recorded" || bad "next step missing"
-grep -Eq 'readiness=Ready For Coding|readiness=ready-for-coding' <<<"${latest}" \
-  && ok "readiness metric recorded" || bad "readiness metric missing"
-grep -Fq 'review-result=pass' <<<"${latest}" && ok "review-result metric" || bad "review-result metric"
-
-# Durable memory files received appends
-grep -Fq "${DECISIONS}" "${MEM}/architecture-decisions.md" \
-  && ok "architecture-decisions.md appended" || bad "architecture-decisions.md"
-grep -Fq "${PITFALLS}" "${MEM}/known-pitfalls.md" \
-  && ok "known-pitfalls.md appended" || bad "known-pitfalls.md"
-grep -Fq "${PATTERNS}" "${MEM}/reusable-patterns.md" \
-  && ok "reusable-patterns.md appended" || bad "reusable-patterns.md"
-grep -Fq "${WORK_ID}" "${MEM}/project-memory.md" \
-  && ok "project-memory.md updated" || bad "project-memory.md"
-grep -Fq "${WORK_ID}" "${MEM}/session-index.md" \
-  && ok "session-index.md updated" || bad "session-index.md"
-
-# Context index kinds
-for kind in session decision pitfall pattern metric; do
-  if grep -Eq "\\| ${kind} \\|" "${MEM}/context-index.md"; then
-    ok "context-index has ${kind} rows"
+for kind in session decision pitfall pattern; do
+  if grep -Fq "\"kind\": \"${kind}\"" "${STAGE}"; then
+    ok "staged record kind ${kind}"
   else
-    bad "context-index missing ${kind} rows"
+    bad "staged record kind ${kind} missing"
   fi
 done
 
-# Per-session entry file exists
-entry_count="$(find "${MEM}/sessions" -name '*.md' 2>/dev/null | wc -l | tr -d ' ')"
-[[ "${entry_count}" -ge 1 ]] && ok "per-session memory files (${entry_count})" || bad "no per-session files"
+if [[ -f "${SESSION}" ]] \
+  && grep -Fq "## Captured Memory" "${SESSION}" \
+  && grep -Fq "${SUMMARY}" "${SESSION}" \
+  && grep -Fq "${VALIDATION}" "${SESSION}"; then
+  ok "current-session capture summary populated"
+else
+  bad "current-session capture summary incomplete"
+fi
 
 # Planning docs updated
 grep -Fq "${WORK_ID}" "${MILESTONE}" && ok "milestone mentions work" || bad "milestone missing work"
-grep -Fq "${ROADMAP_NOTE}" "${ROOT}/ROADMAP.md" && ok "ROADMAP note written" || bad "ROADMAP note missing"
-grep -Fq "${NEXT_STEP}" "${ROOT}/ROADMAP.md" && ok "ROADMAP next written" || bad "ROADMAP next missing"
+grep -Fq "${ROADMAP_NOTE}" "${HOME}/ROADMAP.md" && ok "ROADMAP note written" || bad "ROADMAP note missing"
+grep -Fq "${NEXT_STEP}" "${HOME}/ROADMAP.md" && ok "ROADMAP next written" || bad "ROADMAP next missing"
 
-# Daily session note
-note="$(ls -1t "${ROOT}/session-notes"/*.md 2>/dev/null | head -n 1 || true)"
-if [[ -n "${note}" ]] && grep -Fq "${WORK_ID}" "${note}" && grep -Fq "${VALIDATION}" "${note}"; then
-  ok "session-notes fully populated"
-else
-  bad "session-notes incomplete"
-fi
-
-# Lean progress log includes full capture header (#86)
-PROGRESS="${ROOT}/spdd/memory/entries/progress.md"
-grep -Fq "${WORK_ID}" "${PROGRESS}" \
-  && grep -Fq "${VALIDATION}" "${PROGRESS}" \
-  && ok "lean progress full capture" || bad "lean progress incomplete"
+# Lean progress log still carries operation evidence for code step checks
+grep -Fq "${WORK_ID}" "${LEAN_PROGRESS}" \
+  && grep -Fq "src/hello.py" "${LEAN_PROGRESS}" \
+  && ok "lean progress operation evidence" || bad "lean progress incomplete"
 
 # Official effects verifier with roadmap gate
 if "${SCRIPTS}/verify-agent-command-effects.sh" \
@@ -197,10 +171,17 @@ fi
 # Phase effect steps still green after full populate
 for step in init plan architect code review sync retro prompt-update; do
   if [[ "${step}" == "prompt-update" ]]; then
-    # ensure ledger mentions work
-    if [[ ! -f "${MEM}/prompt-optimization-log.md" ]] \
-      || ! grep -Fq "${WORK_ID}" "${MEM}/prompt-optimization-log.md"; then
-      printf '\n- %s: full-populate prompt refinement\n' "${WORK_ID}" >>"${MEM}/prompt-optimization-log.md"
+    if [[ ! -f "${STAGE}" ]] || ! grep -Fq "${WORK_ID}" "${STAGE}"; then
+      printf '%s\n' \
+        "{\"id\":\"session:${WORK_ID}:(none):capture\",\"kind\":\"session\",\"work_id\":\"${WORK_ID}\",\"area\":\"\",\"phase\":\"prompt-update\",\"ts\":\"2026-08-08T00:00:00Z\",\"title\":\"prompt update\",\"body\":\"full-populate prompt refinement\",\"source\":\"capture\",\"keywords\":[],\"schema\":1}" \
+        >>"${STAGE}"
+    fi
+  fi
+  if [[ "${step}" == "retro" ]]; then
+    if [[ ! -f "${LEDGER}" ]] || ! grep -Fq "\"work_id\": \"${WORK_ID}\"" "${LEDGER}"; then
+      printf '%s\n' \
+        "{\"id\":\"session:${WORK_ID}:(none):capture\",\"kind\":\"session\",\"work_id\":\"${WORK_ID}\",\"area\":\"\",\"phase\":\"retro\",\"ts\":\"2026-08-08T00:00:00Z\",\"title\":\"retro\",\"body\":\"accepted retro evidence\",\"source\":\"capture\",\"keywords\":[],\"schema\":1}" \
+        >>"${LEDGER}"
     fi
   fi
   if "${SCRIPTS}/verify-agent-command-effects.sh" \
@@ -211,7 +192,6 @@ for step in init plan architect code review sync retro prompt-update; do
   fi
 done
 
-# Dump golden entry path for humans inspecting /tmp/sdlc-spdd-live
-echo "  golden session-history: ${HISTORY}"
+echo "  golden staged lessons: ${STAGE}"
 echo "  golden milestone: ${MILESTONE}"
-echo "  golden roadmap: ${ROOT}/ROADMAP.md"
+echo "  golden roadmap: ${HOME}/ROADMAP.md"

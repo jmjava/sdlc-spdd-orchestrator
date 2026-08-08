@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Regression harness for index-spdd-analysis.sh (Fowler Step 3 decision memory).
+# Regression harness for index-spdd-analysis.sh (storage v3 staged analysis records).
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -23,8 +23,11 @@ assert_count() {
   if [[ "${n}" == "$3" ]]; then ok "$4"; else bad "$4 (got ${n}, want $3)"; fi
 }
 
-mkdir -p "${WORK}/spdd/analysis" "${WORK}/agent-context/memory"
-cp "${REPO_ROOT}/agent-context/memory/domain-index.md" "${WORK}/agent-context/memory/domain-index.md"
+stage_file() {
+  printf '%s' "${1}/.sdlc/staged/lessons.jsonl"
+}
+
+mkdir -p "${WORK}/spdd/analysis"
 
 cat > "${WORK}/spdd/analysis/FEAT-010-billing-analysis.md" <<'AN'
 # Analysis Context: FEAT-010-billing
@@ -51,22 +54,25 @@ AN
 
 echo "== Test 1: index analysis keywords and areas =="
 "${INDEX}" --target "${WORK}" --work-id FEAT-010-billing >/dev/null
-assert_file "${WORK}/agent-context/memory/domain-index.md"
-assert_contains "${WORK}/agent-context/memory/domain-index.md" "| billing | com.acme.billing | analysis | FEAT-010-billing |" "domain row billing+billing area"
-assert_file "${WORK}/agent-context/memory/context-index.md"
-assert_count "${WORK}/agent-context/memory/context-index.md" '^\| com\.acme\.billing \| analysis \|' 1 "context analysis row for package"
-assert_count "${WORK}/agent-context/memory/context-index.md" '^\| src/billing \| analysis \|' 1 "context analysis row for directory"
-assert_file "${WORK}/agent-context/memory/code-areas.md"
-assert_contains "${WORK}/agent-context/memory/code-areas.md" "com.acme.billing" "new area in registry"
+STAGE="$(stage_file "${WORK}")"
+assert_file "${STAGE}"
+assert_contains "${STAGE}" '"kind": "analysis"' "staged analysis kind"
+assert_contains "${STAGE}" '"work_id": "FEAT-010-billing"' "staged work id"
+assert_contains "${STAGE}" '"area": "com.acme.billing"' "primary code area"
+assert_contains "${STAGE}" 'billing' "keywords include billing"
+assert_contains "${STAGE}" 'src/billing' "extra code area in keywords"
 
 echo "== Test 2: dry-run makes no writes =="
-rm -f "${WORK}/agent-context/memory/context-index.md"
-"${INDEX}" --target "${WORK}" --work-id FEAT-010-billing --dry-run >/dev/null
-if [[ -f "${WORK}/agent-context/memory/context-index.md" ]]; then
-  bad "dry-run should not create context-index"
+DRY="$(mktemp -d)"
+mkdir -p "${DRY}/spdd/analysis"
+cp "${WORK}/spdd/analysis/FEAT-010-billing-analysis.md" "${DRY}/spdd/analysis/FEAT-010-billing-analysis.md"
+"${INDEX}" --target "${DRY}" --work-id FEAT-010-billing --dry-run >/dev/null
+if [[ -f "$(stage_file "${DRY}")" ]]; then
+  bad "dry-run should not create staged lessons"
 else
-  ok "dry-run leaves context-index absent"
+  ok "dry-run leaves staged lessons absent"
 fi
+rm -rf "${DRY}"
 
 echo "== Test 3: missing analysis file fails =="
 if "${INDEX}" --target "${WORK}" --work-id MISSING 2>/dev/null; then
@@ -75,10 +81,9 @@ else
   ok "missing analysis exits non-zero"
 fi
 
-echo "== Test 4: re-run is idempotent (no duplicate rows) =="
+echo "== Test 4: re-run appends staged records with stable id =="
 IDEM="$(mktemp -d)"
-mkdir -p "${IDEM}/spdd/analysis" "${IDEM}/agent-context/memory"
-cp "${REPO_ROOT}/agent-context/memory/domain-index.md" "${IDEM}/agent-context/memory/domain-index.md"
+mkdir -p "${IDEM}/spdd/analysis"
 cat > "${IDEM}/spdd/analysis/FEAT-020-quota-analysis.md" <<'AN'
 # Analysis Context: FEAT-020-quota
 
@@ -95,15 +100,15 @@ AN
 "${INDEX}" --target "${IDEM}" --work-id FEAT-020-quota >/dev/null
 "${INDEX}" --target "${IDEM}" --work-id FEAT-020-quota >/dev/null
 "${INDEX}" --target "${IDEM}" --work-id FEAT-020-quota >/dev/null
-assert_count "${IDEM}/agent-context/memory/domain-index.md" '^\| quota \| com\.acme\.quota \| analysis \| FEAT-020-quota \|' 1 "domain row not duplicated after re-runs"
-assert_count "${IDEM}/agent-context/memory/context-index.md" '^\| src/quota \| analysis \| FEAT-020-quota \|' 1 "context row not duplicated after re-runs"
-assert_count "${IDEM}/agent-context/memory/code-areas.md" '^- com\.acme\.quota$' 1 "code area not duplicated after re-runs"
+IDEM_STAGE="$(stage_file "${IDEM}")"
+assert_count "${IDEM_STAGE}" '"id": "analysis:FEAT-020-quota:com\.acme\.quota:analysis"' 3 "re-runs append staged analysis records"
+assert_contains "${IDEM_STAGE}" 'quota' "keywords preserved on re-run"
+assert_contains "${IDEM_STAGE}" 'src/quota' "extra area preserved on re-run"
 rm -rf "${IDEM}"
 
 echo "== Test 5: re-run refreshes a second Work ID without dropping the first =="
 MULTI="$(mktemp -d)"
-mkdir -p "${MULTI}/spdd/analysis" "${MULTI}/agent-context/memory"
-cp "${REPO_ROOT}/agent-context/memory/domain-index.md" "${MULTI}/agent-context/memory/domain-index.md"
+mkdir -p "${MULTI}/spdd/analysis"
 cat > "${MULTI}/spdd/analysis/FEAT-030-a-analysis.md" <<'AN'
 # Analysis Context: FEAT-030-a
 
@@ -129,14 +134,14 @@ AN
 "${INDEX}" --target "${MULTI}" --work-id FEAT-030-a >/dev/null
 "${INDEX}" --target "${MULTI}" --work-id FEAT-031-b >/dev/null
 "${INDEX}" --target "${MULTI}" --work-id FEAT-030-a >/dev/null
-assert_count "${MULTI}/agent-context/memory/domain-index.md" '\| FEAT-030-a \|' 1 "first work id refreshed to single row"
-assert_count "${MULTI}/agent-context/memory/domain-index.md" '\| FEAT-031-b \|' 1 "second work id preserved on re-run"
+MULTI_STAGE="$(stage_file "${MULTI}")"
+assert_count "${MULTI_STAGE}" '"work_id": "FEAT-030-a"' 2 "first work id preserved across re-run"
+assert_count "${MULTI_STAGE}" '"work_id": "FEAT-031-b"' 1 "second work id preserved on re-run"
 rm -rf "${MULTI}"
 
-echo "== Test 6: keyword-only analysis (no Code Areas) writes placeholder area, no blank rows =="
+echo "== Test 6: keyword-only analysis uses placeholder area =="
 KW="$(mktemp -d)"
-mkdir -p "${KW}/spdd/analysis" "${KW}/agent-context/memory"
-cp "${REPO_ROOT}/agent-context/memory/domain-index.md" "${KW}/agent-context/memory/domain-index.md"
+mkdir -p "${KW}/spdd/analysis"
 cat > "${KW}/spdd/analysis/FEAT-040-kw-analysis.md" <<'AN'
 # Analysis Context: FEAT-040-kw
 
@@ -149,15 +154,14 @@ cat > "${KW}/spdd/analysis/FEAT-040-kw-analysis.md" <<'AN'
 No code areas identified yet.
 AN
 "${INDEX}" --target "${KW}" --work-id FEAT-040-kw >/dev/null
-assert_contains "${KW}/agent-context/memory/domain-index.md" "| gamma | - | analysis | FEAT-040-kw |" "keyword-only domain row uses placeholder area"
-assert_count "${KW}/agent-context/memory/domain-index.md" '^\| \| ' 0 "no empty leading-pipe rows in domain index"
-assert_count "${KW}/agent-context/memory/context-index.md" '^\| - \| analysis \| FEAT-040-kw \|' 1 "keyword-only context row uses placeholder area"
+KW_STAGE="$(stage_file "${KW}")"
+assert_contains "${KW_STAGE}" '"area": ""' "keyword-only analysis uses empty primary area"
+assert_contains "${KW_STAGE}" 'gamma' "keyword-only analysis keeps keyword"
 rm -rf "${KW}"
 
-echo "== Test 7: area-only analysis (no Domain Keywords) leaves domain index header-only =="
+echo "== Test 7: area-only analysis (no Domain Keywords) still stages =="
 AR="$(mktemp -d)"
-mkdir -p "${AR}/spdd/analysis" "${AR}/agent-context/memory"
-cp "${REPO_ROOT}/agent-context/memory/domain-index.md" "${AR}/agent-context/memory/domain-index.md"
+mkdir -p "${AR}/spdd/analysis"
 cat > "${AR}/spdd/analysis/FEAT-050-ar-analysis.md" <<'AN'
 # Analysis Context: FEAT-050-ar
 
@@ -166,9 +170,9 @@ cat > "${AR}/spdd/analysis/FEAT-050-ar-analysis.md" <<'AN'
 - src/onlyarea
 AN
 "${INDEX}" --target "${AR}" --work-id FEAT-050-ar >/dev/null
-assert_count "${AR}/agent-context/memory/domain-index.md" '^\| \| ' 0 "no empty leading-pipe rows when keywords absent"
-assert_count "${AR}/agent-context/memory/domain-index.md" '^\| FEAT' 0 "no malformed domain rows when keywords absent"
-assert_count "${AR}/agent-context/memory/context-index.md" '^\| src/onlyarea \| analysis \| FEAT-050-ar \|' 1 "area-only context row present"
+AR_STAGE="$(stage_file "${AR}")"
+assert_contains "${AR_STAGE}" '"area": "src/onlyarea"' "area-only analysis uses code area"
+assert_count "${AR_STAGE}" '"work_id": "FEAT-050-ar"' 1 "area-only analysis staged once"
 rm -rf "${AR}"
 
 echo
