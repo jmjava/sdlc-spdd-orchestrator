@@ -64,7 +64,7 @@ They dogfood a full Guide + Neo4j instance; they are not a consumer install cont
 Live stack (opt-in locally; CI workflow `test-guide-stack-experimental.yml`):
 
 ```bash
-# Requires Docker, Java 21, and jmjava/guide @ sdlc-spdd-projection-v2 (or main)
+# Requires Docker, Java 21, and jmjava/orch-guide @ sdlc-spdd-projection-v2 (or main)
 SDLC_GUIDE_STACK_LIVE=1 GUIDE_HOME=~/github/jmjava/guide \
   ./tests/test-guide-stack-live.sh
 ```
@@ -85,7 +85,7 @@ Bring up local Guide + Neo4j from the orchestrator ops console:
 The **Guide** tab drives an **Embabel-mechanics-aligned** local stack:
 
 1. Saves `.sdlc/guide-config.json` (gitignored) — ports, profile, `SPRING_PROFILES_ACTIVE=neo4j,local,<profile>`
-2. **Ensure / pull jmjava/guide** — clones/pulls the pinned tag `sdlc-spdd-projection-v2`
+2. **Ensure / pull jmjava/orch-guide** — clones/pulls the pinned tag `sdlc-spdd-projection-v2` on `jmjava/orch-guide`
    (SPDD NamedEntity projection on `main`; override with `GUIDE_GIT_REF=main` for tip)
 3. **Write Embabel SPDD profile** — generates `application-sdlc-spdd.yml` with `guide.spdd-projection.enabled=true` + RAG directories
 4. **Start Neo4j** — Guide compose (`embabel-neo4j`) with custom `NEO4J_*_PORT`

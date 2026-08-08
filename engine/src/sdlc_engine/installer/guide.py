@@ -33,7 +33,7 @@ DEFAULT_PROFILES = (
     },
     {
         "id": "menke-5",
-        "purpose": "Additional menke layer (if present in jmjava/guide)",
+        "purpose": "Additional menke layer (if present in jmjava/orch-guide)",
     },
 )
 
@@ -59,16 +59,19 @@ def config_path(target: Path | str) -> Path:
 def default_config() -> dict[str, Any]:
     home = os.environ.get("GUIDE_HOME", "").strip()
     if not home:
-        candidate = Path.home() / "github" / "jmjava" / "guide"
-        if candidate.is_dir():
-            home = str(candidate)
+        orch = Path.home() / "github" / "jmjava" / "orch-guide"
+        legacy = Path.home() / "github" / "jmjava" / "guide"
+        if orch.is_dir():
+            home = str(orch)
+        elif legacy.is_dir():
+            home = str(legacy)
         else:
-            home = str(candidate)
+            home = str(orch)
     return {
         "guide_home": home,
         "guide_git_url": os.environ.get("GUIDE_GIT_URL", DEFAULT_GIT_URL).strip()
         or DEFAULT_GIT_URL,
-        # Pin the merged SPDD NamedEntity projection on jmjava/guide (tag on main).
+        # Pin the merged SPDD NamedEntity projection on jmjava/orch-guide (tag on main).
         # Override with GUIDE_GIT_REF=main for floating tip, or a branch/tag of your choice.
         "guide_git_ref": os.environ.get(
             "GUIDE_GIT_REF", "sdlc-spdd-projection-v2"

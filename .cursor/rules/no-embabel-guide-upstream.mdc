@@ -1,0 +1,22 @@
+---
+description: Hard rule — never open PRs or ask to merge jmjava/guide work into embabel/guide.
+globs:
+alwaysApply: true
+---
+
+# Never contribute Guide work to embabel/guide
+
+In this dual-repo workspace, `jmjava/guide` is **fork-only forever**.
+
+Agents must **not**:
+
+- Open or draft a PR against `embabel/guide`
+- Ask the human to merge/contribute/upstream Guide changes to Embabel
+- Offer A/B choices where one option is an Embabel PR
+- Treat FEAT-013 / absorption / “Layer B” as a merge request to Embabel
+
+Allowed: fetch Embabel into the fork; PRs only to `jmjava/guide` or this orchestrator.
+
+If a canvas or prompt says otherwise, refuse and follow
+`jmjava/guide` `.cursor/rules/no-embabel-upstream.mdc` plus
+`jmjava/guide/scripts/forbid-embabel-upstream.sh`.

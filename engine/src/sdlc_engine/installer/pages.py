@@ -321,7 +321,7 @@ PAGE = """<!DOCTYPE html>
     <section class="tab-pane" id="pane-guide">
       <div class="panel">
         <h2>Embabel Guide + Neo4j</h2>
-        <p class="meta">Pulls from <code class="inline">jmjava/guide</code>, starts Compose Neo4j and Guide on custom ports. Config: <code class="inline">.sdlc/guide-config.json</code> (gitignored).</p>
+        <p class="meta">Pulls from <code class="inline">jmjava/orch-guide</code>, starts Compose Neo4j and Guide on custom ports. Config: <code class="inline">.sdlc/guide-config.json</code> (gitignored).</p>
         <div class="row" style="margin-bottom: 0.65rem;">
           <div style="flex: 2 1 16rem;">
             <label class="field" for="guide-home">Guide home</label>
@@ -334,7 +334,7 @@ PAGE = """<!DOCTYPE html>
         </div>
         <div class="row" style="margin-bottom: 0.65rem;">
           <div style="flex: 2 1 18rem;">
-            <label class="field" for="guide-ref">Git ref / branch (jmjava/guide spike)</label>
+            <label class="field" for="guide-ref">Git ref / branch (jmjava/orch-guide)</label>
             <input id="guide-ref" type="text" spellcheck="false" placeholder="sdlc-spdd-projection-v2 (or main)" />
           </div>
           <div style="flex: 1 1 8rem;">
@@ -380,7 +380,7 @@ PAGE = """<!DOCTYPE html>
         <textarea id="guide-notes"></textarea>
         <div class="actions">
           <button type="button" class="btn-primary" id="btn-guide-save">Save config</button>
-          <button type="button" class="btn-secondary" id="btn-guide-ensure">Ensure / pull jmjava/guide</button>
+          <button type="button" class="btn-secondary" id="btn-guide-ensure">Ensure / pull jmjava/orch-guide</button>
           <button type="button" class="btn-secondary" id="btn-guide-profile">Write Embabel SPDD profile</button>
           <button type="button" class="btn-secondary" id="btn-neo-start">Start Neo4j</button>
           <button type="button" class="btn-ghost" id="btn-neo-stop">Stop Neo4j</button>
@@ -770,7 +770,7 @@ PAGE = """<!DOCTYPE html>
     function fillGuide(data) {
       const cfg = data.config || {};
       $("guide-home").value = cfg.guide_home || "";
-      $("guide-git").value = cfg.guide_git_url || "https://github.com/jmjava/guide.git";
+      $("guide-git").value = cfg.guide_git_url || "https://github.com/jmjava/orch-guide.git";
       $("guide-ref").value = cfg.guide_git_ref || "";
       $("guide-profile").value = cfg.profile || "";
       $("guide-host").value = cfg.host || "127.0.0.1";

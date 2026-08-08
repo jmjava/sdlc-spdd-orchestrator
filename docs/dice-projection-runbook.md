@@ -46,13 +46,13 @@ flowchart LR
 | JDK 21 + Maven | Guide builds with `./mvnw` |
 | Docker | Neo4j runs via Guide's compose setup (or point at your own Neo4j) |
 | OpenAI API key | embeddings + chat models used by Guide |
-| Guide fork | `github.com/jmjava/guide`, tag **`sdlc-spdd-projection-v2`** (on `main` through dual-read PR #7; commit `28bdb5d`; supersedes `sdlc-spdd-projection-v1` @ `a6e3246`) |
+| Guide home | `github.com/jmjava/orch-guide`, tag **`sdlc-spdd-projection-v2`** (copied from former `jmjava/guide` tip; supersedes `sdlc-spdd-projection-v1` @ `a6e3246`) |
 | This repo | `sdlc-spdd-orchestrator` (any SDLC-SPDD project layout works) |
 
 ## 1. Get Guide (pinned tag)
 
 ```bash
-git clone git@github.com:jmjava/guide.git
+git clone git@github.com:jmjava/orch-guide.git
 cd guide
 git fetch --tags
 git checkout sdlc-spdd-projection-v2

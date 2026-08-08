@@ -174,7 +174,7 @@ def test_guide_config_roundtrip(tmp_path: Path) -> None:
         tmp_path,
         {
             "guide_home": str(tmp_path / "guide-repo"),
-            "guide_git_url": "https://github.com/jmjava/guide.git",
+            "guide_git_url": "https://github.com/jmjava/orch-guide.git",
             "profile": "menke-2",
             "host": "127.0.0.1",
             "port": 21337,
@@ -276,7 +276,7 @@ def test_ensure_guide_repo_present(tmp_path: Path) -> None:
     result = ensure_guide_repo(
         {
             "guide_home": str(guide_home),
-            "guide_git_url": "https://github.com/jmjava/guide.git",
+            "guide_git_url": "https://github.com/jmjava/orch-guide.git",
         },
         pull=False,
     )
@@ -290,7 +290,7 @@ def test_api_guide_page_has_runtime_controls(tmp_path: Path) -> None:
     page = client.get("/")
     assert b"Start Neo4j" in page.data
     assert b"Start Guide (+ingest)" in page.data
-    assert b"Ensure / pull jmjava/guide" in page.data
+    assert b"Ensure / pull jmjava/orch-guide" in page.data
     assert b"Load NamedEntity projection" in page.data
     assert b"Embabel mechanics" in page.data
     assert b"Incremental ingest" in page.data

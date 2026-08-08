@@ -67,7 +67,7 @@ SDLC_ENGINE=auto ./scripts/sdlc.sh next   # python if importable, else shell
 | `cli` | `sdlc-engine` / `python -m sdlc_engine` |
 
 Two local GUIs + Guide map: [docs/ops-console.md](../docs/ops-console.md)
-(Guide pin for console dogfood: tag **`sdlc-spdd-projection-v2`**).  
+(Guide pin for console dogfood: **`jmjava/orch-guide`** tag **`sdlc-spdd-projection-v2`**).  
 ADF editor runbook: [docs/adf-viewer.md](../docs/adf-viewer.md).
 
 ```bash

@@ -4,47 +4,48 @@
 
 - Work ID: FEAT-013-guide-git-incremental-upstream
 - Work Type: Feature
-- Status: In Progress
-- Readiness: ready-for-coding
+- Status: Complete
+- Readiness: complete
 - Created: 2026-08-07
-- Updated: 2026-08-08 (T02/T03 Layer B branch; T04 embabel PR blocked by fork-only rule)
+- Updated: 2026-08-08 (fork-only complete; never Embabel PR)
 - Owner: Cursor Agent
-- Target Project: jmjava/guide (implementation) → embabel/guide (upstream PR); orchestrator tracks governance
+- Target Project: jmjava/guide only (orchestrator tracks governance)
 - Stack: Java/Kotlin Spring Boot (Embabel Guide) + Neo4j RAG
-- Source System: SPIKE-003 accept (hybrid absorption)
+- Source System: SPIKE-003 accept (hybrid absorption) — **revised**: no Embabel merge asks
 - Analysis: spdd/analysis/FEAT-013-guide-git-incremental-upstream-analysis.md
 - Roadmap: ROADMAP.md
 - Milestone: milestone-1
-- Delivery stage: make it fast (upstream sustainment slice)
+- Delivery stage: make it fast (fork sustainment slice)
 - Related: SPIKE-003-embabel-context-graph-absorption (Complete), SPIKE-001-guide-rag-context-backend
 
 ## R - Requirements
 
 ### User Goal
 
-Land git-incremental directory ingest and RAG maintenance operator APIs from the
-`jmjava/guide` fork into upstream `embabel/guide` without bringing SPDD projection.
+Keep git-incremental directory ingest and RAG maintenance operator APIs on the
+`jmjava/guide` fork (clean, testable slice) **without** opening or asking for any
+PR against `embabel/guide`.
 
 ### Business / Product Goal
 
-Reduce fork drift for the Embabel-general ingest ops SPIKE-003 classified as the
-best first upstream slice, while keeping the SPDD context graph on the fork.
+Sustain Embabel-general ingest ops on the fork under a hard fork-only policy;
+never treat contribution-back as a workflow step.
 
 ### Acceptance Criteria
 
-- [x] Clean upstreamable diff vs `embabel/guide` `main` with **no** `com.embabel.guide.spdd` paths.
+- [x] Clean Layer B slice with **no** `com.embabel.guide.spdd` paths (fork review branch OK).
 - [x] Tests for git-incremental + maintenance included.
 - [x] `guide.git-ingestion.enabled` remains default **false**.
-- [x] Draft PR (or documented Embabel process blocker) against `embabel/guide`.
-- [x] Fork absorption docs updated with what was proposed / merged / rejected.
-- [x] Orchestrator pin unchanged unless a successor Guide tag is cut after upstream merge.
-      (Explicit fork tag `sdlc-spdd-projection-v2` cut for dual-read; pin bumped.)
+- [x] **No** Embabel PR; fork-only posture enforced (Cursor rule + git guard + CI).
+- [x] Fork absorption docs state fork-only forever (not a contribution queue).
+- [x] Explicit fork tag `sdlc-spdd-projection-v2` cut; orchestrator pin bumped.
 
 ### Non-Goals
 
-- No SPDD package / `spdd_*` upstream.
+- **Never** open or ask for a PR against `embabel/guide`.
+- No SPDD package / `spdd_*` contributed upstream.
 - No generic entity MCP in this FEAT.
-- No Cloud Agent `.cursor/*` env files.
+- No Cloud Agent `.cursor/*` env files contributed upstream.
 - No SPIKE-002 model work.
 - No required Guide dependency in orchestrator defaults.
 
@@ -203,19 +204,16 @@ Stay in existing `com.embabel.guide.rag` package; no new top-level module.
 - Validation: targeted tests green (or document environment blocker)
 - Result: `./mvnw -Dtest=GitIncrementalDirectorySupportTest,RagMaintenanceControllerWebMvcTest test` exit 0
 
-### T04 - Open draft PR to embabel/guide + sync docs
+### T04 - Enforce fork-only (no Embabel PR) + sync docs
 
-- Status: Complete (process blocker recorded)
-- Description: Open draft upstream PR (or record process blocker); update fork
-  absorption docs and orchestrator cross-links with URL/status.
-- Files: Guide docs; orchestrator GUIDE-INTEGRATION-SPIKE / progress log
-- Validation: PR URL recorded; absorption matrix shows FEAT-013 status
-- Blocker: `.cursor/rules/no-embabel-upstream.mdc` — fork must not open PRs to
-  `embabel/guide` unless a human explicitly reverses that rule in-session.
-- Fork docs: Guide branch `cursor/feat-013-absorption-status-f564` updates
-  `docs/spdd-upstream-absorption.md` with Layer B branch + blocker.
-- Hand-off: Layer B candidate remains on `jmjava/guide` for human rule reversal
-  or Embabel-side intake.
+- Status: Complete
+- Description: Do **not** open an Embabel PR. Harden prevention (Cursor rule,
+  `scripts/forbid-embabel-upstream.sh`, CI workflow, absorption posture rewrite).
+- Files: Guide `.cursor/rules`, `scripts/forbid-embabel-upstream.sh`,
+  `.github/workflows/forbid-embabel-upstream.yml`,
+  `docs/spdd-upstream-absorption.md`; orchestrator
+  `.cursor/rules/no-embabel-guide-upstream.mdc`
+- Validation: forbid script OK on fork remotes; negative test rejects embabel push URL
 
 ## N - Norms
 
@@ -250,18 +248,16 @@ Stay in existing `com.embabel.guide.rag` package; no new top-level module.
 
 ## Sync Notes
 
-Intake from SPIKE-003 accept (2026-08-07). Analysis written from Layer B inventory.
-T01–T03 complete on Guide; T04 recorded as embabel PR process blocker under
-fork-only rule. Dogfood pin advanced to `sdlc-spdd-projection-v2` (explicit fork
-tag; dual-read #89). Await human rule reversal to open Embabel PR, or close Work ID
-with fork-only Layer B sustainment.
+Human clarified policy: **never ask Embabel to merge**. FEAT-013 closes fork-only.
+Prevention stack landed (Cursor rules + git pre-push guard + CI). Pin
+`sdlc-spdd-projection-v2` remains the dogfood default.
 
 ## Final Status
 
-- Status: In Progress (awaiting human accept of blocker / rule reversal)
-- Completed Date:
-- PR: Layer B candidate `cursor/feat-013-layer-b-upstream-f564` (no embabel PR);
-  absorption docs PR on fork `cursor/feat-013-absorption-status-f564`
-- Completed Operations: T01–T04 (T04 = blocker)
-- Follow-Up Tasks: human reverse no-embabel-upstream rule **or** mark FEAT-013
-  complete as fork-only hand-off
+- Status: Complete
+- Completed Date: 2026-08-08
+- PR: fork docs/guards on `cursor/feat-013-absorption-status-f564`;
+  orchestrator pin/docs on `cursor/guide-persistence-pin-f564`;
+  Layer B review branch `cursor/feat-013-layer-b-upstream-f564` (not an Embabel PR)
+- Completed Operations: T01–T04
+- Follow-Up Tasks: none (fork-only sustainment)

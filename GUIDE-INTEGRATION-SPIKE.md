@@ -4,7 +4,7 @@ We are exploring integration between this project and Embabel Guide (RAG + optio
 DICE domain / context graph over Neo4j).
 
 Repository: https://github.com/jmjava/sdlc-spdd-orchestrator  
-Guide fork (durable pin): https://github.com/jmjava/guide (tag `sdlc-spdd-projection-v2`)
+Guide durable home: https://github.com/jmjava/orch-guide (tag `sdlc-spdd-projection-v2`; was jmjava/guide fork)
 
 ## Governed Work IDs
 
@@ -13,7 +13,7 @@ Guide fork (durable pin): https://github.com/jmjava/guide (tag `sdlc-spdd-projec
 | [SPIKE-001-guide-rag-context-backend](requirements/milestones/SPIKE-001-guide-rag-context-backend.md) | Does DICE hybrid retrieval justify optional Guide? | Provisional GO — field dogfood |
 | [SPIKE-002-local-llm-and-embedding-format](requirements/milestones/SPIKE-002-local-llm-and-embedding-format.md) | Local LLM + embedding format defaults? | Shelved / blocked on Guide+Ollama |
 | [SPIKE-003-embabel-context-graph-absorption](requirements/milestones/SPIKE-003-embabel-context-graph-absorption.md) | Where should the context graph live long-term? | **Complete** — hybrid accepted; FEAT-013 intake |
-| [FEAT-013-guide-git-incremental-upstream](requirements/milestones/FEAT-013-guide-git-incremental-upstream.md) | Upstream git-incremental ingest + RAG maintenance to `embabel/guide` | Code — Layer B branch on fork; embabel PR blocked by fork-only rule |
+| [FEAT-013-guide-git-incremental-upstream](requirements/milestones/FEAT-013-guide-git-incremental-upstream.md) | Keep git-incremental ingest + RAG maintenance on `jmjava/guide` (never Embabel PR) | **Complete** — fork-only; push/PR guards installed |
 
 ## Branch policy
 
@@ -29,6 +29,15 @@ Guide fork (durable pin): https://github.com/jmjava/guide (tag `sdlc-spdd-projec
 - `main` stays markdown-first; Guide remains optional and runtime-resolved.
 - Once a spike produces an accepted plan, open FEAT PR(s) for implementation slices
   (do not merge research spikes as silent framework rewrites).
+
+## Durable Guide home (cutover)
+
+Fork topology is being replaced by a **standalone** repo:
+
+- Target: `jmjava/orch-guide` (not a GitHub fork of Embabel)
+- Plan: [docs/orch-guide-cutover.md](docs/orch-guide-cutover.md)
+- Bootstrap: `./scripts/guide/push-orch-guide-bootstrap.sh` (after empty repo exists)
+- After cutover: hard-reset `jmjava/guide` to `embabel/guide`; dogfood uses `orch-guide`
 
 ## Operator docs
 

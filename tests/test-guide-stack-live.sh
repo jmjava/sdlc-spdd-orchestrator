@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # EXPERIMENTAL: full Guide + Neo4j live stack smoke test.
 #
-# Brings up embabel-neo4j from jmjava/guide, starts Guide (append-ingest, no
+# Brings up embabel-neo4j from jmjava/orch-guide, starts Guide (append-ingest, no
 # startup corpus ingest by default), loads SPDD NamedEntity projection, probes
 # MCP SSE, then tears Guide down.
 #
@@ -9,7 +9,7 @@
 #   SDLC_GUIDE_STACK_LIVE=1 ./tests/test-guide-stack-live.sh
 #
 # Env:
-#   GUIDE_HOME              path to jmjava/guide clone (default: ../guide or ~/github/jmjava/guide)
+#   GUIDE_HOME              path to orch-guide clone (default: ../orch-guide, ../guide, or ~/github/jmjava/orch-guide)
 #   GUIDE_GIT_REF           branch/tag (default: sdlc-spdd-projection-v2)
 #   GUIDE_PORT              default 21337
 #   NEO4J_BOLT_PORT         default 7687
@@ -48,24 +48,27 @@ resolve_guide_home() {
     echo "${GUIDE_HOME}"
     return
   fi
-  if [[ -d "${ROOT}/../guide/.git" ]]; then
-    echo "$(cd "${ROOT}/../guide" && pwd)"
-    return
-  fi
-  if [[ -d "${HOME}/github/jmjava/guide/.git" ]]; then
-    echo "${HOME}/github/jmjava/guide"
-    return
-  fi
+  for candidate in \
+    "${ROOT}/../orch-guide" \
+    "${HOME}/github/jmjava/orch-guide" \
+    "${ROOT}/../guide" \
+    "${HOME}/github/jmjava/guide"
+  do
+    if [[ -d "${candidate}/.git" ]]; then
+      echo "$(cd "${candidate}" && pwd)"
+      return
+    fi
+  done
   echo ""
 }
 
 GUIDE_HOME="$(resolve_guide_home)"
 if [[ -z "${GUIDE_HOME}" || ! -d "${GUIDE_HOME}" ]]; then
-  echo "FAIL: GUIDE_HOME not found (clone jmjava/guide or set GUIDE_HOME)" >&2
+  echo "FAIL: GUIDE_HOME not found (clone jmjava/orch-guide or set GUIDE_HOME)" >&2
   exit 1
 fi
 if [[ ! -f "${GUIDE_HOME}/scripts/append-ingest.sh" ]]; then
-  echo "FAIL: ${GUIDE_HOME} does not look like embabel/guide" >&2
+  echo "FAIL: ${GUIDE_HOME} does not look like orch-guide" >&2
   exit 1
 fi
 
@@ -111,7 +114,7 @@ root = Path(${ROOT@Q})
 guide = Path(${GUIDE_HOME@Q})
 cfg = save_config(root, {
     "guide_home": str(guide),
-    "guide_git_url": "https://github.com/jmjava/guide.git",
+    "guide_git_url": "https://github.com/jmjava/orch-guide.git",
     "guide_git_ref": ${GUIDE_GIT_REF@Q},
     "profile": ${GUIDE_PROFILE@Q},
     "spring_profiles": ${SPRING_PROFILES_ACTIVE@Q},

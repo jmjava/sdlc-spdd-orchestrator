@@ -52,12 +52,12 @@ jobs:
           path: sdlc-spdd-orchestrator
 
       # Private sibling repo: set repo secret GUIDE_CHECKOUT_TOKEN (classic PAT or
-      # fine-grained read on jmjava/guide). Falls back to GITHUB_TOKEN (works only if
-      # guide is public or same-repo access is granted).
-      - name: Checkout jmjava/guide (SPDD spike branch)
+      # fine-grained read on jmjava/orch-guide). Falls back to GITHUB_TOKEN (works only if
+      # orch-guide is public or same-repo access is granted).
+      - name: Checkout jmjava/orch-guide (SPDD durable home)
         uses: actions/checkout@v4
         with:
-          repository: jmjava/guide
+          repository: jmjava/orch-guide
           ref: sdlc-spdd-projection-v2
           path: guide
           token: ${{ secrets.GUIDE_CHECKOUT_TOKEN || secrets.GITHUB_TOKEN }}

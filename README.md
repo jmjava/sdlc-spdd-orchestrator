@@ -255,7 +255,7 @@ python3 -m pip install -e './engine[viewer]'
 
 Guide Neo4j projection is **optional**. When disabled or unreachable, every command
 still works on files + SQLite. Dogfood pin for the Guide binary:
-`jmjava/guide` tag `sdlc-spdd-projection-v2` — see [guide-flow.md](docs/guide-flow.md)
+`jmjava/orch-guide` tag `sdlc-spdd-projection-v2` — see [guide-flow.md](docs/guide-flow.md)
 only if you turn that path on.
 
 ---

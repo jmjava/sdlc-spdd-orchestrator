@@ -161,7 +161,7 @@ def embabel_mechanics_checklist(
             "id": "named_entity",
             "label": "NamedEntity domain module (DataDictionary.fromClasses)",
             "ok": named_entity_module_ok,
-            "hint": "com.embabel.guide.spdd.domain.* on jmjava/guide spike branch",
+            "hint": "com.embabel.guide.spdd.domain.* on jmjava/orch-guide",
         },
         {
             "id": "projection",

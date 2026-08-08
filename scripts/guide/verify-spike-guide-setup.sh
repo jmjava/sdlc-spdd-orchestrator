@@ -3,7 +3,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-GUIDE_ROOT="${GUIDE_ROOT:-${HOME}/github/jmjava/guide}"
+GUIDE_ROOT="${GUIDE_ROOT:-${HOME}/github/jmjava/orch-guide}"
 GUIDE_PORT="${GUIDE_PORT:-21337}"
 
 pass=0
