@@ -14,6 +14,7 @@ from .commit_message import CommitMessageError, CommitMessageService
 from .context_store import ContextStore
 from .db import LocalIndex, format_rows
 from .issues import IssueSyncService
+from .adf_templates import AdfTemplateLibrary, TemplateError
 from .adf_work import AdfWorkService
 from .local_sessions import LocalSessionService
 from .pointer import PointerError, PointerStore
@@ -845,6 +846,70 @@ def cmd_installer(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_template(args: argparse.Namespace) -> int:
+    """List / render / validate ADF template combos."""
+    lib = AdfTemplateLibrary()
+    action = args.template_cmd
+    try:
+        if action == "list":
+            combos = [c.to_dict() for c in lib.list_combos()]
+            if args.json:
+                print(json.dumps({"ok": True, "combos": combos}, indent=2))
+            else:
+                for c in combos:
+                    parts = ",".join(c["parts"])
+                    print(f"{c['id']}\t{c['title']}\tparts={parts}")
+            return 0
+        if action == "validate":
+            combos = lib.list_combos()
+            errors: list[str] = []
+            for combo in combos:
+                try:
+                    lib.load_combo(combo.id)
+                except TemplateError as exc:
+                    errors.append(str(exc))
+            # Also validate stock schemas exist and accept a trivial doc
+            try:
+                sample = {"type": "doc", "version": 1, "content": [{"type": "paragraph"}]}
+                schema_errs = lib.validate_adf(sample)
+                errors.extend(schema_errs)
+            except TemplateError as exc:
+                errors.append(str(exc))
+            if errors:
+                print(json.dumps({"ok": False, "errors": errors}, indent=2))
+                return 1
+            print(json.dumps({"ok": True, "combos": len(combos)}, indent=2))
+            return 0
+        if action == "render":
+            project = _project(args)
+            work_id = (args.work_id or "").strip()
+            if not work_id:
+                print("template render requires --work-id", file=sys.stderr)
+                return 1
+            combo_id = (args.combo or "").strip() or lib.suggest_combo(
+                work_id, getattr(args, "type", "") or ""
+            )
+            result = lib.render(
+                project,
+                work_id,
+                combo_id,
+                work_type=getattr(args, "type", "") or "",
+                output=args.output,
+            )
+            if args.json:
+                print(json.dumps(result.to_dict(), indent=2))
+            elif args.output:
+                print(result.output_path)
+            else:
+                print(json.dumps(result.adf, indent=2))
+            return 0
+    except (TemplateError, FileNotFoundError, OSError) as exc:
+        print(f"sdlc-engine template: {exc}", file=sys.stderr)
+        return 1
+    print(f"unknown template command: {action}", file=sys.stderr)
+    return 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="sdlc-engine",
@@ -1376,6 +1441,41 @@ def build_parser() -> argparse.ArgumentParser:
         "dashboard",
         "EXPERIMENTAL alias for installer — ops console UI",
     )
+
+    tmpl = sub.add_parser(
+        "template",
+        help="ADF template library: list/render/validate combos (header/body/footer)",
+    )
+    tmpl_sub = tmpl.add_subparsers(dest="template_cmd", required=True)
+    tl = tmpl_sub.add_parser("list", help="List stock combo manifests")
+    tl.add_argument("--json", action="store_true")
+    tl.set_defaults(func=cmd_template)
+    tmpl_sub.add_parser(
+        "validate", help="Validate stock combo manifests + ADF schema"
+    ).set_defaults(func=cmd_template)
+    tr = tmpl_sub.add_parser(
+        "render",
+        help="Render planning artifacts for a Work ID into ADF JSON",
+    )
+    tr.add_argument("--work-id", required=True, help="Work ID to bind variables from")
+    tr.add_argument(
+        "--combo",
+        default="",
+        help="Combo id (feature|spike|bug); default: infer from Work ID prefix",
+    )
+    tr.add_argument(
+        "--type",
+        default="",
+        help="Optional work-type override (feature|spike|bug|…)",
+    )
+    tr.add_argument(
+        "-o",
+        "--output",
+        help="Write ADF JSON to this path (relative to --root unless absolute)",
+    )
+    tr.add_argument("--json", action="store_true", help="Emit full RenderResult JSON")
+    tr.set_defaults(func=cmd_template)
+
     return p
 
 

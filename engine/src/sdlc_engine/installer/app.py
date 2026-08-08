@@ -9,6 +9,7 @@ import webbrowser
 from pathlib import Path
 from typing import Any
 
+from sdlc_engine.adf_templates import AdfTemplateLibrary, TemplateError
 from sdlc_engine.adf_work import AdfWorkService
 from sdlc_engine.context_store import ContextStore
 from sdlc_engine.db import LocalIndex
@@ -1029,6 +1030,50 @@ def create_app(default_target: Path | str | None = None) -> Any:
                 ),
             }
         )
+
+    @app.post("/api/templates")
+    def api_templates_list() -> Any:
+        """List ADF template combos from orchestrator templates/adf."""
+        try:
+            lib = AdfTemplateLibrary()
+            combos = [c.to_dict() for c in lib.list_combos()]
+        except (TemplateError, FileNotFoundError, OSError) as exc:
+            return jsonify({"ok": False, "error": str(exc)}), 500
+        return jsonify({"ok": True, "combos": combos, "count": len(combos)})
+
+    @app.post("/api/templates/render")
+    def api_templates_render() -> Any:
+        """Render a combo for a Work ID into ADF (+ markdown preview)."""
+        body = request.get_json(silent=True) or {}
+        target = _target_from_body(body)
+        if not target.is_dir():
+            return jsonify({"ok": False, "error": f"target not found: {target}"}), 400
+        work_id = str(body.get("work_id") or "").strip()
+        if not work_id:
+            return jsonify({"ok": False, "error": "work_id is required"}), 400
+        combo_id = str(body.get("combo") or "").strip()
+        work_type = str(body.get("type") or "").strip()
+        write = bool(body.get("write"))
+        output = str(body.get("output") or "").strip()
+        try:
+            lib = AdfTemplateLibrary()
+            if not combo_id:
+                combo_id = lib.suggest_combo(work_id, work_type)
+            out_path = None
+            if write:
+                out_path = output or f"adf/{work_id}.adf.json"
+            result = lib.render(
+                Project.resolve(target),
+                work_id,
+                combo_id,
+                work_type=work_type,
+                output=out_path,
+            )
+        except (TemplateError, FileNotFoundError, OSError, ValueError) as exc:
+            return jsonify({"ok": False, "error": str(exc), "target": str(target)}), 400
+        payload = result.to_dict()
+        payload["target"] = str(target)
+        return jsonify(payload)
 
     @app.post("/api/integrations/status")
     def api_integrations_status() -> Any:

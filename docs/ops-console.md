@@ -12,7 +12,8 @@ through the ADF editor. The ADF Viewer does **not** talk to Guide (Jira/GitHub s
 
 | UI | Default URL | Start | Responsibility |
 |----|-------------|-------|----------------|
-| **Ops console** | `http://127.0.0.1:5051/` | `./scripts/sdlc.sh console --target <path>` | **Dashboard** (default tab), install/upgrade, persistence backends, SQLite, rollback, Guide+Neo4j lifecycle, **Jira link & sync**, **start/stop** ADF Viewer |
+| **Ops console** | `http://127.0.0.1:5051/` | `./scripts/sdlc.sh console --target <path>` | **Dashboard** (default tab), install/upgrade, persistence backends, SQLite, rollback, Guide+Neo4j lifecycle, **Jira link & sync**, ADF templates API, **start/stop** ADF Viewer |
+| **Vue3 console (dev)** | `http://127.0.0.1:5173/` | `cd console-ui && npm run dev` (proxies `/api` → `:5051`) | Migration shell — Persistence + Templates first; see [adf-template-library-and-vue3-console.md](adf-template-library-and-vue3-console.md) |
 | **ADF Viewer** | `http://127.0.0.1:5050/` | `./scripts/sdlc.sh viewer` or console **ADF** tab | Edit `adf/*.adf.json`, Jira/GitHub prepare/apply sync |
 
 Aliases for the console: `installer`, `dashboard`. Wrapper: `./scripts/visual-installer.sh`.

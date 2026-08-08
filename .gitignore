@@ -13,6 +13,10 @@ __pycache__/
 htmlcov/
 engine/.venv/
 
+# Vue3 ops console
+console-ui/node_modules/
+console-ui/dist/
+
 # Local secrets (TTS / Whisper for docgen pipeline)
 .env
 
