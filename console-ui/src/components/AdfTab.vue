@@ -388,10 +388,10 @@ onMounted(async () => {
           Work type
           <select v-model="workType" data-testid="adf-work-type">
             <option value="feature">feature</option>
-            <option value="bug">bug</option>
-            <option value="chore">chore</option>
             <option value="spike">spike</option>
-            <option value="docs">docs</option>
+            <option value="bug">bug</option>
+            <option value="refactor">refactor</option>
+            <option value="chore">chore</option>
           </select>
         </label>
         <label>
