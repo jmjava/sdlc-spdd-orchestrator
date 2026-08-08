@@ -24,26 +24,30 @@ jmjava/orch-guide      ← durable home for SPDD + git-incremental + dogfood env
 
 ## Phase 2 — Copy current fork tip (agent or human)
 
-**Done (2026-08-08):** bootstrap push to `jmjava/orch-guide`.
+**Status: incorrect bootstrap — needs redo.**
 
-- Method: orphan squash from `jmjava/guide` `cursor/feat-013-absorption-status-f564`
-  (full history push blocked — PAT lacked GitHub `workflow` scope because tip
-  history includes `.github/workflows/*`).
-- Workflows omitted in the bootstrap commit; forbid script + Cursor rule retained.
-- `main` @ `edb1f9e`
-- Tag `sdlc-spdd-projection-v2` → that tip (orch-guide pin; distinct object from
-  the old `jmjava/guide` tag of the same name)
+What landed first was a **squash orphan** (wrong). Required seed is an **exact
+mirror of `jmjava/guide`** (same commits/tags as the fork).
 
-Verify:
+Blocked: agent PAT lacks GitHub **`workflow`** scope, so `git push --mirror`
+rejects refs that contain `.github/workflows/*`.
+
+When a workflow-scoped token is available (or you push locally):
 
 ```bash
-gh repo view jmjava/orch-guide --json url,defaultBranchRef,isEmpty
-git ls-remote https://github.com/jmjava/orch-guide.git HEAD
-git ls-remote https://github.com/jmjava/orch-guide.git refs/tags/sdlc-spdd-projection-v2
+git clone --mirror https://github.com/jmjava/guide.git /tmp/guide-mirror
+cd /tmp/guide-mirror
+git remote set-url origin https://github.com/jmjava/orch-guide.git
+git push --mirror
 ```
 
-Optional later: re-push full history + Actions workflows with a `workflow`-scoped
-token if you want CI parity.
+Verify (must match `jmjava/guide` SHAs):
+
+```bash
+git ls-remote https://github.com/jmjava/guide.git refs/heads/main
+git ls-remote https://github.com/jmjava/orch-guide.git refs/heads/main
+git ls-remote https://github.com/jmjava/orch-guide.git refs/tags/sdlc-spdd-projection-v2
+```
 
 ## Phase 3 — Retarget orchestrator
 
