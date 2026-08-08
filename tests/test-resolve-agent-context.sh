@@ -90,8 +90,8 @@ assert_contains "${json}" 'team-norms.md' "json contains resolved path"
 echo "== Test 8: start-agent-session embeds Resolved Context =="
 START="${REPO_ROOT}/scripts/start-agent-session.sh"
 "${START}" --target "${WORK}" --work-id FEAT-099-test --phase code >/dev/null
-if grep -Fq "## Resolved Context" "${WORK}/agent-context/sessions/current-session.md" && \
-   grep -Fq "team-norms.md" "${WORK}/agent-context/sessions/current-session.md"; then
+if grep -Fq "## Resolved Context" "${WORK}/.sdlc/sessions/current-session.md" && \
+   grep -Fq "team-norms.md" "${WORK}/.sdlc/sessions/current-session.md"; then
   ok "session brief includes resolved context"
 else
   bad "session brief missing Resolved Context"
@@ -154,10 +154,42 @@ assert_contains "${out}" "agent-context/harness/quality-gates.md" "api-test qual
 
 echo "== Test 12: resume prompt omits canvas when already resolved =="
 "${START}" --target "${WORK}" --work-id FEAT-050-billing --phase code >/dev/null
-if grep -Fq "Also read @spdd/canvas/FEAT-050-billing.md" "${WORK}/agent-context/sessions/current-session.md"; then
+if grep -Fq "Also read @spdd/canvas/FEAT-050-billing.md" "${WORK}/.sdlc/sessions/current-session.md"; then
   bad "resume prompt should not duplicate canvas already in Resolved Context"
 else
   ok "resume prompt skips redundant canvas mention"
+fi
+
+echo "== Test 13: lean progress ledger resolves as work-scoped excerpt =="
+mkdir -p "${WORK}/spdd/memory/entries"
+printf '%s\n' \
+  '# Progress Entries' '' \
+  '## FEAT-other' '' '- other work bleed' '' \
+  '## FEAT-050-billing' '' '- T01 complete' \
+  >"${WORK}/spdd/memory/entries/progress.md"
+out="$("${RESOLVE}" --target "${WORK}" --phase code --work-id FEAT-050-billing --format paths)"
+assert_contains "${out}" ".sdlc/resolved/progress-FEAT-050-billing.md" "scoped progress excerpt"
+if grep -Fq "spdd/memory/entries/progress.md" <<< "${out}"; then
+  bad "shared lean progress.md should not resolve wholesale"
+else
+  ok "shared lean progress.md not injected wholesale"
+fi
+excerpt="${WORK}/.sdlc/resolved/progress-FEAT-050-billing.md"
+if [[ -f "${excerpt}" ]]; then
+  ok "scoped excerpt file exists"
+  assert_contains "$(cat "${excerpt}")" "T01 complete" "excerpt includes this work"
+else
+  bad "scoped excerpt file missing"
+fi
+if grep -Fq "other work bleed" "${excerpt}"; then
+  bad "excerpt should not include other Work IDs"
+else
+  ok "excerpt scoped to work-id"
+fi
+if grep -Fq "agent-context/features/FEAT-050-billing/progress-log.md" <<< "${out}"; then
+  bad "legacy feature progress-log should not resolve when lean progress exists"
+else
+  ok "legacy feature progress-log omitted when lean present"
 fi
 
 echo

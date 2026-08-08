@@ -189,11 +189,50 @@ PAGE = """<!DOCTYPE html>
 
     <nav class="tabs" role="tablist">
       <button type="button" class="tab active" data-tab="install">Install / Upgrade</button>
+      <button type="button" class="tab" data-tab="persist">Persistence</button>
       <button type="button" class="tab" data-tab="sqlite">SQLite</button>
       <button type="button" class="tab" data-tab="rollback">Rollback</button>
       <button type="button" class="tab" data-tab="guide">Guide</button>
       <button type="button" class="tab" data-tab="adf">ADF</button>
     </nav>
+
+    <section class="tab-pane" id="pane-persist">
+      <div class="panel">
+        <h2>Persistence options</h2>
+        <p class="meta">
+          Triple-path ContextStore fan-out (#79/#90). Git stay-set is always required.
+          SQLite and Guide soft-fail when enabled. Config:
+          <code class="inline">.sdlc/persistence-config.json</code>
+          (override with <code class="inline">CONTEXT_BACKENDS</code>).
+        </p>
+        <div class="checks" style="margin-bottom: 0.9rem;">
+          <label><input type="checkbox" id="pb-git" checked disabled /> git-pointers (required)</label>
+          <label><input type="checkbox" id="pb-sqlite" checked /> sqlite</label>
+          <label><input type="checkbox" id="pb-guide" checked /> guide-dice</label>
+        </div>
+        <div class="row" style="margin-bottom: 0.75rem;">
+          <div style="flex:1 1 18rem;">
+            <label class="field" for="persist-guide-url">Guide base URL (optional override)</label>
+            <input id="persist-guide-url" type="text" spellcheck="false" placeholder="leave blank to use GUIDE_BASE_URL / localhost:21337" />
+          </div>
+        </div>
+        <label class="field" for="persist-notes">Notes</label>
+        <textarea id="persist-notes" placeholder="Operator notes for this project's persist fan-out"></textarea>
+        <div class="actions">
+          <button type="button" class="btn-secondary" id="btn-persist-refresh">Refresh</button>
+          <button type="button" class="btn-primary" id="btn-persist-save">Save options</button>
+        </div>
+        <div class="stats" id="persist-stats">
+          <div class="stat-card"><div class="n" id="ps-git">—</div><div class="l">git</div></div>
+          <div class="stat-card"><div class="n" id="ps-sqlite">—</div><div class="l">sqlite</div></div>
+          <div class="stat-card"><div class="n" id="ps-guide">—</div><div class="l">guide</div></div>
+          <div class="stat-card"><div class="n" id="ps-source">—</div><div class="l">source</div></div>
+        </div>
+        <div class="meta" id="persist-meta">Not loaded.</div>
+        <div class="status-line" id="persist-status">Ready.</div>
+        <pre class="log" id="persist-log">No persistence action yet.</pre>
+      </div>
+    </section>
 
     <section class="tab-pane active" id="pane-install">
       <div class="panel">
@@ -1057,9 +1096,83 @@ PAGE = """<!DOCTYPE html>
       }
     }
 
+    function applyPersist(data) {
+      const en = data.enabled || {};
+      $("pb-git").checked = true;
+      $("pb-sqlite").checked = !!en.sqlite;
+      $("pb-guide").checked = !!en["guide-dice"];
+      $("persist-guide-url").value = (data.guide && data.guide.base_url) || "";
+      $("persist-notes").value = data.notes || "";
+      $("ps-git").textContent = en["git-pointers"] ? "ON" : "OFF";
+      $("ps-sqlite").textContent = en.sqlite ? (data.sqlite && data.sqlite.exists ? "READY" : "ON") : "OFF";
+      $("ps-guide").textContent = en["guide-dice"] ? "ON" : "OFF";
+      $("ps-source").textContent = data.source || "—";
+      const effective = (data.guide && data.guide.effective_base_url) || "";
+      $("persist-meta").textContent =
+        "backends=" + (data.backends || []).join(",") +
+        " · config=" + (data.config_path || "—") +
+        (data.config_exists ? "" : " (defaults)") +
+        (effective ? (" · effective guide=" + effective) : "");
+      $("persist-log").textContent = JSON.stringify(data, null, 2);
+    }
+
+    async function loadPersist() {
+      const res = await fetch("/api/persistence/status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ target: target() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        $("persist-meta").textContent = data.error || "Failed to load";
+        $("persist-status").textContent = "Load failed";
+        $("persist-status").className = "status-line bad";
+        return;
+      }
+      applyPersist(data);
+      $("persist-status").textContent = "Loaded.";
+      $("persist-status").className = "status-line ok";
+    }
+
+    async function savePersist() {
+      setBusy(["btn-persist-save"], true);
+      $("persist-status").textContent = "Saving…";
+      $("persist-status").className = "status-line";
+      try {
+        const backends = ["git-pointers"];
+        if ($("pb-sqlite").checked) backends.push("sqlite");
+        if ($("pb-guide").checked) backends.push("guide-dice");
+        const res = await fetch("/api/persistence/save", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            target: target(),
+            backends,
+            guide_base_url: $("persist-guide-url").value.trim(),
+            notes: $("persist-notes").value,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          $("persist-status").textContent = data.error || "Save failed";
+          $("persist-status").className = "status-line bad";
+          $("persist-log").textContent = JSON.stringify(data, null, 2);
+          return;
+        }
+        applyPersist(data);
+        $("persist-status").textContent = "Saved persistence options.";
+        $("persist-status").className = "status-line ok";
+      } catch (err) {
+        $("persist-status").textContent = String(err);
+        $("persist-status").className = "status-line bad";
+      } finally {
+        setBusy(["btn-persist-save"], false);
+      }
+    }
+
     async function refreshAll() {
       await detect();
-      await Promise.all([loadSqlite(), loadBackups(), loadGuide(), loadAdf()]);
+      await Promise.all([loadPersist(), loadSqlite(), loadBackups(), loadGuide(), loadAdf()]);
       await loadAdfBrowse($("adf-browse-path").value.trim() || adfBrowsePath || "");
     }
 
@@ -1072,6 +1185,8 @@ PAGE = """<!DOCTYPE html>
       $("run-status").textContent = "Ready.";
       $("run-status").className = "status-line";
     });
+    $("btn-persist-refresh").addEventListener("click", loadPersist);
+    $("btn-persist-save").addEventListener("click", savePersist);
     $("btn-sqlite-refresh").addEventListener("click", loadSqlite);
     $("btn-sqlite-rebuild").addEventListener("click", rebuildSqlite);
     $("btn-backups-refresh").addEventListener("click", loadBackups);

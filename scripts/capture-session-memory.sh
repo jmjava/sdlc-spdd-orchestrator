@@ -237,18 +237,26 @@ safe_timestamp="$(sdlc_timestamp_file)"
 session_day="$(sdlc_timestamp_day)"
 
 memory_dir="${TARGET}/agent-context/memory"
+# Lean stay-set memory is always primary (#83/#85/#86).
+lean_memory_dir="${TARGET}/spdd/memory"
 feature_dir="${TARGET}/agent-context/features/${WORK_ID}"
-session_dir="${TARGET}/agent-context/sessions"
+# Hot sessions (#85): .sdlc/sessions; legacy agent-context/sessions is fallback for reads.
+session_dir="${TARGET}/.sdlc/sessions"
+legacy_session_dir="${TARGET}/agent-context/sessions"
 session_notes_dir="${TARGET}/session-notes"
-session_entry_dir="${memory_dir}/sessions"
+session_entry_dir="${lean_memory_dir}/sessions"
 archive_dir="${memory_dir}/archive"
 if [[ "${DRY_RUN}" -eq 0 ]]; then
-  mkdir -p "${memory_dir}" "${feature_dir}" "${session_dir}" "${session_notes_dir}" "${session_entry_dir}"
+  mkdir -p "${memory_dir}" "${lean_memory_dir}/entries" "${lean_memory_dir}/sessions" \
+    "${session_dir}" "${session_notes_dir}"
+  # Do not create feature mirrors (#86).
 fi
 
 session_history="${memory_dir}/session-history.md"
 session_index="${memory_dir}/session-index.md"
-code_area_index="${memory_dir}/context-index.md"
+# Primary context index is lean; dual-write legacy for transition.
+code_area_index="${lean_memory_dir}/context-index.md"
+legacy_code_area_index="${memory_dir}/context-index.md"
 session_entry_file="${session_entry_dir}/${safe_timestamp}-${WORK_ID}-${PHASE}.md"
 archive_history="${archive_dir}/session-history.md"
 project_memory="${memory_dir}/project-memory.md"
@@ -257,8 +265,13 @@ known_pitfalls="${memory_dir}/known-pitfalls.md"
 reusable_patterns="${memory_dir}/reusable-patterns.md"
 prompt_optimization_log="${memory_dir}/prompt-optimization-log.md"
 archive_ledger="${archive_dir}/prompt-optimization-log.md"
-progress_log="${feature_dir}/progress-log.md"
+progress_log="${lean_memory_dir}/entries/progress.md"
 current_session="${session_dir}/current-session.md"
+if [[ ! -f "${current_session}" && -f "${legacy_session_dir}/current-session.md" ]]; then
+  current_session="${legacy_session_dir}/current-session.md"
+fi
+# Also scan hot + legacy timestamped briefs for capture inputs.
+_session_scan_dirs=("${session_dir}" "${legacy_session_dir}")
 daily_session_note="${session_notes_dir}/${session_day}.md"
 roadmap_file="${TARGET}/ROADMAP.md"
 
@@ -352,6 +365,8 @@ append_context_index_for_areas() {
   rows="${rows%$'\n'}"
   [[ -z "${rows}" ]] && return 0
   prepend_context_index_rows "${code_area_index}" "${rows}"
+  # Dual-write legacy index during transition (Guide / older tools).
+  prepend_context_index_rows "${legacy_code_area_index}" "${rows}"
 }
 
 # Code areas come from parsing session notes, not from manual --areas by default.
@@ -400,7 +415,8 @@ collect_session_content() {
   # Include the full latest timestamped session brief (not just current-session.md)
   # so indexing has the entire last session context.
   local _latest_session_doc=""
-  _latest_session_doc="$(ls -1t "${session_dir}"/20*.md 2>/dev/null | sed -n '1p' || true)"
+  # Prefer hot .sdlc/sessions, then legacy agent-context/sessions (#85).
+  _latest_session_doc="$(ls -1t "${session_dir}"/20*.md "${legacy_session_dir}"/20*.md 2>/dev/null | sed -n '1p' || true)"
   if [[ -n "${_latest_session_doc}" ]] && [[ -f "${_latest_session_doc}" ]]; then
     _parts+="$(<"${_latest_session_doc}")"$'\n'
   fi
@@ -704,11 +720,14 @@ fi
 printf '%s\n' "${entry}" >> "${session_history}"
 printf '%s\n' "${entry}" >> "${progress_log}"
 
-# Durable per-session entry (granular, immutable) the index points at.
+# Durable per-session entry (granular, immutable) the index points at — lean primary.
 {
   printf '# Session: %s - %s\n' "${WORK_ID}" "${PHASE}"
   printf '%s\n' "${entry}"
 } > "${session_entry_file}"
+# Dual-write legacy memory/sessions for transition harnesses.
+mkdir -p "${memory_dir}/sessions"
+cp "${session_entry_file}" "${memory_dir}/sessions/$(basename "${session_entry_file}")"
 
 # Newest-first session index row, retrievable by Work ID or Area.
 index_row="| ${timestamp} | ${WORK_ID} | ${PHASE} | $(sdlc_oneline "${areas_display}" 80) | $(sdlc_oneline "${SUMMARY}") | sessions/$(basename "${session_entry_file}") |"

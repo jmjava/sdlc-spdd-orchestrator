@@ -60,9 +60,12 @@ def test_init_from_adf_creates_artifacts(tmp_path: Path) -> None:
     assert result.source_issue == "ORCH-99"
     assert (root / result.canvas_path).is_file()
     assert (root / result.requirement_path).is_file()
-    assert (root / result.feature_dir / "reasons-canvas.md").is_file()
-    assert (root / result.feature_dir / "requirement.md").is_file()
-    assert (root / result.feature_dir / "progress-log.md").is_file()
+    # Stay-set only (#86): no agent-context/features mirrors.
+    assert result.feature_dir == ""
+    assert not (root / "agent-context" / "features" / result.work_id).exists()
+    progress = root / "spdd" / "memory" / "entries" / "progress.md"
+    assert progress.is_file()
+    assert result.work_id in progress.read_text(encoding="utf-8")
     # --no-claim still pins the pointer so analysis can resume immediately.
     assert (root / ".sdlc" / "pointer").read_text(encoding="utf-8").strip() == result.work_id
     canvas = (root / result.canvas_path).read_text(encoding="utf-8")

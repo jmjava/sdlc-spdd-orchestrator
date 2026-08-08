@@ -1,7 +1,8 @@
-"""Team Work ID registry (agent-context/work-registry.tsv)."""
+"""Team Work ID registry — lean JSONL (#84) + legacy TSV during transition."""
 
 from __future__ import annotations
 
+import json
 import os
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -10,6 +11,8 @@ from pathlib import Path
 from . import canvas as canvas_mod
 from .project import Project
 from .workflow import WorkflowEngine
+
+LEAN_REGISTRY_REL = Path("spdd/memory/registry.jsonl")
 
 
 def _utc_now() -> str:
@@ -20,6 +23,7 @@ REGISTRY_HEADER = """# Team Work Registry — tab-separated. Commit updates so t
 # Columns: work_id status phase operation owner updated note
 # status: active | shelved | done | cancelled | archived | available
 # note tokens: branch:<name> pr:<url-or-#> jira:<KEY> <free text>
+# Prefer lean spdd/memory/registry.jsonl for new events (#84); TSV remains readable.
 work_id\tstatus\tphase\toperation\towner\tupdated\tnote
 """
 
@@ -57,6 +61,10 @@ class TeamRegistry:
     @property
     def path(self) -> Path:
         return self.project.registry_path
+
+    @property
+    def lean_path(self) -> Path:
+        return self.project.root / LEAN_REGISTRY_REL
 
     def _owner(self) -> str:
         if os.environ.get("SDLC_USER"):
@@ -120,6 +128,64 @@ class TeamRegistry:
         tmp = self.path.with_suffix(".tsv.tmp")
         tmp.write_text("\n".join(body) + "\n", encoding="utf-8")
         tmp.replace(self.path)
+
+    def append_lean_event(
+        self,
+        *,
+        event: str,
+        work_id: str,
+        status: str = "",
+        phase: str = "",
+        owner: str = "",
+        note: str = "",
+        ts: str = "",
+    ) -> dict:
+        """Append claim/release/shelf event to lean git registry.jsonl (#84)."""
+        payload = {
+            "event": event,
+            "work_id": work_id,
+            "status": status,
+            "phase": phase,
+            "owner": owner or self._owner(),
+            "note": note,
+            "ts": ts or _utc_now(),
+        }
+        self.lean_path.parent.mkdir(parents=True, exist_ok=True)
+        with self.lean_path.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(payload, ensure_ascii=False) + "\n")
+        return payload
+
+    def lean_events(self, *, work_id: str = "") -> list[dict]:
+        if not self.lean_path.is_file():
+            return []
+        out: list[dict] = []
+        for line in self.lean_path.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if work_id and row.get("work_id") != work_id:
+                continue
+            out.append(row)
+        return out
+
+    def _fanout_claim_sqlite(self, row: "RegistryRow") -> None:
+        try:
+            from .db import LocalIndex
+
+            LocalIndex(self.project).upsert_claim(
+                work_id=row.work_id,
+                owner=row.owner,
+                status=row.status,
+                phase=row.phase,
+                note=row.note,
+                ts=row.updated,
+            )
+        except Exception:
+            # Soft-fail: git registry remains source of truth for multi-user.
+            pass
 
     def discover_work_ids(self) -> list[str]:
         seen: set[str] = set()
@@ -231,6 +297,16 @@ class TeamRegistry:
             note=composed,
         )
         self.upsert(row)
+        self.append_lean_event(
+            event="claim",
+            work_id=work_id,
+            status=row.status,
+            phase=row.phase,
+            owner=row.owner,
+            note=row.note,
+            ts=row.updated,
+        )
+        self._fanout_claim_sqlite(row)
         return row
 
     def release(self, reason: str = "released") -> None:
@@ -244,16 +320,25 @@ class TeamRegistry:
             LocalSessionService(self.project, self).shelf(reason, session_id=wid)
             return
         self.workflow.shelf(reason)
-        self.upsert(
-            RegistryRow(
-                work_id=wid,
-                status="shelved",
-                phase=self.workflow.load_state(wid).phase,
-                owner=self._owner(),
-                updated=_utc_now(),
-                note=reason,
-            )
+        row = RegistryRow(
+            work_id=wid,
+            status="shelved",
+            phase=self.workflow.load_state(wid).phase,
+            owner=self._owner(),
+            updated=_utc_now(),
+            note=reason,
         )
+        self.upsert(row)
+        self.append_lean_event(
+            event="release",
+            work_id=wid,
+            status=row.status,
+            phase=row.phase,
+            owner=row.owner,
+            note=row.note,
+            ts=row.updated,
+        )
+        self._fanout_claim_sqlite(row)
 
     def list_work_text(self) -> str:
         self.refresh_done_status()

@@ -20,7 +20,10 @@ mkdir -p "${FEATURE}" "${ROOT}/spdd/analysis" "${ROOT}/spdd/reviews" "${ROOT}/sp
   "${MEM}" "${ROOT}/session-notes"
 
 # --- Populate lifecycle artifacts as a real session would ---
+LEAN_PROGRESS="${ROOT}/spdd/memory/entries/progress.md"
+mkdir -p "$(dirname "${LEAN_PROGRESS}")"
 [[ -f "${FEATURE}/requirement.md" ]] || cp "${ROOT}/requirements/milestones/${WORK_ID}.md" "${FEATURE}/requirement.md"
+[[ -f "${LEAN_PROGRESS}" ]] || printf '# Progress Log: %s\n\n' "${WORK_ID}" >"${LEAN_PROGRESS}"
 [[ -f "${FEATURE}/progress-log.md" ]] || printf '# Progress Log: %s\n\n' "${WORK_ID}" >"${FEATURE}/progress-log.md"
 
 sed -i 's/^- Readiness: .*/- Readiness: Ready For Coding/' "${CANVAS}"
@@ -42,6 +45,8 @@ printf '# Sync\n\nNo drift detected after live matrix populate.\n' \
 printf '# Retro\n\nWhat went well: seed/flush matrix.\nWhat to improve: always pass full capture flags.\n' \
   >"${FEATURE}/retro.md"
 
+printf '\n### T01 - implement greet\n- Status: Complete\nImplemented greet helper.\nFiles changed: src/hello.py\n' \
+  >>"${LEAN_PROGRESS}"
 printf '\n### T01 - implement greet\n- Status: Complete\nImplemented greet helper.\nFiles changed: src/hello.py\n' \
   >>"${FEATURE}/progress-log.md"
 
@@ -171,10 +176,11 @@ else
   bad "session-notes incomplete"
 fi
 
-# Progress log includes full capture header
-grep -Fq "${WORK_ID}" "${FEATURE}/progress-log.md" \
-  && grep -Fq "${VALIDATION}" "${FEATURE}/progress-log.md" \
-  && ok "progress-log full capture" || bad "progress-log incomplete"
+# Lean progress log includes full capture header (#86)
+PROGRESS="${ROOT}/spdd/memory/entries/progress.md"
+grep -Fq "${WORK_ID}" "${PROGRESS}" \
+  && grep -Fq "${VALIDATION}" "${PROGRESS}" \
+  && ok "lean progress full capture" || bad "lean progress incomplete"
 
 # Official effects verifier with roadmap gate
 if "${SCRIPTS}/verify-agent-command-effects.sh" \

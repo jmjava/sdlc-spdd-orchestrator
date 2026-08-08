@@ -56,13 +56,21 @@ If the engine is unavailable, the section is omitted and session start still
 succeeds. Markdown indexes (`context-index.md`, etc.) remain the primary
 progressive-disclosure path; SQLite is an additional Work ID snapshot.
 
-## Schema (v1)
+## Schema (v4 — full agent-context graph)
 
 - `work_items` — one row per Work ID (title, statuses, Jira/GitHub, paths, registry)
 - `artifacts` — canvas / requirement / feature / analysis / review / sync paths
 - `local_sessions` — machine-private `LOCAL-*` sessions under `.sdlc/local-sessions/`
 - `work_search` — FTS5 when available (else LIKE fallback)
 - `meta` — schema version, rebuild time, source git commit
+- Graph nodes: `requirements`, `canvases`, `areas`, `lessons`, `claims`,
+  `context_sessions`, `pointers`, `context_entries`, `domain_keywords`,
+  `phase_refs`, `project_facts` (+ join `work_areas`)
+- `edges` — typed relationships (requirement/canvas/reasons/area/about/for_work/…)
+
+Full graph contract + coverage gate:
+[SPIKE-088](agent-context-cleanup/spikes/SPIKE-088-sqlite-v2.md)
+(`LocalIndex.capability_coverage()`).
 
 ## Relationship to GUIDE
 

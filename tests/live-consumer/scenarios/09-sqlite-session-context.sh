@@ -65,7 +65,7 @@ else
   bad "start-agent-session"
 fi
 
-BRIEF="${ROOT}/agent-context/sessions/current-session.md"
+BRIEF="${ROOT}/.sdlc/sessions/current-session.md"
 [[ -f "${BRIEF}" ]] && ok "current-session.md exists" || bad "current-session.md missing"
 
 if grep -Fq 'Local SQLite Index (query cache)' "${BRIEF}"; then

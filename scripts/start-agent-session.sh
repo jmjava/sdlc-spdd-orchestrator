@@ -9,10 +9,13 @@ source "${_SCRIPT_DIR}/lib/milestone.sh"
 
 usage() {
   cat <<'EOF'
-Usage: start-agent-session.sh [--target <path>] [--work-id <WORK-ID>] [--phase <phase>] [--milestone <file>]
+Usage: start-agent-session.sh [--target <path>] [--work-id <WORK-ID>] [--phase <phase>] [--milestone <file>] [--quiet]
 
 Create a durable SDLC-SPDD session brief that helps a new agent session resume
 previous work with the right SDLC phase, REASONS Canvas, memory, and handoff context.
+
+Hot session briefs are written under .sdlc/sessions/ (gitignored). Legacy
+agent-context/sessions/ is read-only fallback.
 
 Phases:
   init, analysis, plan, architect, code, api-test, review, prompt-update, retro, sync, resume
@@ -25,6 +28,7 @@ Options:
   --session-limit <n>    Keep at most N timestamped briefs in sessions/
                          (older move to sessions/archive/; default 20)
   --no-session-rotate    Do not archive older timestamped session briefs
+  --quiet                Suppress T## / dogfood recommended-command gravity (#91)
   --help                 Print this help
 
 Examples:
@@ -40,6 +44,7 @@ PHASE="resume"
 MILESTONE=""
 SESSION_LIMIT=20
 SESSION_ROTATE=1
+QUIET=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -65,6 +70,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --no-session-rotate)
       SESSION_ROTATE=0
+      shift
+      ;;
+    --quiet)
+      QUIET=1
       shift
       ;;
     --help|-h)
@@ -124,8 +133,20 @@ fi
 
 timestamp="$(sdlc_timestamp_iso)"
 safe_timestamp="$(sdlc_timestamp_file)"
-session_dir="${TARGET}/agent-context/sessions"
+# Hot path (#85): gitignored .sdlc/sessions — never write new briefs to agent-context/sessions.
+session_dir="${TARGET}/.sdlc/sessions"
 mkdir -p "${session_dir}"
+legacy_session_dir="${TARGET}/agent-context/sessions"
+
+# Quiet / product-test mode (#91)
+if [[ "${QUIET}" -eq 0 ]]; then
+  _q="$(printf '%s' "${SDLC_QUIET:-}" | tr '[:upper:]' '[:lower:]')"
+  if [[ "${_q}" == "1" || "${_q}" == "true" || "${_q}" == "yes" || "${_q}" == "on" ]]; then
+    QUIET=1
+  elif [[ -f "${TARGET}/agent-context/harness/quiet-mode.md" ]]; then
+    QUIET=1
+  fi
+fi
 
 session_name="${safe_timestamp}-${PHASE}"
 if [[ -n "${WORK_ID}" ]]; then
@@ -145,13 +166,20 @@ review_report=""
 sync_log=""
 retro_file=""
 if [[ -n "${WORK_ID}" ]]; then
+  # Stay-set paths are canonical (#86). Feature dir is legacy fallback only.
   feature_dir="${TARGET}/agent-context/features/${WORK_ID}"
   feature_canvas="${feature_dir}/reasons-canvas.md"
   canonical_canvas="${TARGET}/spdd/canvas/${WORK_ID}.md"
-  progress_log="${feature_dir}/progress-log.md"
+  progress_log="${TARGET}/spdd/memory/entries/progress.md"
+  if [[ ! -f "${progress_log}" && -f "${feature_dir}/progress-log.md" ]]; then
+    progress_log="${feature_dir}/progress-log.md"
+  fi
   review_report="${TARGET}/spdd/reviews/${WORK_ID}-review.md"
   sync_log="${TARGET}/spdd/sync/${WORK_ID}-sync.md"
-  retro_file="${feature_dir}/retro.md"
+  retro_file="${TARGET}/spdd/memory/entries/retro.md"
+  if [[ ! -f "${retro_file}" && -f "${feature_dir}/retro.md" ]]; then
+    retro_file="${feature_dir}/retro.md"
+  fi
 fi
 
 status_for() {
@@ -218,8 +246,15 @@ case "${PHASE}" in
 esac
 
 # Prefer workflow helper when installed — honors Ready For Coding gate for code phase.
-if declare -F sdlc_workflow_recommended_command >/dev/null 2>&1 && [[ -n "${WORK_ID}" ]]; then
+export SDLC_ROOT="${TARGET}"
+if [[ "${QUIET}" -eq 1 ]]; then
+  export SDLC_QUIET=1
+fi
+if [[ "${QUIET}" -eq 0 ]] && declare -F sdlc_workflow_recommended_command >/dev/null 2>&1 && [[ -n "${WORK_ID}" ]]; then
   recommended_command="$(sdlc_workflow_recommended_command "${PHASE}" "${WORK_ID}")"
+fi
+if [[ "${QUIET}" -eq 1 ]]; then
+  recommended_command="Quiet mode: retrieve context via SQLite/Guide/context store; no T## dogfood command."
 fi
 
 git_status="not a git repository"
@@ -312,7 +347,10 @@ if [[ -n "${WORK_ID}" ]]; then
   fi
 fi
 
-resume_prompt="For ${WORK_ID:-<WORK-ID>}, read @agent-context/sessions/current-session.md first."
+resume_prompt="For ${WORK_ID:-<WORK-ID>}, read @.sdlc/sessions/current-session.md first."
+if [[ ! -f "${current_file}" && -f "${legacy_session_dir}/current-session.md" ]]; then
+  resume_prompt+=$'\n'"(Legacy fallback available: @agent-context/sessions/current-session.md)"
+fi
 resume_prompt+=$'\n\n'"Load only the files listed under **Resolved Context** in that brief for the ${PHASE} phase (SDLC Agents progressive disclosure)."
 if [[ "${sqlite_lookup_loaded}" -eq 1 ]]; then
   resume_prompt+=$'\n'"Also treat **Local SQLite Index (query cache)** in that brief as loaded lookup context for Work ID ${WORK_ID} (regenerable cache; prefer canvas/requirement files if they disagree)."
@@ -332,7 +370,11 @@ if [[ "${PHASE}" == "analysis" ]]; then
 fi
 
 resume_prompt+=$'\n\n'"Continue in the ${PHASE} phase using the hybrid SDLC Agents + SPDD workflow."
-resume_prompt+=$'\n'"Recommended command: ${recommended_command}"
+if [[ "${QUIET}" -eq 1 ]]; then
+  resume_prompt+=$'\n'"Quiet/product-test mode: skip T## dogfood recommended commands; retrieve context via SQLite/Guide/context store as needed."
+else
+  resume_prompt+=$'\n'"Recommended command: ${recommended_command}"
+fi
 if [[ -n "${jira_ask_prompt}" ]]; then
   resume_prompt+=$'\n\n'"${jira_ask_prompt}"
 elif [[ -n "${jira_status}" && "${jira_status}" != "missing" && "${jira_status}" != "draft" ]]; then
@@ -441,6 +483,24 @@ Add notes here during the session, then persist them with:
 EOF
 
 cp "${session_file}" "${current_file}"
+
+# Index hot session into SQLite when engine is available (#85).
+if [[ -n "${WORK_ID}" ]]; then
+  python3 -m sdlc_engine --root "${TARGET}" db query \
+    --sql "SELECT 1" >/dev/null 2>&1 || true
+  python3 - <<PY 2>/dev/null || true
+from sdlc_engine.db import LocalIndex
+from sdlc_engine.project import Project
+idx = LocalIndex(Project("${TARGET}"))
+idx.upsert_context_session(
+    session_id="${session_name}",
+    work_id="${WORK_ID}",
+    phase="${PHASE}",
+    path=".sdlc/sessions/${session_name}.md",
+    summary="hot session brief",
+)
+PY
+fi
 
 rotate_session_briefs() {
   # Keep the newest ${limit} timestamped briefs; move older ones to archive/.

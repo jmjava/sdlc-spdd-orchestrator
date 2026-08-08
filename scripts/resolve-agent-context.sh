@@ -198,11 +198,51 @@ collect_context_index_matches() {
   )
 }
 
+_progress_section_for_work() {
+  local file="$1"
+  local wid="$2"
+  [[ -f "${file}" && -n "${wid}" ]] || return 0
+  # Keep in sync with Project.ledger_section_for_work / _wf_ledger_section_for_work.
+  awk -v wid="${wid}" '
+    BEGIN { in_h2 = 0; in_h3 = 0 }
+    /^## / {
+      rest = $0
+      sub(/^##[[:space:]]+/, "", rest)
+      in_h2 = (rest == wid || index(rest, wid " ") == 1 || index(rest, wid " -") == 1 || index(rest, wid "—") == 1)
+      in_h3 = 0
+      if (in_h2) print
+      next
+    }
+    /^### / {
+      in_h3 = (index($0, wid) > 0)
+      in_h2 = 0
+      if (in_h3) print
+      next
+    }
+    in_h2 || in_h3 { print }
+  ' "${file}"
+}
+
 add_work_id_artifacts() {
   local wid="$1"
   add_path "${TARGET}/spdd/canvas/${wid}.md"
   add_path "${TARGET}/spdd/analysis/${wid}-analysis.md"
-  add_path "${TARGET}/agent-context/features/${wid}/progress-log.md"
+  # Lean progress is canonical (#86); inject a work-scoped excerpt only so the
+  # shared ledger does not bleed other Work IDs into the resolved context.
+  local lean="${TARGET}/spdd/memory/entries/progress.md"
+  if [[ -f "${lean}" ]]; then
+    local section excerpt_dir excerpt
+    section="$(_progress_section_for_work "${lean}" "${wid}")"
+    if [[ -n "${section}" ]]; then
+      excerpt_dir="${TARGET}/.sdlc/resolved"
+      excerpt="${excerpt_dir}/progress-${wid}.md"
+      mkdir -p "${excerpt_dir}"
+      printf '# Progress (scoped: %s)\n\n%s\n' "${wid}" "${section}" >"${excerpt}"
+      add_path "${excerpt}"
+    fi
+  else
+    add_path "${TARGET}/agent-context/features/${wid}/progress-log.md"
+  fi
   add_path "${TARGET}/agent-context/features/${wid}/analysis-context.md"
 }
 

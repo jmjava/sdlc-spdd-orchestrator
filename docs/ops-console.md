@@ -12,7 +12,7 @@ through the ADF editor. The ADF Viewer does **not** talk to Guide (Jira sync onl
 
 | UI | Default URL | Start | Responsibility |
 |----|-------------|-------|----------------|
-| **Ops console** | `http://127.0.0.1:5051/` | `./scripts/sdlc.sh console --target <path>` | Install/upgrade, SQLite, rollback, Guide+Neo4j lifecycle, **start/stop** ADF Viewer |
+| **Ops console** | `http://127.0.0.1:5051/` | `./scripts/sdlc.sh console --target <path>` | Install/upgrade, persistence backends, SQLite, rollback, Guide+Neo4j lifecycle, **start/stop** ADF Viewer |
 | **ADF Viewer** | `http://127.0.0.1:5050/` | `./scripts/sdlc.sh viewer` or console **ADF** tab | Edit `adf/*.adf.json`, Jira prepare/apply sync |
 
 Aliases for the console: `installer`, `dashboard`. Wrapper: `./scripts/visual-installer.sh`.
@@ -72,6 +72,7 @@ the `--root` passed when starting the ADF Viewer.
 | Tab | What it does |
 |-----|----------------|
 | **Install / Upgrade** | Detect fresh vs upgrade; run setup/upgrade/verify (dry-run supported) |
+| **Persistence** | Toggle `CONTEXT_BACKENDS` backends (`git-pointers`, `sqlite`, `guide-dice`); optional Guide URL + notes → `.sdlc/persistence-config.json` |
 | **SQLite** | `.sdlc/index.sqlite` status + rebuild |
 | **Rollback** | List `.sdlc-spdd-upgrade-backups/<timestamp>/` and restore |
 | **Guide** | Config (`.sdlc/guide-config.json`), ensure `jmjava/guide` @ `sdlc-spdd-projection-v1`, Neo4j/Guide start/stop, projection load, ingest/purge operators |
@@ -93,8 +94,11 @@ and records pid/port under `.sdlc/adf-viewer-runtime.json`.
 1. **Dogfood stack** — console **Guide** tab (or [dice-projection-runbook.md](dice-projection-runbook.md)).
 2. **Opt in an install** — `init-project.sh … --with-guide` writes
    `agent-context/harness/guide-dice.md`.
-3. **Runtime resolve** — `resolve-context-backend.sh` returns `guide-dice` only when
-   the marker exists **and** Guide answers; otherwise `files` (not an error).
+3. **Runtime resolve** — `resolve-context-backend.sh` emits `CONTEXT_BACKENDS=…`
+   (comma-separated set). Explicit env/config is authoritative: a disabled
+   `guide-dice` is never re-added from the harness marker. Legacy
+   `CONTEXT_BACKEND=files|guide-dice` is still emitted for older parsers.
+   Default (no config) still probes the marker + live Guide.
 
 Slash commands never fail because Guide is down. End-to-end flow:
 [guide-flow.md](guide-flow.md). Contributor dogfood notes:

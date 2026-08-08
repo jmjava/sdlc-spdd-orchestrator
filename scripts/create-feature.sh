@@ -10,7 +10,7 @@ usage() {
   cat <<'EOF'
 Usage: create-feature.sh --type <feature|bug|refactor|spike> --name <short-name> [--target <path>]
 
-Create a feature workspace folder and REASONS Canvas from template.
+Create stay-set REASONS canvas + milestone requirement (no agent-context/features mirrors).
 EOF
 }
 
@@ -65,24 +65,19 @@ esac
 
 PREFIX="$(work_type_prefix "${TYPE}")"
 slug="$(slugify "${NAME}" legacy)"
-features_dir="${TARGET}/agent-context/features"
-mkdir -p "${features_dir}"
-
-next="$(next_work_number "${PREFIX}" "${TARGET}" "${features_dir}/${PREFIX}-"*)"
-work_id="$(printf '%s-%03d-%s' "${PREFIX}" "${next}" "${slug}")"
-
-feature_dir="${features_dir}/${work_id}"
 canvas_dir="${TARGET}/spdd/canvas"
-tasks_dir="${feature_dir}/tasks"
-mkdir -p "${feature_dir}" "${tasks_dir}" "${canvas_dir}"
+req_dir="${TARGET}/requirements/milestones"
+mkdir -p "${canvas_dir}" "${req_dir}" "${TARGET}/spdd/memory/entries"
+
+next="$(next_work_number "${PREFIX}" "${TARGET}" "${canvas_dir}/${PREFIX}-"*.md)"
+work_id="$(printf '%s-%03d-%s' "${PREFIX}" "${next}" "${slug}")"
 
 template="${REPO_ROOT}/templates/reasons-canvas/${TEMPLATE}"
 canvas_content="$(sed "s/<WORK-ID>/${work_id}/g; s/<Work Name>/${NAME}/g" "${template}")"
 
-printf '%s\n' "${canvas_content}" > "${feature_dir}/reasons-canvas.md"
 printf '%s\n' "${canvas_content}" > "${canvas_dir}/${work_id}.md"
 
-cat > "${feature_dir}/requirement.md" <<EOF
+cat > "${req_dir}/${work_id}.md" <<EOF
 # Requirement: ${work_id}
 
 ## Summary
@@ -94,14 +89,20 @@ ${NAME}
 Add requirement details here.
 EOF
 
-cat > "${feature_dir}/progress-log.md" <<EOF
-# Progress Log: ${work_id}
-
-## ${work_id}
-
-- Created feature workspace and canvas.
-EOF
+# Lean progress ledger (not feature mirror).
+progress="${TARGET}/spdd/memory/entries/progress.md"
+if [[ ! -f "${progress}" ]]; then
+  printf '# Progress Entries\n\n' > "${progress}"
+fi
+{
+  echo ""
+  echo "## ${work_id}"
+  echo ""
+  echo "- Created stay-set canvas + requirement (no feature mirror)."
+} >> "${progress}"
 
 echo "Created:"
-echo "  ${feature_dir}/"
 echo "  ${canvas_dir}/${work_id}.md"
+echo "  ${req_dir}/${work_id}.md"
+echo "  ${progress} (appended)"
+# Hard rule: do not create agent-context/features/<WORK-ID>/

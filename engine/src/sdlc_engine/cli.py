@@ -11,6 +11,7 @@ from pathlib import Path
 from . import __version__
 from .archive import ArchiveService
 from .commit_message import CommitMessageError, CommitMessageService
+from .context_store import ContextStore
 from .db import LocalIndex, format_rows
 from .issues import IssueSyncService
 from .adf_work import AdfWorkService
@@ -166,6 +167,107 @@ def cmd_pointer(args: argparse.Namespace) -> int:
         print(str(exc), file=sys.stderr)
         return 2
     return 0
+
+
+def cmd_context(args: argparse.Namespace) -> int:
+    store = ContextStore(_project(args))
+    action = args.context_cmd
+    if action == "persist-lesson":
+        result = store.persist_lesson(
+            kind=args.kind,
+            work_id=args.work_id,
+            body=args.body,
+            area=args.area or "",
+            source=args.source or "cli",
+            phase=args.phase or "sync",
+            project_guide=not args.no_guide,
+        )
+        print(json.dumps(result.as_dict(), indent=2))
+        return 0 if result.git.get("ok") else 1
+    if action == "persist-entry":
+        result = store.persist_context_entry(
+            kind=args.kind,
+            work_id=args.work_id,
+            body=args.body,
+            area=args.area or "",
+            phase=args.phase or "",
+            source=args.source or "cli",
+            project_guide=not args.no_guide,
+        )
+        print(json.dumps(result.as_dict(), indent=2))
+        return 0 if result.git.get("ok") else 1
+    if action == "retrieve":
+        print(
+            json.dumps(
+                store.retrieve(work_id=args.work_id or "", area=args.area or ""),
+                indent=2,
+            )
+        )
+        return 0
+    if action == "coverage":
+        from .db import LocalIndex
+
+        print(json.dumps(LocalIndex(_project(args)).capability_coverage(), indent=2))
+        return 0
+    if action == "backends":
+        from .persistence import load_config, save_config, status_dict
+
+        project = _project(args)
+        if getattr(args, "set_backends", None) is not None:
+            raw = str(args.set_backends or "").strip()
+            if not raw:
+                print("error: --set requires a non-empty backend list", file=sys.stderr)
+                return 2
+            backends = [p.strip() for p in raw.replace(";", ",").split(",") if p.strip()]
+            cfg = load_config(project)
+            cfg["backends"] = backends
+            if getattr(args, "guide_base_url", None):
+                cfg["guide_base_url"] = args.guide_base_url
+            if getattr(args, "notes", None) is not None:
+                cfg["notes"] = args.notes
+            try:
+                print(json.dumps(save_config(project, cfg), indent=2))
+            except ValueError as exc:
+                print(f"error: {exc}", file=sys.stderr)
+                return 2
+            return 0
+        print(json.dumps(status_dict(project), indent=2))
+        return 0
+    return 2
+
+
+def cmd_agent_context(args: argparse.Namespace) -> int:
+    """Upgrade/re-init and quiet-mode helpers for agent-context cleanup."""
+    from .agent_context_upgrade import AgentContextUpgrade
+    from .quiet import is_quiet, quiet_resume_blurb
+
+    project = _project(args)
+    action = args.agent_context_cmd
+    if action == "detect":
+        print(json.dumps(AgentContextUpgrade(project).detect(), indent=2))
+        return 0
+    if action == "upgrade":
+        result = AgentContextUpgrade(project).run(
+            dry_run=bool(args.dry_run),
+            rebuild_db=not bool(args.no_rebuild),
+        )
+        print(json.dumps(result.as_dict(), indent=2))
+        return 0 if result.ok else 1
+    if action == "quiet-status":
+        quiet = is_quiet(project, quiet_flag=bool(getattr(args, "quiet", False)))
+        print(
+            json.dumps(
+                {
+                    "quiet": quiet,
+                    "blurb": quiet_resume_blurb(guide_live=bool(args.guide_live)),
+                    "hot_session_dir": str(project.hot_session_dir()),
+                    "current_session": str(project.current_session_path()),
+                },
+                indent=2,
+            )
+        )
+        return 0
+    return 2
 
 
 def cmd_version(_: argparse.Namespace) -> int:
@@ -823,6 +925,80 @@ def build_parser() -> argparse.ArgumentParser:
     ptr.add_argument("pointer_cmd", choices=["get", "set", "reset"])
     ptr.add_argument("work_id", nargs="?")
     ptr.set_defaults(func=cmd_pointer)
+
+    ctx = sub.add_parser(
+        "context",
+        help="Triple-path context store (git pointers + SQLite + Guide)",
+    )
+    ctx_sub = ctx.add_subparsers(dest="context_cmd", required=True)
+    cpl = ctx_sub.add_parser(
+        "persist-lesson",
+        help="Persist a lesson into git stay-set, SQLite, and Guide projection",
+    )
+    cpl.add_argument("--kind", required=True, choices=["decision", "pitfall", "pattern"])
+    cpl.add_argument("--work-id", required=True)
+    cpl.add_argument("--body", required=True)
+    cpl.add_argument("--area", default="")
+    cpl.add_argument("--source", default="cli")
+    cpl.add_argument("--phase", default="sync")
+    cpl.add_argument(
+        "--no-guide",
+        action="store_true",
+        help="Skip Guide projection fan-out",
+    )
+    cpl.set_defaults(func=cmd_context)
+    cpe = ctx_sub.add_parser(
+        "persist-entry",
+        help="Persist a non-lesson context entry (progress/analysis/metric/…)",
+    )
+    cpe.add_argument("--kind", required=True)
+    cpe.add_argument("--work-id", required=True)
+    cpe.add_argument("--body", required=True)
+    cpe.add_argument("--area", default="")
+    cpe.add_argument("--phase", default="")
+    cpe.add_argument("--source", default="cli")
+    cpe.add_argument("--no-guide", action="store_true")
+    cpe.set_defaults(func=cmd_context)
+    cre = ctx_sub.add_parser("retrieve", help="Assemble retrieve from git + SQLite + Guide")
+    cre.add_argument("--work-id", default="")
+    cre.add_argument("--area", default="")
+    cre.set_defaults(func=cmd_context)
+    ctx_sub.add_parser(
+        "coverage", help="Report agent-context capability coverage in SQLite"
+    ).set_defaults(func=cmd_context)
+    cb = ctx_sub.add_parser(
+        "backends",
+        help="Show or set CONTEXT_BACKENDS persistence options (#79/#90)",
+    )
+    cb.add_argument(
+        "--set",
+        dest="set_backends",
+        default=None,
+        help="Comma-separated backends: git-pointers,sqlite,guide-dice",
+    )
+    cb.add_argument("--guide-base-url", default=None)
+    cb.add_argument("--notes", default=None)
+    cb.set_defaults(func=cmd_context)
+
+    ac = sub.add_parser(
+        "agent-context",
+        help="Upgrade/re-init noisy agent-context runtime + quiet mode (#80/#91)",
+    )
+    ac_sub = ac.add_subparsers(dest="agent_context_cmd", required=True)
+    ac_sub.add_parser("detect", help="Detect legacy sessions/features noise").set_defaults(
+        func=cmd_agent_context
+    )
+    acu = ac_sub.add_parser(
+        "upgrade",
+        help="Archive sessions/features to .sdlc/legacy-export and seed lean runtime",
+    )
+    acu.add_argument("--dry-run", action="store_true")
+    acu.add_argument("--no-rebuild", action="store_true")
+    acu.set_defaults(func=cmd_agent_context)
+    aqs = ac_sub.add_parser("quiet-status", help="Show quiet/product-test mode status")
+    aqs.add_argument("--quiet", action="store_true", help="Treat as --quiet flag set")
+    aqs.add_argument("--guide-live", action="store_true")
+    aqs.set_defaults(func=cmd_agent_context)
 
     shell = sub.add_parser("shell", help="Run a v1 scripts/*.sh via bridge")
     shell.add_argument("script")

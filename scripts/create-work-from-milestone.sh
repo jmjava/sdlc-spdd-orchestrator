@@ -166,22 +166,20 @@ append_milestone_map_header() {
 
 create_work() {
   local title="$1"
-  local number slug work_id feature_dir canvas_path milestone_requirement_path
-  local feature_requirement_path progress_log status_date milestone_requirement_rel
+  local number slug work_id canvas_path milestone_requirement_path
+  local progress_log status_date milestone_requirement_rel
+  # Number from stay-set canvases only — no agent-context/features (#86).
   number="$(next_work_number "${PREFIX}" "${TARGET}" \
-    "${TARGET}/agent-context/features/${PREFIX}-"* \
     "${TARGET}/spdd/canvas/${PREFIX}-"*.md)"
   slug="$(slugify "${title}" strict)"
   if [[ -z "${slug}" ]]; then
     slug="milestone-work"
   fi
   work_id="$(printf '%s-%03d-%s' "${PREFIX}" "${number}" "${slug}")"
-  feature_dir="${TARGET}/agent-context/features/${work_id}"
   canvas_path="${TARGET}/spdd/canvas/${work_id}.md"
   milestone_requirement_path="${requirement_parent}/${work_id}.md"
   milestone_requirement_rel="${requirement_parent_rel}/${work_id}.md"
-  feature_requirement_path="${feature_dir}/requirement.md"
-  progress_log="${feature_dir}/progress-log.md"
+  progress_log="${TARGET}/spdd/memory/entries/progress.md"
   status_date="$(sdlc_timestamp_iso)"
   milestone_number="$(_milestone_number_from_path "${MILESTONE}" || true)"
   milestone_frontmatter_id="milestone-${milestone_number:-1}"
@@ -190,13 +188,13 @@ create_work() {
     echo "[dry-run] would create ${work_id} from milestone item: ${title}"
     echo "[dry-run] would write ${canvas_path}"
     echo "[dry-run] would write ${milestone_requirement_path}"
-    echo "[dry-run] would write ${feature_requirement_path}"
+    echo "[dry-run] would append ${progress_log}"
     echo "[dry-run] would update ${milestone_rel}"
     echo "${work_id}"
     return
   fi
 
-  mkdir -p "${feature_dir}/tasks" "${TARGET}/spdd/canvas" "${requirement_parent}"
+  mkdir -p "${TARGET}/spdd/canvas" "${requirement_parent}" "${TARGET}/spdd/memory/entries"
 
   cat > "${canvas_path}" <<EOF
 # REASONS Canvas: ${work_id} - ${title}
@@ -367,8 +365,6 @@ Created from ${milestone_rel}. Use sync notes to track drift between the milesto
 - Follow-Up Tasks:
 EOF
 
-  cp "${canvas_path}" "${feature_dir}/reasons-canvas.md"
-
   cat > "${milestone_requirement_path}" <<EOF
 ---
 work_id: "${work_id}"
@@ -448,32 +444,15 @@ Run:
     /sdlc-spdd-plan @${milestone_requirement_rel} @${roadmap_rel} @${milestone_rel}
 EOF
 
-  cat > "${feature_requirement_path}" <<EOF
-# Requirement: ${work_id}
-
-Canonical milestone-derived requirement:
-
-    @${milestone_requirement_rel}
-
-## Summary
-
-${title}
-
-## Source
-
-- Milestone: ${milestone_rel}
-- Canonical file: ${milestone_requirement_rel}
-
-Use the canonical file in \`/sdlc-spdd-plan\` prompts.
-EOF
-
-  cat > "${progress_log}" <<EOF
-# Progress Log: ${work_id}
-
-## ${work_id}
-
-- ${status_date}: Created from milestone item in ${milestone_rel}.
-EOF
+  if [[ ! -f "${progress_log}" ]]; then
+    printf '# Progress Entries\n\n' > "${progress_log}"
+  fi
+  {
+    echo ""
+    echo "## ${work_id}"
+    echo ""
+    echo "- ${status_date}: Created from milestone item in ${milestone_rel}."
+  } >> "${progress_log}"
 
   append_milestone_map_header
   echo "| ${work_id} | spdd/canvas/${work_id}.md | ${milestone_requirement_rel} | Draft | Created from milestone item |" >> "${MILESTONE}"
@@ -481,7 +460,7 @@ EOF
   echo "Created ${work_id}"
   echo "  ${canvas_path}"
   echo "  ${milestone_requirement_path}"
-  echo "  ${feature_requirement_path}"
+  echo "  ${progress_log} (appended)"
   echo "${work_id}"
 }
 
