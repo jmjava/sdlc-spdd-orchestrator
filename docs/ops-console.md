@@ -76,7 +76,7 @@ the `--root` passed when starting the ADF Viewer.
 | **Persistence** | Toggle `CONTEXT_BACKENDS` backends (`git-pointers`, `sqlite`, `guide-dice`); optional Guide URL + notes → `.sdlc/persistence-config.json`. Operator guide: [triple-path-context.md](triple-path-context.md) |
 | **SQLite** | `.sdlc/index.sqlite` status + rebuild |
 | **Rollback** | List `.sdlc-spdd-upgrade-backups/<timestamp>/` and restore |
-| **Guide** | Config (`.sdlc/guide-config.json`), ensure `jmjava/guide` @ `sdlc-spdd-projection-v1`, Neo4j/Guide start/stop, projection load, ingest/purge operators |
+| **Guide** | Config (`.sdlc/guide-config.json`), ensure `jmjava/guide` @ `sdlc-spdd-projection-v1`, Neo4j/Guide start/stop, projection load, ingest/purge operators. Dual-repo Cloud Agent: defaults `guide_home` to sibling `../guide` and treats an already-open Bolt (`/opt/neo4j`) as Neo4j up (no Compose required). |
 | **ADF** | Start / stop / restart viewer process; open URL. Editing stays in the viewer |
 
 Use `--no-browser` in CI/headless. `--port` / `--host` / `--lan` match the viewer CLI.

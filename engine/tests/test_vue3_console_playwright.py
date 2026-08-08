@@ -413,6 +413,55 @@ def test_vue3_guide_tab_shows_config_and_probe(page, live_vue_console) -> None: 
     )
 
 
+def test_vue3_guide_dual_repo_defaults_and_native_neo4j(page, live_vue_console) -> None:  # type: ignore[no-untyped-def]
+    """Dual-repo Cloud Agent: sibling GUIDE_HOME + already-running /opt Neo4j Bolt."""
+    sibling = orchestrator_root().parent / "guide"
+    if not (sibling / "scripts" / "append-ingest.sh").is_file():
+        pytest.skip("dual-repo guide checkout not present")
+
+    import socket as _socket
+
+    bolt_open = False
+    try:
+        with _socket.create_connection(("127.0.0.1", 7687), timeout=0.4):
+            bolt_open = True
+    except OSError:
+        bolt_open = False
+
+    _goto_vue(page, live_vue_console)
+    _open_tab(page, "guide")
+    page.get_by_test_id("guide-panel").wait_for(state="visible")
+    page.wait_for_function(
+        f"""() => {{
+          const el = document.querySelector('[data-testid="guide-home"]');
+          return el && el.value && el.value.includes({sibling.name!r});
+        }}"""
+    )
+    home_val = page.get_by_test_id("guide-home").input_value()
+    assert Path(home_val).resolve() == sibling.resolve()
+
+    page.get_by_test_id("btn-guide-probe").click()
+    page.wait_for_function(
+        """() => {
+          const t = document.querySelector('[data-testid="guide-probe"]')?.textContent || '';
+          return t.includes('Guide ') && t.includes('Neo4j');
+        }"""
+    )
+    if bolt_open:
+        page.wait_for_function(
+            """() => (document.querySelector('[data-testid="st-neo"]')?.textContent || '')
+              .trim() === 'UP'"""
+        )
+        page.get_by_test_id("btn-neo-start").click()
+        page.wait_for_function(
+            """() => {
+              const t = document.querySelector('[data-testid="guide-action-status"]')?.textContent || '';
+              return t.includes('OK') || t.includes('already');
+            }"""
+        )
+        assert page.get_by_test_id("st-neo").inner_text().strip() == "UP"
+
+
 def test_vue3_adf_start_status_stop(page, live_vue_console) -> None:  # type: ignore[no-untyped-def]
     _goto_vue(page, live_vue_console)
     _open_tab(page, "adf")

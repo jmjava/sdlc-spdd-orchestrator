@@ -238,6 +238,21 @@ def ensure_guide_repo(
 
 
 def start_neo4j(cfg: dict[str, Any]) -> dict[str, Any]:
+    """Start Compose Neo4j, or no-op when Bolt is already open (native dual-env)."""
+    host = "127.0.0.1"
+    bolt = int(cfg.get("neo4j_bolt_port") or 7687)
+    http = int(cfg.get("neo4j_http_port") or 7474)
+    # Dual-repo Cloud Agent / native /opt/neo4j often already exposes Bolt.
+    if _tcp_open(host, bolt, timeout=0.8):
+        return {
+            "ok": True,
+            "action": "already_running",
+            "bolt_ready": True,
+            "bolt_url": f"bolt://localhost:{bolt}",
+            "browser_url": f"http://localhost:{http}",
+            "log": "Neo4j Bolt already open (native or compose)",
+        }
+
     home = Path(str(cfg.get("guide_home") or "")).expanduser()
     if not home.is_dir() or not (home / "compose.yaml").is_file():
         return {
@@ -255,8 +270,6 @@ def start_neo4j(cfg: dict[str, Any]) -> dict[str, Any]:
     )
     if result["ok"]:
         # Wait briefly for Bolt.
-        host = "127.0.0.1"
-        bolt = int(cfg.get("neo4j_bolt_port") or 7687)
         ready = False
         for _ in range(20):
             if _tcp_open(host, bolt, timeout=0.8):
@@ -265,9 +278,8 @@ def start_neo4j(cfg: dict[str, Any]) -> dict[str, Any]:
             time.sleep(1.5)
         result["bolt_ready"] = ready
         result["bolt_url"] = f"bolt://localhost:{bolt}"
-        result["browser_url"] = (
-            f"http://localhost:{int(cfg.get('neo4j_http_port') or 7474)}"
-        )
+        result["browser_url"] = f"http://localhost:{http}"
+        result["action"] = "started"
     return result
 
 

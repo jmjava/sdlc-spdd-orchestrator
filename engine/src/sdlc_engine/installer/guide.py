@@ -56,14 +56,52 @@ def config_path(target: Path | str) -> Path:
     return Path(target).expanduser().resolve() / CONFIG_REL
 
 
+def _looks_like_guide_home(path: Path) -> bool:
+    """True when ``path`` is a usable jmjava/guide (or embabel/guide) checkout."""
+    return path.is_dir() and (path / "scripts" / "append-ingest.sh").is_file()
+
+
+def resolve_guide_home() -> Path:
+    """Resolve Guide checkout for dual-repo Cloud Agent / local layouts.
+
+    Order:
+    1. ``GUIDE_HOME`` when it points at a real guide tree
+    2. Sibling ``../guide`` next to the orchestrator (Cursor dual-repo env)
+    3. ``~/github/jmjava/guide`` when present
+    4. Otherwise the conventional ``~/github/jmjava/guide`` path (may not exist yet)
+    """
+    env = os.environ.get("GUIDE_HOME", "").strip()
+    if env:
+        env_path = Path(env).expanduser().resolve()
+        if _looks_like_guide_home(env_path):
+            return env_path
+
+    try:
+        from .runner import orchestrator_root
+
+        sibling = (orchestrator_root().parent / "guide").resolve()
+        if _looks_like_guide_home(sibling):
+            return sibling
+    except FileNotFoundError:
+        pass
+
+    # Also accept Cursor's multi-repo workspace layout even if orchestrator_root
+    # resolution is unavailable in an unusual install.
+    for candidate in (
+        Path("/agent/repos/guide"),
+        Path.home() / "github" / "jmjava" / "guide",
+    ):
+        resolved = candidate.expanduser().resolve()
+        if _looks_like_guide_home(resolved):
+            return resolved
+
+    if env:
+        return Path(env).expanduser()
+    return Path.home() / "github" / "jmjava" / "guide"
+
+
 def default_config() -> dict[str, Any]:
-    home = os.environ.get("GUIDE_HOME", "").strip()
-    if not home:
-        candidate = Path.home() / "github" / "jmjava" / "guide"
-        if candidate.is_dir():
-            home = str(candidate)
-        else:
-            home = str(candidate)
+    home = str(resolve_guide_home())
     return {
         "guide_home": home,
         "guide_git_url": os.environ.get("GUIDE_GIT_URL", DEFAULT_GIT_URL).strip()
