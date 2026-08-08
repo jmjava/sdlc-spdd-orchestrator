@@ -20,3 +20,12 @@
   Recorded in Guide `docs/spdd-upstream-absorption.md` (branch
   `cursor/feat-013-absorption-status-f564`). Candidate remains on fork for hand-off.
 - SPIKE-089 docs synced: Guide dual-read complete; issue #89 closeable.
+
+## 2026-08-08 — Fork-only policy hardened (never ask to merge)
+
+- Human: never ask Embabel to merge; need prevention, not an A/B choice.
+- Guide: strengthened `.cursor/rules/no-embabel-upstream.mdc` (no chat escape hatch).
+- Guide: `scripts/forbid-embabel-upstream.sh` + `install-git-hooks.sh` + CI workflow.
+- Orchestrator: `.cursor/rules/no-embabel-guide-upstream.mdc`.
+- Absorption doc rewritten as fork posture (not contribution queue).
+- FEAT-013 Final Status → Complete (fork-only).
