@@ -252,6 +252,81 @@ def test_empty_metadata_bullets_do_not_swallow_next_line(tmp_path: Path) -> None
     assert meta["source_url"] == ""
 
 
+def test_parse_github_issue_ref_variants() -> None:
+    parse = IssueSyncService.parse_github_issue_ref
+    assert parse("123") == ("", "123")
+    assert parse("#123") == ("", "123")
+    assert parse("acme/widgets#7") == ("acme/widgets", "7")
+    import pytest
+
+    with pytest.raises(ValueError):
+        parse("not-a-ref")
+    with pytest.raises(ValueError):
+        parse("")
+
+
+def test_resolve_github_repo_precedence(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.delenv("SDLC_GITHUB_REPO", raising=False)
+    monkeypatch.delenv("GH_REPO", raising=False)
+
+    def fake_gh(cmd: list[str], cwd: Path) -> CompletedProcess:
+        assert cmd == ["git", "remote", "get-url", "origin"]
+        return CompletedProcess(cmd, 0, stdout="git@github.com:acme/widgets.git\n", stderr="")
+
+    svc = IssueSyncService(Project(tmp_path), gh_runner=fake_gh)
+    # explicit wins
+    assert svc.resolve_github_repo("other/repo") == "other/repo"
+    # env beats git remote
+    monkeypatch.setenv("SDLC_GITHUB_REPO", "env/repo")
+    assert svc.resolve_github_repo() == "env/repo"
+    # ssh remote URL parsed
+    monkeypatch.delenv("SDLC_GITHUB_REPO")
+    assert svc.resolve_github_repo() == "acme/widgets"
+
+
+def test_fetch_github_issue_with_fake_gh(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.delenv("SDLC_GITHUB_REPO", raising=False)
+    monkeypatch.delenv("GH_REPO", raising=False)
+
+    def fake_gh(cmd: list[str], cwd: Path) -> CompletedProcess:
+        if cmd[:2] == ["git", "remote"]:
+            return CompletedProcess(cmd, 0, stdout="https://github.com/acme/widgets\n", stderr="")
+        assert cmd[:3] == ["gh", "issue", "view"]
+        assert cmd[3] == "12"
+        assert "--repo" in cmd and "acme/widgets" in cmd
+        payload = {
+            "number": 12,
+            "title": "Fetched",
+            "state": "OPEN",
+            "url": "https://github.com/acme/widgets/issues/12",
+            "body": "hello **md**",
+        }
+        return CompletedProcess(cmd, 0, stdout=json.dumps(payload), stderr="")
+
+    svc = IssueSyncService(Project(tmp_path), gh_runner=fake_gh)
+    data = svc.fetch_github_issue("#12")
+    assert data["title"] == "Fetched"
+    assert data["body"] == "hello **md**"
+    assert data["repo"] == "acme/widgets"
+
+
+def test_update_github_issue_body_with_fake_gh(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setenv("SDLC_GITHUB_REPO", "acme/widgets")
+    seen: dict = {}
+
+    def fake_gh(cmd: list[str], cwd: Path) -> CompletedProcess:
+        assert cmd[:3] == ["gh", "issue", "edit"]
+        seen["body"] = cmd[cmd.index("--body") + 1]
+        return CompletedProcess(
+            cmd, 0, stdout="https://github.com/acme/widgets/issues/12\n", stderr=""
+        )
+
+    svc = IssueSyncService(Project(tmp_path), gh_runner=fake_gh)
+    out = svc.update_github_issue_body("12", "new body")
+    assert "acme/widgets#12" in out
+    assert seen["body"] == "new body"
+
+
 def test_sync_links_after_mocked_github_push(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setenv("SDLC_USER", "syncer")
     work_id = "FEAT-305-roundtrip"

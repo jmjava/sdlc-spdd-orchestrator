@@ -6,6 +6,7 @@ import base64
 import difflib
 import json
 import os
+import re
 import shutil
 import subprocess
 import urllib.error
@@ -36,6 +37,15 @@ from .sync_local import LocalSyncService
 # Optional hooks for tests (inject fake gh / HTTP).
 GhRunner = Callable[[list[str], Path], subprocess.CompletedProcess]
 UrlOpener = Callable[..., object]
+
+# "123", "#123", or "owner/repo#123"
+_GH_ISSUE_REF_RE = re.compile(r"^(?:(?P<repo>[\w.-]+/[\w.-]+)#)?#?(?P<num>\d+)$")
+
+
+def _repo_from_remote_url(url: str) -> str:
+    """owner/repo from an https or ssh GitHub remote URL ('' if not GitHub-shaped)."""
+    m = re.search(r"github\.com[:/]+([\w.-]+/[\w.-]+?)(?:\.git)?/?\s*$", (url or "").strip())
+    return m.group(1) if m else ""
 
 
 @dataclass
@@ -709,6 +719,78 @@ class IssueSyncService:
                 report += "Dry-run only; pass --apply to write milestone fields.\n"
             return report
         raise ValueError("system must be jira or github")
+
+    @staticmethod
+    def parse_github_issue_ref(ref: str) -> tuple[str, str]:
+        """Split '123', '#123', or 'owner/repo#123' into ('owner/repo' or '', number)."""
+        m = _GH_ISSUE_REF_RE.match((ref or "").strip())
+        if not m:
+            raise ValueError(
+                f"invalid GitHub issue reference: {ref!r} "
+                "(use 123, #123, or owner/repo#123)"
+            )
+        return m.group("repo") or "", m.group("num")
+
+    def resolve_github_repo(self, explicit: str | None = None) -> str:
+        """owner/repo: explicit arg → SDLC_GITHUB_REPO/GH_REPO env → git remote origin.
+
+        Returns '' when nothing resolves; gh then falls back to the cwd remote.
+        """
+        if explicit and explicit.strip():
+            return explicit.strip()
+        env = self._github_repo()
+        if env:
+            return env
+        proc = self._gh_runner(["git", "remote", "get-url", "origin"], self.project.root)
+        if proc.returncode == 0:
+            return _repo_from_remote_url(proc.stdout or "")
+        return ""
+
+    def _require_gh(self) -> None:
+        if self._gh_runner is _default_gh_runner and not shutil.which("gh"):
+            raise RuntimeError("gh CLI not found; install GitHub CLI and run `gh auth login`")
+
+    def fetch_github_issue(self, issue_ref: str, *, repo: str | None = None) -> dict:
+        """GET number/title/state/url/body for a GitHub issue via the gh CLI."""
+        ref_repo, num = self.parse_github_issue_ref(issue_ref)
+        resolved = self.resolve_github_repo(ref_repo or repo)
+        self._require_gh()
+        cmd = ["gh", "issue", "view", num, "--json", "number,title,state,url,body"]
+        if resolved:
+            cmd.extend(["--repo", resolved])
+        proc = self._gh_runner(cmd, self.project.root)
+        if proc.returncode != 0:
+            raise RuntimeError(
+                proc.stderr.strip() or proc.stdout.strip() or "gh issue view failed"
+            )
+        try:
+            data = json.loads(proc.stdout)
+        except json.JSONDecodeError as exc:
+            raise RuntimeError(f"gh issue view returned invalid JSON: {exc}") from exc
+        if not isinstance(data, dict):
+            raise RuntimeError("gh issue view returned unexpected payload")
+        data.setdefault("number", int(num))
+        data["repo"] = resolved
+        return data
+
+    def update_github_issue_body(
+        self, issue_ref: str, body_md: str, *, repo: str | None = None
+    ) -> str:
+        """PUT (via `gh issue edit --body`) markdown into an existing issue body."""
+        ref_repo, num = self.parse_github_issue_ref(issue_ref)
+        resolved = self.resolve_github_repo(ref_repo or repo)
+        self._require_gh()
+        cmd = ["gh", "issue", "edit", num, "--body", body_md]
+        if resolved:
+            cmd.extend(["--repo", resolved])
+        proc = self._gh_runner(cmd, self.project.root)
+        if proc.returncode != 0:
+            raise RuntimeError(
+                proc.stderr.strip() or proc.stdout.strip() or "gh issue edit failed"
+            )
+        label = f"{resolved}#{num}" if resolved else f"#{num}"
+        url = proc.stdout.strip().splitlines()[-1].strip() if proc.stdout.strip() else ""
+        return f"Updated GitHub issue {label} body" + (f" ({url})" if url else "")
 
     def close_github(self, number: str) -> str:
         """Best-effort close for integration-test cleanup."""
