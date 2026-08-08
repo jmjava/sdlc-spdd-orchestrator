@@ -122,7 +122,9 @@ Equivalent low-level path:
 
     ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id FEAT-001-order-status-api --phase analysis
 
-Then **paste the Resume Prompt** from `agent-context/sessions/current-session.md` — do not paraphrase it. The brief embeds **Resolved Context** (phase files, extensions, Work ID artifacts, area-filtered index rows) and the Resume Prompt directs the agent to load only those files.
+Then **paste the Resume Prompt** from `.sdlc/sessions/current-session.md` — do not paraphrase it. The brief embeds **Resolved Context** (phase files, extensions, Work ID artifacts, area-filtered index rows, work-scoped progress excerpt) and the Resume Prompt directs the agent to load only those files.
+
+> Hot path (`v2.0.0a6+`): session briefs live under **`.sdlc/sessions/`** (gitignored), not `agent-context/sessions/`. See [Hot sessions and lean memory](hot-sessions-and-lean-memory.md).
 
 This first-day walkthrough uses the **ad-hoc entry** (you have a requirement but no prior canvas). If you mapped milestone work in step 4 and the canvas is already planned and architected, start the brief at `--phase code` instead. See [Session brief timing](three-part-operating-path.md#session-brief-timing) for the milestone-driven vs ad-hoc rule.
 

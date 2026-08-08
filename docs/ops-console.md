@@ -72,7 +72,7 @@ the `--root` passed when starting the ADF Viewer.
 | Tab | What it does |
 |-----|----------------|
 | **Install / Upgrade** | Detect fresh vs upgrade; run setup/upgrade/verify (dry-run supported) |
-| **Persistence** | Toggle `CONTEXT_BACKENDS` backends (`git-pointers`, `sqlite`, `guide-dice`); optional Guide URL + notes → `.sdlc/persistence-config.json` |
+| **Persistence** | Toggle `CONTEXT_BACKENDS` backends (`git-pointers`, `sqlite`, `guide-dice`); optional Guide URL + notes → `.sdlc/persistence-config.json`. Operator guide: [triple-path-context.md](triple-path-context.md) |
 | **SQLite** | `.sdlc/index.sqlite` status + rebuild |
 | **Rollback** | List `.sdlc-spdd-upgrade-backups/<timestamp>/` and restore |
 | **Guide** | Config (`.sdlc/guide-config.json`), ensure `jmjava/guide` @ `sdlc-spdd-projection-v1`, Neo4j/Guide start/stop, projection load, ingest/purge operators |

@@ -101,16 +101,19 @@ With an explicit milestone:
 
     ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id FEAT-001-order-status-api --phase code --milestone milestone-1.md
 
-Session-brief rotation (keeps `agent-context/sessions/` bounded):
+Session-brief rotation (keeps `.sdlc/sessions/` bounded — **hot path, gitignored**):
 
 - `--session-limit <n>` — keep at most N timestamped briefs; older move to
-  `agent-context/sessions/archive/` (default 20). `current-session.md` is never archived.
+  `.sdlc/sessions/archive/` (default 20). `current-session.md` is never archived.
 - `--no-session-rotate` — leave prior timestamped briefs in place (previous behavior).
 
-This writes:
+This writes (`v2.0.0a6+`):
 
-    agent-context/sessions/<timestamp>-code-FEAT-001-order-status-api.md
-    agent-context/sessions/current-session.md
+    .sdlc/sessions/<timestamp>-code-FEAT-001-order-status-api.md
+    .sdlc/sessions/current-session.md
+
+Legacy `agent-context/sessions/` is no longer the write target. See
+[Hot sessions and lean memory](hot-sessions-and-lean-memory.md).
 
 The brief includes:
 
@@ -118,16 +121,16 @@ The brief includes:
 - Work ID
 - phase
 - active milestone (explicit `--milestone` or auto-detected from milestone files)
-- recommended command
+- recommended command (honors [quiet mode](quiet-mode.md))
 - canvas sync state
 - roadmap and milestone status
 - artifact status
-- memory files to read
+- **Resolved Context** (phase files, extensions, Work ID artifacts, scoped progress)
 - playbooks to consider
 - git status
 - copy/paste resume prompt with SDLC, SPDD, and planning-layer `@` references
 
-Then paste the **Resume Prompt** from `current-session.md`. See [Session prompt standard](session-prompt-standard.md), [SPDD prompt standard](spdd-prompt-standard.md), and [Planning prompt standard](planning-prompt-standard.md).
+Then paste the **Resume Prompt** from `.sdlc/sessions/current-session.md`. See [Session prompt standard](session-prompt-standard.md), [SPDD prompt standard](spdd-prompt-standard.md), and [Planning prompt standard](planning-prompt-standard.md).
 
 ## 3. Resync Previous Work
 
