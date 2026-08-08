@@ -1,0 +1,7 @@
+{
+  "id": "bug",
+  "title": "Bugfix",
+  "description": "Defect ADF with problem, expected behavior, and acceptance",
+  "work_types": ["bug", "bugfix"],
+  "parts": ["header_work", "body_bug", "footer_traceability"]
+}
