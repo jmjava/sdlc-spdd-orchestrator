@@ -76,7 +76,7 @@ the `--root` passed when starting the ADF Viewer.
 | **Persistence** | Toggle `CONTEXT_BACKENDS` backends (`git-pointers`, `sqlite`, `guide-dice`); optional Guide URL + notes → `.sdlc/persistence-config.json`. Operator guide: [triple-path-context.md](triple-path-context.md) |
 | **SQLite** | `.sdlc/index.sqlite` status + rebuild |
 | **Rollback** | List `.sdlc-spdd-upgrade-backups/<timestamp>/` and restore |
-| **Guide** | Config (`.sdlc/guide-config.json`), ensure `jmjava/guide` @ `sdlc-spdd-projection-v1`, Neo4j/Guide start/stop, projection load, ingest/purge operators |
+| **Guide** | Config (`.sdlc/guide-config.json`), ensure `jmjava/guide` @ `sdlc-spdd-projection-v1`, Neo4j/Guide start/stop, projection load, ingest/purge operators. Dual-repo Cloud Agent: defaults `guide_home` to sibling `../guide` and treats an already-open Bolt (`/opt/neo4j`) as Neo4j up (no Compose required). |
 | **ADF** | Start / stop / restart viewer process; open URL. Editing stays in the viewer |
 
 Use `--no-browser` in CI/headless. `--port` / `--host` / `--lan` match the viewer CLI.
@@ -115,9 +115,12 @@ HTTP `7474`. Override Guide git ref with `GUIDE_GIT_REF` (default tag
 |-------|---------|
 | Installer API + units (≥90% `sdlc_engine.installer`) | `pytest -q engine/tests/test_installer*.py --cov=sdlc_engine.installer --cov-fail-under=90` |
 | Live viewer start/stop via `/api/adf` | `pytest -q engine/tests/test_installer_adf_live.py` |
-| Console Playwright (opt-in) | `SDLC_CONSOLE_E2E=1 pytest -q engine/tests/test_console_playwright.py -m console_e2e` |
+| Console Playwright — Flask HTML (opt-in) | `SDLC_CONSOLE_E2E=1 pytest -q engine/tests/test_console_playwright.py -m console_e2e` |
+| Console Playwright — Vue3 GUI (opt-in) | `cd console-ui && npm ci && npm run build && cd .. && SDLC_CONSOLE_E2E=1 pytest -q engine/tests/test_vue3_console_playwright.py -m console_e2e` |
 | Viewer Playwright (opt-in) | `SDLC_VIEWER_E2E=1 pytest -q engine/tests/test_viewer_playwright.py -m viewer_e2e` |
-| Guide + Neo4j live stack (opt-in) | `SDLC_GUIDE_STACK_LIVE=1 ./tests/test-guide-stack-live.sh` |
+| Guide + Neo4j live stack API (opt-in) | `SDLC_GUIDE_STACK_LIVE=1 ./tests/test-guide-stack-live.sh` |
+| Vue3 Playwright live Guide stack (opt-in) | `SDLC_CONSOLE_E2E=1 SDLC_GUIDE_STACK_LIVE=1 pytest -q engine/tests/test_vue3_console_live_playwright.py -m guide_live --run-console-e2e --run-guide-live` |
+| Vue3 Playwright live ADF viewer (opt-in) | `SDLC_CONSOLE_E2E=1 SDLC_ADF_VIEWER_LIVE=1 pytest -q engine/tests/test_vue3_console_live_playwright.py -m adf_viewer_live --run-console-e2e --run-adf-viewer-live` |
 
 CI: `test-sdlc-engine.yml` runs installer coverage, viewer e2e, and console e2e.
 Guide live stack stays on `test-guide-stack-experimental.yml`.

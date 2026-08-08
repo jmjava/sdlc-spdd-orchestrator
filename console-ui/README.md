@@ -2,11 +2,15 @@
 
 Vite + Vue3 shell that talks to the existing Flask installer JSON API (`/api/*`).
 
-## First slice
+## Tabs (Vue3 parity)
 
-- **Persistence** tab → `POST /api/persistence/status`
-- **Templates** tab → `POST /api/templates` + `/api/templates/render`
-- Other tabs stubbed until ported from `engine/src/sdlc_engine/installer/pages.py`
+- **Persistence** → status + save (`/api/persistence/*`)
+- **Templates** → list/render/write ADF (`/api/templates/*`)
+- **Install** → detect + run/verify (`/api/detect`, `/api/run`)
+- **SQLite** → status + rebuild (`/api/sqlite/*`)
+- **Rollback** → backups + restore (`/api/backups`, `/api/rollback`)
+- **Guide** → config/probe/lifecycle (`/api/guide/*`)
+- **ADF** → viewer lifecycle + browse/init (`/api/adf/*`)
 
 ## Dev
 
@@ -33,4 +37,17 @@ CONSOLE_API=http://127.0.0.1:5051 CONSOLE_TARGET=/path/to/project npm run smoke
 npm run build   # → console-ui/dist
 ```
 
-Serving the built assets from Flask is a later slice; for now use Vite proxy in development.
+Serve the build from Flask (same origin as `/api/*`):
+
+```bash
+SDLC_VUE_CONSOLE_DIST=$PWD/dist python -m sdlc_engine console --target .. --no-browser --port 5051
+# open http://127.0.0.1:5051/
+```
+
+## Playwright
+
+From the repo root (builds `dist` if needed):
+
+```bash
+SDLC_CONSOLE_E2E=1 pytest -q engine/tests/test_vue3_console_playwright.py -m console_e2e
+```

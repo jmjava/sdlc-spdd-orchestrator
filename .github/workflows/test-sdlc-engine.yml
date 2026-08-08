@@ -5,6 +5,8 @@ on:
     paths:
       - 'engine/**'
       - 'adf/**'
+      - 'console-ui/**'
+      - 'templates/adf/**'
       - 'scripts/sdlc.sh'
       - '.github/workflows/test-sdlc-engine.yml'
   push:
@@ -12,6 +14,8 @@ on:
     paths:
       - 'engine/**'
       - 'adf/**'
+      - 'console-ui/**'
+      - 'templates/adf/**'
       - 'scripts/sdlc.sh'
       - '.github/workflows/test-sdlc-engine.yml'
 
@@ -48,10 +52,27 @@ jobs:
           SDLC_VIEWER_E2E: "1"
         run: pytest -q engine/tests/test_viewer_playwright.py -m viewer_e2e
 
-      - name: Run ops console Playwright GUI tests
+      - name: Run ops console Playwright GUI tests (Flask HTML)
         env:
           SDLC_CONSOLE_E2E: "1"
         run: pytest -q engine/tests/test_console_playwright.py -m console_e2e
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: console-ui/package-lock.json
+
+      - name: Build Vue3 ops console
+        working-directory: console-ui
+        run: |
+          npm ci
+          npm run build
+
+      - name: Run Vue3 ops console Playwright GUI tests
+        env:
+          SDLC_CONSOLE_E2E: "1"
+        run: pytest -q engine/tests/test_vue3_console_playwright.py -m console_e2e
 
       - name: CLI smoke via sdlc.sh python engine
         run: |
