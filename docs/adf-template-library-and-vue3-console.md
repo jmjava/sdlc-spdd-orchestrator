@@ -92,11 +92,26 @@ Dev: see [`console-ui/README.md`](../console-ui/README.md).
 - [x] Schema validation test
 - [x] Vue3 shell loads against live `/api/persistence/status` (smoke)
 - [x] Docs + draft PR off this branch
+- [x] Playwright GUI coverage for Vue3 shell (Persistence, Templates, stubs)
+
+## Playwright (Vue3)
+
+Build once, then run opt-in e2e (same marker as the legacy Flask console suite):
+
+```bash
+cd console-ui && npm ci && npm run build && cd ..
+pip install -e './engine[dev,viewer-e2e]'
+playwright install chromium
+SDLC_CONSOLE_E2E=1 pytest -q engine/tests/test_vue3_console_playwright.py -m console_e2e
+```
+
+Flask can serve the Vite build when `SDLC_VUE_CONSOLE_DIST=console-ui/dist` (or
+`create_app(..., vue_dist=...)`). The suite builds/serves that path automatically.
 
 ## Next slices
 
-- Port remaining Flask tabs into Vue3 components
-- Optional: serve `console-ui/dist` from Flask `/` when present
+- Port remaining Flask tabs into Vue3 components (extend Playwright as each tab lands)
+- Default `console` to Vue dist when present (retire Flask `pages.py` HTML)
 - Chore / milestone-sync combos
 - Explicit “write ADF + open viewer” action (still no auto Jira push)
 

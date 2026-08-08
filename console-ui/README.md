@@ -33,4 +33,17 @@ CONSOLE_API=http://127.0.0.1:5051 CONSOLE_TARGET=/path/to/project npm run smoke
 npm run build   # → console-ui/dist
 ```
 
-Serving the built assets from Flask is a later slice; for now use Vite proxy in development.
+Serve the build from Flask (same origin as `/api/*`):
+
+```bash
+SDLC_VUE_CONSOLE_DIST=$PWD/dist python -m sdlc_engine console --target .. --no-browser --port 5051
+# open http://127.0.0.1:5051/
+```
+
+## Playwright
+
+From the repo root (builds `dist` if needed):
+
+```bash
+SDLC_CONSOLE_E2E=1 pytest -q engine/tests/test_vue3_console_playwright.py -m console_e2e
+```

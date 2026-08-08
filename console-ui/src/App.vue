@@ -42,9 +42,9 @@ onMounted(refreshHealth);
 </script>
 
 <template>
-  <div class="shell">
+  <div class="shell" data-testid="console-shell">
     <header class="brand-row">
-      <h1 class="brand">SDLC-SPDD</h1>
+      <h1 class="brand" data-testid="console-brand">SDLC-SPDD</h1>
       <p class="tagline">
         Vue3 ops console — Persistence + ADF Templates first; remaining tabs stubbed
         pending parity port from Flask.
@@ -58,23 +58,31 @@ onMounted(refreshHealth);
         spellcheck="false"
         placeholder="Target project path"
         aria-label="Target project path"
+        data-testid="target-input"
       />
-      <button class="btn btn-secondary" type="button" @click="refreshHealth">
+      <button
+        class="btn btn-secondary"
+        type="button"
+        data-testid="refresh-health"
+        @click="refreshHealth"
+      >
         Refresh health
       </button>
     </div>
-    <p v-if="healthError" class="status err">{{ healthError }}</p>
-    <p v-else-if="health" class="status ok muted">
+    <p v-if="healthError" class="status err" data-testid="health-status">{{ healthError }}</p>
+    <p v-else-if="health" class="status ok muted" data-testid="health-status">
       API ok · default {{ health.default_target || "—" }}
     </p>
 
-    <nav class="tabs" aria-label="Console tabs">
+    <nav class="tabs" aria-label="Console tabs" data-testid="console-tabs">
       <button
         v-for="tab in tabs"
         :key="tab.id"
         type="button"
         class="tab"
         :class="{ active: active === tab.id }"
+        :data-testid="`tab-${tab.id}`"
+        :data-tab="tab.id"
         @click="active = tab.id"
       >
         {{ tab.label }}
@@ -83,9 +91,9 @@ onMounted(refreshHealth);
 
     <PersistenceTab v-if="active === 'persistence'" :target="target" />
     <TemplatesTab v-else-if="active === 'templates'" :target="target" />
-    <section v-else class="panel">
-      <h2>{{ activeMeta?.label }}</h2>
-      <p class="lead">
+    <section v-else class="panel" data-testid="stub-panel">
+      <h2 data-testid="stub-title">{{ activeMeta?.label }}</h2>
+      <p class="lead" data-testid="stub-lead">
         Stub — port from Flask <code>installer/pages.py</code> in a later slice. APIs remain on
         the Flask BFF (<code>/api/*</code>).
       </p>

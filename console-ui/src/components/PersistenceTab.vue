@@ -39,18 +39,24 @@ async function loadStatus() {
 </script>
 
 <template>
-  <section class="panel">
+  <section class="panel" data-testid="persistence-panel">
     <h2>Persistence</h2>
     <p class="lead">
       Triple-path backends (<code>git-pointers</code>, <code>sqlite</code>,
       <code>guide-dice</code>) via <code>POST /api/persistence/status</code>.
     </p>
     <div class="actions">
-      <button class="btn btn-primary" type="button" :disabled="loading" @click="loadStatus">
+      <button
+        class="btn btn-primary"
+        type="button"
+        data-testid="persistence-load"
+        :disabled="loading"
+        @click="loadStatus"
+      >
         {{ loading ? "Loading…" : "Load status" }}
       </button>
     </div>
-    <p class="status" :class="statusClass">{{ statusText }}</p>
-    <pre class="log">{{ log }}</pre>
+    <p class="status" :class="statusClass" data-testid="persistence-status">{{ statusText }}</p>
+    <pre class="log" data-testid="persistence-log">{{ log }}</pre>
   </section>
 </template>

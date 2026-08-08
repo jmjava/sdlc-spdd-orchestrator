@@ -115,7 +115,8 @@ HTTP `7474`. Override Guide git ref with `GUIDE_GIT_REF` (default tag
 |-------|---------|
 | Installer API + units (≥90% `sdlc_engine.installer`) | `pytest -q engine/tests/test_installer*.py --cov=sdlc_engine.installer --cov-fail-under=90` |
 | Live viewer start/stop via `/api/adf` | `pytest -q engine/tests/test_installer_adf_live.py` |
-| Console Playwright (opt-in) | `SDLC_CONSOLE_E2E=1 pytest -q engine/tests/test_console_playwright.py -m console_e2e` |
+| Console Playwright — Flask HTML (opt-in) | `SDLC_CONSOLE_E2E=1 pytest -q engine/tests/test_console_playwright.py -m console_e2e` |
+| Console Playwright — Vue3 GUI (opt-in) | `cd console-ui && npm ci && npm run build && cd .. && SDLC_CONSOLE_E2E=1 pytest -q engine/tests/test_vue3_console_playwright.py -m console_e2e` |
 | Viewer Playwright (opt-in) | `SDLC_VIEWER_E2E=1 pytest -q engine/tests/test_viewer_playwright.py -m viewer_e2e` |
 | Guide + Neo4j live stack (opt-in) | `SDLC_GUIDE_STACK_LIVE=1 ./tests/test-guide-stack-live.sh` |
 
