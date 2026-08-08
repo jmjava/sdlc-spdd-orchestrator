@@ -51,7 +51,7 @@ the `--root` passed when starting the ADF Viewer.
 | **Persistence** | Toggle `CONTEXT_BACKENDS` backends (`git-pointers`, `sqlite`, `guide-dice`); optional Guide URL + notes → `.sdlc/persistence-config.json`. **Check ledger parity** and **Parity + repair** buttons call `sdlc-engine context parity`. Operator guide: [triple-path-context.md](triple-path-context.md) |
 | **SQLite** | `.sdlc/index.sqlite` status + rebuild |
 | **Rollback** | List `.sdlc-spdd-upgrade-backups/<timestamp>/` and restore |
-| **Guide** | Config (`.sdlc/guide-config.json`), ensure `jmjava/orch-guide` @ `spdd-projection-v3`, Neo4j/Guide start/stop, projection load, ingest/purge operators |
+| **Guide** | Config (`.sdlc/guide-config.json`), ensure `jmjava/orch-guide` @ `sdlc-spdd-projection-v2`, Neo4j/Guide start/stop, projection load, ingest/purge operators. Dual-repo Cloud Agent: defaults `guide_home` to sibling `../guide` and treats an already-open Bolt (`/opt/neo4j`) as Neo4j up (no Compose required). |
 | **Jira** | Link a **manually created** Jira key to a Work ID (requirement + canvas + registry); prepare/apply **pull** and **push** (update only — no issue create) |
 | **ADF** | Start / stop / restart viewer process; open URL. Editing stays in the viewer |
 
@@ -98,8 +98,10 @@ HTTP `7474`. Override Guide git ref with `GUIDE_GIT_REF` (default tag
 |------|-------|---------|
 | 1 | Unit | `pytest -q engine/tests_unit` |
 | 2 | Local integration (installer API) | `pytest -q engine/tests_integration` |
-| 3 | E2E Playwright | `./scripts/run-test-suites.sh e2e` |
+| 3 | E2E Playwright (Flask HTML + Vue3) | `./scripts/run-test-suites.sh e2e` (builds `console-ui` when needed) |
 | 3 | Guide + Neo4j live stack | `SDLC_GUIDE_STACK_LIVE=1 ./tests/test-guide-stack-live.sh` |
+| 3 | Vue3 Playwright live Guide stack (opt-in) | `SDLC_GUIDE_STACK_LIVE=1 pytest -q engine/tests_e2e/test_vue3_console_live_playwright.py -m guide_live --run-guide-live` |
+| 3 | Vue3 Playwright live ADF viewer (opt-in) | `SDLC_ADF_VIEWER_LIVE=1 pytest -q engine/tests_e2e/test_vue3_console_live_playwright.py -m adf_viewer_live --run-adf-viewer-live` |
 
 CI: `./scripts/test-ci-local.sh` mirrors tier 1+2 via `.venv`.
 Guide live stack: `./scripts/test-ci-local.sh --guide` or `test-guide-stack-experimental.yml`.

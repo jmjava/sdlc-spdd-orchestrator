@@ -5,12 +5,14 @@ on:
     paths:
       - 'engine/**'
       - 'adf/**'
+      - 'console-ui/**'
       - 'scripts/run-test-suites.sh'
       - '.github/workflows/test-e2e-playwright.yml'
   push:
     branches: [main]
     paths:
       - 'engine/tests_e2e/**'
+      - 'console-ui/**'
       - '.github/workflows/test-e2e-playwright.yml'
 
 concurrency:
@@ -34,3 +36,15 @@ jobs:
         run: PYTHONPATH=engine/src pytest -q engine/tests_e2e/test_viewer_playwright.py --screenshot=only-on-failure
       - name: Suite 3 — ops console Playwright
         run: PYTHONPATH=engine/src pytest -q engine/tests_e2e/test_console_playwright.py --screenshot=only-on-failure
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: console-ui/package-lock.json
+      - name: Build Vue3 ops console
+        working-directory: console-ui
+        run: |
+          npm ci
+          npm run build
+      - name: Suite 3 — Vue3 ops console Playwright
+        run: PYTHONPATH=engine/src pytest -q engine/tests_e2e/test_vue3_console_playwright.py --screenshot=only-on-failure

@@ -5,6 +5,8 @@ on:
     paths:
       - 'engine/**'
       - 'adf/**'
+      - 'console-ui/**'
+      - 'templates/adf/**'
       - 'scripts/sdlc.sh'
       - 'scripts/run-test-suites.sh'
       - '.github/workflows/test-sdlc-engine.yml'
@@ -13,6 +15,8 @@ on:
     paths:
       - 'engine/**'
       - 'adf/**'
+      - 'console-ui/**'
+      - 'templates/adf/**'
       - 'scripts/sdlc.sh'
       - 'scripts/run-test-suites.sh'
       - '.github/workflows/test-sdlc-engine.yml'

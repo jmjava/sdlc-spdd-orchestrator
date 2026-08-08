@@ -92,13 +92,55 @@ Dev: see [`console-ui/README.md`](../console-ui/README.md).
 - [x] Schema validation test
 - [x] Vue3 shell loads against live `/api/persistence/status` (smoke)
 - [x] Docs + draft PR off this branch
+- [x] Playwright GUI coverage for full Vue3 console (all tabs + Persistence save + Templates write)
+
+## Playwright (Vue3)
+
+Build once, then run opt-in e2e (same marker as the legacy Flask console suite):
+
+```bash
+cd console-ui && npm ci && npm run build && cd ..
+pip install -e './engine[dev,viewer-e2e]'
+playwright install chromium
+SDLC_CONSOLE_E2E=1 pytest -q engine/tests/test_vue3_console_playwright.py -m console_e2e
+```
+
+Flask can serve the Vite build when `SDLC_VUE_CONSOLE_DIST=console-ui/dist` (or
+`create_app(..., vue_dist=...)`). The suite builds/serves that path automatically.
 
 ## Next slices
 
-- Port remaining Flask tabs into Vue3 components
-- Optional: serve `console-ui/dist` from Flask `/` when present
+- Default `console` to Vue dist when present (retire Flask `pages.py` HTML)
 - Chore / milestone-sync combos
-- Explicit “write ADF + open viewer” action (still no auto Jira push)
+- Explicit “open viewer after write” affordance (still no auto Jira push)
+
+## Vue3 tab parity (this branch)
+
+| Tab | Vue3 | Playwright |
+|-----|------|------------|
+| Persistence (load + save) | ✅ | ✅ |
+| Templates (feature/spike/bug + write) | ✅ | ✅ |
+| Install | ✅ | ✅ |
+| SQLite | ✅ | ✅ |
+| Rollback | ✅ | ✅ |
+| Guide | ✅ | ✅ stubbed probe + dual-env defaults; **live** via `guide_live` |
+| ADF viewer + init-from-ADF | ✅ | ✅ stubbed lifecycle; **live** via `adf_viewer_live` |
+
+### Live dual-repo gates (the former “no” gaps)
+
+```bash
+# Needs sibling ../guide + Neo4j Bolt (:7687). Starts Guide JVM (slow first time).
+SDLC_CONSOLE_E2E=1 SDLC_GUIDE_STACK_LIVE=1 \
+  pytest -q engine/tests/test_vue3_console_live_playwright.py -m guide_live \
+  --run-console-e2e --run-guide-live
+
+# Real ADF viewer process (port 5050 free).
+SDLC_CONSOLE_E2E=1 SDLC_ADF_VIEWER_LIVE=1 \
+  pytest -q engine/tests/test_vue3_console_live_playwright.py -m adf_viewer_live \
+  --run-console-e2e --run-adf-viewer-live
+```
+
+Also wired into `.github/workflows/test-guide-stack-experimental.yml`.
 
 ## Related open work
 

@@ -109,6 +109,10 @@ def guide_env(cfg: dict[str, Any]) -> dict[str, str]:
         env["ANTHROPIC_API_KEY"] = env.get(
             "ANTHROPIC_API_KEY_INGEST_PLACEHOLDER", "dummy-key"
         )
+    # Dual-repo Cloud Agent / native /opt/neo4j: Bolt is already open — do not
+    # ask append-ingest.sh to `docker compose up neo4j` (dockerd often unavailable).
+    if env.get("SKIP_COMPOSE_NEO4J") in {"", None} and _tcp_open("127.0.0.1", bolt, timeout=0.4):
+        env["SKIP_COMPOSE_NEO4J"] = "1"
     return env
 
 
@@ -118,10 +122,11 @@ def ensure_guide_repo(
     pull: bool = True,
 ) -> dict[str, Any]:
     """Clone jmjava/orch-guide if missing; optionally fast-forward pull."""
-    home = Path(str(cfg.get("guide_home") or "")).expanduser()
-    url = str(cfg.get("guide_git_url") or DEFAULT_GIT_URL).strip() or DEFAULT_GIT_URL
-    if not str(home):
+    home_raw = str(cfg.get("guide_home") or "").strip()
+    if not home_raw:
         return {"ok": False, "error": "guide_home is required", "log": ""}
+    home = Path(home_raw).expanduser()
+    url = str(cfg.get("guide_git_url") or DEFAULT_GIT_URL).strip() or DEFAULT_GIT_URL
 
     if not home.exists():
         home.parent.mkdir(parents=True, exist_ok=True)
@@ -238,6 +243,21 @@ def ensure_guide_repo(
 
 
 def start_neo4j(cfg: dict[str, Any]) -> dict[str, Any]:
+    """Start Compose Neo4j, or no-op when Bolt is already open (native dual-env)."""
+    host = "127.0.0.1"
+    bolt = int(cfg.get("neo4j_bolt_port") or 7687)
+    http = int(cfg.get("neo4j_http_port") or 7474)
+    # Dual-repo Cloud Agent / native /opt/neo4j often already exposes Bolt.
+    if _tcp_open(host, bolt, timeout=0.8):
+        return {
+            "ok": True,
+            "action": "already_running",
+            "bolt_ready": True,
+            "bolt_url": f"bolt://localhost:{bolt}",
+            "browser_url": f"http://localhost:{http}",
+            "log": "Neo4j Bolt already open (native or compose)",
+        }
+
     home = Path(str(cfg.get("guide_home") or "")).expanduser()
     if not home.is_dir() or not (home / "compose.yaml").is_file():
         return {

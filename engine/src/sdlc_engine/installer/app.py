@@ -358,10 +358,19 @@ def _dashboard_suggestions(project: Project, status: dict[str, Any]) -> list[dic
     return out
 
 
-def create_app(default_target: Path | str | None = None) -> Any:
-    """Create the ops console Flask app (localhost tool)."""
+def create_app(
+    default_target: Path | str | None = None,
+    *,
+    vue_dist: Path | str | None = None,
+) -> Any:
+    """Create the ops console Flask app (localhost tool).
+
+    When ``vue_dist`` (or env ``SDLC_VUE_CONSOLE_DIST``) points at a Vite
+    ``console-ui/dist`` directory, ``/`` serves the Vue3 shell and ``/assets/*``
+    from that build. Otherwise the legacy Flask HTML console is served.
+    """
     try:
-        from flask import Flask, jsonify, render_template_string, request
+        from flask import Flask, jsonify, render_template_string, request, send_from_directory
     except ImportError as exc:  # pragma: no cover
         raise SystemExit(
             "Flask is required for the installer console. Install with: "
@@ -370,10 +379,19 @@ def create_app(default_target: Path | str | None = None) -> Any:
 
     orch = orchestrator_root()
     start = Path(default_target or Path.cwd()).expanduser().resolve()
+    raw_vue = vue_dist if vue_dist is not None else os.environ.get("SDLC_VUE_CONSOLE_DIST")
+    vue_root: Path | None = None
+    if raw_vue:
+        vue_root = Path(str(raw_vue)).expanduser().resolve()
+        if not (vue_root / "index.html").is_file():
+            raise FileNotFoundError(
+                f"Vue console dist missing index.html: {vue_root}"
+            )
 
     app = Flask(__name__)
     app.config["INSTALLER_DEFAULT_TARGET"] = str(start)
     app.config["ORCHESTRATOR_ROOT"] = str(orch)
+    app.config["VUE_CONSOLE_DIST"] = str(vue_root) if vue_root else None
 
     def _target_from_body(body: dict[str, Any] | None = None) -> Path:
         body = body or {}
@@ -382,13 +400,26 @@ def create_app(default_target: Path | str | None = None) -> Any:
             raw = app.config["INSTALLER_DEFAULT_TARGET"]
         return Path(raw).expanduser().resolve()
 
-    @app.get("/")
-    def index() -> str:
-        return render_template_string(
-            PAGE,
-            default_target=app.config["INSTALLER_DEFAULT_TARGET"],
-            orchestrator_root=app.config["ORCHESTRATOR_ROOT"],
-        )
+    if vue_root is None:
+
+        @app.get("/")
+        def index() -> str:
+            return render_template_string(
+                PAGE,
+                default_target=app.config["INSTALLER_DEFAULT_TARGET"],
+                orchestrator_root=app.config["ORCHESTRATOR_ROOT"],
+            )
+
+    else:
+        dist = vue_root
+
+        @app.get("/")
+        def index() -> Any:
+            return send_from_directory(dist, "index.html")
+
+        @app.get("/assets/<path:asset_path>")
+        def vue_assets(asset_path: str) -> Any:
+            return send_from_directory(dist / "assets", asset_path)
 
     @app.get("/api/health")
     def api_health() -> Any:

@@ -6,6 +6,7 @@ must not require ``[viewer]`` extras just because this conftest exists.
 
 from __future__ import annotations
 
+import os
 import socket
 import threading
 import time
@@ -13,6 +14,43 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+
+
+def pytest_addoption(parser: pytest.Parser) -> None:
+    parser.addoption(
+        "--run-guide-live",
+        action="store_true",
+        default=False,
+        help="Run Vue3 console tests against live Guide+Neo4j (dual-repo)",
+    )
+    parser.addoption(
+        "--run-adf-viewer-live",
+        action="store_true",
+        default=False,
+        help="Run Vue3 ADF tab against a real viewer process",
+    )
+
+
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+    guide_live_enabled = (
+        config.getoption("--run-guide-live")
+        or os.environ.get("SDLC_GUIDE_STACK_LIVE", "0") == "1"
+    )
+    adf_viewer_live_enabled = (
+        config.getoption("--run-adf-viewer-live")
+        or os.environ.get("SDLC_ADF_VIEWER_LIVE", "0") == "1"
+    )
+    skip_guide_live = pytest.mark.skip(
+        reason="need --run-guide-live or SDLC_GUIDE_STACK_LIVE=1 (dual-repo Guide+Neo4j)"
+    )
+    skip_adf_viewer_live = pytest.mark.skip(
+        reason="need --run-adf-viewer-live or SDLC_ADF_VIEWER_LIVE=1"
+    )
+    for item in items:
+        if not guide_live_enabled and "guide_live" in item.keywords:
+            item.add_marker(skip_guide_live)
+        if not adf_viewer_live_enabled and "adf_viewer_live" in item.keywords:
+            item.add_marker(skip_adf_viewer_live)
 
 
 def _free_port() -> int:
