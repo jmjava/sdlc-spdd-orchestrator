@@ -22,6 +22,7 @@ The matching slash commands live in `.github/prompts/` (invoke in Copilot Chat):
     /sdlc-spdd-commit-message
     /sdlc-spdd-prompt-update
     /sdlc-spdd-retro
+    /sdlc-spdd-accept
     /sdlc-spdd-sync
     /sdlc-spdd-whereami
 
