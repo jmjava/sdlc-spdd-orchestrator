@@ -30,7 +30,7 @@ Session briefs, feature mirrors, ephemeral locks, and other runtime noise under 
 |--------|------|
 | `cursor/agent-context-cleanup-integration-decf` | Integration line — all task work merges here |
 | `cursor/agent-context-cleanup-<task>-decf` | Short-lived task branches off integration |
-| `main` | Receives **one** final PR from integration when the program is done |
+| `main` | Receives **one** final PR from integration — open as draft [#109](https://github.com/jmjava/sdlc-spdd-orchestrator/pull/109) |
 
 Rules:
 
@@ -59,7 +59,7 @@ Rules:
 | #85 Sessions | `spikes/SPIKE-085-sessions.md` | **hot path `.sdlc/sessions/`** + SQLite upsert |
 | #86 Feature mirrors | `spikes/SPIKE-086-feature-mirrors.md` | no new mirror writes; archive via upgrade |
 | #88 SQLite graph | `spikes/SPIKE-088-sqlite-v2.md` | schema v4 + coverage tests |
-| #89 Guide contract | `spikes/SPIKE-089-guide-contract.md` | orchestrator dual-write; Guide dual-read in `jmjava/guide` |
+| #89 Guide contract | `spikes/SPIKE-089-guide-contract.md` | orchestrator dual-write shipped; Guide dual-read on `jmjava/guide` **branch**, not merged |
 | #90 Orchestration | `spikes/SPIKE-090-orchestration.md` | ContextStore fan-out + `context backends` + console Persistence tab |
 | #91 Quiet mode | `spikes/SPIKE-091-quiet-mode.md` | `SDLC_QUIET` / `--quiet` / harness file |
 | #80 Upgrade/re-init | (issue) | `sdlc-engine agent-context upgrade` → `.sdlc/legacy-export/` |
@@ -68,8 +68,13 @@ Rules:
 
 - [x] Full capability model (schema v4) + `capability_coverage().complete`  
 - [x] Hot sessions (#85), upgrade (#80), mirror stop (#86), quiet (#91) with tests  
-- [x] Guide lean+legacy context-index load (#89) on `jmjava/guide`  
-- [ ] Human review of integration branch + Guide dual-index PR  
-- [ ] Then open **one** PR: `cursor/agent-context-cleanup-integration-decf` → `main`  
+- [x] Persistence options (#90): `.sdlc/persistence-config.json`, `CONTEXT_BACKENDS`, ops console **Persistence** tab  
+- [x] Fable hard-review passes cleared (criticals + Important + Nice-to-have): retrieve backend gating, capture-format DB ingest, work-scoped progress excerpts (`.sdlc/resolved/progress-<WORK-ID>.md`), …  
+- [x] Orchestrator dual-write of lean + legacy context-index (#89) — Guide tag `sdlc-spdd-projection-v1` keeps working via the legacy path  
+- [x] Integration PR opened: [#109](https://github.com/jmjava/sdlc-spdd-orchestrator/pull/109) (draft `integration → main`; slice PRs #102/#104 are folded in — do not merge them separately)  
+- [ ] Guide dual-read (#89) merged in `jmjava/guide` — implemented on branch `cursor/spdd-dual-context-index-decf`, **not yet** on `jmjava/guide` `main` or the tag. Guide is optional/soft-fail, so this does **not** block #109.  
+- [ ] Human review + merge of [#109](https://github.com/jmjava/sdlc-spdd-orchestrator/pull/109); Guide dual-index PR reviewed separately on `jmjava/guide`  
+
+Hard rule: never PR/push/merge to `embabel/guide` — all Guide dogfood work goes through the `jmjava/guide` fork.
 
 See `spikes/` and the GitHub issues above.

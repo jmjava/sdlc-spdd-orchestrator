@@ -7,6 +7,9 @@ Tracked as [#93](https://github.com/jmjava/sdlc-spdd-orchestrator/issues/93).
 **Do not open or merge `integration → main` until this end-state is complete with tests.**  
 Intermediate PRs target `cursor/agent-context-cleanup-integration-decf` only.
 
+Status: end-state reached on integration; the one final PR is open as draft
+[#109](https://github.com/jmjava/sdlc-spdd-orchestrator/pull/109), awaiting human review.
+
 ## Invariant
 
 A fact accepted into agent context is available from:

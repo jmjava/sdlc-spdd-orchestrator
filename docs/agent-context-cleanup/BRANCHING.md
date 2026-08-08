@@ -32,7 +32,8 @@ Do **not** target `main` until the program is complete.
 
 ## Final merge (human approval)
 
-One PR only:
+One PR only — open as draft [#109](https://github.com/jmjava/sdlc-spdd-orchestrator/pull/109)
+(slice PRs #102/#104 are folded in; do not merge them separately):
 
 - **Base:** `main`  
 - **Head:** `cursor/agent-context-cleanup-integration-decf`  

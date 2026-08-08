@@ -14,3 +14,14 @@ Python `ContextStore` in `sdlc_engine/context_store.py`:
 CLI: `sdlc-engine context persist-lesson|persist-entry|retrieve|coverage|backends`  
 Ops console: **Persistence** tab (`/api/persistence/status|save`)  
 Bash: `scripts/resolve-context-backend.sh` reports `CONTEXT_BACKENDS=git-pointers,sqlite,guide-dice` (set).
+
+## Hard-review follow-ups (landed on integration)
+
+- `retrieve` queries only backends enabled by the persistence config — disabled
+  backends are skipped, not soft-failed.
+- `PersistResult.ok` = the required git leg succeeded; SQLite/Guide are soft
+  secondaries and `partial` flags their failures.
+- DB rebuild ingests lean capture-format entries under `spdd/memory/entries/`.
+- `resolve-agent-context.sh` scopes the shared lean progress ledger per Work ID
+  into a gitignored excerpt at `.sdlc/resolved/progress-<WORK-ID>.md`, so other
+  Work IDs do not bleed into the resolved context.

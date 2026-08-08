@@ -1,7 +1,7 @@
 # SPIKE-083: Lean-git lessons learned
 
 GitHub: [#83](https://github.com/jmjava/sdlc-spdd-orchestrator/issues/83)  
-Status: **proposal accepted for implementation**
+Status: **implemented** (lean persist via `ContextStore.persist_lesson` → `spdd/memory/lessons/*` + index row + pointer)
 
 ## Decision
 

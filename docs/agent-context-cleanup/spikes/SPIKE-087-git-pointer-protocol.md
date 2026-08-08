@@ -1,7 +1,7 @@
 # SPIKE-087: Path-1 git pointer protocol
 
 GitHub: [#87](https://github.com/jmjava/sdlc-spdd-orchestrator/issues/87)  
-Status: **draft proposal** (ready for implementation follow-on)
+Status: **implemented** (`PointerLedger` in `sdlc_engine/pointers.py`, wired into `ContextStore` fan-out per #90)
 
 ## Goal
 
@@ -95,4 +95,4 @@ Git-alone must answer the #82 matrix from stay-set + this ledger.
 - [x] Storage + write triggers documented  
 - [x] Reconstruct story for git-alone documented  
 - [x] `PointerLedger` implemented (`sdlc_engine/pointers.py`) + `engine/tests/test_pointers.py`  
-- [ ] Reviewed against #83/#84/#85 before wiring capture fan-out (#90)
+- [x] Reviewed against #83/#84/#85 before wiring capture fan-out (#90) — fan-out is live in `ContextStore`

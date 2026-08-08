@@ -12,7 +12,7 @@ through the ADF editor. The ADF Viewer does **not** talk to Guide (Jira sync onl
 
 | UI | Default URL | Start | Responsibility |
 |----|-------------|-------|----------------|
-| **Ops console** | `http://127.0.0.1:5051/` | `./scripts/sdlc.sh console --target <path>` | Install/upgrade, SQLite, rollback, Guide+Neo4j lifecycle, **start/stop** ADF Viewer |
+| **Ops console** | `http://127.0.0.1:5051/` | `./scripts/sdlc.sh console --target <path>` | Install/upgrade, persistence backends, SQLite, rollback, Guide+Neo4j lifecycle, **start/stop** ADF Viewer |
 | **ADF Viewer** | `http://127.0.0.1:5050/` | `./scripts/sdlc.sh viewer` or console **ADF** tab | Edit `adf/*.adf.json`, Jira prepare/apply sync |
 
 Aliases for the console: `installer`, `dashboard`. Wrapper: `./scripts/visual-installer.sh`.
