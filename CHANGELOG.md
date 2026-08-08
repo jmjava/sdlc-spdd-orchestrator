@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- Guide dogfood pin default `GUIDE_GIT_REF` → **`sdlc-spdd-projection-v2`** (lean+legacy dual-read on `jmjava/guide` [PR #7](https://github.com/jmjava/guide/pull/7))
+- SPIKE-089 / agent-context cleanup docs: Guide dual-read marked complete; issue #89 closeable
+
 ### Added
 
 - (templating / Vue3 ops console — in progress)
@@ -30,7 +35,7 @@ Agent-context cleanup program landed on `main` (#109).
 
 ### Notes
 
-- Guide lean+legacy dual-read (#89) still pending on `jmjava/guide` (`cursor/spdd-dual-context-index-decf`); orchestrator dual-writes both indexes so tag `sdlc-spdd-projection-v1` remains usable via legacy path.
+- At release time Guide lean+legacy dual-read (#89) was still pending; later merged on `jmjava/guide` via PR #7 and pinned as `sdlc-spdd-projection-v2` (see Unreleased).
 
 ## [Prior unreleased notes (pre-2.0.0a6)]
 

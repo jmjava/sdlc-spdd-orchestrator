@@ -67,7 +67,7 @@ Rules:
 | #85 Sessions | `spikes/SPIKE-085-sessions.md` | **hot path `.sdlc/sessions/`** + SQLite upsert |
 | #86 Feature mirrors | `spikes/SPIKE-086-feature-mirrors.md` | no new mirror writes; archive via upgrade |
 | #88 SQLite graph | `spikes/SPIKE-088-sqlite-v2.md` | schema v4 + coverage tests |
-| #89 Guide contract | `spikes/SPIKE-089-guide-contract.md` | orchestrator dual-write shipped; Guide dual-read on `jmjava/guide` **branch**, not merged |
+| #89 Guide contract | `spikes/SPIKE-089-guide-contract.md` | complete — Guide dual-read merged via [jmjava/guide#7](https://github.com/jmjava/guide/pull/7); pin `sdlc-spdd-projection-v2` |
 | #90 Orchestration | `spikes/SPIKE-090-orchestration.md` | ContextStore fan-out + `context backends` + console Persistence tab |
 | #91 Quiet mode | `spikes/SPIKE-091-quiet-mode.md` | `SDLC_QUIET` / `--quiet` / harness file |
 | #80 Upgrade/re-init | (issue) | `sdlc-engine agent-context upgrade` → `.sdlc/legacy-export/` |
@@ -80,7 +80,8 @@ Rules:
 - [x] Fable hard-review passes cleared (criticals + Important + Nice-to-have): retrieve backend gating, capture-format DB ingest, work-scoped progress excerpts (`.sdlc/resolved/progress-<WORK-ID>.md`), …  
 - [x] Orchestrator dual-write of lean + legacy context-index (#89) — Guide tag `sdlc-spdd-projection-v1` keeps working via the legacy path  
 - [x] Integration merged to `main`: [#109](https://github.com/jmjava/sdlc-spdd-orchestrator/pull/109) (release tag `v2.0.0a6`)  
-- [ ] Guide dual-read (#89) merged in `jmjava/guide` — implemented on branch `cursor/spdd-dual-context-index-decf`, **not yet** on `jmjava/guide` `main` or the tag  
+- [x] Guide dual-read (#89) merged in `jmjava/guide` — [PR #7](https://github.com/jmjava/guide/pull/7) on `main`; dogfood pin `sdlc-spdd-projection-v2`  
+
 
 Hard rule: never PR/push/merge to `embabel/guide` — all Guide dogfood work goes through the `jmjava/guide` fork.
 

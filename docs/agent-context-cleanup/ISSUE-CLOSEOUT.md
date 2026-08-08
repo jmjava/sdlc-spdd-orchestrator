@@ -27,11 +27,16 @@ Cloud Agent tokens cannot close GitHub issues (HTTP 403). Close these manually
 Release commit on `main` already listed `Closes #…` for the above (`5b8eb3a`);
 GitHub did not auto-close them for this integration.
 
+## Close as done (Guide follow-on)
+
+| Issue | Title | Evidence |
+|------:|-------|----------|
+| #89 | Guide dual-read lean + legacy context-index | [jmjava/guide#7](https://github.com/jmjava/guide/pull/7) on `main`; pin `sdlc-spdd-projection-v2` |
+
 ## Keep open
 
 | Issue | Why |
 |------:|-----|
-| #89 | Guide dual-read of lean `spdd/memory/context-index.md` still on `jmjava/guide` branch `cursor/spdd-dual-context-index-decf` — not on guide `main`/tag |
 | #103 | PR Playback / report — separate feature |
 
 ## One-liner for bulk close

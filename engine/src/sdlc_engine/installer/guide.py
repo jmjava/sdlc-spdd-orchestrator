@@ -71,7 +71,7 @@ def default_config() -> dict[str, Any]:
         # Pin the merged SPDD NamedEntity projection on jmjava/guide (tag on main).
         # Override with GUIDE_GIT_REF=main for floating tip, or a branch/tag of your choice.
         "guide_git_ref": os.environ.get(
-            "GUIDE_GIT_REF", "sdlc-spdd-projection-v1"
+            "GUIDE_GIT_REF", "sdlc-spdd-projection-v2"
         ).strip(),
         "profile": os.environ.get("GUIDE_PROFILE", "sdlc-spdd").strip() or "sdlc-spdd",
         "spring_profiles": os.environ.get("SPRING_PROFILES_ACTIVE", "").strip(),

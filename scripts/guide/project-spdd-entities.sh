@@ -13,7 +13,7 @@ stats_url="http://localhost:${GUIDE_PORT}/api/v1/data/spdd-projection/stats"
 
 if ! curl -sf --max-time 3 "${stats_url}" >/dev/null 2>&1; then
   echo "Guide not reachable at ${stats_url}" >&2
-  echo "Ensure guide runs sdlc-spdd-projection-v1 (or main) with guide.spdd-projection.enabled=true" >&2
+  echo "Ensure guide runs sdlc-spdd-projection-v2 (or main) with guide.spdd-projection.enabled=true" >&2
   exit 1
 fi
 

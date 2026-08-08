@@ -2,7 +2,7 @@
 
 **Work ID:** SPIKE-001-guide-rag-context-backend (historical spike; path shipped)  
 **Status:** Optional Guide DICE backend is available on `main` (`v2.0.0a6`+). Guide pin:
-tag **`sdlc-spdd-projection-v1`** on `jmjava/guide`. Local dogfood UI:
+tag **`sdlc-spdd-projection-v2`** on `jmjava/guide`. Local dogfood UI:
 [ops-console.md](ops-console.md) (**Guide** tab). ADF editing is a separate app
 ([adf-viewer.md](adf-viewer.md)) and does not use Guide.
 
@@ -23,7 +23,7 @@ flowchart LR
         MD["Markdown artifacts<br/>spdd/canvas/*.md<br/>agent-context/memory/context-index.md<br/>analysis, session notes"]
     end
 
-    subgraph Guide["Guide (sdlc-spdd-projection-v1) + Neo4j"]
+    subgraph Guide["Guide (sdlc-spdd-projection-v2) + Neo4j"]
         CH["RAG chunks<br/>embedding + BM25<br/>(legs 1-2)"]
         EN["Domain entities __Entity__<br/>WorkId, Canvas, Area,<br/>Decision, Pitfall, Pattern<br/>typed edges (leg 3)"]
     end

@@ -23,4 +23,4 @@ FEAT-012-session-brief-archive	done	sync		John Menke	2026-07-15T23:22:00Z	canvas
 SPIKE-001-guide-rag-context-backend	active	analysis	T01-T08	John Menke	2026-08-01T15:30:00Z	integration:integrate/console-and-spike-001; pr:#24+#54; T06 pending
 SPIKE-002-local-llm-and-embedding-format	shelved	analysis	T01	John Menke	2026-07-15T23:31:32Z	Blocked: Guide MCP not connected; analysis ready; resume with SPIKE-001 when guide is up
 SPIKE-003-embabel-context-graph-absorption	done	sync	T01-T04	Cursor Agent	2026-08-07T21:15:00Z	accepted hybrid; FEAT-013 intake; PR #76
-FEAT-013-guide-git-incremental-upstream	active	code	T02	Cursor Agent	2026-08-07T21:15:00Z	T01 complete; next Guide Layer B branch vs embabel/guide main
+FEAT-013-guide-git-incremental-upstream	active	code	T04-blocker	Cursor Agent	2026-08-08T03:15:00Z	Layer B branch ready; embabel PR blocked by fork-only rule; pin v2

@@ -196,7 +196,7 @@ def test_api_guide_save_and_mocked_lifecycle(
         json={
             "target": t,
             "guide_home": str(guide_home),
-            "guide_git_ref": "sdlc-spdd-projection-v1",
+            "guide_git_ref": "sdlc-spdd-projection-v2",
             "port": 21337,
         },
     )

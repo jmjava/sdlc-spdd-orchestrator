@@ -117,7 +117,7 @@ Also useful day to day:
 | [Engine v2 — commit-message](engine-v2.md#commit-message-diff-report) | Python engine diff report for `/sdlc-spdd-commit-message` |
 | [SPIKE guide ingest (operator notes)](spike-guide-ingest-agent-context.md) | Historical T01 operator notes; prefer [Guide flow](guide-flow.md) + [DICE runbook](dice-projection-runbook.md) on `main` |
 | [Guide flow](guide-flow.md) | End-to-end optional Guide context backend: dual ingest, runtime resolution, per-phase tools, persist loop |
-| [DICE projection runbook](dice-projection-runbook.md) | Run against Guide tag `sdlc-spdd-projection-v1` (or `GUIDE_GIT_REF=main`): typed entity persist/retrieve, `spdd_*` MCP tools |
+| [DICE projection runbook](dice-projection-runbook.md) | Run against Guide tag `sdlc-spdd-projection-v2` (or `GUIDE_GIT_REF=main`): typed entity persist/retrieve, `spdd_*` MCP tools |
 | [Narrated demos bundle](demos/README.md) | You maintain or extend the docgen bundle under `docs/demos/` |
 | [TESTING.md](../TESTING.md) | You need the command-testing confidence stack (CI gates, local smoke, planning-sync verification) |
 | [Design decisions](design-decisions.md) | You need rationale for major choices (including planned-but-not-installed features) |
