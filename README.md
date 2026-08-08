@@ -1,85 +1,138 @@
 # SDLC-SPDD Orchestrator
 
-A multi-assistant scaffold for disciplined AI-assisted delivery — Planning + SPDD
-(REASONS canvases) + SDLC phase commands — for Cursor, GitHub Copilot, and Claude Code.
+**Govern AI-assisted delivery the way you govern human delivery:** one Work ID, one
+design contract, one phase at a time — across Cursor, GitHub Copilot, and Claude Code.
 
-**Latest release:** [`v2.0.0a6`](https://github.com/jmjava/sdlc-spdd-orchestrator/releases/tag/v2.0.0a6)
-([#109](https://github.com/jmjava/sdlc-spdd-orchestrator/pull/109))
+This repository is an installable operating model, not a compiled agent runtime. You
+drop Planning + SPDD + SDLC into an application repo; assistants follow the same
+artifacts, handoffs, and gates every session.
 
-## What's new (`v2.0.0a6`)
+| | |
+| --- | --- |
+| **Latest release** | [`v2.0.0a6`](https://github.com/jmjava/sdlc-spdd-orchestrator/releases/tag/v2.0.0a6) · [#109](https://github.com/jmjava/sdlc-spdd-orchestrator/pull/109) |
+| **License** | MIT |
+| **Assistants** | Cursor · GitHub Copilot · Claude Code |
+| **Demo videos** | [GitHub Pages](https://jmjava.github.io/sdlc-spdd-orchestrator/) |
 
-The agent-context cleanup program is on `main`. Runtime noise left the commit stream;
-contracts and progress stay lean and queryable.
+---
 
-| Change | What you get |
-| ------ | ------------ |
-| **Lean stay-set** | Requirements + REASONS canvases + compact memory under `spdd/memory/` (lessons, pointers, context-index, progress entries) |
-| **Hot sessions** | Session briefs in gitignored `.sdlc/sessions/` (not `agent-context/sessions/`) |
-| **Triple-path context** | Persist/retrieve across **git pointers + SQLite + optional Guide** — soft-fail secondaries; toggle with `CONTEXT_BACKENDS` or the ops console **Persistence** tab |
-| **Quiet mode** | `SDLC_QUIET=1` / harness marker — product work without T## dogfood gravity |
-| **Work-scoped resolve** | Shared progress ledgers inject as `.sdlc/resolved/progress-<WORK-ID>.md` excerpts |
+## Why it exists
 
-Program docs: [docs/agent-context-cleanup/](docs/agent-context-cleanup/)
+Unstructured chat with an AI coding assistant produces drift: scope expands, decisions
+vanish, the next session starts from zero. SDLC-SPDD fixes that with three durable
+layers that stay in the repo:
+
+| Layer | Question | You commit |
+| ----- | -------- | ---------- |
+| **Planning** | *Why* are we doing this? | `ROADMAP.md`, milestones, requirements, session notes |
+| **SPDD** | *What* exactly ships (and what does not)? | `spdd/canvas/<WORK-ID>.md` — the REASONS Canvas |
+| **SDLC** | *Who acts when*, and how does the next session resume? | Phase commands, hot session briefs, lean memory |
+
+The canvas **governs** execution. Planning informs it. SDLC runs the lifecycle around it.
+Assistants do not invent a parallel process each turn.
+
+---
+
+## What's new in `v2.0.0a6`
+
+The agent-context cleanup program is merged. The framework still does the same job —
+but the commit surface is lean, and the same facts can live in three stores at once.
+
+### Before → after
+
+| Concern | Old default | Now (`v2.0.0a6`) |
+| ------- | ----------- | ---------------- |
+| Session briefs | Committed under `agent-context/sessions/` | Hot path: **`.sdlc/sessions/`** (gitignored) |
+| Progress / lessons | Feature mirrors + sprawling memory trees | Lean ledgers under **`spdd/memory/`** |
+| Local query | Grep the tree | Regenerable **SQLite** graph (`.sdlc/index.sqlite`) |
+| Optional graph | Manual / spike-shaped Guide wiring | **Triple-path** persist/retrieve: git + SQLite + Guide |
+| Operator control | Env vars only | Ops console **Persistence** tab + `CONTEXT_BACKENDS` |
+| Product dogfood | T## gravity always on | **Quiet mode** (`SDLC_QUIET` / harness marker) |
+
+### Triple-path context (shipped)
+
+Every accepted lesson or context entry can fan out concurrently:
+
+1. **Git pointers + stay-set files** — always on; reviewable contracts  
+2. **SQLite** — relational graph for local lookup / FTS (soft-fail)  
+3. **Guide (Neo4j)** — typed-edge retrieve when opted in (soft-fail)
+
+```text
+capture / persist
+        │
+        ├─► spdd/memory/…  + pointers.jsonl     (required)
+        ├─► .sdlc/index.sqlite                   (if enabled)
+        └─► Guide SPDD projection                (if enabled + reachable)
+```
+
+Toggle backends with:
+
+```bash
+sdlc-engine context backends
+sdlc-engine context backends --set git-pointers,sqlite
+# or: ops console → Persistence tab
+# or: CONTEXT_BACKENDS=git-pointers,sqlite,guide-dice
+```
+
+Program detail: [docs/agent-context-cleanup/](docs/agent-context-cleanup/)
+
+---
 
 ## Current focus
 
-**ADF template library + Vue3 ops console** — turn planning iterations into templated
-Jira ADF (header/body/footer combos) and replace the Flask dogfood UI with Vue3.
+**ADF template library + Vue3 ops console**
 
-- Plan: [docs/adf-template-library-and-vue3-console.md](docs/adf-template-library-and-vue3-console.md)
-- Branch / PR: [`cursor/adf-templates-vue3-console-decf`](https://github.com/jmjava/sdlc-spdd-orchestrator/tree/cursor/adf-templates-vue3-console-decf) · [#114](https://github.com/jmjava/sdlc-spdd-orchestrator/pull/114)
+Planning iterations already produce requirements, analysis, and canvas decisions.
+The next product slice turns those into **templated Jira ADF** (composable
+header / body / footer libraries) and replaces the Flask dogfood console with **Vue3**.
 
-## Local tools
+| Doc | Branch / PR |
+| --- | ----------- |
+| [ADF templates + Vue3 plan](docs/adf-template-library-and-vue3-console.md) | [`cursor/adf-templates-vue3-console-decf`](https://github.com/jmjava/sdlc-spdd-orchestrator/tree/cursor/adf-templates-vue3-console-decf) · [#114](https://github.com/jmjava/sdlc-spdd-orchestrator/pull/114) |
 
-Two localhost apps (Flask today; Vue3 console is the migration target). Prefer shell
-install scripts for production targets; the ops console is experimental dogfood UI.
+---
 
-| UI | Port | Start | Job |
-| -- | ---- | ----- | --- |
-| **Ops console** | `5051` | `./scripts/sdlc.sh console --target /path/to/app` | Install/upgrade, **Persistence**, SQLite, rollback, optional Guide stack, launch ADF Viewer |
-| **ADF Viewer** | `5050` | `./scripts/sdlc.sh viewer` | Edit `adf/*.adf.json`, explicit Jira sync |
+## The daily loop
 
-```bash
-python3 -m pip install -e './engine[viewer]'
-./scripts/sdlc.sh console --target .          # http://127.0.0.1:5051/
-./scripts/sdlc.sh viewer --root . --port 5050 # http://127.0.0.1:5050/
+One Work ID. One operation at a time. Capture before you leave.
+
+```mermaid
+flowchart LR
+  claim["claim / resume"] --> start["start session"]
+  start --> orient["next / whereami"]
+  orient --> phase["analysis → plan → architect → code → review"]
+  phase --> capture["capture memory"]
+  capture --> claim
 ```
 
-Details: [docs/ops-console.md](docs/ops-console.md) · [docs/adf-viewer.md](docs/adf-viewer.md)
+```bash
+# Terminal (installed target: scripts/sdlc-spdd/ … · this repo: scripts/sdlc.sh …)
+./scripts/sdlc.sh claim FEAT-001-order-status
+./scripts/sdlc.sh start
+./scripts/sdlc.sh next
 
-**Demo videos:** [GitHub Pages intros](https://jmjava.github.io/sdlc-spdd-orchestrator/)
+# AI chat — not the terminal
+/sdlc-spdd-analysis @requirements/milestones/FEAT-001-order-status.md
+/sdlc-spdd-plan @spdd/analysis/FEAT-001-order-status-analysis.md
+/sdlc-spdd-architect @spdd/canvas/FEAT-001-order-status.md
+/sdlc-spdd-code @spdd/canvas/FEAT-001-order-status.md operation T01
+/sdlc-spdd-review @spdd/canvas/FEAT-001-order-status.md
 
-## How the three parts fit
+./scripts/sdlc.sh capture --work-id FEAT-001-order-status --phase code \
+  --summary "Shipped T01" --validation "tests green"
+```
 
-| Part | Answers | Artifacts |
-| ---- | ------- | --------- |
-| **Planning** | _Why_ the work matters | `ROADMAP.md`, milestones, `requirements/`, `session-notes/` |
-| **SPDD** | _What_ to build (and not) | `spdd/canvas/<WORK-ID>.md`, `spdd/analysis/`, `spdd/reviews/` |
-| **SDLC** | _Who acts when_ / handoffs | phase commands, `.sdlc/sessions/`, `spdd/memory/`, workflow CLI |
+Paste the **Resume Prompt** from `.sdlc/sessions/current-session.md`. Load only files
+listed under **Resolved Context** — including the work-scoped progress excerpt when
+present (`.sdlc/resolved/progress-<WORK-ID>.md`).
 
-Optional Guide Neo4j projection is just another **context backend** (off by default;
-files + SQLite still work). See [docs/guide-flow.md](docs/guide-flow.md) only if you
-opt in — it is not required to use this framework.
+Hands-on walkthrough: [First day with SDLC-SPDD](docs/first-day-with-sdlc-spdd.md)
 
-> We dogfood the framework on itself via Work IDs under [`spdd/canvas/`](spdd/canvas/)
-> and [`requirements/milestones/`](requirements/milestones/). Roadmap posture:
-> [ROADMAP.md](ROADMAP.md).
+---
 
-## How commands work
+## Install into a project (~5 minutes)
 
-| Kind | Looks like | Where |
-| ---- | ---------- | ----- |
-| **Assistant** (AI chat) | `/sdlc-spdd-init`, `/sdlc-spdd-plan @requirements/foo.md` | Cursor / Copilot / Claude Code chat in the **target** project |
-| **Shell — install** | `./scripts/setup-agent-prompts.sh --target …` | Terminal in the **orchestrator** clone |
-| **Shell — daily use** | `./scripts/sdlc-spdd/sdlc.sh next` | Terminal in an **installed target** |
-| **Shell — dogfood** | `./scripts/sdlc.sh next` | Terminal in this repo |
-
-**`/sdlc-spdd-*` is not a terminal command.** Full detail:
-[How to run assistant commands](docs/initialization-and-invocation.md#how-to-run-assistant-commands).
-
-## Quick start (~5 minutes)
-
-From this repo, point `--target` at your application:
+Run from **this** repository; point `--target` at your application:
 
 ```bash
 git clone https://github.com/jmjava/sdlc-spdd-orchestrator.git
@@ -89,124 +142,202 @@ cd sdlc-spdd-orchestrator
 ./scripts/verify-project-install.sh --target /path/to/your/project
 ```
 
-Open the **target** in your assistant and run `/sdlc-spdd-init` in chat.
+What lands in the target:
 
-Then: [First day with SDLC-SPDD](docs/first-day-with-sdlc-spdd.md).
+- Assistant adapters (Cursor commands, Copilot prompts, Claude Code commands)
+- Always-on grounding (`.cursor/rules/sdlc-spdd.mdc`, Copilot instructions, `CLAUDE.md`)
+- Runtime CLI under `scripts/sdlc-spdd/`
+- Scaffolding: `ROADMAP.md`, milestones, `requirements/`, `spdd/`, `agent-context/` harness
 
-Upgrade an existing install (does not overwrite app source, canvases, or notes):
+Upgrade without clobbering app source, canvases, or notes:
 
 ```bash
 ./scripts/upgrade-project.sh --target /path/to/your/project --all
 ```
 
-## Day-one flow
+More: [Installing into your project](docs/installing-into-your-project.md) ·
+[Framework upgrade](docs/framework-upgrade.md)
 
-Chat commands are `/sdlc-spdd-*`; shell lines use `./scripts/sdlc-spdd/` in a target
-(or `./scripts/sdlc.sh` when dogfooding this repo).
+---
 
-```bash
-/sdlc-spdd-init
+## Commands: chat vs shell
 
-./scripts/sdlc-spdd/sdlc.sh claim FEAT-001-my-feature
-./scripts/sdlc-spdd/sdlc.sh start
-# Paste Resume Prompt from .sdlc/sessions/current-session.md — load only Resolved Context
+| Kind | Example | Where it runs |
+| ---- | ------- | ------------- |
+| **Assistant** | `/sdlc-spdd-plan @requirements/…` | Cursor / Copilot / Claude **chat** in the target |
+| **Install / upgrade** | `./scripts/setup-agent-prompts.sh --target …` | Terminal in the **orchestrator** clone |
+| **Daily workflow** | `./scripts/sdlc-spdd/sdlc.sh next` | Terminal in an **installed target** |
+| **Dogfood this repo** | `./scripts/sdlc.sh next` | Terminal here |
 
-/sdlc-spdd-analysis @requirements/my-feature.md @ROADMAP.md
-/sdlc-spdd-plan @spdd/analysis/FEAT-001-my-feature-analysis.md
-/sdlc-spdd-architect @spdd/canvas/FEAT-001-my-feature.md
-/sdlc-spdd-code @spdd/canvas/FEAT-001-my-feature.md operation T01
-/sdlc-spdd-review @spdd/canvas/FEAT-001-my-feature.md
+`/sdlc-spdd-*` is **never** a shell command. Details:
+[How to run assistant commands](docs/initialization-and-invocation.md#how-to-run-assistant-commands).
 
-./scripts/sdlc-spdd/sdlc.sh capture --work-id FEAT-001-my-feature --phase code \
-  --summary "Completed T01" --validation "tests passed"
-```
+### Assistant commands
 
-Orient anytime: `./scripts/sdlc-spdd/sdlc.sh next` or `/sdlc-spdd-whereami`.
-
-## Context loading (every session)
-
-Progressive disclosure — not whole-directory dumps.
-
-1. **Tier 1** — small always-on grounding (`.cursor/rules/sdlc-spdd.mdc`, Copilot instructions, or `CLAUDE.md`).
-2. **Tier 2** — `sdlc.sh start` writes `.sdlc/sessions/current-session.md` with a **Resolved Context** table (phase files, extensions, Work ID artifacts, area-filtered index rows, work-scoped progress excerpt).
-3. Paste the **Resume Prompt**; load only listed files.
-4. **Capture** grows lean memory (`spdd/memory/…`) + SQLite for the next run.
-
-```bash
-./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>
-./scripts/sdlc-spdd/sdlc.sh start
-./scripts/sdlc-spdd/resolve-agent-context.sh --target . --phase code --work-id <WORK-ID>
-```
-
-More: [Context loading and scaling](docs/context-loading-and-scaling.md)
-
-## Core assistant commands
-
-| Command | Use it for |
-| ------- | ---------- |
-| `/sdlc-spdd-whereami` | Orient: registry, Work ID, phase, gates, next command |
+| Command | Purpose |
+| ------- | ------- |
+| `/sdlc-spdd-whereami` | Orient: Work ID, phase, gates, recommended next step |
 | `/sdlc-spdd-init` | Initialize project context |
-| `/sdlc-spdd-analysis` | Domain keywords, scoped scan, analysis artifact |
-| `/sdlc-spdd-plan` | Create REASONS Canvas from accepted analysis |
+| `/sdlc-spdd-analysis` | Scoped analysis artifact |
+| `/sdlc-spdd-plan` | Create / update the REASONS Canvas |
 | `/sdlc-spdd-architect` | Harden the canvas before coding |
-| `/sdlc-spdd-code` | Implement one approved operation |
-| `/sdlc-spdd-api-test` | Generate API test script |
+| `/sdlc-spdd-code` | Implement **one** approved operation |
+| `/sdlc-spdd-api-test` | API verification script for the work |
 | `/sdlc-spdd-review` | Compare implementation to the canvas |
-| `/sdlc-spdd-prompt-update` | Update the canvas when acceptance criteria change |
-| `/sdlc-spdd-retro` | Capture reusable learnings |
-| `/sdlc-spdd-sync` | Reconcile accepted drift back into prompt artifacts |
+| `/sdlc-spdd-prompt-update` | Change the canvas when acceptance criteria change |
+| `/sdlc-spdd-retro` | Capture reusable lessons |
+| `/sdlc-spdd-sync` | Reconcile accepted drift into prompt artifacts |
 | `/sdlc-spdd-commit-message` | Draft a paste-ready commit message from the diff |
 
-## Core scripts
+### Workflow CLI (high traffic)
 
-| Script | Use it for |
-| ------ | ---------- |
-| `scripts/setup-agent-prompts.sh` | Install into a target |
-| `scripts/upgrade-project.sh` | Upgrade framework-owned files |
-| `scripts/sdlc-spdd/sdlc.sh` | Daily CLI: `next`, `claim`, `resume`, `advance`, `capture`, `team`, `list-work`, `db`, `console`, … |
-| `scripts/sdlc-spdd/start-agent-session.sh` | Hot session brief + Resume Prompt |
-| `scripts/sdlc-spdd/capture-session-memory.sh` | Persist summary / lessons / progress |
-| `scripts/sdlc-spdd/resolve-agent-context.sh` | Progressive disclosure paths |
-| `scripts/sdlc-spdd/verify-agent-command-effects.sh` | Lean-first side-effect checks |
+| Command | Purpose |
+| ------- | ------- |
+| `sdlc.sh claim <WORK-ID>` | Own the work (+ team registry) |
+| `sdlc.sh start` / `resume` | Hot session brief + Resume Prompt |
+| `sdlc.sh next` / `status` | What to do now (honors quiet mode) |
+| `sdlc.sh advance` | Move phase when gates pass |
+| `sdlc.sh capture` | Persist summary, lessons, lean progress |
+| `sdlc.sh db rebuild \| query \| lookup` | Local SQLite index |
+| `sdlc.sh local start \| promote` | Offline `LOCAL-*` sessions → real Work IDs |
+| `sdlc.sh console` / `viewer` | Ops console · ADF Viewer |
+| `sdlc.sh issues draft \| push \| pull` | Jira / GitHub issue sync (explicit only) |
 
-Python engine: `pip install -e './engine[dev]'` then `sdlc-engine …`
-(workflow, context persist/retrieve, issue sync, ADF helpers).
+Python engine (same surface, importable):
 
-## Repository layout
+```bash
+python3 -m pip install -e './engine[dev,viewer]'
+SDLC_ENGINE=python ./scripts/sdlc.sh next
+sdlc-engine context retrieve --work-id FEAT-001-order-status
+sdlc-engine context backends
+```
 
-| Path | Purpose |
-| ---- | ------- |
-| `docs/` | Guides, runbooks, [agent-context cleanup](docs/agent-context-cleanup/), research |
-| `scripts/` | Install, upgrade, validation, target runtime templates |
-| `engine/` | Python orchestration engine (`sdlc-engine`) + ops console / ADF viewer |
-| `templates/` | Canvas / assistant command / project-doc templates |
-| `spdd/` | Canvases, analysis, reviews, lean `memory/` stay-set |
-| `agent-context/` | Install harness, playbooks, extensions (not the hot session bus) |
-| `requirements/` | Milestone / Work ID requirements (Jira-oriented) |
+Engine notes: [engine/README.md](engine/README.md)
+
+---
+
+## Context loading (progressive disclosure)
+
+Sessions must not reload the whole tree.
+
+1. **Tier 1 — always on** — a small grounding file per assistant  
+2. **Tier 2 — resolved** — `sdlc.sh start` writes `.sdlc/sessions/current-session.md` with a **Resolved Context** table (phase files, skills/extensions, Work ID artifacts, area-filtered index rows, scoped progress)  
+3. **Paste the Resume Prompt** — open only those paths  
+4. **Capture** — grow `spdd/memory/` (+ SQLite / Guide when enabled) for the next run  
+
+```bash
+./scripts/sdlc.sh claim <WORK-ID>
+./scripts/sdlc.sh start
+./scripts/resolve-agent-context.sh --target . --phase code --work-id <WORK-ID>
+```
+
+Deep dive: [Context loading and scaling](docs/context-loading-and-scaling.md)
+
+---
+
+## Local GUIs
+
+Experimental dogfood UIs. Prefer shell install for production targets. Vue3 console
+is the migration target (see Current focus).
+
+| UI | Default URL | Start | Responsibility |
+| -- | ----------- | ----- | -------------- |
+| **Ops console** | `http://127.0.0.1:5051/` | `./scripts/sdlc.sh console --target <path>` | Install/upgrade, **Persistence**, SQLite, rollback, optional Guide lifecycle, launch ADF Viewer |
+| **ADF Viewer** | `http://127.0.0.1:5050/` | `./scripts/sdlc.sh viewer --root <path>` | Edit `adf/*.adf.json`; explicit Jira upload/download |
+
+```bash
+python3 -m pip install -e './engine[viewer]'
+./scripts/sdlc.sh console --target .
+./scripts/sdlc.sh viewer --root .
+```
+
+[Ops console](docs/ops-console.md) · [ADF Viewer](docs/adf-viewer.md)
+
+Guide Neo4j projection is **optional**. When disabled or unreachable, every command
+still works on files + SQLite. Dogfood pin for the Guide binary:
+`jmjava/guide` tag `sdlc-spdd-projection-v1` — see [guide-flow.md](docs/guide-flow.md)
+only if you turn that path on.
+
+---
+
+## Where things live
+
+```text
+your-app/
+  ROADMAP.md                 Planning narrative
+  requirements/              Requirements (often → Jira)
+  session-notes/             Daily human/agent narrative
+  spdd/
+    canvas/<WORK-ID>.md      REASONS Canvas (governs execution)
+    analysis/ reviews/ sync/ Governance siblings
+    memory/                  Lean stay-set (lessons, entries, pointers, index)
+  .sdlc/
+    sessions/                Hot session briefs (gitignored)
+    index.sqlite             Local graph cache (gitignored)
+    resolved/                Ephemeral resolve excerpts
+  agent-context/
+    harness/ playbooks/      Install-time rules & playbooks
+    extensions/              Phase extensions / skills
+  scripts/sdlc-spdd/         Installed workflow CLI
+  adf/                       Optional checked-in ADF JSON
+```
+
+| Path (this repo) | Purpose |
+| ---------------- | ------- |
+| `docs/` | Guides, cleanup program, research |
+| `scripts/` | Install, upgrade, validation, runtime templates |
+| `engine/` | Python `sdlc-engine`, ops console, ADF viewer |
+| `templates/` | Canvas + assistant command templates |
+| `spdd/` | Dogfood canvases + lean memory |
+| `requirements/` | Dogfood requirements |
+| `examples/` | Sample workflows |
+
+---
 
 ## Documentation map
 
-**Start here**
+**Onboarding**
 
-1. [First day with SDLC-SPDD](docs/first-day-with-sdlc-spdd.md)
-2. [Three-part operating path](docs/three-part-operating-path.md)
-3. [Installing into your project](docs/installing-into-your-project.md)
-4. [Daily runbook](docs/daily-runbook.md)
-5. [Agent-context cleanup](docs/agent-context-cleanup/) — lean stay-set + triple-path
-6. [Ops console](docs/ops-console.md) · [ADF Viewer](docs/adf-viewer.md)
+1. [First day with SDLC-SPDD](docs/first-day-with-sdlc-spdd.md) — hands-on first loop  
+2. [Three-part operating path](docs/three-part-operating-path.md) — how Planning / SPDD / SDLC hand off  
+3. [Installing into your project](docs/installing-into-your-project.md)  
+4. [Daily runbook](docs/daily-runbook.md) · [Cheat sheet](docs/sdlc-spdd-cheat-sheet.md)  
+5. [Useful concepts and commands](docs/useful-concepts-and-commands.md)  
 
-**Also useful**
+**Shipped platform**
 
-- [Useful concepts and commands](docs/useful-concepts-and-commands.md)
-- [Local SQLite index](docs/local-sqlite-index.md)
-- [Jira runbook](docs/jira-runbook.md) · [Jira-compatible requirements](docs/jira-compatible-requirements-format.md)
-- [Changelog](CHANGELOG.md) · full index in [docs/README.md](docs/README.md)
+- [Agent-context cleanup](docs/agent-context-cleanup/) — stay-set, triple-path, quiet mode  
+- [Local SQLite index](docs/local-sqlite-index.md)  
+- [Ops console](docs/ops-console.md) · [ADF Viewer](docs/adf-viewer.md)  
+- [Jira runbook](docs/jira-runbook.md) · [Jira-compatible requirements](docs/jira-compatible-requirements-format.md)  
+- [Changelog](CHANGELOG.md) · [ROADMAP](ROADMAP.md)  
+
+**Next product slice**
+
+- [ADF template library + Vue3 console](docs/adf-template-library-and-vue3-console.md)  
+
+Full index: [docs/README.md](docs/README.md)
+
+---
 
 ## What this is not
 
-Not a compiled multi-agent runtime, and not a replacement for Cursor, Copilot,
-Claude Code, Jira, or OpenSPDD. It is a repository-based operating model that makes
-AI-assisted work more governable, reviewable, and reusable.
+- Not a hosted multi-agent SaaS or a replacement for Cursor, Copilot, or Claude Code  
+- Not an official extension of [SDLC Agents](https://github.com/dsilahcilar/sdlc-agents) or [OpenSPDD](https://github.com/gszhangwei/open-spdd)  
+- Not “commit every session file” — hot runtime stays under `.sdlc/`; git keeps contracts  
+
+It **is** a repository-based operating model that makes AI-assisted work reviewable,
+resumable, and reusable across assistants and teammates.
+
+---
+
+## Contributing & dogfood
+
+We develop this framework through its own Work IDs (`spdd/canvas/`, `requirements/milestones/`).
+See [CONTRIBUTING.md](CONTRIBUTING.md) for script-path rules (orchestrator vs target) and
+[ROADMAP.md](ROADMAP.md) for delivery posture.
+
+---
 
 ## License
 
@@ -215,5 +346,5 @@ MIT
 ## Attribution
 
 Inspired by [SDLC Agents](https://github.com/dsilahcilar/sdlc-agents) and
-[OpenSPDD](https://github.com/gszhangwei/open-spdd). Not an official extension of
-either project.
+[OpenSPDD](https://github.com/gszhangwei/open-spdd). Not an official extension of either
+project unless that relationship is established later.
