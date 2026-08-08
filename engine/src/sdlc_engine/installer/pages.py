@@ -140,6 +140,16 @@ PAGE = """<!DOCTYPE html>
     .check-list .mark.ok { color: var(--ok); }
     .check-list .mark.bad { color: var(--bad); }
     .check-list .hint { display: block; color: var(--muted); font-size: 0.82rem; margin-top: 0.15rem; }
+    .feed-list { list-style: none; padding: 0; margin: 0; max-height: 22rem; overflow: auto; }
+    .feed-list li {
+      display: grid; grid-template-columns: 5.2rem 1fr; gap: 0.45rem;
+      padding: 0.4rem 0; border-bottom: 1px solid var(--line); font-size: 0.88rem;
+    }
+    .feed-list .src {
+      font-family: var(--mono); font-size: 0.7rem; font-weight: 500;
+      text-transform: uppercase; color: var(--muted); padding-top: 0.15rem;
+    }
+    .feed-list .hint { display: block; color: var(--muted); font-size: 0.78rem; margin-top: 0.1rem; }
     .status-line { margin-bottom: 0.55rem; font-family: var(--mono); font-size: 0.78rem; color: var(--muted); }
     .status-line.ok { color: var(--ok); }
     .status-line.bad { color: var(--bad); }
@@ -188,13 +198,71 @@ PAGE = """<!DOCTYPE html>
     </section>
 
     <nav class="tabs" role="tablist">
-      <button type="button" class="tab active" data-tab="install">Install / Upgrade</button>
+      <button type="button" class="tab active" data-tab="dashboard">Dashboard</button>
+      <button type="button" class="tab" data-tab="install">Install / Upgrade</button>
       <button type="button" class="tab" data-tab="persist">Persistence</button>
       <button type="button" class="tab" data-tab="sqlite">SQLite</button>
       <button type="button" class="tab" data-tab="rollback">Rollback</button>
       <button type="button" class="tab" data-tab="guide">Guide</button>
       <button type="button" class="tab" data-tab="adf">ADF</button>
     </nav>
+
+    <section class="tab-pane active" id="pane-dashboard">
+      <div class="panel">
+        <h2>Today</h2>
+        <p class="meta">Deterministic suggested actions from the ledger, registry, workflow state, and config — no LLM.</p>
+        <ul class="check-list" id="dash-suggestions"><li>Refresh to load.</li></ul>
+        <div class="actions">
+          <button type="button" class="btn-secondary" id="btn-dash-refresh">Refresh dashboard</button>
+        </div>
+        <div class="status-line" id="dash-status">Ready.</div>
+      </div>
+
+      <div class="panel">
+        <h2>Active work</h2>
+        <div class="stats">
+          <div class="stat-card"><div class="n" id="dw-id">—</div><div class="l">work id</div></div>
+          <div class="stat-card"><div class="n" id="dw-phase">—</div><div class="l">phase</div></div>
+          <div class="stat-card"><div class="n" id="dw-gates">—</div><div class="l">open gates</div></div>
+          <div class="stat-card"><div class="n" id="dw-op">—</div><div class="l">next op</div></div>
+        </div>
+        <h3>Do now</h3>
+        <pre class="cmd" id="dash-work-cmd">—</pre>
+        <ul class="check-list" id="dash-work-gates"></ul>
+        <div class="meta">Claim/advance from the terminal: <code class="inline">./scripts/sdlc.sh next</code></div>
+      </div>
+
+      <div class="panel">
+        <h2>Memory &amp; backends</h2>
+        <div class="stats">
+          <div class="stat-card"><div class="n" id="dm-accepted">—</div><div class="l">accepted</div></div>
+          <div class="stat-card"><div class="n" id="dm-staged">—</div><div class="l">staged</div></div>
+          <div class="stat-card"><div class="n" id="db-sqlite">—</div><div class="l">sqlite cache</div></div>
+          <div class="stat-card"><div class="n" id="db-guide">—</div><div class="l">guide</div></div>
+        </div>
+        <div class="meta" id="dash-memory-meta">—</div>
+        <div class="meta" id="dash-backends-meta">—</div>
+        <div class="actions">
+          <button type="button" class="btn-secondary dash-configure" data-goto-tab="persist">Configure → Persistence (parity buttons)</button>
+          <button type="button" class="btn-ghost dash-configure" data-goto-tab="sqlite">Configure → SQLite</button>
+          <button type="button" class="btn-ghost dash-configure" data-goto-tab="guide">Configure → Guide</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Integrations</h2>
+        <ul class="check-list" id="dash-integrations"><li>—</li></ul>
+        <div class="actions">
+          <button type="button" class="btn-ghost dash-configure" data-goto-tab="adf">Configure → ADF / Viewer</button>
+          <button type="button" class="btn-ghost dash-configure" data-goto-tab="guide">Configure → Guide</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Recent activity — catch up here</h2>
+        <ul class="feed-list" id="dash-activity"><li><span class="src">—</span><span>Refresh to load.</span></li></ul>
+      </div>
+    </section>
 
     <section class="tab-pane" id="pane-persist">
       <div class="panel">
@@ -239,7 +307,7 @@ PAGE = """<!DOCTYPE html>
       </div>
     </section>
 
-    <section class="tab-pane active" id="pane-install">
+    <section class="tab-pane" id="pane-install">
       <div class="panel">
         <h2>Install options</h2>
         <div class="checks" style="margin-bottom: 0.9rem;">
@@ -1208,14 +1276,130 @@ PAGE = """<!DOCTYPE html>
       }
     }
 
+    function esc(v) {
+      return String(v == null ? "" : v).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+    }
+
+    function gotoTab(name) {
+      const btn = document.querySelector('.tab[data-tab="' + name + '"]');
+      if (btn) btn.click();
+    }
+
+    function fillDashboardStatus(data) {
+      const work = data.work || {};
+      $("dw-id").textContent = work.pointer || "(none)";
+      $("dw-phase").textContent = work.phase || "—";
+      $("dw-gates").textContent = String((work.open_gates || []).length);
+      $("dw-op").textContent = work.operation || "—";
+      $("dash-work-cmd").textContent = work.recommended_command
+        || (work.pointer ? "—" : "./scripts/sdlc.sh claim <WORK-ID>");
+      const gates = work.open_gates || [];
+      $("dash-work-gates").innerHTML = gates.length
+        ? gates.map((g) => `<li><span class="mark bad">!!</span><span>${esc(g.label || g.gate)}</span></li>`).join("")
+        : '<li><span class="mark ok">OK</span><span>No open gates'
+          + (work.pointer ? " — ready to advance." : " — no active Work ID.") + "</span></li>";
+      const mem = data.memory || {};
+      $("dm-accepted").textContent = mem.accepted_count != null ? mem.accepted_count : "—";
+      $("dm-staged").textContent = mem.staged_count != null ? mem.staged_count : "—";
+      const last = mem.registry_last_event;
+      $("dash-memory-meta").textContent =
+        "ledger " + (mem.ledger_path || "") +
+        (mem.last_accepted_ts ? " · last accepted " + mem.last_accepted_ts : " · nothing accepted yet") +
+        (mem.needs_accept ? " · staged records need accept" : "") +
+        (last
+          ? " · registry: " + [last.event, last.work_id, last.owner ? "by " + last.owner : "", last.ts].filter(Boolean).join(" ")
+          : " · registry empty");
+      const be = data.backends || {};
+      const sq = be.sqlite || {};
+      const gd = be.guide || {};
+      $("db-sqlite").textContent = sq.enabled ? (sq.exists ? "READY" : "ON") : "OFF";
+      $("db-guide").textContent = gd.enabled ? (gd.reachable ? "UP" : "DOWN") : "OFF";
+      $("dash-backends-meta").textContent =
+        "backends=" + (be.backends || []).join(",") +
+        " · source=" + (be.source || "—") +
+        (gd.enabled ? " · guide " + (gd.reachable ? "reachable" : "unreachable") + " at " + (gd.host || "?") + ":" + (gd.port || "?") : "") +
+        " · " + (be.parity_hint || "");
+      const integ = data.integrations || {};
+      const jira = integ.jira || {};
+      const gh = integ.github || {};
+      const viewer = integ.viewer || {};
+      const item = (ok, label, hint) => `<li>
+          <span class="mark ${ok ? "ok" : "bad"}">${ok ? "OK" : "!!"}</span>
+          <span><strong>${esc(label)}</strong><span class="hint">${esc(hint || "")}</span></span>
+        </li>`;
+      $("dash-integrations").innerHTML = [
+        item(jira.configured, "Jira env " + (jira.configured ? "set" : "not set"), jira.hint),
+        item(gh.authenticated, "GitHub CLI " + (gh.authenticated ? "authenticated" : "not ready"), gh.detail),
+        item(
+          viewer.running,
+          "ADF Viewer (:" + (viewer.port || 5050) + ") " + (viewer.running ? "running" : "stopped"),
+          viewer.running ? viewer.url : "Start it from the ADF tab."
+        ),
+      ].join("");
+    }
+
+    async function loadDashboard() {
+      setBusy(["btn-dash-refresh"], true);
+      $("dash-status").textContent = "Loading…";
+      $("dash-status").className = "status-line";
+      try {
+        const opts = {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ target: target() }),
+        };
+        const [statusRes, activityRes, suggestRes] = await Promise.all([
+          fetch("/api/dashboard/status", opts),
+          fetch("/api/dashboard/activity?limit=20", opts),
+          fetch("/api/dashboard/suggestions", opts),
+        ]);
+        const status = await statusRes.json();
+        if (!statusRes.ok) {
+          $("dash-status").textContent = status.error || "Dashboard load failed";
+          $("dash-status").className = "status-line bad";
+        } else {
+          fillDashboardStatus(status);
+        }
+        const activity = await activityRes.json();
+        const items = activity.items || [];
+        $("dash-activity").innerHTML = items.length
+          ? items.map((it) => `<li>
+              <span class="src">${esc(it.source)}</span>
+              <span>${esc(it.text)}<span class="hint">${esc(it.ts)}${it.work_id ? " · " + esc(it.work_id) : ""}</span></span>
+            </li>`).join("")
+          : '<li><span class="src">—</span><span>No activity yet (fresh install).</span></li>';
+        const sug = await suggestRes.json();
+        const list = sug.suggestions || [];
+        $("dash-suggestions").innerHTML = list.length
+          ? list.map((s) => `<li><span class="mark">[ ]</span><span>${esc(s.text)}</span></li>`).join("")
+          : '<li><span class="mark ok">OK</span><span>Nothing pending — all caught up.</span></li>';
+        if (statusRes.ok) {
+          $("dash-status").textContent = "Loaded.";
+          $("dash-status").className = "status-line ok";
+        }
+      } catch (err) {
+        $("dash-status").textContent = String(err);
+        $("dash-status").className = "status-line bad";
+      } finally {
+        setBusy(["btn-dash-refresh"], false);
+      }
+    }
+
     async function refreshAll() {
       await detect();
-      await Promise.all([loadPersist(), loadSqlite(), loadBackups(), loadGuide(), loadAdf()]);
+      await Promise.all([loadDashboard(), loadPersist(), loadSqlite(), loadBackups(), loadGuide(), loadAdf()]);
       await loadAdfBrowse($("adf-browse-path").value.trim() || adfBrowsePath || "");
     }
 
     $("btn-detect").addEventListener("click", detect);
     $("btn-refresh-all").addEventListener("click", refreshAll);
+    $("btn-dash-refresh").addEventListener("click", loadDashboard);
+    document.querySelectorAll(".dash-configure").forEach((el) => {
+      el.addEventListener("click", (e) => {
+        e.preventDefault();
+        gotoTab(el.dataset.gotoTab);
+      });
+    });
     $("btn-run").addEventListener("click", () => run());
     $("btn-verify").addEventListener("click", () => run("verify"));
     $("btn-clear").addEventListener("click", () => {
