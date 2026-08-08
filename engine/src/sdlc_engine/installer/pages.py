@@ -213,7 +213,7 @@ PAGE = """<!DOCTYPE html>
         <div class="row" style="margin-bottom: 0.75rem;">
           <div style="flex:1 1 18rem;">
             <label class="field" for="persist-guide-url">Guide base URL (optional override)</label>
-            <input id="persist-guide-url" type="text" spellcheck="false" placeholder="http://localhost:21337" />
+            <input id="persist-guide-url" type="text" spellcheck="false" placeholder="leave blank to use GUIDE_BASE_URL / localhost:21337" />
           </div>
         </div>
         <label class="field" for="persist-notes">Notes</label>
@@ -1107,10 +1107,12 @@ PAGE = """<!DOCTYPE html>
       $("ps-sqlite").textContent = en.sqlite ? (data.sqlite && data.sqlite.exists ? "READY" : "ON") : "OFF";
       $("ps-guide").textContent = en["guide-dice"] ? "ON" : "OFF";
       $("ps-source").textContent = data.source || "—";
+      const effective = (data.guide && data.guide.effective_base_url) || "";
       $("persist-meta").textContent =
         "backends=" + (data.backends || []).join(",") +
         " · config=" + (data.config_path || "—") +
-        (data.config_exists ? "" : " (defaults)");
+        (data.config_exists ? "" : " (defaults)") +
+        (effective ? (" · effective guide=" + effective) : "");
       $("persist-log").textContent = JSON.stringify(data, null, 2);
     }
 

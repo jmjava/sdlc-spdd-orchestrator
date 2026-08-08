@@ -136,19 +136,66 @@ def test_workflow_infers_code_from_lean_progress(tmp_path: Path, monkeypatch) ->
     monkeypatch.setenv("SDLC_USER", "lean-dev")
     project = Project(tmp_path)
     wid = "FEAT-lean-infer"
+    other = "FEAT-other-progress"
     (tmp_path / "requirements" / "milestones").mkdir(parents=True)
     (tmp_path / "requirements" / "milestones" / f"{wid}.md").write_text(
         f"# Requirement: {wid}\n", encoding="utf-8"
     )
+    (tmp_path / "requirements" / "milestones" / f"{other}.md").write_text(
+        f"# Requirement: {other}\n", encoding="utf-8"
+    )
     (tmp_path / "spdd" / "canvas").mkdir(parents=True)
     (tmp_path / "spdd" / "canvas" / f"{wid}.md").write_text(
-        f"# REASONS Canvas: {wid}\n\n## Metadata\n- Readiness: Ready For Coding\n",
+        f"# REASONS Canvas: {wid}\n\n## Metadata\n- Readiness: Needs Analysis\n",
         encoding="utf-8",
     )
     progress = tmp_path / "spdd" / "memory" / "entries" / "progress.md"
     progress.parent.mkdir(parents=True)
     progress.write_text(
-        f"## {wid}\n\n- T01 complete — implemented greet\n", encoding="utf-8"
+        f"## {other}\n\n- T01 complete — implemented greet\n\n"
+        f"## {wid}\n\n- planning notes only\n",
+        encoding="utf-8",
     )
     engine = WorkflowEngine(project)
+    # Other work's progress must not force this work into code.
+    assert engine.infer_phase_from_artifacts(wid) == "architect"
+    progress.write_text(
+        f"## {other}\n\n- T01 complete\n\n"
+        f"## {wid}\n\n- T01 complete — implemented greet\n",
+        encoding="utf-8",
+    )
     assert engine.infer_phase_from_artifacts(wid) == "code"
+
+
+def test_cli_rejects_unknown_backends(tmp_path: Path, monkeypatch, capsys) -> None:
+    monkeypatch.delenv("CONTEXT_BACKENDS", raising=False)
+    rc = main(
+        [
+            "--root",
+            str(tmp_path),
+            "context",
+            "backends",
+            "--set",
+            "git-pointers,sqllite",
+        ]
+    )
+    assert rc == 2
+    err = capsys.readouterr().err
+    assert "unknown" in err.lower()
+
+
+def test_save_does_not_roundtrip_default_guide_url(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.delenv("CONTEXT_BACKENDS", raising=False)
+    monkeypatch.delenv("GUIDE_BASE_URL", raising=False)
+    status = status_dict(Project(tmp_path))
+    assert status["guide"]["base_url"] == ""
+    assert status["guide"]["effective_base_url"].startswith("http://")
+    saved = save_config(
+        tmp_path,
+        {"backends": ["git-pointers", "sqlite"], "guide_base_url": "", "notes": ""},
+    )
+    assert saved["guide"]["base_url"] == ""
+    cfg_file = json.loads(
+        (tmp_path / ".sdlc" / "persistence-config.json").read_text(encoding="utf-8")
+    )
+    assert cfg_file.get("guide_base_url") == ""

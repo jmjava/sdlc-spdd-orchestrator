@@ -33,13 +33,28 @@ def test_persistence_status_and_save(tmp_path: Path) -> None:
     )
     assert res.status_code == 200
     saved = res.get_json()
+    # Save must return status_dict shape so the Persistence tab can re-apply UI.
     assert saved["backends"] == ["git-pointers", "sqlite"]
+    assert saved["enabled"]["sqlite"] is True
+    assert saved["enabled"]["guide-dice"] is False
     assert saved["notes"] == "installer-api"
+    assert saved.get("config_path")
+    assert saved.get("saved") is True
     assert (tmp_path / ".sdlc" / "persistence-config.json").is_file()
 
-    res = client.post("/api/persistence/status", json={"target": str(tmp_path)})
+    # Second save from the returned shape must not silently drop backends.
+    res = client.post(
+        "/api/persistence/save",
+        json={
+            "target": str(tmp_path),
+            "backends": saved["backends"],
+            "guide_base_url": saved.get("guide", {}).get("base_url") or "",
+            "notes": saved["notes"],
+        },
+    )
     assert res.status_code == 200
     again = res.get_json()
+    assert again["backends"] == ["git-pointers", "sqlite"]
     assert again["enabled"]["guide-dice"] is False
     assert again["config_exists"] is True
 
@@ -69,6 +84,13 @@ def test_persistence_save_validation(tmp_path: Path) -> None:
         },
     )
     assert res.status_code == 400
+
+    res = client.post(
+        "/api/persistence/save",
+        json={"target": str(tmp_path), "backends": ["git-pointers", "sqllite"]},
+    )
+    assert res.status_code == 400
+    assert "unknown" in (res.get_json().get("error") or "").lower()
 
 
 def test_persistence_tab_in_console_html(tmp_path: Path) -> None:

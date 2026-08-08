@@ -141,20 +141,27 @@ class WorkflowEngine:
                 inferred = "code"
         progress = self.project.progress_log_path(work_id)
         legacy_progress = self.project.feature_dir(work_id) / "progress-log.md"
-        for prog in (progress, legacy_progress):
-            if prog.is_file() and re.search(
-                r"(T\d{2}.*complete|implemented|merged)",
-                prog.read_text(encoding="utf-8"),
-                re.IGNORECASE,
-            ):
-                inferred = "code"
-                break
+        evidence = ""
+        if progress.is_file():
+            evidence = Project.ledger_section_for_work(
+                progress.read_text(encoding="utf-8"), work_id
+            )
+        elif legacy_progress.is_file():
+            evidence = legacy_progress.read_text(encoding="utf-8")
+        if evidence and re.search(
+            r"(T\d{2}.*complete|implemented|merged)", evidence, re.IGNORECASE
+        ):
+            inferred = "code"
         if self.project.review_path(work_id).is_file():
             inferred = "review"
         lean_retro = root / "spdd" / "memory" / "entries" / "retro.md"
         if (self.project.feature_dir(work_id) / "retro.md").is_file() or (
             lean_retro.is_file()
-            and work_id in lean_retro.read_text(encoding="utf-8")
+            and bool(
+                Project.ledger_section_for_work(
+                    lean_retro.read_text(encoding="utf-8"), work_id
+                )
+            )
         ):
             inferred = "retro"
         if self.project.sync_path(work_id).is_file():

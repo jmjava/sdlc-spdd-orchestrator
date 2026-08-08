@@ -130,13 +130,7 @@ class ContextStore:
         want_sqlite = backend_enabled(self.project, BACKEND_SQLITE)
         want_guide = project_guide and backend_enabled(self.project, BACKEND_GUIDE)
 
-        if not backend_enabled(self.project, BACKEND_GIT):
-            result.ok = False
-            result.git = {"ok": False, "skipped": True, "error": "git-pointers disabled"}
-            result.errors.append("git: git-pointers backend disabled")
-            return self._finalize_persist(result)
-
-        # Path 1: lean git
+        # Path 1: lean git (always required; git-pointers cannot be disabled)
         try:
             git_meta = self._persist_lesson_git(
                 kind=kind_n,
@@ -242,12 +236,7 @@ class ContextStore:
         want_sqlite = backend_enabled(self.project, BACKEND_SQLITE)
         want_guide = project_guide and backend_enabled(self.project, BACKEND_GUIDE)
 
-        if not backend_enabled(self.project, BACKEND_GIT):
-            result.ok = False
-            result.git = {"ok": False, "skipped": True, "error": "git-pointers disabled"}
-            result.errors.append("git: git-pointers backend disabled")
-            return self._finalize_persist(result)
-
+        # Path 1: lean git (always required; git-pointers cannot be disabled)
         try:
             git_meta = self._persist_entry_git(
                 kind=kind_n,

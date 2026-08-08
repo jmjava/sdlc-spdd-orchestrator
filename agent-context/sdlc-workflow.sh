@@ -685,11 +685,47 @@ _wf_requirement_path() {
   return 0
 }
 
+# Extract shared lean-ledger slices for one Work ID (## WID sections + ### … WID … blocks).
+_wf_ledger_section_for_work() {
+  local file="$1"
+  local work_id="$2"
+  [[ -f "${file}" && -n "${work_id}" ]] || return 0
+  awk -v wid="${work_id}" '
+    BEGIN { in_h2 = 0; in_h3 = 0 }
+    /^## / {
+      rest = $0
+      sub(/^##[[:space:]]+/, "", rest)
+      in_h2 = (rest == wid || index(rest, wid " ") == 1 || index(rest, wid " -") == 1)
+      in_h3 = 0
+      if (in_h2) print
+      next
+    }
+    /^### / {
+      in_h3 = (index($0, wid) > 0)
+      if (in_h3) print
+      next
+    }
+    in_h2 || in_h3 { print }
+  ' "${file}"
+}
+
+_wf_progress_evidence_for_work() {
+  local root="$1"
+  local work_id="$2"
+  local lean="${root}/spdd/memory/entries/progress.md"
+  local legacy="${root}/agent-context/features/${work_id}/progress-log.md"
+  if [[ -f "${lean}" ]]; then
+    _wf_ledger_section_for_work "${lean}" "${work_id}"
+  elif [[ -f "${legacy}" ]]; then
+    cat "${legacy}"
+  fi
+}
+
 _wf_infer_phase_from_artifacts() {
   local work_id="$1"
   local root="${SDLC_ROOT}"
   local inferred="init"
-  local req feature_req analysis canvas review retro sync_log progress
+  local req feature_req analysis canvas review retro sync_log progress_evidence
 
   feature_req="${root}/agent-context/features/${work_id}/requirement.md"
   req="$(_wf_requirement_path "${work_id}")"
@@ -699,11 +735,7 @@ _wf_infer_phase_from_artifacts() {
   retro="${root}/agent-context/features/${work_id}/retro.md"
   lean_retro="${root}/spdd/memory/entries/retro.md"
   sync_log="${root}/spdd/sync/${work_id}-sync.md"
-  # Prefer lean progress (#86); legacy feature progress-log is fallback.
-  progress="${root}/spdd/memory/entries/progress.md"
-  if [[ ! -f "${progress}" ]]; then
-    progress="${root}/agent-context/features/${work_id}/progress-log.md"
-  fi
+  progress_evidence="$(_wf_progress_evidence_for_work "${root}" "${work_id}")"
 
   if [[ -n "${req}" || -f "${feature_req}" ]]; then
     inferred="analysis"
@@ -717,13 +749,13 @@ _wf_infer_phase_from_artifacts() {
       inferred="code"
     fi
   fi
-  if [[ -f "${progress}" ]] && grep -Eqi '(T[0-9]{2}.*complete|implemented|merged)' "${progress}" 2>/dev/null; then
+  if [[ -n "${progress_evidence}" ]] && grep -Eqi '(T[0-9]{2}.*complete|implemented|merged)' <<<"${progress_evidence}" 2>/dev/null; then
     inferred="code"
   fi
   if [[ -f "${review}" ]]; then
     inferred="review"
   fi
-  if [[ -f "${retro}" ]] || { [[ -f "${lean_retro}" ]] && grep -Fq "${work_id}" "${lean_retro}"; }; then
+  if [[ -f "${retro}" ]] || { [[ -f "${lean_retro}" ]] && [[ -n "$(_wf_ledger_section_for_work "${lean_retro}" "${work_id}")" ]]; }; then
     inferred="retro"
   fi
   if [[ -f "${sync_log}" ]]; then
@@ -755,7 +787,7 @@ _wf_infer_phase_from_artifacts() {
 _wf_infer_gates_from_artifacts() {
   local work_id="$1"
   local root="${SDLC_ROOT}"
-  local req feature_req analysis canvas review retro sync_log progress
+  local req feature_req analysis canvas review retro sync_log progress_evidence
   local readiness=""
 
   feature_req="${root}/agent-context/features/${work_id}/requirement.md"
@@ -766,10 +798,7 @@ _wf_infer_gates_from_artifacts() {
   retro="${root}/agent-context/features/${work_id}/retro.md"
   lean_retro="${root}/spdd/memory/entries/retro.md"
   sync_log="${root}/spdd/sync/${work_id}-sync.md"
-  progress="${root}/spdd/memory/entries/progress.md"
-  if [[ ! -f "${progress}" ]]; then
-    progress="${root}/agent-context/features/${work_id}/progress-log.md"
-  fi
+  progress_evidence="$(_wf_progress_evidence_for_work "${root}" "${work_id}")"
 
   if [[ -n "${req}" || -f "${feature_req}" ]]; then
     echo "requirement_documented=passed"
@@ -796,7 +825,7 @@ _wf_infer_gates_from_artifacts() {
   if [[ -f "${canvas}" ]] && grep -Eqi '^###[[:space:]]+T[0-9]{2}' "${canvas}" 2>/dev/null; then
     echo "operations_task_sized=passed"
   fi
-  if [[ -f "${progress}" ]] && grep -Eqi '(T[0-9]{2}.*complete|implemented|merged|mvn test|pytest)' "${progress}" 2>/dev/null; then
+  if [[ -n "${progress_evidence}" ]] && grep -Eqi '(T[0-9]{2}.*complete|implemented|merged|mvn test|pytest)' <<<"${progress_evidence}" 2>/dev/null; then
     echo "code_maps_to_ops=passed"
     echo "tests_updated=passed"
   fi
@@ -804,7 +833,7 @@ _wf_infer_gates_from_artifacts() {
     echo "review_completed=passed"
     echo "safeguards_checked=passed"
   fi
-  if [[ -f "${retro}" ]] || { [[ -f "${lean_retro}" ]] && grep -Fq "${work_id}" "${lean_retro}"; }; then
+  if [[ -f "${retro}" ]] || { [[ -f "${lean_retro}" ]] && [[ -n "$(_wf_ledger_section_for_work "${lean_retro}" "${work_id}")" ]]; }; then
     echo "retro_completed=passed"
   fi
   if [[ -f "${sync_log}" ]]; then

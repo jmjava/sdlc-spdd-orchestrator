@@ -213,8 +213,11 @@ def cmd_context(args: argparse.Namespace) -> int:
         from .persistence import load_config, save_config, status_dict
 
         project = _project(args)
-        if getattr(args, "set_backends", None):
-            raw = str(args.set_backends or "")
+        if getattr(args, "set_backends", None) is not None:
+            raw = str(args.set_backends or "").strip()
+            if not raw:
+                print("error: --set requires a non-empty backend list", file=sys.stderr)
+                return 2
             backends = [p.strip() for p in raw.replace(";", ",").split(",") if p.strip()]
             cfg = load_config(project)
             cfg["backends"] = backends
@@ -222,7 +225,11 @@ def cmd_context(args: argparse.Namespace) -> int:
                 cfg["guide_base_url"] = args.guide_base_url
             if getattr(args, "notes", None) is not None:
                 cfg["notes"] = args.notes
-            print(json.dumps(save_config(project, cfg), indent=2))
+            try:
+                print(json.dumps(save_config(project, cfg), indent=2))
+            except ValueError as exc:
+                print(f"error: {exc}", file=sys.stderr)
+                return 2
             return 0
         print(json.dumps(status_dict(project), indent=2))
         return 0

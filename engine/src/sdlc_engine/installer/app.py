@@ -217,7 +217,11 @@ def create_app(default_target: Path | str | None = None) -> Any:
             cfg["guide_base_url"] = str(body.get("guide_base_url") or "").strip()
         if "notes" in body:
             cfg["notes"] = str(body.get("notes") or "")
-        saved = save_persistence_config(project, cfg)
+        try:
+            saved = save_persistence_config(project, cfg)
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 400
+        # Always return status_dict shape so the Persistence tab can re-apply UI state.
         saved["available"] = list(ALL_BACKENDS)
         saved["target"] = str(target)
         return jsonify(saved)
