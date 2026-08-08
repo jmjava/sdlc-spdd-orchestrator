@@ -41,8 +41,18 @@ def _seed_stay_set(root: Path, work_id: str) -> None:
     )
 
 
-@pytest.mark.skip(reason="capture-session-memory.sh still writes legacy indexes; pending script v3 update")
-def test_capture_reads_hot_session_writes_lean_indexes(tmp_path: Path) -> None:
+def _staged_records(root: Path) -> list[dict]:
+    staged = root / ".sdlc" / "staged" / "lessons.jsonl"
+    if not staged.is_file():
+        return []
+    return [
+        json.loads(line)
+        for line in staged.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+
+
+def test_capture_stages_session_record_only(tmp_path: Path) -> None:
     wid = "FEAT-940-capture-lean"
     _seed_stay_set(tmp_path, wid)
     hot = tmp_path / ".sdlc" / "sessions"
@@ -73,19 +83,19 @@ def test_capture_reads_hot_session_writes_lean_indexes(tmp_path: Path) -> None:
         check=False,
     )
     assert proc.returncode == 0, proc.stderr + proc.stdout
-    lean_index = tmp_path / "spdd" / "memory" / "context-index.md"
-    assert lean_index.is_file()
-    assert "| scripts/lib | session |" in lean_index.read_text(encoding="utf-8")
-    progress = tmp_path / "spdd" / "memory" / "entries" / "progress.md"
-    assert progress.is_file()
-    assert wid in progress.read_text(encoding="utf-8")
-    lean_sessions = list((tmp_path / "spdd" / "memory" / "sessions").glob("*.md"))
-    assert lean_sessions
+    records = _staged_records(tmp_path)
+    assert records, "capture should stage at least one JSONL record"
+    sessions = [r for r in records if r["kind"] == "session" and r["work_id"] == wid]
+    assert sessions
+    assert sessions[-1]["area"] == "scripts/lib"
+    # Committed ledger untouched; no legacy index/mirror trees created.
+    assert not (tmp_path / "spdd" / "memory" / "lessons.jsonl").exists()
+    assert not (tmp_path / "spdd" / "memory" / "context-index.md").exists()
+    assert not (tmp_path / "spdd" / "memory" / "entries").exists()
     assert not (tmp_path / "agent-context" / "features").exists()
 
 
-@pytest.mark.skip(reason="create-feature.sh progress path pending storage v3 script update")
-def test_create_feature_does_not_create_feature_mirrors(tmp_path: Path) -> None:
+def test_create_feature_stages_record_no_mirrors(tmp_path: Path) -> None:
     script = REPO / "scripts" / "create-feature.sh"
     proc = subprocess.run(
         [
@@ -109,7 +119,9 @@ def test_create_feature_does_not_create_feature_mirrors(tmp_path: Path) -> None:
     wid = canvases[0].stem
     assert (tmp_path / "requirements" / "milestones" / f"{wid}.md").is_file()
     assert not (tmp_path / "agent-context" / "features").exists()
-    assert (tmp_path / "spdd" / "memory" / "entries" / "progress.md").is_file()
+    assert not (tmp_path / "spdd" / "memory" / "entries").exists()
+    records = _staged_records(tmp_path)
+    assert any(r["kind"] == "session" and r["work_id"] == wid for r in records)
 
 
 def test_upgrade_memory_only_exports_then_idempotent(tmp_path: Path) -> None:
