@@ -254,9 +254,10 @@ class LocalSessionService:
         self._dir(session.id).mkdir(parents=True, exist_ok=True)
         (self._dir(session.id) / "brief.md").write_text(brief, encoding="utf-8")
         (self.project.sdlc_dir / "current-local-session.md").write_text(brief, encoding="utf-8")
-        # Opt-in only: also write committed agent-context/sessions (usually unwanted).
+        # Opt-in only: also write a committed copy under session-notes/local
+        # (usually unwanted — hot briefs stay in gitignored .sdlc/sessions).
         if os.environ.get("SDLC_LOCAL_WRITE_SESSION_BRIEF", "0") == "1":
-            sessions = self.project.root / "agent-context" / "sessions"
+            sessions = self.project.session_notes_dir / "local"
             sessions.mkdir(parents=True, exist_ok=True)
             (sessions / "current-session.md").write_text(brief, encoding="utf-8")
             stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")

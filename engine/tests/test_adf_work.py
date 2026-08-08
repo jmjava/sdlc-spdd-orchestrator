@@ -60,7 +60,7 @@ def test_init_from_adf_creates_artifacts(tmp_path: Path) -> None:
     assert result.source_issue == "ORCH-99"
     assert (root / result.canvas_path).is_file()
     assert (root / result.requirement_path).is_file()
-    # Stay-set only (#86): no agent-context/features mirrors.
+    # Stay-set only (#86): no committed per-feature mirror folders.
     assert result.feature_dir == ""
     assert not (root / "agent-context" / "features" / result.work_id).exists()
     progress = root / "spdd" / "memory" / "entries" / "progress.md"

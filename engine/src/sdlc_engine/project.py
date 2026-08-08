@@ -94,12 +94,8 @@ class Project:
 
     @property
     def registry_jsonl_path(self) -> Path:
-        """Committed claim/release event log (replaces work-registry.tsv)."""
+        """Committed claim/release event log (replaces the legacy TSV registry)."""
         return self.memory_dir / "registry.jsonl"
-
-    @property
-    def legacy_registry_tsv_path(self) -> Path:
-        return self.home / "agent-context" / "work-registry.tsv"
 
     # Kept name for compatibility with existing callers; now points at the
     # lean JSONL registry.

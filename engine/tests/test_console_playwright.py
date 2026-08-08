@@ -291,5 +291,7 @@ def test_adf_browse_select_and_init_work(page, live_console, monkeypatch) -> Non
     assert "End-to-end from console" in text
     assert "Source System: ADF" in text
     assert (target / "requirements" / "milestones" / "FEAT-013-playwright-adf-init.md").is_file()
-    reg = (target / "agent-context" / "work-registry.tsv").read_text(encoding="utf-8")
+    # storage v3: claims append to the committed JSONL registry event log.
+    reg = (target / "spdd" / "memory" / "registry.jsonl").read_text(encoding="utf-8")
     assert "playwright-adf" in reg
+    assert "FEAT-013-playwright-adf-init" in reg

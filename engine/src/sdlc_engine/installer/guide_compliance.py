@@ -41,7 +41,7 @@ guide:
     allowed-roots:
       - {orch}
   directories:
-    - {orch}/agent-context/memory
+    - {orch}/spdd/memory
     - {orch}/spdd/canvas
     - {orch}/spdd/analysis
   git-ingestion:

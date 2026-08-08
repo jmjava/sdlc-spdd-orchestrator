@@ -40,11 +40,11 @@ def test_api_rollback_endpoint(tmp_path: Path) -> None:
     backup = root / "20260101T000000Z"
     backup.mkdir(parents=True)
     (backup / "manifest.json").write_text(
-        '{"files": ["agent-context/memory/context-index.md"]}\n', encoding="utf-8"
+        '{"files": ["spdd/memory/lessons.jsonl"]}\n', encoding="utf-8"
     )
-    (backup / "agent-context" / "memory").mkdir(parents=True)
-    (backup / "agent-context" / "memory" / "context-index.md").write_text(
-        "from-backup\n", encoding="utf-8"
+    (backup / "spdd" / "memory").mkdir(parents=True)
+    (backup / "spdd" / "memory" / "lessons.jsonl").write_text(
+        '{"id": "from-backup"}\n', encoding="utf-8"
     )
 
     app = create_app(tmp_path)

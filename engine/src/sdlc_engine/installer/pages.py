@@ -200,14 +200,17 @@ PAGE = """<!DOCTYPE html>
       <div class="panel">
         <h2>Persistence options</h2>
         <p class="meta">
-          Triple-path ContextStore fan-out (#79/#90). Git stay-set is always required.
-          SQLite and Guide soft-fail when enabled. Config:
+          Ledger-first ContextStore (storage v3). The committed lessons ledger
+          <code class="inline">spdd/memory/lessons.jsonl</code> and registry
+          <code class="inline">spdd/memory/registry.jsonl</code> are the system of record;
+          captures stage in <code class="inline">.sdlc/staged/lessons.jsonl</code> until accepted.
+          SQLite is an opt-in local cache rebuilt from the ledger; Guide soft-fails. Config:
           <code class="inline">.sdlc/persistence-config.json</code>
           (override with <code class="inline">CONTEXT_BACKENDS</code>).
         </p>
         <div class="checks" style="margin-bottom: 0.9rem;">
-          <label><input type="checkbox" id="pb-git" checked disabled /> git-pointers (required)</label>
-          <label><input type="checkbox" id="pb-sqlite" checked /> sqlite</label>
+          <label><input type="checkbox" id="pb-git" checked disabled /> git-pointers — ledger + registry (required)</label>
+          <label><input type="checkbox" id="pb-sqlite" checked /> sqlite (opt-in cache)</label>
           <label><input type="checkbox" id="pb-guide" checked /> guide-dice</label>
         </div>
         <div class="row" style="margin-bottom: 0.75rem;">
@@ -221,6 +224,8 @@ PAGE = """<!DOCTYPE html>
         <div class="actions">
           <button type="button" class="btn-secondary" id="btn-persist-refresh">Refresh</button>
           <button type="button" class="btn-primary" id="btn-persist-save">Save options</button>
+          <button type="button" class="btn-secondary" id="btn-persist-parity">Check ledger parity</button>
+          <button type="button" class="btn-warn" id="btn-persist-parity-repair">Parity + repair</button>
         </div>
         <div class="stats" id="persist-stats">
           <div class="stat-card"><div class="n" id="ps-git">—</div><div class="l">git</div></div>
@@ -270,7 +275,7 @@ PAGE = """<!DOCTYPE html>
     <section class="tab-pane" id="pane-sqlite">
       <div class="panel">
         <h2>Local SQLite index</h2>
-        <p class="meta">Regenerable cache under <code class="inline">.sdlc/index.sqlite</code> — pre-GUIDE query layer. Git remains source of truth.</p>
+        <p class="meta">Opt-in cache under <code class="inline">.sdlc/index.sqlite</code>, rebuilt from the committed ledger (<code class="inline">spdd/memory/lessons.jsonl</code>) and registry (<code class="inline">spdd/memory/registry.jsonl</code>). The ledger remains the source of truth.</p>
         <div class="stats" id="sqlite-stats">
           <div class="stat-card"><div class="n" id="sq-work">—</div><div class="l">work items</div></div>
           <div class="stat-card"><div class="n" id="sq-art">—</div><div class="l">artifacts</div></div>
@@ -1170,6 +1175,39 @@ PAGE = """<!DOCTYPE html>
       }
     }
 
+    async function parityPersist(repair) {
+      setBusy(["btn-persist-parity", "btn-persist-parity-repair"], true);
+      $("persist-status").textContent = repair ? "Checking ledger parity (repair)…" : "Checking ledger parity…";
+      $("persist-status").className = "status-line";
+      try {
+        const res = await fetch("/api/persistence/parity", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ target: target(), repair: !!repair }),
+        });
+        const data = await res.json();
+        $("persist-log").textContent = JSON.stringify(data, null, 2);
+        if (!res.ok) {
+          $("persist-status").textContent = data.error || "Parity check failed";
+          $("persist-status").className = "status-line bad";
+          return;
+        }
+        const parity = data.parity || {};
+        const ledger = parity.ledger || {};
+        $("persist-status").textContent =
+          (parity.ok ? "Parity OK" : "Parity drift") +
+          " · ledger " + (ledger.count != null ? ledger.count : "?") + " accepted (" + (ledger.path || "spdd/memory/lessons.jsonl") + ")" +
+          (parity.repaired ? " · repair ran (db rebuild / Guide reproject)" : "");
+        $("persist-status").className = "status-line " + (parity.ok ? "ok" : "bad");
+      } catch (err) {
+        $("persist-status").textContent = String(err);
+        $("persist-status").className = "status-line bad";
+        $("persist-log").textContent = String(err);
+      } finally {
+        setBusy(["btn-persist-parity", "btn-persist-parity-repair"], false);
+      }
+    }
+
     async function refreshAll() {
       await detect();
       await Promise.all([loadPersist(), loadSqlite(), loadBackups(), loadGuide(), loadAdf()]);
@@ -1187,6 +1225,11 @@ PAGE = """<!DOCTYPE html>
     });
     $("btn-persist-refresh").addEventListener("click", loadPersist);
     $("btn-persist-save").addEventListener("click", savePersist);
+    $("btn-persist-parity").addEventListener("click", () => parityPersist(false));
+    $("btn-persist-parity-repair").addEventListener("click", () => {
+      if (!confirm("Repair re-derives projections (SQLite rebuild + Guide reproject) when parity drifts. Continue?")) return;
+      parityPersist(true);
+    });
     $("btn-sqlite-refresh").addEventListener("click", loadSqlite);
     $("btn-sqlite-rebuild").addEventListener("click", rebuildSqlite);
     $("btn-backups-refresh").addEventListener("click", loadBackups);

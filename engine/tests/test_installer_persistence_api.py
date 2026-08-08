@@ -93,6 +93,60 @@ def test_persistence_save_validation(tmp_path: Path) -> None:
     assert "unknown" in (res.get_json().get("error") or "").lower()
 
 
+def test_persistence_parity_endpoint(tmp_path: Path) -> None:
+    from sdlc_engine.context_store import ContextStore
+    from sdlc_engine.persistence import save_config
+    from sdlc_engine.project import Project
+
+    app = create_app(tmp_path)
+    client = app.test_client()
+
+    res = client.post("/api/persistence/parity", json={"target": str(tmp_path / "missing")})
+    assert res.status_code == 400
+
+    # Ledger + sqlite cache only (no live Guide in tests).
+    save_config(tmp_path, {"backends": ["git-pointers", "sqlite"]})
+    res = client.post("/api/persistence/parity", json={"target": str(tmp_path)})
+    assert res.status_code == 200
+    data = res.get_json()
+    assert data["ok"] is True
+    assert data["parity"]["ledger"]["count"] == 0
+    assert data["parity"]["sqlite"]["enabled"] is True
+    assert data["parity"]["guide"]["enabled"] is False
+
+    store = ContextStore(Project(tmp_path), guide_base_url="http://127.0.0.1:9")
+    store.persist_lesson(
+        kind="pattern",
+        work_id="FEAT-900-console-parity",
+        body="Console parity lesson",
+        source="test",
+        project_guide=False,
+    )
+    store.accept(work_id="FEAT-900-console-parity", project_guide=False)
+    # Corrupt the cache to force drift (a missing db would just be rebuilt).
+    import sqlite3
+
+    with sqlite3.connect(tmp_path / ".sdlc" / "index.sqlite") as conn:
+        conn.execute("DELETE FROM lessons")
+    res = client.post("/api/persistence/parity", json={"target": str(tmp_path)})
+    assert res.status_code == 200
+    drift = res.get_json()
+    assert drift["ok"] is False
+    assert drift["parity"]["sqlite"]["missing"]
+
+    # Repair re-derives the sqlite cache from the committed ledger.
+    res = client.post(
+        "/api/persistence/parity", json={"target": str(tmp_path), "repair": True}
+    )
+    assert res.status_code == 200
+    assert res.get_json()["parity"]["repaired"] is True
+
+    res = client.post("/api/persistence/parity", json={"target": str(tmp_path)})
+    after = res.get_json()
+    assert after["ok"] is True
+    assert after["parity"]["ledger"]["count"] == 1
+
+
 def test_persistence_tab_in_console_html(tmp_path: Path) -> None:
     app = create_app(tmp_path)
     client = app.test_client()
@@ -100,4 +154,10 @@ def test_persistence_tab_in_console_html(tmp_path: Path) -> None:
     assert 'data-tab="persist"' in html
     assert "/api/persistence/status" in html
     assert "/api/persistence/save" in html
+    assert "/api/persistence/parity" in html
+    assert "btn-persist-parity" in html
     assert "pb-sqlite" in html
+    # v3 storage copy: committed ledger + registry, staged captures, sqlite cache.
+    assert "spdd/memory/lessons.jsonl" in html
+    assert "spdd/memory/registry.jsonl" in html
+    assert ".sdlc/staged/lessons.jsonl" in html

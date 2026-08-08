@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from sdlc_engine.adf_work import AdfWorkService
+from sdlc_engine.context_store import ContextStore
 from sdlc_engine.db import LocalIndex
 from sdlc_engine.persistence import (
     ALL_BACKENDS,
@@ -225,6 +226,25 @@ def create_app(default_target: Path | str | None = None) -> Any:
         saved["available"] = list(ALL_BACKENDS)
         saved["target"] = str(target)
         return jsonify(saved)
+
+    @app.post("/api/persistence/parity")
+    def api_persistence_parity() -> Any:
+        """Diff the committed lessons ledger against SQLite/Guide projections.
+
+        Runs ``ContextStore.parity()``; ``repair=true`` re-derives drifted
+        projections (SQLite rebuild + Guide reproject).
+        """
+        body = request.get_json(silent=True) or {}
+        target = _target_from_body(body)
+        if not target.is_dir():
+            return jsonify({"error": f"target not found: {target}"}), 400
+        project = Project.resolve(target)
+        try:
+            result = ContextStore(project).parity(repair=bool(body.get("repair")))
+        except Exception as exc:  # noqa: BLE001
+            return jsonify({"ok": False, "error": str(exc), "target": str(target)}), 500
+        # Drift is a successful check result — report it with 200 and ok=false.
+        return jsonify({"ok": bool(result.get("ok")), "target": str(target), "parity": result})
 
     @app.post("/api/backups")
     def api_backups() -> Any:

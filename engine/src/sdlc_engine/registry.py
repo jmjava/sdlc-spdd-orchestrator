@@ -61,7 +61,8 @@ class TeamRegistry:
 
     @property
     def legacy_tsv_path(self) -> Path:
-        return self.project.legacy_registry_tsv_path
+        # Read-only transition fallback (see module docstring).
+        return self.project.home / "agent-context" / "work-registry.tsv"
 
     def _owner(self) -> str:
         if os.environ.get("SDLC_USER"):

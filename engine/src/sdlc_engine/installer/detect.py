@@ -7,12 +7,21 @@ from typing import Any
 
 
 MARKERS = (
+    # storage v3 single-folder home
+    "sdlc-spdd/scripts/sdlc.sh",
+    "sdlc-spdd/spdd/memory/lessons.jsonl",
+    "spdd/memory/lessons.jsonl",
     "scripts/sdlc-spdd/sdlc.sh",
-    "agent-context/sdlc-workflow.sh",
-    "agent-context/work-registry.tsv",
     ".cursor/commands/sdlc-spdd-init.md",
     ".github/prompts/sdlc-spdd-init.prompt.md",
     ".claude/commands/sdlc-spdd-init.md",
+)
+
+# Pre-v3 sprawled layouts, detected only so upgrade (and storage migrate)
+# can be recommended for old installs.
+LEGACY_MARKERS = (
+    "agent-context/sdlc-workflow.sh",
+    "agent-context/work-registry.tsv",
 )
 
 
@@ -22,7 +31,7 @@ def detect_target(target: Path | str) -> dict[str, Any]:
     exists = root.is_dir()
     markers_found: list[str] = []
     if exists:
-        for rel in MARKERS:
+        for rel in (*MARKERS, *LEGACY_MARKERS):
             if (root / rel).exists():
                 markers_found.append(rel)
 
