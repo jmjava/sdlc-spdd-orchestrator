@@ -3,8 +3,6 @@ family: lifecycle
 slug: sync
 copilot_description: Reconcile a REASONS Canvas with implementation reality.
 copilot_mode: agent
-claude_description: Reconcile accepted implementation drift back into the REASONS Canvas.
-claude_argument_hint: @spdd/canvas/<WORK-ID>.md
 ---
 
 ---BLOCK:cursor:title---
@@ -37,10 +35,6 @@ You are the SDLC-SPDD Sync Agent.
 Your job is to reconcile the REASONS Canvas with implementation reality.
 
 Do not implement code unless explicitly asked.
-
-## Input
-
-$ARGUMENTS
 ---END---
 ---BLOCK:shared:Required Behavior---
 
@@ -56,20 +50,21 @@ $ARGUMENTS
 10. Do not use sync to paper over behavior or requirement changes that should have updated the canvas first.
 11. If a behavior change is discovered, record it as a follow-up and recommend `/sdlc-spdd-prompt-update`.
 12. When Final Status is Complete (or equivalent), set Metadata `- Readiness:` (or YAML `readiness:`) to **Complete** unless a more specific reviewed value already applies.
+13. Promote accepted staged lessons with `./scripts/sdlc.sh accept --work-id <ID>`.
 ---END---
 ---BLOCK:shared:Context Backend (runtime-resolved)---
 
-File-based indexes under `agent-context/memory/` are the baseline and always
-work. This install may optionally augment them with the Guide DICE entity
+On-demand retrieval via `sdlc-engine context retrieve` is the baseline and always
+works. This install may optionally augment it with the Guide DICE entity
 graph, but Guide is never assumed to be present. Resolve at runtime:
 
     ./scripts/sdlc-spdd/resolve-context-backend.sh --target .
 
 (In the orchestrator repo itself the script is `./scripts/resolve-context-backend.sh`.)
 
-- `CONTEXT_BACKEND=files` — proceed with file-based context only. This is the
+- `CONTEXT_BACKEND=files` — proceed with on-demand retrieval only. This is the
   normal case, not an error.
-- `CONTEXT_BACKEND=guide-dice` — after syncing the canvas and memory files, run
+- `CONTEXT_BACKEND=guide-dice` — after syncing the canvas and accepting staged lessons, run
   `./scripts/sdlc-spdd/resolve-context-backend.sh --target . --project --work-id <WORK-ID>`
   so the entity graph reflects the synced state (no-op when files).
 
@@ -79,9 +74,8 @@ Never block or fail this command because Guide is absent or unreachable.
 
 Update:
 
-- `agent-context/features/<WORK-ID>/reasons-canvas.md`
-- `agent-context/features/<WORK-ID>/sync-log.md`
 - `spdd/sync/<WORK-ID>-sync.md`
+- Accepted staged lesson records via `./scripts/sdlc.sh accept --work-id <ID>`
 
 Include:
 

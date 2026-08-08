@@ -3,8 +3,6 @@ family: workflow
 slug: shelf
 copilot_description: Shelf the active Work ID — pause work and clear the local pointer.
 copilot_mode: agent
-claude_description: Shelf the active Work ID — pause work and clear the local pointer.
-claude_argument_hint: [reason]
 ---
 
 ---BLOCK:cursor:title---
@@ -44,7 +42,7 @@ Do not implement application code.
 2. Capture an optional shelf reason from the user (default: `manual shelf`).
 3. Run `./scripts/sdlc-spdd/sdlc.sh shelf --reason "<reason>"` (or `./scripts/sdlc.sh shelf --reason "<reason>"`).
 4. Run `./scripts/sdlc-spdd/sdlc.sh list-work` (or `./scripts/sdlc.sh list-work`) to show available Work IDs.
-5. Remind the user to commit `agent-context/work-registry.tsv` on shared repositories.
+5. Remind the user that registry events live in `spdd/memory/registry.jsonl` (managed via `sdlc.sh claim/release`, not hand-edited).
 6. Do not modify application source code.
 ---END---
 ---BLOCK:shared:Output---
@@ -52,5 +50,5 @@ Do not implement application code.
 - Shelf confirmation (previous Work ID and reason)
 - How to resume later (`./scripts/sdlc-spdd/sdlc.sh resume <WORK-ID>`)
 - Available Work IDs from `list-work`
-- Reminder to commit `agent-context/work-registry.tsv` when applicable
+- Reminder: registry events live in `spdd/memory/registry.jsonl`; commit after shelf when your team tracks registry in git
 ---END---

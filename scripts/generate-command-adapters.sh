@@ -178,11 +178,15 @@ write_claude() {
   rb="$(block_or_shared "${spec}" claude "Required Behavior")"
   out_body="$(block_or_shared "${spec}" claude "Output")"
   {
-    echo "---"
-    echo "description: ${desc}"
-    [[ -n "${hint}" ]] && echo "argument-hint: ${hint}"
-    echo "---"
-    echo
+    # Frontmatter only when the spec provides metadata; committed claude
+    # adapters without descriptions have none.
+    if [[ -n "${desc}" || -n "${hint}" ]]; then
+      echo "---"
+      [[ -n "${desc}" ]] && echo "description: ${desc}"
+      [[ -n "${hint}" ]] && echo "argument-hint: ${hint}"
+      echo "---"
+      echo
+    fi
     printf '# %s\n\n' "${title}"
     [[ -n "${preamble}" ]] && printf '%s\n\n' "${preamble}"
     printf '## Required Behavior\n\n%s\n\n' "${rb}"

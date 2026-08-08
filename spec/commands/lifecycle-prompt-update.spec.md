@@ -3,8 +3,6 @@ family: lifecycle
 slug: prompt-update
 copilot_description: Update an existing REASONS Canvas when requirements or behavior intent changes.
 copilot_mode: agent
-claude_description: Update the REASONS Canvas when behavior or acceptance criteria change.
-claude_argument_hint: @spdd/canvas/<WORK-ID>.md
 ---
 
 ---BLOCK:cursor:title---
@@ -39,10 +37,6 @@ You are the SDLC-SPDD Prompt Update Agent.
 Your job is to update an existing REASONS Canvas when requirements, acceptance criteria, behavior, constraints, or architecture intent change.
 
 Do not modify application source code.
-
-## Input
-
-$ARGUMENTS
 ---END---
 ---BLOCK:cursor:Required Behavior---
 
@@ -54,10 +48,7 @@ $ARGUMENTS
 6. Update Operations when the change affects implementation tasks.
 7. Update Norms and Safeguards when the change affects engineering constraints.
 8. Record the source of the change, such as a Jira key, GitHub issue, review finding, or stakeholder decision.
-9. **Append a prompt-optimization ledger entry** to
-   `agent-context/memory/prompt-optimization-log.md` with Date, Work ID, Change,
-   Hypothesis, Signal, and Outcome (`improved` / `neutral` / `worse` / `unknown`)
-   for this prompt/canvas change.
+9. Stage a decision record explaining the intent change via `./scripts/sdlc.sh capture --decision ...` (never edit `spdd/memory/lessons.jsonl` by hand).
 10. Do not change code.
 11. Recommend the next SDLC-SPDD command.
 ---END---
@@ -71,9 +62,7 @@ $ARGUMENTS
 6. Update Operations when the change affects implementation tasks.
 7. Update Norms and Safeguards when the change affects engineering constraints.
 8. Record the source of the change, such as a Jira key, GitHub issue, review finding, or stakeholder decision.
-9. **Append a prompt-optimization ledger entry** to
-   `agent-context/memory/prompt-optimization-log.md` (Date, Work ID, Change,
-   Hypothesis, Signal, Outcome: `improved` / `neutral` / `worse` / `unknown`).
+9. Stage a decision record explaining the intent change via `./scripts/sdlc.sh capture --decision ...` (never edit `spdd/memory/lessons.jsonl` by hand).
 10. Do not change code.
 11. Recommend the next SDLC-SPDD prompt.
 ---END---
@@ -87,9 +76,7 @@ $ARGUMENTS
 6. Update Operations when the change affects implementation tasks.
 7. Update Norms and Safeguards when the change affects engineering constraints.
 8. Record the source of the change, such as a Jira key, GitHub issue, review finding, or stakeholder decision.
-9. **Append a prompt-optimization ledger entry** to
-   `agent-context/memory/prompt-optimization-log.md` (Date, Work ID, Change,
-   Hypothesis, Signal, Outcome: `improved` / `neutral` / `worse` / `unknown`).
+9. Stage a decision record explaining the intent change via `./scripts/sdlc.sh capture --decision ...` (never edit `spdd/memory/lessons.jsonl` by hand).
 10. Do not change code.
 11. Recommend the next SDLC-SPDD command.
 ---END---
@@ -98,9 +85,7 @@ $ARGUMENTS
 Update:
 
 - `spdd/canvas/<WORK-ID>.md`
-- `agent-context/features/<WORK-ID>/reasons-canvas.md`
-- `agent-context/features/<WORK-ID>/progress-log.md`
-- `agent-context/memory/prompt-optimization-log.md` (required ledger entry)
+- Staged decision record in `.sdlc/staged/lessons.jsonl` (promoted at retro/sync with `./scripts/sdlc.sh accept --work-id <ID>`)
 
 Include:
 
@@ -108,7 +93,7 @@ Include:
 - Sections updated
 - Operations added, removed, or changed
 - Safeguards changed
-- Ledger entry summary (Change / Hypothesis / Outcome)
+- Decision record summary (intent change captured)
 - Whether the canvas is ready for architecture review or coding
 - Recommended next command
 ---END---
@@ -117,9 +102,7 @@ Include:
 Update:
 
 - `spdd/canvas/<WORK-ID>.md`
-- `agent-context/features/<WORK-ID>/reasons-canvas.md`
-- `agent-context/features/<WORK-ID>/progress-log.md`
-- `agent-context/memory/prompt-optimization-log.md` (required ledger entry)
+- Staged decision record in `.sdlc/staged/lessons.jsonl` (promoted at retro/sync with `./scripts/sdlc.sh accept --work-id <ID>`)
 
 Include:
 
@@ -127,7 +110,7 @@ Include:
 - Sections updated
 - Operations added, removed, or changed
 - Safeguards changed
-- Ledger entry summary (Change / Hypothesis / Outcome)
+- Decision record summary (intent change captured)
 - Whether the canvas is ready for architecture review or coding
 - Recommended next prompt
 ---END---
@@ -136,9 +119,7 @@ Include:
 Update:
 
 - `spdd/canvas/<WORK-ID>.md`
-- `agent-context/features/<WORK-ID>/reasons-canvas.md`
-- `agent-context/features/<WORK-ID>/progress-log.md`
-- `agent-context/memory/prompt-optimization-log.md` (required ledger entry)
+- Staged decision record in `.sdlc/staged/lessons.jsonl` (promoted at retro/sync with `./scripts/sdlc.sh accept --work-id <ID>`)
 
 Include:
 
@@ -146,7 +127,7 @@ Include:
 - Sections updated
 - Operations added, removed, or changed
 - Safeguards changed
-- Ledger entry summary (Change / Hypothesis / Outcome)
+- Decision record summary (intent change captured)
 - Whether the canvas is ready for architecture review or coding
 - Recommended next command
 ---END---

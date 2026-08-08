@@ -3,7 +3,6 @@ family: lifecycle
 slug: whereami
 copilot_description: Show current SDLC phase, gates, team registry, and the single best next action.
 copilot_mode: agent
-claude_description: Show current SDLC phase, gates, team registry, and the single best next action.
 ---
 
 ---BLOCK:cursor:title---
@@ -56,5 +55,5 @@ Do not implement code.
 - Local pointer summary (Work ID, phase, next operation if in code phase, canvas readiness when present, Jira status)
 - Tracker follow-up when Jira is missing/draft (ask user; claim with `--jira`)
 - The recommended assistant command or shell command to run next
-- Remind user to commit `agent-context/work-registry.tsv` after claim/release
+- Registry events live in `spdd/memory/registry.jsonl`; lessons are accepted at retro/sync with `./scripts/sdlc.sh accept --work-id <ID>`
 ---END---
