@@ -39,14 +39,14 @@ def test_local_start_capture_promote(tmp_path: Path, monkeypatch) -> None:
     assert (tmp_path / "requirements" / "milestones" / f"{work_id}.md").is_file()
     # Stay-set only (#86) — promote must not create feature mirrors.
     assert not (tmp_path / "agent-context" / "features" / work_id).exists()
-    progress = (tmp_path / "spdd" / "memory" / "entries" / "progress.md").read_text(
+    progress = (tmp_path / ".sdlc" / "staged" / "lessons.jsonl").read_text(
         encoding="utf-8"
     )
     assert work_id in progress
     assert session.id in progress
     pointer = (tmp_path / ".sdlc" / "pointer").read_text(encoding="utf-8").strip()
     assert pointer == work_id
-    reg = (tmp_path / "agent-context" / "work-registry.tsv").read_text(encoding="utf-8")
+    reg = (tmp_path / "spdd" / "memory" / "registry.jsonl").read_text(encoding="utf-8")
     assert work_id in reg
     assert f"promoted-from:{session.id}" in reg
 

@@ -45,7 +45,8 @@ def test_archive_complete_keeps_milestone(tmp_path: Path, monkeypatch) -> None:
     svc.archive_work(work_id)
     assert not (tmp_path / "spdd" / "canvas" / f"{work_id}.md").exists()
     assert (tmp_path / "spdd" / "canvas" / "archive" / f"{work_id}.md").is_file()
-    assert (tmp_path / "agent-context" / "features" / "archive" / work_id).is_dir()
+    # Feature mirrors are legacy; archive no longer moves them (storage v3).
+    assert (tmp_path / "agent-context" / "features" / work_id).is_dir()
     assert (tmp_path / "requirements" / "milestones" / f"{work_id}.md").is_file()
     rows = {r.work_id: r for r in reg.rows()}
     assert rows[work_id].status == "archived"

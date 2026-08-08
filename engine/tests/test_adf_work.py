@@ -201,10 +201,20 @@ def test_init_from_adf_same_owner_reclaim_allowed(
     root = tmp_path / "app"
     root.mkdir()
     wid = "FEAT-013-same-owner"
-    (root / "agent-context").mkdir(parents=True)
-    (root / "agent-context" / "work-registry.tsv").write_text(
-        "work_id\tstatus\tphase\toperation\towner\tupdated\tnote\n"
-        f"{wid}\tactive\tanalysis\t\tsame-owner\t2026-01-01T00:00:00Z\tseed\n",
+    (root / "spdd" / "memory").mkdir(parents=True, exist_ok=True)
+    (root / "spdd" / "memory" / "registry.jsonl").write_text(
+        json.dumps(
+            {
+                "event": "claim",
+                "work_id": wid,
+                "status": "active",
+                "phase": "analysis",
+                "owner": "same-owner",
+                "note": "seed",
+                "ts": "2026-01-01T00:00:00Z",
+            }
+        )
+        + "\n",
         encoding="utf-8",
     )
     adf = root / "same.adf.json"
@@ -244,7 +254,7 @@ def test_init_from_adf_claims_and_sets_pointer(tmp_path: Path, monkeypatch: pyte
     )
     pointer = (root / ".sdlc" / "pointer").read_text(encoding="utf-8").strip()
     assert pointer == "FEAT-013-claimed-from-adf"
-    reg = (root / "agent-context" / "work-registry.tsv").read_text(encoding="utf-8")
+    reg = (root / "spdd" / "memory" / "registry.jsonl").read_text(encoding="utf-8")
     assert "FEAT-013-claimed-from-adf" in reg
     assert "adf-claimer" in reg
     assert "init-from-adf:" in reg
@@ -260,10 +270,20 @@ def test_init_from_adf_claim_conflict_before_write(
     root.mkdir()
     wid = "FEAT-013-claim-conflict"
     # Seed an active claim owned by alice without a canvas yet.
-    (root / "agent-context").mkdir(parents=True)
-    (root / "agent-context" / "work-registry.tsv").write_text(
-        "work_id\tstatus\tphase\toperation\towner\tupdated\tnote\n"
-        f"{wid}\tactive\tanalysis\t\talice\t2026-01-01T00:00:00Z\tseed\n",
+    (root / "spdd" / "memory").mkdir(parents=True, exist_ok=True)
+    (root / "spdd" / "memory" / "registry.jsonl").write_text(
+        json.dumps(
+            {
+                "event": "claim",
+                "work_id": wid,
+                "status": "active",
+                "phase": "analysis",
+                "owner": "alice",
+                "note": "seed",
+                "ts": "2026-01-01T00:00:00Z",
+            }
+        )
+        + "\n",
         encoding="utf-8",
     )
     adf = root / "conflict.adf.json"

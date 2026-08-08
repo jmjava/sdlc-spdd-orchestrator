@@ -125,11 +125,10 @@ class WorkflowEngine:
         return self.load_state(work_id)
 
     def infer_phase_from_artifacts(self, work_id: str) -> str:
-        root = self.project.root
+        from .lessons_ledger import LessonsLedger
+
         inferred = "init"
-        if (root / "requirements" / "milestones" / f"{work_id}.md").is_file() or (
-            self.project.feature_dir(work_id) / "requirement.md"
-        ).is_file():
+        if self.project.milestone_path(work_id).is_file():
             inferred = "analysis"
         if self.project.analysis_path(work_id).is_file():
             inferred = "plan"
@@ -139,30 +138,17 @@ class WorkflowEngine:
             text = canvas.read_text(encoding="utf-8")
             if re.search(r"ready\s+for\s+coding", text, re.IGNORECASE):
                 inferred = "code"
-        progress = self.project.progress_log_path(work_id)
-        legacy_progress = self.project.feature_dir(work_id) / "progress-log.md"
-        evidence = ""
-        if progress.is_file():
-            evidence = Project.ledger_section_for_work(
-                progress.read_text(encoding="utf-8"), work_id
-            )
-        elif legacy_progress.is_file():
-            evidence = legacy_progress.read_text(encoding="utf-8")
-        if evidence and re.search(
-            r"(T\d{2}.*complete|implemented|merged)", evidence, re.IGNORECASE
+        ledger = LessonsLedger(self.project)
+        progress_records = ledger.records(work_id=work_id, include_staged=True)
+        if progress_records and any(
+            re.search(r"(T\d{2}.*complete|implemented|merged)", (r.body or r.title), re.IGNORECASE)
+            for r in progress_records
         ):
             inferred = "code"
         if self.project.review_path(work_id).is_file():
             inferred = "review"
-        lean_retro = root / "spdd" / "memory" / "entries" / "retro.md"
-        if (self.project.feature_dir(work_id) / "retro.md").is_file() or (
-            lean_retro.is_file()
-            and bool(
-                Project.ledger_section_for_work(
-                    lean_retro.read_text(encoding="utf-8"), work_id
-                )
-            )
-        ):
+        retro_kinds = {"decision", "pitfall", "pattern"}
+        if any(r.kind in retro_kinds for r in ledger.records(work_id=work_id, include_staged=True)):
             inferred = "retro"
         if self.project.sync_path(work_id).is_file():
             inferred = "sync"
@@ -178,6 +164,8 @@ class WorkflowEngine:
         return inferred
 
     def sync(self, work_id: str | None = None) -> WorkflowState:
+        from .lessons_ledger import LessonsLedger
+
         wid = work_id or self.pointer.get()
         if not wid:
             raise ValueError("sync requires a Work ID or active pointer")
@@ -188,22 +176,14 @@ class WorkflowEngine:
             state.gates["canvas_exists"] = "passed"
             op, _title = canvas_mod.next_operation(canvas)
             state.operation = op
-        if self.project.analysis_path(wid).is_file() or (
-            self.project.feature_dir(wid) / "requirement.md"
-        ).is_file() or self.project.milestone_path(wid).is_file():
+        if self.project.analysis_path(wid).is_file() or self.project.milestone_path(wid).is_file():
             state.gates["requirement_documented"] = "passed"
         if self.project.review_path(wid).is_file():
             state.gates["review_completed"] = "passed"
             state.gates["safeguards_checked"] = "passed"
-        lean_retro = self.project.root / "spdd" / "memory" / "entries" / "retro.md"
-        if (self.project.feature_dir(wid) / "retro.md").is_file() or (
-            lean_retro.is_file()
-            and bool(
-                Project.ledger_section_for_work(
-                    lean_retro.read_text(encoding="utf-8"), wid
-                )
-            )
-        ):
+        ledger = LessonsLedger(self.project)
+        retro_kinds = {"decision", "pitfall", "pattern"}
+        if any(r.kind in retro_kinds for r in ledger.records(work_id=wid, include_staged=True)):
             state.gates["retro_completed"] = "passed"
         self.save_state(state)
         self._log(wid, "sync", f"phase={state.phase}")

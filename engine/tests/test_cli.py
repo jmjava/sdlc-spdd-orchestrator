@@ -161,8 +161,9 @@ def test_cli_work_init_from_adf_claims_by_default(tmp_path: Path, monkeypatch, c
     assert rc == 0
     out = capsys.readouterr().out
     assert "Created FEAT-013-cli-claim-default" in out
-    reg = (tmp_path / "agent-context" / "work-registry.tsv").read_text(encoding="utf-8")
-    assert "cli-claim" in reg
+    reg_path = tmp_path / "spdd" / "memory" / "registry.jsonl"
+    assert reg_path.is_file()
+    assert "cli-claim" in reg_path.read_text(encoding="utf-8")
     assert (tmp_path / ".sdlc" / "pointer").read_text(encoding="utf-8").strip() == (
         "FEAT-013-cli-claim-default"
     )
@@ -189,10 +190,21 @@ def test_cli_work_init_from_adf_invalid_json(tmp_path: Path, capsys) -> None:
 def test_cli_work_init_from_adf_claim_conflict(tmp_path: Path, monkeypatch, capsys) -> None:
     monkeypatch.setenv("SDLC_USER", "bob")
     wid = "FEAT-013-cli-conflict"
-    (tmp_path / "agent-context").mkdir(parents=True)
-    (tmp_path / "agent-context" / "work-registry.tsv").write_text(
-        "work_id\tstatus\tphase\toperation\towner\tupdated\tnote\n"
-        f"{wid}\tactive\tanalysis\t\talice\t2026-01-01T00:00:00Z\tseed\n",
+    (tmp_path / "spdd" / "memory").mkdir(parents=True, exist_ok=True)
+    reg_jsonl = tmp_path / "spdd" / "memory" / "registry.jsonl"
+    reg_jsonl.write_text(
+        json.dumps(
+            {
+                "event": "claim",
+                "work_id": wid,
+                "status": "active",
+                "phase": "analysis",
+                "owner": "alice",
+                "note": "seed",
+                "ts": "2026-01-01T00:00:00Z",
+            }
+        )
+        + "\n",
         encoding="utf-8",
     )
     adf = tmp_path / "x.adf.json"

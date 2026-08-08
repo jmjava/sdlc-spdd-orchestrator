@@ -62,12 +62,6 @@ class ArchiveService:
 
         root = self.project.root
         moved = False
-        feature_src = self.project.feature_dir(work_id)
-        moved |= self._move(
-            feature_src,
-            root / "agent-context" / "features" / "archive" / work_id,
-            dry_run,
-        )
         for src, dest in [
             (root / "spdd" / "canvas" / f"{work_id}.md", root / "spdd" / "canvas" / "archive" / f"{work_id}.md"),
             (
@@ -101,7 +95,7 @@ class ArchiveService:
         )
 
         if dry_run:
-            print(f"[dry-run] would mark {work_id} archived in work-registry.tsv")
+            print(f"[dry-run] would mark {work_id} archived in registry.jsonl")
             return
 
         note = f"archived:{kind if kind != 'other' else 'forced'}"
@@ -118,7 +112,7 @@ class ArchiveService:
         if not moved:
             print(f"archive: {work_id} marked archived (no movable artifacts found; milestone left in place)")
         else:
-            print(f"Archived {work_id} ({kind}). Commit moved paths + agent-context/work-registry.tsv.")
+            print(f"Archived {work_id} ({kind}). Commit moved paths + spdd/memory/registry.jsonl.")
         print(f"Left in place: requirements/milestones/{work_id}.md (if present).")
 
     def archive_eligible(self, *, dry_run: bool = False) -> int:

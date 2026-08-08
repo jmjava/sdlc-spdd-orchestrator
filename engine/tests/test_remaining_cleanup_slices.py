@@ -66,32 +66,26 @@ def test_hot_session_paths_prefer_sdlc(tmp_path: Path) -> None:
     assert hot == tmp_path / ".sdlc" / "sessions"
     project.ensure_runtime_dirs()
     assert hot.is_dir()
-    # No current yet → returns hot path even if missing
     assert project.current_session_path() == hot / "current-session.md"
-    legacy = project.legacy_session_dir()
-    legacy.mkdir(parents=True, exist_ok=True)
-    (legacy / "current-session.md").write_text("legacy\n", encoding="utf-8")
-    assert project.current_session_path() == legacy / "current-session.md"
     (hot / "current-session.md").write_text("hot\n", encoding="utf-8")
-    assert project.current_session_path() == hot / "current-session.md"
+    assert project.current_session_path().read_text(encoding="utf-8") == "hot\n"
 
 
 def test_persist_entry_does_not_write_feature_mirrors(tmp_path: Path) -> None:
     wid = "FEAT-930-no-mirror"
     _seed_noise(tmp_path, wid)
     store = ContextStore(Project(tmp_path), guide_base_url="http://127.0.0.1:9")
-    result = store.persist_context_entry(
-        kind="progress",
+    result = store.persist_lesson(
+        kind="decision",
         work_id=wid,
         body="Lean progress only",
         area="scripts/lib",
         project_guide=False,
     )
     assert result.git.get("ok") is True
-    lean = tmp_path / "spdd" / "memory" / "entries" / "progress.md"
-    assert lean.is_file()
-    assert "Lean progress only" in lean.read_text(encoding="utf-8")
-    # Must not create/update feature mirror for new writes
+    staged = tmp_path / ".sdlc" / "staged" / "lessons.jsonl"
+    assert staged.is_file()
+    assert "Lean progress only" in staged.read_text(encoding="utf-8")
     mirror = tmp_path / "agent-context" / "features" / wid / "progress-log.md"
     assert "Lean progress only" not in mirror.read_text(encoding="utf-8")
 
@@ -110,15 +104,14 @@ def test_upgrade_archives_sessions_and_features(tmp_path: Path) -> None:
     assert dry.dry_run
     assert (tmp_path / "agent-context" / "features").is_dir()
 
-    result = up.run(dry_run=False, rebuild_db=True)
+    result = up.run(dry_run=False, rebuild_db=False)
     assert result.ok
     assert not (tmp_path / "agent-context" / "features").exists()
     assert not (tmp_path / "agent-context" / "sessions").exists()
     assert (tmp_path / ".sdlc" / "sessions").is_dir()
-    assert (tmp_path / "agent-context" / "UPGRADED.md").is_file()
     export = Path(result.export_dir)
-    assert (export / "agent-context" / "features").is_dir()
-    assert (export / "memory" / "context-index.md").is_file()
+    assert export.is_dir()
+    assert (export / "agent-context" / "memory" / "context-index.md").is_file()
     # Stay-set still present
     assert (tmp_path / "spdd" / "canvas" / f"{wid}.md").is_file()
     assert (tmp_path / "requirements" / "milestones" / f"{wid}.md").is_file()

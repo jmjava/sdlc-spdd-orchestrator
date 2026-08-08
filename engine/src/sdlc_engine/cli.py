@@ -111,7 +111,7 @@ def cmd_claim(args: argparse.Namespace) -> int:
         print(str(exc), file=sys.stderr)
         return 1
     print(f"Claimed {row.work_id} as {row.owner} (phase={row.phase})")
-    print("Team registry updated — commit agent-context/work-registry.tsv to share with teammates.")
+    print("Team registry updated — commit spdd/memory/registry.jsonl to share with teammates.")
     return 0
 
 
@@ -170,36 +170,97 @@ def cmd_pointer(args: argparse.Namespace) -> int:
 
 
 def cmd_context(args: argparse.Namespace) -> int:
+    import sys
+
+    from .lessons_ledger import LEDGER_KINDS
+
     store = ContextStore(_project(args))
     action = args.context_cmd
     if action == "persist-lesson":
+        body = args.body
+        if body == "-":
+            body = sys.stdin.read()
+        keywords = [k.strip() for k in (args.keywords or "").split(",") if k.strip()]
         result = store.persist_lesson(
             kind=args.kind,
             work_id=args.work_id,
-            body=args.body,
+            body=body,
+            title=getattr(args, "title", "") or "",
             area=args.area or "",
             source=args.source or "cli",
-            phase=args.phase or "sync",
+            phase=args.phase or "",
+            keywords=keywords or None,
+            accept=bool(getattr(args, "accept", False)),
             project_guide=not args.no_guide,
         )
         print(json.dumps(result.as_dict(), indent=2))
         return 0 if result.git.get("ok") else 1
     if action == "persist-entry":
-        result = store.persist_context_entry(
-            kind=args.kind,
+        print(
+            "warning: persist-entry is deprecated; use context persist-lesson",
+            file=sys.stderr,
+        )
+        body = args.body
+        if body == "-":
+            body = sys.stdin.read()
+        result = store.persist_lesson(
+            kind=args.kind if args.kind in LEDGER_KINDS else "decision",
             work_id=args.work_id,
-            body=args.body,
+            body=body,
             area=args.area or "",
-            phase=args.phase or "",
             source=args.source or "cli",
+            phase=args.phase or "",
             project_guide=not args.no_guide,
         )
         print(json.dumps(result.as_dict(), indent=2))
         return 0 if result.git.get("ok") else 1
+    if action == "accept":
+        out = store.accept(
+            work_id=getattr(args, "work_id", "") or "",
+            ids=[i.strip() for i in (getattr(args, "ids", "") or "").split(",") if i.strip()]
+            or None,
+            discard_rest=bool(getattr(args, "discard_rest", False)),
+            project_guide=not getattr(args, "no_guide", False),
+        )
+        print(json.dumps(out, indent=2))
+        return 0
+    if action == "show":
+        rec = store.show(args.record_id)
+        if rec is None:
+            print(json.dumps({"error": "not found", "id": args.record_id}, indent=2))
+            return 1
+        print(json.dumps(rec, indent=2))
+        return 0
+    if action == "parity":
+        out = store.parity(repair=bool(getattr(args, "repair", False)))
+        print(json.dumps(out, indent=2))
+        return 0 if out.get("ok") else 1
+    if action == "digest":
+        areas = [a.strip() for a in (getattr(args, "areas", "") or "").split(",") if a.strip()]
+        keywords = [k.strip() for k in (getattr(args, "keywords", "") or "").split(",") if k.strip()]
+        print(
+            json.dumps(
+                store.digest(
+                    work_id=getattr(args, "work_id", "") or "",
+                    areas=areas or None,
+                    keywords=keywords or None,
+                    limit=int(getattr(args, "limit", 8) or 8),
+                ),
+                indent=2,
+            )
+        )
+        return 0
     if action == "retrieve":
         print(
             json.dumps(
-                store.retrieve(work_id=args.work_id or "", area=args.area or ""),
+                store.retrieve(
+                    work_id=args.work_id or "",
+                    area=args.area or "",
+                    kind=getattr(args, "kind", "") or "",
+                    keyword=getattr(args, "keyword", "") or "",
+                    include_staged=not bool(getattr(args, "no_staged", False)),
+                    limit=int(getattr(args, "limit", 50) or 50),
+                ),
                 indent=2,
             )
         )
@@ -232,6 +293,19 @@ def cmd_context(args: argparse.Namespace) -> int:
                 return 2
             return 0
         print(json.dumps(status_dict(project), indent=2))
+        return 0
+    return 2
+
+
+def cmd_storage(args: argparse.Namespace) -> int:
+    from .storage_migrate import StorageMigration
+
+    mig = StorageMigration(_project(args))
+    if args.storage_cmd == "status":
+        print(json.dumps(mig.detect(), indent=2))
+        return 0
+    if args.storage_cmd == "migrate":
+        print(json.dumps(mig.run(dry_run=bool(args.dry_run)), indent=2))
         return 0
     return 2
 
@@ -565,7 +639,7 @@ def cmd_local(args: argparse.Namespace) -> int:
         print(f"  canvas: spdd/canvas/{work_id}.md")
         print(f"  requirement: requirements/milestones/{work_id}.md")
         if not args.no_claim:
-            print(f"Claimed {work_id} — commit agent-context/work-registry.tsv when sharing.")
+            print(f"Claimed {work_id} — commit spdd/memory/registry.jsonl when sharing.")
         return 0
     return 2
 
@@ -928,28 +1002,29 @@ def build_parser() -> argparse.ArgumentParser:
 
     ctx = sub.add_parser(
         "context",
-        help="Triple-path context store (git pointers + SQLite + Guide)",
+        help="Ledger-first context store (git ledger + optional SQLite + Guide)",
     )
     ctx_sub = ctx.add_subparsers(dest="context_cmd", required=True)
+    from .lessons_ledger import LEDGER_KINDS as _LEDGER_KINDS
+
     cpl = ctx_sub.add_parser(
         "persist-lesson",
-        help="Persist a lesson into git stay-set, SQLite, and Guide projection",
+        help="Stage or accept a lesson record in the ledger",
     )
-    cpl.add_argument("--kind", required=True, choices=["decision", "pitfall", "pattern"])
+    cpl.add_argument("--kind", required=True, choices=list(_LEDGER_KINDS))
     cpl.add_argument("--work-id", required=True)
-    cpl.add_argument("--body", required=True)
+    cpl.add_argument("--body", required=True, help="Body text or '-' for stdin")
+    cpl.add_argument("--title", default="")
     cpl.add_argument("--area", default="")
     cpl.add_argument("--source", default="cli")
-    cpl.add_argument("--phase", default="sync")
-    cpl.add_argument(
-        "--no-guide",
-        action="store_true",
-        help="Skip Guide projection fan-out",
-    )
+    cpl.add_argument("--phase", default="")
+    cpl.add_argument("--keywords", default="", help="Comma-separated keywords")
+    cpl.add_argument("--accept", action="store_true", help="Land directly in committed ledger")
+    cpl.add_argument("--no-guide", action="store_true", help="Skip Guide projection fan-out")
     cpl.set_defaults(func=cmd_context)
     cpe = ctx_sub.add_parser(
         "persist-entry",
-        help="Persist a non-lesson context entry (progress/analysis/metric/…)",
+        help="Deprecated alias for persist-lesson",
     )
     cpe.add_argument("--kind", required=True)
     cpe.add_argument("--work-id", required=True)
@@ -959,16 +1034,38 @@ def build_parser() -> argparse.ArgumentParser:
     cpe.add_argument("--source", default="cli")
     cpe.add_argument("--no-guide", action="store_true")
     cpe.set_defaults(func=cmd_context)
-    cre = ctx_sub.add_parser("retrieve", help="Assemble retrieve from git + SQLite + Guide")
+    cacc = ctx_sub.add_parser("accept", help="Promote staged lessons to committed ledger")
+    cacc.add_argument("--work-id", default="")
+    cacc.add_argument("--ids", default="", help="Comma-separated record ids")
+    cacc.add_argument("--discard-rest", action="store_true")
+    cacc.add_argument("--no-guide", action="store_true")
+    cacc.set_defaults(func=cmd_context)
+    cshow = ctx_sub.add_parser("show", help="Show one lesson record by id")
+    cshow.add_argument("record_id")
+    cshow.set_defaults(func=cmd_context)
+    cpar = ctx_sub.add_parser("parity", help="Diff ledger vs SQLite/Guide; optional repair")
+    cpar.add_argument("--repair", action="store_true")
+    cpar.set_defaults(func=cmd_context)
+    cdig = ctx_sub.add_parser("digest", help="Bounded session-start digest")
+    cdig.add_argument("--work-id", default="")
+    cdig.add_argument("--areas", default="", help="Comma-separated areas")
+    cdig.add_argument("--keywords", default="", help="Comma-separated keywords")
+    cdig.add_argument("--limit", type=int, default=8)
+    cdig.set_defaults(func=cmd_context)
+    cre = ctx_sub.add_parser("retrieve", help="Assemble retrieve from ledger + projections")
     cre.add_argument("--work-id", default="")
     cre.add_argument("--area", default="")
+    cre.add_argument("--kind", default="")
+    cre.add_argument("--keyword", default="")
+    cre.add_argument("--limit", type=int, default=50)
+    cre.add_argument("--no-staged", action="store_true")
     cre.set_defaults(func=cmd_context)
     ctx_sub.add_parser(
-        "coverage", help="Report agent-context capability coverage in SQLite"
+        "coverage", help="Report CONTEXT_KINDS capability coverage in SQLite"
     ).set_defaults(func=cmd_context)
     cb = ctx_sub.add_parser(
         "backends",
-        help="Show or set CONTEXT_BACKENDS persistence options (#79/#90)",
+        help="Show or set CONTEXT_BACKENDS persistence options",
     )
     cb.add_argument(
         "--set",
@@ -979,6 +1076,15 @@ def build_parser() -> argparse.ArgumentParser:
     cb.add_argument("--guide-base-url", default=None)
     cb.add_argument("--notes", default=None)
     cb.set_defaults(func=cmd_context)
+
+    st = sub.add_parser("storage", help="Storage v3 migration and status")
+    st_sub = st.add_subparsers(dest="storage_cmd", required=True)
+    st_sub.add_parser("status", help="Detect legacy layout / migration state").set_defaults(
+        func=cmd_storage
+    )
+    stm = st_sub.add_parser("migrate", help="Migrate legacy agent-context to ledger v3")
+    stm.add_argument("--dry-run", action="store_true")
+    stm.set_defaults(func=cmd_storage)
 
     ac = sub.add_parser(
         "agent-context",

@@ -1,7 +1,9 @@
-"""Triple-path context store: lean git + SQLite relational + Guide DICE.
+"""Context store (storage v3): one ledger write, derived projections.
 
-Persist fans out to all three (soft-fail on SQLite/Guide). Retrieve assembles
-what is available. Tests prove entry into each mechanism.
+Persist writes the lesson ledger only (stage by default; accepted on
+``accept``). SQLite (opt-in cache) and Guide (primary query/working store)
+are pure projections of the ledger, re-derived by rebuild/reproject —
+parity by construction, verified by :meth:`ContextStore.parity`.
 """
 
 from __future__ import annotations
@@ -15,35 +17,19 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from .context_model import CONTEXT_KINDS
 from .db import LocalIndex
+from .lessons_ledger import LEDGER_KINDS, LessonRecord, LessonsLedger
 from .persistence import (
-    BACKEND_GIT,
     BACKEND_GUIDE,
     BACKEND_SQLITE,
     enabled as backend_enabled,
     load_config as load_persistence_config,
 )
-from .pointers import PointerLedger, PointerRecord
 from .project import Project
-
-LESSON_FILES = {
-    "decision": Path("spdd/memory/lessons/decisions.md"),
-    "pitfall": Path("spdd/memory/lessons/pitfalls.md"),
-    "pattern": Path("spdd/memory/lessons/patterns.md"),
-}
-CONTEXT_INDEX = Path("spdd/memory/context-index.md")
-LEGACY_CONTEXT_INDEX = Path("agent-context/memory/context-index.md")
 
 
 def _utc_now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-
-
-def _lesson_id(kind: str, work_id: str, area: str, source: str) -> str:
-    area_part = area or "(none)"
-    src = source or "capture"
-    return f"{kind}:{work_id}:{area_part}:{src}"
 
 
 @dataclass
@@ -69,7 +55,7 @@ class PersistResult:
 
 
 class ContextStore:
-    """Fan-out persist / assemble retrieve across three backends."""
+    """Ledger-first persist; assemble retrieve from ledger + projections."""
 
     def __init__(
         self,
@@ -79,8 +65,8 @@ class ContextStore:
         guide_timeout: float = 30.0,
     ) -> None:
         self.project = project or Project.resolve()
+        self.ledger = LessonsLedger(self.project)
         self.index = LocalIndex(self.project)
-        self.pointers = PointerLedger(self.project)
         env_url = os.environ.get("GUIDE_BASE_URL", "").strip()
         port = os.environ.get("GUIDE_PORT", "21337").strip() or "21337"
         persist_cfg = load_persistence_config(self.project)
@@ -93,43 +79,6 @@ class ContextStore:
     def _backends(self) -> list[str]:
         return list(load_persistence_config(self.project).get("backends") or [])
 
-    def _finalize_persist(self, result: PersistResult) -> PersistResult:
-        """ok = required git path succeeded; partial = soft-fail secondaries."""
-        result.backends = self._backends()
-        result.ok = bool(result.git.get("ok"))
-        result.partial = bool(result.errors)
-        return result
-
-    def _fanout_sqlite_guide(
-        self,
-        result: PersistResult,
-        *,
-        want_sqlite: bool,
-        want_guide: bool,
-        sqlite_fn,
-    ) -> PersistResult:
-        """Shared soft-fail fan-out for SQLite + Guide after git succeeded."""
-        if want_sqlite:
-            try:
-                result.sqlite = {"ok": True, **(sqlite_fn() or {})}
-            except Exception as exc:  # noqa: BLE001
-                result.sqlite = {"ok": False, "error": str(exc)}
-                result.errors.append(f"sqlite: {exc}")
-        else:
-            result.sqlite = {"ok": False, "skipped": True}
-
-        if want_guide:
-            try:
-                guide_meta = self.project_to_guide()
-                result.guide = {"ok": True, **guide_meta}
-            except Exception as exc:  # noqa: BLE001
-                result.guide = {"ok": False, "error": str(exc)}
-                result.errors.append(f"guide: {exc}")
-        else:
-            result.guide = {"ok": False, "skipped": True}
-
-        return self._finalize_persist(result)
-
     # --- persist ---
 
     def persist_lesson(
@@ -138,331 +87,118 @@ class ContextStore:
         kind: str,
         work_id: str,
         body: str,
+        title: str = "",
         area: str = "",
         source: str = "capture",
-        phase: str = "sync",
-        project_guide: bool = True,
-    ) -> PersistResult:
-        """Write one accepted lesson into git stay-set, SQLite, and Guide."""
-        kind_n = (kind or "").strip().lower()
-        if kind_n not in LESSON_FILES:
-            raise ValueError("kind must be decision|pitfall|pattern")
-        wid = (work_id or "").strip()
-        if not wid:
-            raise ValueError("work_id is required")
-        text = (body or "").strip()
-        if not text:
-            raise ValueError("body is required")
-
-        result = PersistResult(ok=True)
-        lid = _lesson_id(kind_n, wid, area, source)
-        ts = _utc_now()
-        want_sqlite = backend_enabled(self.project, BACKEND_SQLITE)
-        want_guide = project_guide and backend_enabled(self.project, BACKEND_GUIDE)
-
-        # Path 1: lean git (always required; git-pointers cannot be disabled)
-        try:
-            git_meta = self._persist_lesson_git(
-                kind=kind_n,
-                work_id=wid,
-                body=text,
-                area=area,
-                source=source,
-                phase=phase,
-                lesson_id=lid,
-                ts=ts,
-            )
-            result.git = {"ok": True, **git_meta}
-        except Exception as exc:  # noqa: BLE001 - soft reporting; git is required
-            result.ok = False
-            result.git = {"ok": False, "error": str(exc)}
-            result.errors.append(f"git: {exc}")
-            return self._finalize_persist(result)
-
-        def _sqlite() -> dict[str, Any]:
-            self.index.upsert_lesson(
-                lesson_id=lid,
-                kind=kind_n,
-                work_id=wid,
-                area=area,
-                body=text,
-                source=source,
-                ts=ts,
-            )
-            self.index.upsert_pointer_row(
-                pointer_id=git_meta["pointer_id"],
-                kind="lesson",
-                work_id=wid,
-                intent=text[:200],
-                payload={"lesson_id": lid, "area": area, "subtype": kind_n},
-                ts=ts,
-            )
-            graph = self.index.graph_for_work(wid)
-            return {
-                "lesson_id": lid,
-                "lessons_for_work": len(graph.get("lessons") or []),
-                "requirements": len(graph.get("requirements") or []),
-                "canvases": len(graph.get("canvases") or []),
-                "areas": len(graph.get("areas") or []),
-                "edges": len(graph.get("edges") or []),
-                "schema": "4",
-            }
-
-        return self._fanout_sqlite_guide(
-            result,
-            want_sqlite=want_sqlite,
-            want_guide=want_guide,
-            sqlite_fn=_sqlite,
-        )
-
-    def persist_context_entry(
-        self,
-        *,
-        kind: str,
-        work_id: str,
-        body: str,
-        area: str = "",
         phase: str = "",
-        source: str = "capture",
+        keywords: list[str] | None = None,
+        accept: bool = False,
         project_guide: bool = True,
     ) -> PersistResult:
-        """Fan-out a non-lesson agent-context entry (progress/analysis/metric/…)."""
-        kind_n = (kind or "").strip().lower()
-        if kind_n not in CONTEXT_KINDS:
-            raise ValueError(f"kind must be one of {sorted(CONTEXT_KINDS)}")
-        if kind_n in LESSON_FILES:
-            return self.persist_lesson(
-                kind=kind_n,
-                work_id=work_id,
-                body=body,
-                area=area,
-                source=source,
-                phase=phase or "sync",
-                project_guide=project_guide,
-            )
-        wid = (work_id or "").strip()
-        if not wid:
-            raise ValueError("work_id is required")
-        text = (body or "").strip()
-        if not text:
-            raise ValueError("body is required")
-
+        """Write one lesson record. Staged by default; ``accept=True`` lands
+        it in the committed ledger immediately (retro/sync accept points)."""
+        record = LessonRecord(
+            id="",
+            kind=kind,
+            work_id=work_id,
+            area=area,
+            phase=phase,
+            title=title,
+            body=(body or "").strip(),
+            source=source,
+            keywords=list(keywords or []),
+        )
         result = PersistResult(ok=True)
-        ts = _utc_now()
         want_sqlite = backend_enabled(self.project, BACKEND_SQLITE)
         want_guide = project_guide and backend_enabled(self.project, BACKEND_GUIDE)
 
-        # Path 1: lean git (always required; git-pointers cannot be disabled)
+        # Path 1: the ledger (required; stage keeps git quiet until accept).
         try:
-            git_meta = self._persist_entry_git(
-                kind=kind_n,
-                work_id=wid,
-                body=text,
-                area=area,
-                phase=phase,
-                source=source,
-                ts=ts,
-            )
-            result.git = {"ok": True, **git_meta}
-        except Exception as exc:  # noqa: BLE001
+            if accept:
+                self.ledger.append_accepted(record)
+            else:
+                self.ledger.stage(record)
+            result.git = {
+                "ok": True,
+                "id": record.id,
+                "staged": not accept,
+                "path": self._rel(
+                    self.ledger.path if accept else self.ledger.stage_path
+                ),
+            }
+        except Exception as exc:  # noqa: BLE001 - ledger is the required path
             result.ok = False
             result.git = {"ok": False, "error": str(exc)}
             result.errors.append(f"git: {exc}")
-            return self._finalize_persist(result)
+            return self._finalize(result)
 
-        def _sqlite() -> dict[str, Any]:
-            eid = self.index.upsert_context_entry(
-                kind=kind_n,
-                work_id=wid,
-                area=area,
-                phase=phase,
-                path=git_meta.get("path", ""),
-                title=text[:120],
-                body=text,
-                source=source,
-                ts=ts,
-            )
-            self.index.upsert_pointer_row(
-                pointer_id=git_meta["pointer_id"],
-                kind=kind_n,
-                work_id=wid,
-                intent=text[:200],
-                payload={"entry_id": eid, "area": area},
-                ts=ts,
-            )
-            graph = self.index.graph_for_work(wid)
-            cov = self.index.capability_coverage()
-            return {
-                "entry_id": eid,
-                "context_entries": len(graph.get("context_entries") or []),
-                "requirements": len(graph.get("requirements") or []),
-                "canvases": len(graph.get("canvases") or []),
-                "coverage_complete": cov.get("complete"),
-                "schema": "4",
-            }
+        # Projections (soft-fail): staged records are queryable immediately.
+        if want_sqlite:
+            try:
+                self.index.upsert_lesson_record(record, staged=not accept)
+                result.sqlite = {"ok": True, "id": record.id, "schema": "5"}
+            except Exception as exc:  # noqa: BLE001
+                result.sqlite = {"ok": False, "error": str(exc)}
+                result.errors.append(f"sqlite: {exc}")
+        else:
+            result.sqlite = {"ok": False, "skipped": True}
 
-        return self._fanout_sqlite_guide(
-            result,
-            want_sqlite=want_sqlite,
-            want_guide=want_guide,
-            sqlite_fn=_sqlite,
-        )
+        if want_guide:
+            try:
+                result.guide = {"ok": True, **self.project_to_guide()}
+            except Exception as exc:  # noqa: BLE001
+                result.guide = {"ok": False, "error": str(exc)}
+                result.errors.append(f"guide: {exc}")
+        else:
+            result.guide = {"ok": False, "skipped": True}
 
-    def _persist_entry_git(
+        return self._finalize(result)
+
+    def accept(
         self,
         *,
-        kind: str,
-        work_id: str,
-        body: str,
-        area: str,
-        phase: str,
-        source: str,
-        ts: str,
+        work_id: str = "",
+        ids: list[str] | None = None,
+        discard_rest: bool = False,
+        project_guide: bool = True,
     ) -> dict[str, Any]:
-        """Lean-git write for non-lesson context entries (+ dual-write index)."""
-        # Stay-set ledger only — no agent-context/features mirrors (#86).
-        mem_dir = self.project.root / "spdd" / "memory" / "entries"
-        mem_dir.mkdir(parents=True, exist_ok=True)
-        rel = Path("spdd/memory/entries") / f"{kind}.md"
-        path = self.project.root / rel
-        if not path.is_file():
-            path.write_text(f"# {kind.title()} Entries\n\n", encoding="utf-8")
-        block = (
-            f"\n## {work_id} — {ts}\n\n"
-            f"- Area: {area or '(none)'}\n"
-            f"- Phase: {phase or '(none)'}\n"
-            f"- Source: {source}\n\n"
-            f"{body}\n"
+        """Promote staged records to the committed ledger, then reproject."""
+        out = self.ledger.accept(
+            work_id=work_id, ids=ids, discard_rest=discard_rest
         )
-        with path.open("a", encoding="utf-8") as fh:
-            fh.write(block)
+        if backend_enabled(self.project, BACKEND_SQLITE):
+            try:
+                self.index.rebuild()
+                out["sqlite"] = {"ok": True, "rebuilt": True}
+            except Exception as exc:  # noqa: BLE001
+                out["sqlite"] = {"ok": False, "error": str(exc)}
+        if project_guide and backend_enabled(self.project, BACKEND_GUIDE):
+            try:
+                out["guide"] = {"ok": True, **self.project_to_guide()}
+            except Exception as exc:  # noqa: BLE001
+                out["guide"] = {"ok": False, "error": str(exc)}
+        return out
 
-        index_path = self.project.root / CONTEXT_INDEX
-        index_path.parent.mkdir(parents=True, exist_ok=True)
-        if not index_path.is_file():
-            index_path.write_text(
-                "# Context Index\n\n"
-                "| Area | Kind | Work ID | Phase | Timestamp | Source | Entry |\n"
-                "|------|------|---------|-------|-----------|--------|-------|\n",
-                encoding="utf-8",
-            )
-        entry = body[:120].replace("|", "/")
-        row = (
-            f"| {area or '(none)'} | {kind} | {work_id} | {phase or ''} | "
-            f"{ts} | {source} | {entry} |\n"
-        )
-        with index_path.open("a", encoding="utf-8") as fh:
-            fh.write(row)
-        legacy = self.project.root / LEGACY_CONTEXT_INDEX
-        legacy.parent.mkdir(parents=True, exist_ok=True)
-        if not legacy.is_file():
-            legacy.write_text(index_path.read_text(encoding="utf-8"), encoding="utf-8")
-        else:
-            with legacy.open("a", encoding="utf-8") as fh:
-                fh.write(row)
+    def _finalize(self, result: PersistResult) -> PersistResult:
+        result.backends = self._backends()
+        result.ok = bool(result.git.get("ok"))
+        result.partial = bool(result.errors)
+        return result
 
-        ptr = self.pointers.append(
-            PointerRecord(
-                id="",
-                kind=kind,
-                subtype=kind,
-                work_id=work_id,
-                intent=body[:200],
-                paths=[rel.as_posix(), CONTEXT_INDEX.as_posix()],
-                links={"areas": [area] if area else []},
-                ts=ts,
-            )
-        )
-        return {
-            "path": rel.as_posix(),
-            "index_path": CONTEXT_INDEX.as_posix(),
-            "pointer_id": ptr.id,
-        }
+    def _rel(self, path: Path) -> str:
+        try:
+            return str(path.resolve().relative_to(self.project.root.resolve()))
+        except ValueError:
+            return str(path)
 
-    def _persist_lesson_git(
-        self,
-        *,
-        kind: str,
-        work_id: str,
-        body: str,
-        area: str,
-        source: str,
-        phase: str,
-        lesson_id: str,
-        ts: str,
-    ) -> dict[str, Any]:
-        lesson_rel = LESSON_FILES[kind]
-        lesson_path = self.project.root / lesson_rel
-        lesson_path.parent.mkdir(parents=True, exist_ok=True)
-        if not lesson_path.is_file():
-            titles = {
-                "decision": "Architecture Decisions",
-                "pitfall": "Known Pitfalls",
-                "pattern": "Reusable Patterns",
-            }
-            lesson_path.write_text(f"# {titles[kind]}\n\n", encoding="utf-8")
-
-        anchor = lesson_id.replace(":", "-")
-        block = (
-            f"\n## {work_id} — {ts}\n\n"
-            f"<!-- id: {lesson_id} -->\n"
-            f"- Area: {area or '(none)'}\n"
-            f"- Source: {source}\n\n"
-            f"{body}\n"
-        )
-        with lesson_path.open("a", encoding="utf-8") as fh:
-            fh.write(block)
-
-        index_path = self.project.root / CONTEXT_INDEX
-        index_path.parent.mkdir(parents=True, exist_ok=True)
-        if not index_path.is_file():
-            index_path.write_text(
-                "# Context Index\n\n"
-                "| Area | Kind | Work ID | Phase | Timestamp | Source | Entry |\n"
-                "|------|------|---------|-------|-----------|--------|-------|\n",
-                encoding="utf-8",
-            )
-        area_cell = area or "(none)"
-        # Entry is projected into Guide entity name/description — include body marker for retrieval proof.
-        entry = f"{body[:120].replace('|', '/')} ({lesson_rel.as_posix()}#{anchor})"
-        row = (
-            f"| {area_cell} | {kind} | {work_id} | {phase} | {ts} | {source} | {entry} |\n"
-        )
-        with index_path.open("a", encoding="utf-8") as fh:
-            fh.write(row)
-
-        # Dual-write legacy path so current Guide loaders still see lessons.
-        legacy = self.project.root / LEGACY_CONTEXT_INDEX
-        legacy.parent.mkdir(parents=True, exist_ok=True)
-        if not legacy.is_file():
-            legacy.write_text(index_path.read_text(encoding="utf-8"), encoding="utf-8")
-        else:
-            with legacy.open("a", encoding="utf-8") as fh:
-                fh.write(row)
-
-        ptr = self.pointers.append(
-            PointerRecord(
-                id="",
-                kind="lesson",
-                subtype=kind,
-                work_id=work_id,
-                intent=body[:200],
-                paths=[lesson_rel.as_posix(), CONTEXT_INDEX.as_posix()],
-                links={"areas": [area] if area else [], "lesson_id": lesson_id},
-                ts=ts,
-            )
-        )
-        return {
-            "lesson_id": lesson_id,
-            "lesson_path": lesson_rel.as_posix(),
-            "index_path": CONTEXT_INDEX.as_posix(),
-            "pointer_id": ptr.id,
-        }
+    # --- Guide ---
 
     def project_to_guide(self) -> dict[str, Any]:
-        """POST SPDD projection load against this project root."""
+        """POST SPDD projection load against this project's home folder."""
         url = f"{self.guide_base_url}/api/v1/data/spdd-projection/load"
-        payload = json.dumps({"rootPath": str(self.project.root.resolve())}).encode("utf-8")
+        payload = json.dumps(
+            {"rootPath": str(self.project.home.resolve())}
+        ).encode("utf-8")
         req = urllib.request.Request(
             url,
             data=payload,
@@ -494,38 +230,76 @@ class ContextStore:
         with urllib.request.urlopen(req, timeout=self.guide_timeout) as resp:
             return json.loads(resp.read().decode("utf-8"))
 
-    def retrieve(self, *, work_id: str = "", area: str = "") -> dict[str, Any]:
+    def guide_stats(self) -> dict[str, Any]:
+        url = f"{self.guide_base_url}/api/v1/data/spdd-projection/stats"
+        req = urllib.request.Request(url, method="GET")
+        with urllib.request.urlopen(req, timeout=self.guide_timeout) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+
+    def guide_lesson_ids(self) -> set[str]:
+        """All lesson entity ids known to Guide (for parity diff)."""
+        ids: set[str] = set()
+        for label in ("Decision", "Pitfall", "Pattern", "Session", "Analysis"):
+            url = (
+                f"{self.guide_base_url}/api/v1/data/spdd-projection/"
+                f"by-label?label={label}&limit=10000"
+            )
+            req = urllib.request.Request(url, method="GET")
+            try:
+                with urllib.request.urlopen(req, timeout=self.guide_timeout) as resp:
+                    data = json.loads(resp.read().decode("utf-8"))
+            except (urllib.error.URLError, json.JSONDecodeError):
+                raise
+            for item in data.get("items") or data.get("entities") or []:
+                eid = item.get("id") or item.get("entityId") or ""
+                if eid:
+                    ids.add(str(eid))
+        return ids
+
+    # --- retrieve ---
+
+    def retrieve(
+        self,
+        *,
+        work_id: str = "",
+        area: str = "",
+        kind: str = "",
+        keyword: str = "",
+        include_staged: bool = True,
+        limit: int = 50,
+    ) -> dict[str, Any]:
         want_sqlite = backend_enabled(self.project, BACKEND_SQLITE)
         want_guide = backend_enabled(self.project, BACKEND_GUIDE)
         out: dict[str, Any] = {
             "work_id": work_id,
             "area": area,
+            "kind": kind,
             "backends": self._backends(),
-            "git_pointers": [],
-            "sqlite_lessons": [],
+            "ledger": [],
             "sqlite_graph": None,
             "guide": None,
             "errors": [],
         }
         try:
-            out["git_pointers"] = [
-                p.to_json()
-                for p in self.pointers.list(work_id=work_id, area=area, kind="lesson")
+            staged = self.ledger.staged_ids()
+            records = self.ledger.records(
+                work_id=work_id,
+                area=area,
+                kind=kind,
+                keyword=keyword,
+                include_staged=include_staged,
+            )[: max(1, limit)]
+            out["ledger"] = [
+                {**r.to_json(), "staged": r.id in staged} for r in records
             ]
         except Exception as exc:  # noqa: BLE001
-            out["errors"].append(f"git: {exc}")
-        if want_sqlite:
+            out["errors"].append(f"ledger: {exc}")
+        if want_sqlite and work_id:
             try:
-                if area:
-                    out["sqlite_lessons"] = self.index.lessons_for_area(area)
-                elif work_id:
-                    out["sqlite_lessons"] = self.index.lessons_for_work(work_id)
-                if work_id:
-                    out["sqlite_graph"] = self.index.graph_for_work(work_id)
+                out["sqlite_graph"] = self.index.graph_for_work(work_id)
             except Exception as exc:  # noqa: BLE001
                 out["errors"].append(f"sqlite: {exc}")
-        else:
-            out["sqlite_lessons"] = []
+        elif work_id:
             out["sqlite_graph"] = {"skipped": True}
         if work_id and want_guide:
             try:
@@ -535,3 +309,104 @@ class ContextStore:
         elif work_id:
             out["guide"] = {"ok": False, "skipped": True}
         return out
+
+    def show(self, record_id: str) -> dict[str, Any] | None:
+        """One full record by id — for on-demand body loading."""
+        rec = self.ledger.get(record_id)
+        if rec is None:
+            return None
+        data = rec.to_json()
+        data["staged"] = record_id in self.ledger.staged_ids()
+        return data
+
+    # --- parity ---
+
+    def parity(self, *, repair: bool = False) -> dict[str, Any]:
+        """Diff accepted ledger record ids against SQLite and Guide.
+
+        Scope: accepted records only (staged/hot data is runtime state).
+        ``repair`` re-derives the projections (db rebuild + Guide reproject).
+        """
+        ledger_ids = self.ledger.accepted_ids()
+        out: dict[str, Any] = {
+            "ledger": {"count": len(ledger_ids), "path": self._rel(self.ledger.path)},
+            "backends": self._backends(),
+            "ok": True,
+            "repaired": False,
+        }
+
+        if backend_enabled(self.project, BACKEND_SQLITE):
+            try:
+                sqlite_ids = self.index.accepted_lesson_ids()
+                missing = sorted(ledger_ids - sqlite_ids)
+                extra = sorted(sqlite_ids - ledger_ids)
+                out["sqlite"] = {
+                    "enabled": True,
+                    "count": len(sqlite_ids),
+                    "missing": missing,
+                    "extra": extra,
+                    "ok": not missing and not extra,
+                }
+                if missing or extra:
+                    out["ok"] = False
+            except Exception as exc:  # noqa: BLE001
+                out["sqlite"] = {"enabled": True, "ok": False, "error": str(exc)}
+                out["ok"] = False
+        else:
+            out["sqlite"] = {"enabled": False}
+
+        if backend_enabled(self.project, BACKEND_GUIDE):
+            try:
+                guide_ids = self.guide_lesson_ids()
+                missing = sorted(ledger_ids - guide_ids)
+                out["guide"] = {
+                    "enabled": True,
+                    "count": len(guide_ids),
+                    "missing": missing,
+                    "ok": not missing,
+                }
+                if missing:
+                    out["ok"] = False
+            except Exception as exc:  # noqa: BLE001
+                out["guide"] = {"enabled": True, "ok": False, "error": str(exc)}
+                out["ok"] = False
+        else:
+            out["guide"] = {"enabled": False}
+
+        if repair and not out["ok"]:
+            repaired: dict[str, Any] = {}
+            if backend_enabled(self.project, BACKEND_SQLITE):
+                try:
+                    self.index.rebuild()
+                    repaired["sqlite"] = "rebuilt"
+                except Exception as exc:  # noqa: BLE001
+                    repaired["sqlite"] = f"error: {exc}"
+            if backend_enabled(self.project, BACKEND_GUIDE):
+                try:
+                    self.project_to_guide()
+                    repaired["guide"] = "reprojected"
+                except Exception as exc:  # noqa: BLE001
+                    repaired["guide"] = f"error: {exc}"
+            out["repaired"] = True
+            out["repair_actions"] = repaired
+        return out
+
+    # --- session-start digest ---
+
+    def digest(
+        self,
+        *,
+        work_id: str = "",
+        areas: list[str] | None = None,
+        keywords: list[str] | None = None,
+        limit: int = 8,
+    ) -> dict[str, Any]:
+        return self.ledger.digest(
+            areas=areas or [],
+            keywords=keywords or [],
+            work_id=work_id,
+            limit=limit,
+        )
+
+
+__all__ = ["ContextStore", "PersistResult", "LEDGER_KINDS"]

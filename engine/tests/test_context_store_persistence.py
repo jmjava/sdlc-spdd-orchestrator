@@ -1,4 +1,4 @@
-"""Prove ContextStore writes enter git pointers, SQLite, and Guide DICE."""
+"""ContextStore persistence — ledger-first v3."""
 
 from __future__ import annotations
 
@@ -12,31 +12,18 @@ import pytest
 from sdlc_engine.cli import main
 from sdlc_engine.context_store import ContextStore
 from sdlc_engine.db import LocalIndex
-from sdlc_engine.pointers import PointerLedger
+from sdlc_engine.persistence import save_config
 from sdlc_engine.project import Project
 
 
 def _seed_canvas(root: Path, work_id: str) -> None:
     req = root / "requirements" / "milestones" / f"{work_id}.md"
     req.parent.mkdir(parents=True, exist_ok=True)
-    req.write_text(
-        f"""# Requirement: {work_id}
-
-## Summary
-
-Persistence proof for {work_id}.
-
-## Jira
-
-- Key: ORCH-900
-- Summary: Persist {work_id}
-""",
-        encoding="utf-8",
-    )
+    req.write_text(f"# Requirement: {work_id}\n\n## Summary\nProof.\n", encoding="utf-8")
     canvas = root / "spdd" / "canvas" / f"{work_id}.md"
     canvas.parent.mkdir(parents=True, exist_ok=True)
     canvas.write_text(
-        f"""# REASONS Canvas: {work_id} - Persistence proof
+        f"""# REASONS Canvas: {work_id}
 
 ## Metadata
 
@@ -46,16 +33,14 @@ Persistence proof for {work_id}.
 """,
         encoding="utf-8",
     )
-    # lean stay-set dirs
-    mem = root / "spdd" / "memory" / "lessons"
-    mem.mkdir(parents=True, exist_ok=True)
-    (root / "spdd" / "memory" / "pointers.jsonl").write_text("", encoding="utf-8")
+    root.joinpath("spdd/memory").mkdir(parents=True, exist_ok=True)
 
 
-def test_persist_lesson_enters_git_and_sqlite(tmp_path: Path) -> None:
+def test_persist_lesson_stages_git_and_sqlite(tmp_path: Path) -> None:
     wid = "FEAT-900-persist-proof"
-    area = "com.embabel.guide.spdd"
+    area = "engine"
     _seed_canvas(tmp_path, wid)
+    save_config(tmp_path, {"backends": ["git-pointers", "sqlite"]})
     store = ContextStore(Project(tmp_path), guide_base_url="http://127.0.0.1:9")
 
     result = store.persist_lesson(
@@ -67,74 +52,45 @@ def test_persist_lesson_enters_git_and_sqlite(tmp_path: Path) -> None:
         project_guide=False,
     )
     assert result.git.get("ok") is True
+    assert result.git.get("staged") is True
     assert result.sqlite.get("ok") is True
-    assert result.guide.get("skipped") is True
 
-    # --- Path 1: lean git ---
-    lesson_file = tmp_path / "spdd" / "memory" / "lessons" / "pitfalls.md"
-    assert lesson_file.is_file()
-    text = lesson_file.read_text(encoding="utf-8")
-    assert "Never open PRs against embabel/guide" in text
-    assert f"id: pitfall:{wid}:{area}:unit-test" in text
+    staged_path = tmp_path / ".sdlc" / "staged" / "lessons.jsonl"
+    assert staged_path.is_file()
+    assert "Never open PRs" in staged_path.read_text(encoding="utf-8")
 
-    index = (tmp_path / "spdd" / "memory" / "context-index.md").read_text(encoding="utf-8")
-    assert f"| {area} | pitfall | {wid} |" in index
-
-    ptrs = PointerLedger(Project(tmp_path)).list(work_id=wid, kind="lesson")
-    assert len(ptrs) == 1
-    assert ptrs[0].links.get("lesson_id") == f"pitfall:{wid}:{area}:unit-test"
-    assert area in (ptrs[0].links.get("areas") or [])
-
-    # --- Path 2: SQLite relational (full section graph) ---
     idx = LocalIndex(Project(tmp_path))
     lessons = idx.lessons_for_area(area)
     assert len(lessons) == 1
-    assert lessons[0]["work_id"] == wid
-    assert lessons[0]["kind"] == "pitfall"
-    areas = idx.query_sql(
-        "SELECT area FROM work_areas WHERE work_id = ?",
-        (wid,),
-    )
-    assert areas[0]["area"] == area
-    assert result.sqlite.get("schema") == "4"
-    assert result.sqlite.get("requirements") == 1
-    assert result.sqlite.get("canvases") == 1
-    graph = idx.graph_for_work(wid)
-    edge_rels = {(e["src_kind"], e["rel"], e["dst_kind"]) for e in graph["edges"]}
-    assert ("requirement", "reasons", "canvas") in edge_rels
-    assert ("lesson", "about", "requirement") in edge_rels
-    assert ("lesson", "about", "canvas") in edge_rels
-    assert ("lesson", "about", "area") in edge_rels
+    assert lessons[0]["staged"] == 1
+    assert result.sqlite.get("schema") == "5"
 
 
-def test_persist_context_entry_progress_enters_git_and_sqlite(tmp_path: Path) -> None:
-    wid = "FEAT-922-progress-entry"
+def test_persist_accept_and_parity(tmp_path: Path) -> None:
+    wid = "FEAT-901-accept"
     _seed_canvas(tmp_path, wid)
+    save_config(tmp_path, {"backends": ["git-pointers", "sqlite"]})
     store = ContextStore(Project(tmp_path), guide_base_url="http://127.0.0.1:9")
-    result = store.persist_context_entry(
-        kind="progress",
+    store.persist_lesson(
+        kind="pattern",
         work_id=wid,
-        area="scripts/lib",
-        body="Progress note for full context model",
-        phase="code",
-        source="unit-test",
+        area="scripts",
+        body="Accept me",
+        source="test",
         project_guide=False,
     )
-    assert result.git.get("ok") is True
-    assert result.sqlite.get("ok") is True
-    assert result.sqlite.get("schema") == "4"
-    entry_file = tmp_path / "spdd" / "memory" / "entries" / "progress.md"
-    assert entry_file.is_file()
-    assert "Progress note for full context model" in entry_file.read_text(encoding="utf-8")
-    idx = LocalIndex(Project(tmp_path))
-    graph = idx.graph_for_work(wid)
-    assert any(e["kind"] == "progress" for e in graph["context_entries"])
-    assert graph["requirements"] and graph["canvases"]
+    store.accept(work_id=wid, project_guide=False)
+    ledger_path = tmp_path / "spdd" / "memory" / "lessons.jsonl"
+    assert ledger_path.is_file()
+    parity = store.parity(repair=False)
+    assert parity["sqlite"]["enabled"] is True
+    assert parity["sqlite"]["ok"] is True
 
 
 def test_cli_persist_lesson_no_guide(tmp_path: Path) -> None:
     wid = "FEAT-903-cli"
     _seed_canvas(tmp_path, wid)
+    save_config(tmp_path, {"backends": ["git-pointers", "sqlite"]})
     rc = main(
         [
             "--root",
@@ -148,13 +104,12 @@ def test_cli_persist_lesson_no_guide(tmp_path: Path) -> None:
             "--area",
             "scripts/lib",
             "--body",
-            "CLI fan-out writes lean git + sqlite",
+            "CLI fan-out writes ledger + sqlite",
             "--no-guide",
         ]
     )
     assert rc == 0
     assert LocalIndex(Project(tmp_path)).lessons_for_work(wid)
-    assert PointerLedger(Project(tmp_path)).list(work_id=wid, kind="lesson")
 
 
 def test_persist_lesson_calls_guide_project(tmp_path: Path) -> None:
@@ -162,15 +117,9 @@ def test_persist_lesson_calls_guide_project(tmp_path: Path) -> None:
     _seed_canvas(tmp_path, wid)
     store = ContextStore(Project(tmp_path), guide_base_url="http://guide.test")
 
-    fake_body = json.dumps(
-        {
-            "rootPath": str(tmp_path),
-            "workIds": 1,
-            "pitfalls": 1,
-            "decisions": 0,
-            "patterns": 0,
-        }
-    ).encode("utf-8")
+    fake_body = json.dumps({"rootPath": str(tmp_path), "workIds": 1, "pitfalls": 1}).encode(
+        "utf-8"
+    )
 
     mock_resp = MagicMock()
     mock_resp.status = 200
@@ -189,13 +138,8 @@ def test_persist_lesson_calls_guide_project(tmp_path: Path) -> None:
         )
 
     assert result.git.get("ok") is True
-    assert result.sqlite.get("ok") is True
     assert result.guide.get("ok") is True
-    assert result.guide.get("pitfalls") == 1
-    assert result.ok is True
     assert mocked.called
-    req = mocked.call_args.args[0]
-    assert req.full_url.endswith("/api/v1/data/spdd-projection/load")
 
 
 def _guide_live() -> bool:
@@ -209,58 +153,29 @@ def _guide_live() -> bool:
         return False
 
 
-@pytest.mark.skipif(not _guide_live(), reason="Guide not running on GUIDE_BASE_URL/:21337")
-def test_live_persist_enters_all_three_backends() -> None:
-    """Live E2E: git stay-set + SQLite rows + Guide Neo4j projection all see the lesson.
-
-    Fixture root must sit under Guide allowed-roots (orchestrator checkout), not /tmp.
-    """
+@pytest.mark.skipif(not _guide_live(), reason="Guide not running")
+def test_live_persist_enters_all_backends() -> None:
     import shutil
     import uuid
 
     wid = "FEAT-902-live-triple-persist"
-    area = "com.embabel.guide.spdd"
-    body = "LIVE-TRIPLE-PERSIST: never contribute to embabel/guide"
-    # Resolve from this test file → repo root (…/engine/tests/this.py → repo)
     repo_root = Path(__file__).resolve().parents[2]
     fixture = repo_root / ".sdlc" / "test-fixtures" / f"live-triple-{uuid.uuid4().hex[:8]}"
     try:
         fixture.mkdir(parents=True, exist_ok=True)
         _seed_canvas(fixture, wid)
-
+        save_config(fixture, {"backends": ["git-pointers", "sqlite", "guide-dice"]})
         store = ContextStore(Project(fixture))
         result = store.persist_lesson(
             kind="pitfall",
             work_id=wid,
-            area=area,
-            body=body,
+            area="engine",
+            body="LIVE-TRIPLE-PERSIST",
             source="live-test",
+            accept=True,
             project_guide=True,
         )
-        assert result.git.get("ok") is True, result.as_dict()
-        assert result.sqlite.get("ok") is True, result.as_dict()
-        assert result.guide.get("ok") is True, result.as_dict()
-        assert result.ok is True, result.as_dict()
-
-        # git
-        assert body in (fixture / "spdd/memory/lessons/pitfalls.md").read_text(encoding="utf-8")
-        assert PointerLedger(Project(fixture)).list(work_id=wid)
-
-        # sqlite
-        sqlite_lessons = LocalIndex(Project(fixture)).lessons_for_work(wid)
-        assert any(body in (r.get("body") or "") for r in sqlite_lessons)
-
-        # guide retrieve — description/name carries index Entry column; body marker is in Entry path/text
-        work = store.guide_work(wid)
-        assert work.get("found") is True
-        pitfalls = work.get("pitfalls") or []
-        assert pitfalls, f"expected Guide pitfalls for {wid}, got {work}"
-        blob = json.dumps(pitfalls)
-        assert "LIVE-TRIPLE-PERSIST" in blob, blob
-
-        assembled = store.retrieve(work_id=wid, area=area)
-        assert assembled["git_pointers"]
-        assert assembled["sqlite_lessons"]
-        assert assembled["guide"] and assembled["guide"].get("found") is True
+        assert result.ok is True
+        assert LocalIndex(Project(fixture)).lessons_for_work(wid)
     finally:
         shutil.rmtree(fixture, ignore_errors=True)

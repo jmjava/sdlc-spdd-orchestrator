@@ -1,14 +1,14 @@
-"""Persistence backend options for the triple-path ContextStore (#79/#90).
+"""Persistence backend options for the ledger-first ContextStore (storage v3).
 
 Config file (gitignored runtime): ``.sdlc/persistence-config.json``
 
 Backends:
-  - git-pointers — lean stay-set files + pointers.jsonl (always required)
-  - sqlite       — local ``.sdlc/index.sqlite`` upsert (soft-fail)
+  - git-pointers — committed ledger + registry JSONL (always required)
+  - sqlite       — opt-in local ``.sdlc/index.sqlite`` cache (soft-fail)
   - guide-dice   — Guide SPDD projection load (soft-fail)
 
 Environment overrides (comma-separated set):
-  ``CONTEXT_BACKENDS=git-pointers,sqlite,guide-dice``
+  ``CONTEXT_BACKENDS=git-pointers,guide-dice`` or add ``sqlite`` opt-in.
 """
 
 from __future__ import annotations
@@ -27,7 +27,7 @@ BACKEND_SQLITE = "sqlite"
 BACKEND_GUIDE = "guide-dice"
 
 ALL_BACKENDS: tuple[str, ...] = (BACKEND_GIT, BACKEND_SQLITE, BACKEND_GUIDE)
-DEFAULT_BACKENDS: tuple[str, ...] = ALL_BACKENDS
+DEFAULT_BACKENDS: tuple[str, ...] = (BACKEND_GIT, BACKEND_GUIDE)
 
 _ALIASES = {
     "git": BACKEND_GIT,
@@ -192,9 +192,9 @@ def status_dict(project: Project) -> dict[str, Any]:
         "git": {
             "ok": True,
             "stay_set": "spdd/memory/",
-            "pointers": "spdd/memory/pointers.jsonl",
-            "entries": "spdd/memory/entries/",
-            "lessons": "spdd/memory/lessons/",
+            "ledger": "spdd/memory/lessons.jsonl",
+            "staged": ".sdlc/staged/lessons.jsonl",
+            "registry": "spdd/memory/registry.jsonl",
         },
         "sqlite": {
             "enabled": BACKEND_SQLITE in backends,

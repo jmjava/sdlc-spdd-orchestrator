@@ -108,11 +108,8 @@ def test_api_run_dry_upgrade(tmp_path: Path) -> None:
 
 def test_sqlite_status_and_rebuild(tmp_path: Path) -> None:
     (tmp_path / "spdd" / "canvas").mkdir(parents=True)
-    (tmp_path / "agent-context").mkdir(parents=True)
-    (tmp_path / "agent-context" / "work-registry.tsv").write_text(
-        "work_id\tstatus\towner\tclaimed_at\tphase\tnote\n",
-        encoding="utf-8",
-    )
+    (tmp_path / "spdd" / "memory").mkdir(parents=True)
+    (tmp_path / "spdd" / "memory" / "registry.jsonl").write_text("", encoding="utf-8")
     app = create_app(tmp_path)
     client = app.test_client()
     missing = client.post("/api/sqlite/status", json={"target": str(tmp_path)})
@@ -306,7 +303,7 @@ def test_guide_ops_helpers_and_purge_confirm(tmp_path: Path) -> None:
     from sdlc_engine.installer.guide_ops import default_operator_directories
 
     dirs = default_operator_directories(tmp_path)
-    assert str(tmp_path.resolve()) in dirs
+    assert any(d.endswith("spdd/memory") for d in dirs)
     assert any(d.endswith("spdd/canvas") for d in dirs)
 
     app = create_app(tmp_path)

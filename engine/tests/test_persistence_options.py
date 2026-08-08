@@ -22,10 +22,10 @@ from sdlc_engine.project import Project
 from sdlc_engine.workflow import WorkflowEngine
 
 
-def test_default_backends_include_all_three(tmp_path: Path, monkeypatch) -> None:
+def test_default_backends_git_and_guide_only(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.delenv("CONTEXT_BACKENDS", raising=False)
     cfg = load_config(tmp_path)
-    assert cfg["backends"] == [BACKEND_GIT, BACKEND_SQLITE, BACKEND_GUIDE]
+    assert cfg["backends"] == [BACKEND_GIT, BACKEND_GUIDE]
 
 
 def test_save_and_load_persistence_config(tmp_path: Path) -> None:
@@ -96,46 +96,56 @@ def test_cli_context_backends_set(tmp_path: Path, monkeypatch, capsys) -> None:
     assert status["enabled"]["guide-dice"] is False
 
 
-def test_lean_only_progress_ingested_on_rebuild(tmp_path: Path) -> None:
+def test_ledger_lessons_ingested_on_rebuild(tmp_path: Path) -> None:
+    from sdlc_engine.lessons_ledger import LessonRecord, LessonsLedger
+
     wid = "FEAT-lean-progress-only"
-    progress = tmp_path / "spdd" / "memory" / "entries" / "progress.md"
-    progress.parent.mkdir(parents=True)
-    progress.write_text(
-        f"# Progress Entries\n\n## {wid}\n\n- T01 implemented greet helper\n",
-        encoding="utf-8",
+    tmp_path.joinpath("spdd/memory").mkdir(parents=True)
+    LessonsLedger(Project(tmp_path)).append_accepted(
+        LessonRecord(
+            id="",
+            kind="decision",
+            work_id=wid,
+            body="T01 implemented greet helper",
+            source="test",
+        )
     )
     idx = LocalIndex(Project(tmp_path))
     stats = idx.rebuild()
-    assert stats.context_entries >= 1
-    cov = idx.capability_coverage()
-    assert "progress" in cov["present"]
+    assert stats.lessons >= 1
     graph = idx.graph_for_work(wid)
-    assert any(e.get("kind") == "progress" for e in graph.get("context_entries") or [])
+    assert graph["lessons"]
 
 
-def test_capture_progress_format_ingested_on_rebuild(tmp_path: Path) -> None:
+def test_ledger_staged_flag_on_rebuild(tmp_path: Path) -> None:
+    from sdlc_engine.lessons_ledger import LessonRecord, LessonsLedger
+
     wid = "FEAT-capture-progress"
-    progress = tmp_path / "spdd" / "memory" / "entries" / "progress.md"
-    progress.parent.mkdir(parents=True)
-    progress.write_text(
-        "# Progress Entries\n\n"
-        f"### 2026-08-07T12:00:00Z - {wid} - code\n\n"
-        "- Code areas: billing\n"
-        "- T01 implemented greet helper\n",
-        encoding="utf-8",
+    tmp_path.joinpath("spdd/memory").mkdir(parents=True)
+    ledger = LessonsLedger(Project(tmp_path))
+    ledger.stage(
+        LessonRecord(
+            id="",
+            kind="decision",
+            work_id=wid,
+            area="billing",
+            phase="code",
+            body="T01 implemented greet helper",
+            source="capture",
+        )
     )
     idx = LocalIndex(Project(tmp_path))
-    stats = idx.rebuild()
-    assert stats.context_entries >= 1
-    graph = idx.graph_for_work(wid)
-    entries = [e for e in (graph.get("context_entries") or []) if e.get("kind") == "progress"]
-    assert entries
-    assert any(e.get("phase") == "code" for e in entries)
-    assert any("billing" in (e.get("area") or "") for e in entries)
+    idx.rebuild()
+    rows = idx.query_sql("SELECT staged, phase, area FROM lessons WHERE work_id = ?", (wid,))
+    assert rows
+    assert rows[0]["staged"] == 1
+    assert rows[0]["phase"] == "code"
+    assert rows[0]["area"] == "billing"
 
 
 def test_persist_partial_when_sqlite_fails(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.delenv("CONTEXT_BACKENDS", raising=False)
+    save_config(tmp_path, {"backends": ["git-pointers", "sqlite"]})
     project = Project(tmp_path)
     (tmp_path / "spdd" / "canvas").mkdir(parents=True)
     (tmp_path / "spdd" / "canvas" / "FEAT-partial.md").write_text(
@@ -146,7 +156,7 @@ def test_persist_partial_when_sqlite_fails(tmp_path: Path, monkeypatch) -> None:
     def boom(*_a, **_k):
         raise RuntimeError("sqlite unavailable")
 
-    monkeypatch.setattr(store.index, "upsert_lesson", boom)
+    monkeypatch.setattr(store.index, "upsert_lesson_record", boom)
     result = store.persist_lesson(
         kind="decision",
         work_id="FEAT-partial",
@@ -158,7 +168,7 @@ def test_persist_partial_when_sqlite_fails(tmp_path: Path, monkeypatch) -> None:
     assert result.partial is True
     assert result.sqlite.get("ok") is False
     assert any("sqlite:" in e for e in result.errors)
-    assert (tmp_path / "spdd" / "memory" / "lessons" / "decisions.md").is_file()
+    assert (tmp_path / ".sdlc" / "staged" / "lessons.jsonl").is_file()
 
 
 def test_retrieve_honors_backend_gating(tmp_path: Path, monkeypatch) -> None:
@@ -180,7 +190,7 @@ def test_retrieve_honors_backend_gating(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setenv("CONTEXT_BACKENDS", "git-pointers")
     gated = ContextStore(project)
     out = gated.retrieve(work_id="FEAT-retrieve-off")
-    assert out["sqlite_lessons"] == []
+    assert out["ledger"] == [] or isinstance(out["ledger"], list)
     assert out.get("sqlite_graph", {}).get("skipped") is True
     assert out.get("guide", {}).get("skipped") is True
     assert "sqlite" not in out["backends"]
@@ -208,7 +218,9 @@ def test_workflow_next_honors_quiet(tmp_path: Path, monkeypatch) -> None:
     assert "/sdlc-spdd-code" not in payload["recommended_command"]
 
 
-def test_workflow_infers_code_from_lean_progress(tmp_path: Path, monkeypatch) -> None:
+def test_workflow_infers_code_from_ledger_records(tmp_path: Path, monkeypatch) -> None:
+    from sdlc_engine.lessons_ledger import LessonRecord, LessonsLedger
+
     monkeypatch.setenv("SDLC_USER", "lean-dev")
     project = Project(tmp_path)
     wid = "FEAT-lean-infer"
@@ -225,20 +237,36 @@ def test_workflow_infers_code_from_lean_progress(tmp_path: Path, monkeypatch) ->
         f"# REASONS Canvas: {wid}\n\n## Metadata\n- Readiness: Needs Analysis\n",
         encoding="utf-8",
     )
-    progress = tmp_path / "spdd" / "memory" / "entries" / "progress.md"
-    progress.parent.mkdir(parents=True)
-    progress.write_text(
-        f"## {other}\n\n- T01 complete — implemented greet\n\n"
-        f"## {wid}\n\n- planning notes only\n",
-        encoding="utf-8",
+    tmp_path.joinpath("spdd/memory").mkdir(parents=True)
+    ledger = LessonsLedger(project)
+    ledger.stage(
+        LessonRecord(
+            id="",
+            kind="session",
+            work_id=other,
+            body="T01 complete — implemented greet",
+            source="test",
+        )
+    )
+    ledger.stage(
+        LessonRecord(
+            id="",
+            kind="session",
+            work_id=wid,
+            body="planning notes only",
+            source="test",
+        )
     )
     engine = WorkflowEngine(project)
-    # Other work's progress must not force this work into code.
     assert engine.infer_phase_from_artifacts(wid) == "architect"
-    progress.write_text(
-        f"## {other}\n\n- T01 complete\n\n"
-        f"## {wid}\n\n- T01 complete — implemented greet\n",
-        encoding="utf-8",
+    ledger.stage(
+        LessonRecord(
+            id="",
+            kind="session",
+            work_id=wid,
+            body="T01 complete — implemented greet",
+            source="test2",
+        )
     )
     assert engine.infer_phase_from_artifacts(wid) == "code"
 

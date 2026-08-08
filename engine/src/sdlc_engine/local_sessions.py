@@ -466,19 +466,27 @@ class LocalSessionService:
             encoding="utf-8",
         )
 
-        # Stay-set progress only (#86) — do not create agent-context/features mirrors.
-        progress = self.project.progress_log_path(work_id)
-        progress.parent.mkdir(parents=True, exist_ok=True)
-        if not progress.is_file():
-            progress.write_text("# Progress Entries\n\n", encoding="utf-8")
-        with progress.open("a", encoding="utf-8") as fh:
-            fh.write(
-                f"\n## {work_id}\n\n"
-                f"- Promoted from local session `{sid}` at {_utc_now()}\n"
-                f"- Intent: {intent}\n"
+        # Stage progress evidence in the ledger (storage v3).
+        from .lessons_ledger import LessonRecord, LessonsLedger
+
+        ledger = LessonsLedger(self.project)
+        body = (
+            f"- Promoted from local session `{sid}` at {_utc_now()}\n"
+            f"- Intent: {intent}\n"
+        )
+        if notes_text:
+            body += f"\n### Notes from {sid}\n\n{notes_text}\n"
+        ledger.stage(
+            LessonRecord(
+                id="",
+                kind="session",
+                work_id=work_id,
+                title=f"Promoted from {sid}",
+                body=body,
+                source="local-promote",
+                phase="code",
             )
-            if notes_text:
-                fh.write(f"\n### Notes from {sid}\n\n{notes_text}\n")
+        )
 
         # Canvas
         canvas_dir = self.project.root / "spdd" / "canvas"
