@@ -33,8 +33,11 @@ def test_resolve_guide_home_ignores_env_that_is_not_guide(tmp_path: Path, monkey
     bare = tmp_path / "not-guide"
     bare.mkdir()
     monkeypatch.setenv("GUIDE_HOME", str(bare))
+    # Force discovery misses so invalid GUIDE_HOME cannot win via sibling/agent paths.
+    monkeypatch.setattr(guide_mod, "_looks_like_guide_home", lambda _p: False)
     resolved = resolve_guide_home()
     assert resolved != bare.resolve()
+    assert resolved == Path.home() / "github" / "jmjava" / "guide"
 
 
 def test_default_config_points_at_dual_repo_sibling_when_present(monkeypatch) -> None:

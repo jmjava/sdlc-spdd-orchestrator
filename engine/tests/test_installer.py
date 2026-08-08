@@ -200,8 +200,13 @@ def test_guide_config_roundtrip(tmp_path: Path) -> None:
     assert "neo4j" in body
 
 
-def test_guide_env_custom_ports() -> None:
+def test_guide_env_custom_ports(monkeypatch) -> None:
+    from sdlc_engine.installer import guide_runtime as gr
     from sdlc_engine.installer.guide_runtime import guide_env
+
+    # Keep this unit test independent of whether Bolt is open on the host.
+    monkeypatch.setattr(gr, "_tcp_open", lambda *a, **k: False)
+    monkeypatch.delenv("SKIP_COMPOSE_NEO4J", raising=False)
 
     env = guide_env(
         {
@@ -219,6 +224,131 @@ def test_guide_env_custom_ports() -> None:
     assert env["NEO4J_BOLT_PORT"] == "17687"
     assert env["NEO4J_URI"] == "bolt://localhost:17687"
     assert env["NEO4J_PASSWORD"] == "secret"
+    assert "SKIP_COMPOSE_NEO4J" not in env or env.get("SKIP_COMPOSE_NEO4J") in {"", None}
+
+
+def test_guide_env_sets_skip_compose_when_bolt_open(monkeypatch) -> None:
+    from sdlc_engine.installer import guide_runtime as gr
+    from sdlc_engine.installer.guide_runtime import guide_env
+
+    monkeypatch.delenv("SKIP_COMPOSE_NEO4J", raising=False)
+    monkeypatch.setattr(gr, "_tcp_open", lambda *a, **k: True)
+    env = guide_env({"port": 21337, "neo4j_bolt_port": 7687})
+    assert env["SKIP_COMPOSE_NEO4J"] == "1"
+
+
+def test_guide_env_preserves_explicit_skip_compose(monkeypatch) -> None:
+    from sdlc_engine.installer import guide_runtime as gr
+    from sdlc_engine.installer.guide_runtime import guide_env
+
+    monkeypatch.setenv("SKIP_COMPOSE_NEO4J", "0")
+    monkeypatch.setattr(gr, "_tcp_open", lambda *a, **k: True)
+    env = guide_env({"port": 21337, "neo4j_bolt_port": 7687})
+    assert env["SKIP_COMPOSE_NEO4J"] == "0"
+
+
+def test_start_neo4j_errors_without_compose(tmp_path: Path, monkeypatch) -> None:
+    from sdlc_engine.installer import guide_runtime as gr
+
+    monkeypatch.setattr(gr, "_tcp_open", lambda *a, **k: False)
+    result = gr.start_neo4j({"guide_home": str(tmp_path), "neo4j_bolt_port": 7687})
+    assert result["ok"] is False
+    assert "compose.yaml" in (result.get("error") or "")
+
+
+def test_stop_guide_noop_without_runtime(tmp_path: Path) -> None:
+    from sdlc_engine.installer.guide_runtime import stop_guide
+
+    result = stop_guide(tmp_path, {"port": 21337})
+    assert result["ok"] is True
+    assert result["killed"] == []
+
+
+def test_ensure_guide_repo_requires_home() -> None:
+    from sdlc_engine.installer.guide_runtime import ensure_guide_repo
+
+    result = ensure_guide_repo({"guide_home": ""})
+    assert result["ok"] is False
+    assert "guide_home" in (result.get("error") or "")
+
+
+def test_load_runtime_tolerates_corrupt_json(tmp_path: Path) -> None:
+    from sdlc_engine.installer.guide_runtime import _load_runtime, runtime_path
+
+    path = runtime_path(tmp_path)
+    path.parent.mkdir(parents=True)
+    path.write_text("{not-json", encoding="utf-8")
+    assert _load_runtime(tmp_path) == {}
+
+
+def test_resolve_guide_home_prefers_valid_env(tmp_path: Path, monkeypatch) -> None:
+    from sdlc_engine.installer.guide import resolve_guide_home
+
+    home = tmp_path / "env-guide"
+    (home / "scripts").mkdir(parents=True)
+    (home / "scripts" / "append-ingest.sh").write_text("#!/bin/bash\n", encoding="utf-8")
+    monkeypatch.setenv("GUIDE_HOME", str(home))
+    assert resolve_guide_home() == home.resolve()
+
+
+def test_resolve_guide_home_ignores_bare_env(tmp_path: Path, monkeypatch) -> None:
+    from sdlc_engine.installer import guide as guide_mod
+    from sdlc_engine.installer.guide import resolve_guide_home
+
+    bare = tmp_path / "not-guide"
+    bare.mkdir()
+    monkeypatch.setenv("GUIDE_HOME", str(bare))
+    monkeypatch.setattr(guide_mod, "_looks_like_guide_home", lambda _p: False)
+    assert resolve_guide_home() == Path.home() / "github" / "jmjava" / "guide"
+
+
+def test_start_neo4j_compose_path(tmp_path: Path, monkeypatch) -> None:
+    from sdlc_engine.installer import guide_runtime as gr
+
+    guide = tmp_path / "guide"
+    guide.mkdir()
+    (guide / "compose.yaml").write_text("services: {}\n", encoding="utf-8")
+    calls = {"n": 0}
+
+    def fake_tcp(*_a, **_k):
+        calls["n"] += 1
+        # First probe (already running?) false; later wait loop true.
+        return calls["n"] > 1
+
+    monkeypatch.setattr(gr, "_tcp_open", fake_tcp)
+    monkeypatch.setattr(
+        gr,
+        "_run",
+        lambda *a, **k: {"ok": True, "exit_code": 0, "command": [], "log": "up"},
+    )
+    result = gr.start_neo4j(
+        {"guide_home": str(guide), "neo4j_bolt_port": 17687, "neo4j_http_port": 17474}
+    )
+    assert result["ok"] is True
+    assert result["action"] == "started"
+    assert result["bolt_ready"] is True
+
+
+def test_ensure_guide_repo_present_no_pull(tmp_path: Path, monkeypatch) -> None:
+    from sdlc_engine.installer import guide_runtime as gr
+
+    guide = tmp_path / "guide"
+    (guide / ".git").mkdir(parents=True)
+
+    def fake_run(cmd, **_k):
+        joined = " ".join(cmd)
+        if "rev-parse" in joined and "--short" in joined:
+            return {"ok": True, "exit_code": 0, "command": cmd, "log": "abc1234"}
+        if "abbrev-ref" in joined:
+            return {"ok": True, "exit_code": 0, "command": cmd, "log": "main"}
+        if "remote" in joined:
+            return {"ok": True, "exit_code": 0, "command": cmd, "log": "origin"}
+        return {"ok": True, "exit_code": 0, "command": cmd, "log": ""}
+
+    monkeypatch.setattr(gr, "_run", fake_run)
+    result = gr.ensure_guide_repo({"guide_home": str(guide)}, pull=False)
+    assert result["ok"] is True
+    assert result["action"] == "present"
 
 
 def test_embabel_profile_and_named_entity_gate(tmp_path: Path) -> None:

@@ -122,10 +122,11 @@ def ensure_guide_repo(
     pull: bool = True,
 ) -> dict[str, Any]:
     """Clone jmjava/guide if missing; optionally fast-forward pull."""
-    home = Path(str(cfg.get("guide_home") or "")).expanduser()
-    url = str(cfg.get("guide_git_url") or DEFAULT_GIT_URL).strip() or DEFAULT_GIT_URL
-    if not str(home):
+    home_raw = str(cfg.get("guide_home") or "").strip()
+    if not home_raw:
         return {"ok": False, "error": "guide_home is required", "log": ""}
+    home = Path(home_raw).expanduser()
+    url = str(cfg.get("guide_git_url") or DEFAULT_GIT_URL).strip() or DEFAULT_GIT_URL
 
     if not home.exists():
         home.parent.mkdir(parents=True, exist_ok=True)

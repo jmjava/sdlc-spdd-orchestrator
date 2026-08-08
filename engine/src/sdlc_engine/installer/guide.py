@@ -95,8 +95,8 @@ def resolve_guide_home() -> Path:
         if _looks_like_guide_home(resolved):
             return resolved
 
-    if env:
-        return Path(env).expanduser()
+    # Invalid GUIDE_HOME is ignored (do not prefer a bare directory over the
+    # conventional checkout path used by local / Cloud Agent layouts).
     return Path.home() / "github" / "jmjava" / "guide"
 
 
