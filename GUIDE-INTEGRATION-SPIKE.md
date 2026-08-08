@@ -30,6 +30,15 @@ Guide fork (durable pin): https://github.com/jmjava/guide (tag `sdlc-spdd-projec
 - Once a spike produces an accepted plan, open FEAT PR(s) for implementation slices
   (do not merge research spikes as silent framework rewrites).
 
+## Durable Guide home (cutover)
+
+Fork topology is being replaced by a **standalone** repo:
+
+- Target: `jmjava/orch-guide` (not a GitHub fork of Embabel)
+- Plan: [docs/orch-guide-cutover.md](docs/orch-guide-cutover.md)
+- Bootstrap: `./scripts/guide/push-orch-guide-bootstrap.sh` (after empty repo exists)
+- After cutover: hard-reset `jmjava/guide` to `embabel/guide`; dogfood uses `orch-guide`
+
 ## Operator docs
 
 - [docs/dice-projection-runbook.md](docs/dice-projection-runbook.md)
