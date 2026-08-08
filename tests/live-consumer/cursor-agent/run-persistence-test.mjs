@@ -352,7 +352,7 @@ async function main() {
   if (start.status === 0) ok("start-agent-session (phase D)");
   else bad(`start-agent-session failed: ${start.stderr || start.stdout}`);
 
-  const briefPath = path.join(ROOT, "agent-context/sessions/current-session.md");
+  const briefPath = path.join(ROOT, ".sdlc/sessions/current-session.md");
   const brief = fs.existsSync(briefPath) ? fs.readFileSync(briefPath, "utf8") : "";
   if (brief.includes("Local SQLite Index (query cache)")) ok("brief has Local SQLite Index section");
   else bad("brief missing Local SQLite Index section");
@@ -375,7 +375,7 @@ async function main() {
       const { result } = await send(
         agent2,
         [
-          "Read ONLY agent-context/sessions/current-session.md.",
+          "Read ONLY .sdlc/sessions/current-session.md.",
           `Quote the Local SQLite Index fields for Work ID ${WORK_ID}.`,
           "Include has_canvas and registry_status if present.",
           "Do not invent values; do not modify files.",

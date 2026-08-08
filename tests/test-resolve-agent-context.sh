@@ -90,8 +90,8 @@ assert_contains "${json}" 'team-norms.md' "json contains resolved path"
 echo "== Test 8: start-agent-session embeds Resolved Context =="
 START="${REPO_ROOT}/scripts/start-agent-session.sh"
 "${START}" --target "${WORK}" --work-id FEAT-099-test --phase code >/dev/null
-if grep -Fq "## Resolved Context" "${WORK}/agent-context/sessions/current-session.md" && \
-   grep -Fq "team-norms.md" "${WORK}/agent-context/sessions/current-session.md"; then
+if grep -Fq "## Resolved Context" "${WORK}/.sdlc/sessions/current-session.md" && \
+   grep -Fq "team-norms.md" "${WORK}/.sdlc/sessions/current-session.md"; then
   ok "session brief includes resolved context"
 else
   bad "session brief missing Resolved Context"
@@ -154,7 +154,7 @@ assert_contains "${out}" "agent-context/harness/quality-gates.md" "api-test qual
 
 echo "== Test 12: resume prompt omits canvas when already resolved =="
 "${START}" --target "${WORK}" --work-id FEAT-050-billing --phase code >/dev/null
-if grep -Fq "Also read @spdd/canvas/FEAT-050-billing.md" "${WORK}/agent-context/sessions/current-session.md"; then
+if grep -Fq "Also read @spdd/canvas/FEAT-050-billing.md" "${WORK}/.sdlc/sessions/current-session.md"; then
   bad "resume prompt should not duplicate canvas already in Resolved Context"
 else
   ok "resume prompt skips redundant canvas mention"

@@ -93,6 +93,9 @@ esac
 TARGET="$(sdlc_resolve_target "${TARGET}")"
 FEATURE_DIR="${TARGET}/agent-context/features/${WORK_ID}"
 CANVAS="${TARGET}/spdd/canvas/${WORK_ID}.md"
+# Hot path (#86): lean progress.md. Legacy feature progress-log.md is fallback.
+LEAN_PROGRESS="${TARGET}/spdd/memory/entries/progress.md"
+FEATURE_PROGRESS="${FEATURE_DIR}/progress-log.md"
 
 failures=0
 
@@ -122,6 +125,31 @@ check_contains_regex() {
     echo "  FAIL ${label}: ${path} (pattern not found: ${regex})" >&2
     failures=$((failures + 1))
   fi
+}
+
+check_progress_exists() {
+  if [[ -f "${LEAN_PROGRESS}" ]]; then
+    echo "  ok  progress log: ${LEAN_PROGRESS}"
+  elif [[ -f "${FEATURE_PROGRESS}" ]]; then
+    echo "  ok  progress log (legacy): ${FEATURE_PROGRESS}"
+  else
+    echo "  FAIL progress log: ${LEAN_PROGRESS} (or legacy ${FEATURE_PROGRESS})" >&2
+    failures=$((failures + 1))
+  fi
+}
+
+check_progress_contains_regex() {
+  local label="$1"
+  local regex="$2"
+  local path
+  for path in "${LEAN_PROGRESS}" "${FEATURE_PROGRESS}"; do
+    if [[ -f "${path}" ]] && grep -Eq "${regex}" "${path}"; then
+      echo "  ok  ${label}: ${path}"
+      return
+    fi
+  done
+  echo "  FAIL ${label}: ${LEAN_PROGRESS} (pattern not found: ${regex})" >&2
+  failures=$((failures + 1))
 }
 
 check_any_session_note_contains_work_id() {
@@ -157,7 +185,7 @@ if [[ "${STEP}" == "plan" || "${STEP}" == "architect" || "${STEP}" == "code" || 
   check_exists "canvas" "${CANVAS}"
   check_exists "feature dir" "${FEATURE_DIR}"
   check_exists "feature requirement" "${FEATURE_DIR}/requirement.md"
-  check_exists "progress log" "${FEATURE_DIR}/progress-log.md"
+  check_progress_exists
 fi
 
 if [[ "${STEP}" == "plan" || "${STEP}" == "architect" || "${STEP}" == "prompt-update" ]]; then
@@ -170,7 +198,8 @@ if [[ "${STEP}" == "architect" ]]; then
 fi
 
 if [[ "${STEP}" == "code" ]]; then
-  check_contains_regex "progress log operation evidence" "${FEATURE_DIR}/progress-log.md" "${OPERATION}|[Ii]mplement|[Cc]omplete|[Ff]iles changed"
+  check_progress_contains_regex "progress log operation evidence" \
+    "${OPERATION}|[Ii]mplement|[Cc]omplete|[Ff]iles changed"
   # Soft gate: when readiness is declared, it should be Ready For Coding.
   if grep -qE '^-[[:space:]]*[Rr]eadiness:[[:space:]]*|^readiness:[[:space:]]*' "${CANVAS}" 2>/dev/null; then
     check_contains_regex "code readiness Ready For Coding" "${CANVAS}" "Ready For Coding|ready-for-coding"
@@ -202,9 +231,9 @@ fi
 if [[ "${STEP}" == "capture" ]]; then
   check_exists "session history memory" "${TARGET}/agent-context/memory/session-history.md"
   check_any_session_note_contains_work_id "${TARGET}/session-notes"
-  # capture-session-memory.sh always appends a "### <ts> - <WORK-ID> - <phase>"
-  # header to the progress log, so the Work ID is a deterministic anchor here.
-  check_contains_regex "progress log mention work-id" "${FEATURE_DIR}/progress-log.md" "${WORK_ID}"
+  # capture-session-memory.sh appends "### <ts> - <WORK-ID> - <phase>" to lean
+  # spdd/memory/entries/progress.md (#86); legacy feature progress-log is fallback.
+  check_progress_contains_regex "progress log mention work-id" "${WORK_ID}"
 
   if [[ -n "${MILESTONE}" ]]; then
     check_contains_regex "milestone mention work-id" "${TARGET}/${MILESTONE}" "${WORK_ID}"
