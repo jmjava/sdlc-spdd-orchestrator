@@ -47,8 +47,6 @@ source "${LIB}/work-id.sh"
 # shellcheck source=/dev/null
 source "${LIB}/milestone.sh"
 # shellcheck source=/dev/null
-source "${LIB}/context-index.sh"
-# shellcheck source=/dev/null
 source "${LIB}/readiness.sh"
 # shellcheck source=/dev/null
 source "${LIB}/paths.sh"
@@ -294,26 +292,10 @@ assert_true "subdir definition detect" _is_subdir_milestone_definition \
 assert_false "root not subdir definition" _is_subdir_milestone_definition "${M}/milestone-1.md"
 
 # ---------------------------------------------------------------------------
-echo "== context-index.sh edges =="
-idx="${WORK}/agent-context/memory/context-index.md"
-prepend_context_index_rows "${idx}" "| src/foo | session | FEAT-1 | code | 2026-01-01T00:00:00Z | brief | entry |"
-assert_contains "$(cat "${idx}")" "Kinds: analysis, session" "header kinds line"
-assert_contains "$(cat "${idx}")" "src/foo" "first row written"
-# prepend keeps newest first
-prepend_context_index_rows "${idx}" "| src/bar | session | FEAT-2 | plan | 2026-01-02T00:00:00Z | brief | newer |"
-rows="$(awk '/^\| / && $0 !~ /^\| Area/' "${idx}")"
-first_data="$(printf '%s\n' "${rows}" | head -n1)"
-assert_contains "${first_data}" "src/bar" "prepend puts new row first"
-assert_contains "${rows}" "src/foo" "prepend keeps prior row"
-# empty new_rows still rewrites header
-prepend_context_index_rows "${idx}" ""
-assert_contains "$(cat "${idx}")" "| Area | Kind |" "empty prepend keeps header"
-
-# ---------------------------------------------------------------------------
 echo "== paths.sh manifest + sdlc_require_lib =="
 assert_true "paths lists readiness.sh" \
   bash -c 'printf "%s\n" "$@" | grep -qx readiness.sh' -- "${SDLC_SHIPPED_LIB_FILES[@]}"
-assert_true "paths has >=7 shipped libs" test "${#SDLC_SHIPPED_LIB_FILES[@]}" -ge 7
+assert_true "paths has >=6 shipped libs" test "${#SDLC_SHIPPED_LIB_FILES[@]}" -ge 6
 assert_true "orchestrator-only includes boundary" \
   bash -c 'printf "%s\n" "$@" | grep -qx shipped-docs-boundary.sh' -- "${SDLC_ORCHESTRATOR_ONLY_LIB_FILES[@]}"
 assert_true "orchestrator-only includes framework-install" \
