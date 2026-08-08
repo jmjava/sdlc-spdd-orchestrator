@@ -290,7 +290,7 @@ def test_api_guide_page_has_runtime_controls(tmp_path: Path) -> None:
     page = client.get("/")
     assert b"Start Neo4j" in page.data
     assert b"Start Guide (+ingest)" in page.data
-    assert b"Ensure / pull jmjava/guide" in page.data
+    assert b"Ensure / pull jmjava/orch-guide" in page.data
     assert b"Load NamedEntity projection" in page.data
     assert b"Embabel mechanics" in page.data
     assert b"Incremental ingest" in page.data
