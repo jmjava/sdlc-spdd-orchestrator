@@ -645,6 +645,8 @@ fi
 echo "== Test 15: list-work discovers repo Work IDs =="
 T="${WORK}/team"
 work_id="FEAT-009-team"
+printf '# REASONS Canvas: %s\n\n## Metadata\n\n- Work ID: %s\n' "${work_id}" "${work_id}" \
+  > "${T}/spdd/canvas/${work_id}.md"
 # reuse team fixture from Test 14 (bob owns after --force resume)
 out="$(SDLC_ROOT="${T}" wf "${T}" list-work)"
 if grep -q 'FEAT-009-team' <<< "${out}"; then ok "list-work shows work id"; else bad "list-work missing id"; fi

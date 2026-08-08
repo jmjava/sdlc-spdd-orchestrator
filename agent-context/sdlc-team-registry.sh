@@ -410,18 +410,45 @@ PY
 }
 
 _team_registry_rows() {
-  _team_registry_read_events | python3 - <<'PY'
-import json, sys
+  _team_registry_init
+  python3 - <<PY
+import json
+from pathlib import Path
+
 by_id = {}
-for line in sys.stdin:
-    line = line.strip()
-    if not line:
-        continue
-    ev = json.loads(line)
-    wid = ev.get("work_id", "")
-    if not wid:
-        continue
-    by_id[wid] = ev
+jsonl = Path(${SDLC_TEAM_REGISTRY_JSONL@Q})
+if jsonl.is_file() and jsonl.stat().st_size:
+    for line in jsonl.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            ev = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        wid = ev.get("work_id", "")
+        if wid:
+            by_id[wid] = ev
+legacy = Path(${SDLC_TEAM_REGISTRY_LEGACY@Q})
+if not by_id and legacy.is_file():
+    for line in legacy.read_text(encoding="utf-8").splitlines():
+        if not line or line.startswith("#") or line.startswith("work_id"):
+            continue
+        parts = line.split("\t")
+        while len(parts) < 7:
+            parts.append("")
+        wid = parts[0]
+        if not wid:
+            continue
+        by_id[wid] = {
+            "work_id": wid,
+            "status": parts[1],
+            "phase": parts[2],
+            "operation": parts[3],
+            "owner": parts[4],
+            "ts": parts[5],
+            "note": parts[6],
+        }
 for wid in sorted(by_id):
     ev = by_id[wid]
     print("\t".join([

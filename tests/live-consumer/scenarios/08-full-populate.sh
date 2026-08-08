@@ -10,7 +10,6 @@ echo "== 08 full populate (no empty capture fields) =="
 
 HOME="${ROOT}/sdlc-spdd"
 SCRIPTS="${HOME}/scripts"
-FEATURE="${HOME}/agent-context/features/${WORK_ID}"
 CANVAS="${HOME}/spdd/canvas/${WORK_ID}.md"
 STAGE="${HOME}/.sdlc/staged/lessons.jsonl"
 LEDGER="${HOME}/spdd/memory/lessons.jsonl"
@@ -18,15 +17,17 @@ MILESTONE_REL="requirements/milestones/milestone-1/MILESTONE-1.md"
 MILESTONE="${HOME}/${MILESTONE_REL}"
 SESSION="${HOME}/.sdlc/sessions/current-session.md"
 
-mkdir -p "${FEATURE}" "${HOME}/spdd/analysis" "${HOME}/spdd/reviews" "${HOME}/spdd/sync" \
-  "${HOME}/session-notes"
+mkdir -p "${HOME}/spdd/analysis" "${HOME}/spdd/reviews" "${HOME}/spdd/sync" \
+  "${HOME}/session-notes" "${HOME}/requirements/milestones"
+
+[[ -f "${HOME}/requirements/milestones/${WORK_ID}.md" ]] \
+  || cp "${ROOT}/requirements/milestones/${WORK_ID}.md" "${HOME}/requirements/milestones/${WORK_ID}.md" 2>/dev/null \
+  || printf '# Requirement: %s\n' "${WORK_ID}" >"${HOME}/requirements/milestones/${WORK_ID}.md"
 
 # --- Populate lifecycle artifacts as a real session would ---
 LEAN_PROGRESS="${HOME}/spdd/memory/entries/progress.md"
 mkdir -p "$(dirname "${LEAN_PROGRESS}")"
-[[ -f "${FEATURE}/requirement.md" ]] || cp "${HOME}/requirements/milestones/${WORK_ID}.md" "${FEATURE}/requirement.md"
 [[ -f "${LEAN_PROGRESS}" ]] || printf '# Progress Log: %s\n\n' "${WORK_ID}" >"${LEAN_PROGRESS}"
-[[ -f "${FEATURE}/progress-log.md" ]] || printf '# Progress Log: %s\n\n' "${WORK_ID}" >"${FEATURE}/progress-log.md"
 
 sed -i 's/^- Readiness: .*/- Readiness: Ready For Coding/' "${CANVAS}"
 sed -i 's/^- Status: .*/- Status: In Progress/' "${CANVAS}"
@@ -38,19 +39,12 @@ fi
 printf '# Analysis\n\nScope lock and constraints for %s.\n' "${WORK_ID}" \
   >"${HOME}/spdd/analysis/${WORK_ID}-analysis.md"
 printf '# Review\n\nStatus: Approved\n\nAll acceptance criteria met for T01.\n' \
-  >"${FEATURE}/review.md"
-cp "${FEATURE}/review.md" "${HOME}/spdd/reviews/${WORK_ID}-review.md"
-printf '# Sync log\n\nCanvas, requirement, and milestone aligned.\n' \
-  >"${FEATURE}/sync-log.md"
+  >"${HOME}/spdd/reviews/${WORK_ID}-review.md"
 printf '# Sync\n\nNo drift detected after live matrix populate.\n' \
   >"${HOME}/spdd/sync/${WORK_ID}-sync.md"
-printf '# Retro\n\nWhat went well: seed/flush matrix.\nWhat to improve: always pass full capture flags.\n' \
-  >"${FEATURE}/retro.md"
 
 printf '\n### T01 - implement greet\n- Status: Complete\nImplemented greet helper.\nFiles changed: src/hello.py\n' \
   >>"${LEAN_PROGRESS}"
-printf '\n### T01 - implement greet\n- Status: Complete\nImplemented greet helper.\nFiles changed: src/hello.py\n' \
-  >>"${FEATURE}/progress-log.md"
 
 # Ensure milestone + roadmap exist (install creates them; seed keeps FEAT req).
 [[ -f "${MILESTONE}" ]] && ok "milestone present (${MILESTONE_REL})" || bad "milestone missing"
