@@ -1,7 +1,7 @@
 # SPIKE-089: Guide projection contract
 
 GitHub: [#89](https://github.com/jmjava/sdlc-spdd-orchestrator/issues/89)  
-Status: **orchestrator side shipped (dual-write); Guide dual-read pending merge on `jmjava/guide`**
+Status: **complete on both sides** — orchestrator dual-write shipped; Guide dual-read merged on `jmjava/guide`
 
 ## Decision
 
@@ -18,11 +18,12 @@ Orchestrator still dual-writes during transition.
 
 | Side | Where | State |
 |------|-------|-------|
-| Orchestrator dual-write (lean + legacy context-index) | integration branch / PR [#109](https://github.com/jmjava/sdlc-spdd-orchestrator/pull/109) | shipped |
-| Guide dual-read (`SpddMarkdownProjectionService.load`) | `jmjava/guide` branch `cursor/spdd-dual-context-index-decf` | implemented, **not merged** to `jmjava/guide` `main` or the tag |
+| Orchestrator dual-write (lean + legacy context-index) | `main` / PR [#109](https://github.com/jmjava/sdlc-spdd-orchestrator/pull/109) / tag `v2.0.0a6` | shipped |
+| Guide dual-read (`SpddMarkdownProjectionService.load`) | `jmjava/guide` `main` via [PR #7](https://github.com/jmjava/guide/pull/7) (`28bdb5d`) | **merged** |
+| Dogfood pin | tag `sdlc-spdd-projection-v2` @ `28bdb5d` | **current** (supersedes `sdlc-spdd-projection-v1`) |
 
-Tag `sdlc-spdd-projection-v1` still reads only the legacy `agent-context/memory/context-index.md`.
-That keeps working because the orchestrator dual-writes both indexes, and Guide is
-optional/soft-fail — so the pending Guide merge does **not** block orchestrator PR #109.
+Tag `sdlc-spdd-projection-v1` still reads only the legacy
+`agent-context/memory/context-index.md`. Prefer `sdlc-spdd-projection-v2` (or
+`main`) so Guide dual-reads the lean stay-set without relying on dual-write alone.
 
 Hard rule: never PR/push/merge to `embabel/guide`; dogfood uses the `jmjava/guide` fork only.

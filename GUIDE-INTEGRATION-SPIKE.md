@@ -4,7 +4,7 @@ We are exploring integration between this project and Embabel Guide (RAG + optio
 DICE domain / context graph over Neo4j).
 
 Repository: https://github.com/jmjava/sdlc-spdd-orchestrator  
-Guide fork (durable pin): https://github.com/jmjava/guide (tag `sdlc-spdd-projection-v1`)
+Guide fork (durable pin): https://github.com/jmjava/guide (tag `sdlc-spdd-projection-v2`)
 
 ## Governed Work IDs
 
@@ -13,7 +13,7 @@ Guide fork (durable pin): https://github.com/jmjava/guide (tag `sdlc-spdd-projec
 | [SPIKE-001-guide-rag-context-backend](requirements/milestones/SPIKE-001-guide-rag-context-backend.md) | Does DICE hybrid retrieval justify optional Guide? | Provisional GO — field dogfood |
 | [SPIKE-002-local-llm-and-embedding-format](requirements/milestones/SPIKE-002-local-llm-and-embedding-format.md) | Local LLM + embedding format defaults? | Shelved / blocked on Guide+Ollama |
 | [SPIKE-003-embabel-context-graph-absorption](requirements/milestones/SPIKE-003-embabel-context-graph-absorption.md) | Where should the context graph live long-term? | **Complete** — hybrid accepted; FEAT-013 intake |
-| [FEAT-013-guide-git-incremental-upstream](requirements/milestones/FEAT-013-guide-git-incremental-upstream.md) | Upstream git-incremental ingest + RAG maintenance to `embabel/guide` | Analysis / plan (accepted follow-on) |
+| [FEAT-013-guide-git-incremental-upstream](requirements/milestones/FEAT-013-guide-git-incremental-upstream.md) | Upstream git-incremental ingest + RAG maintenance to `embabel/guide` | Code — Layer B branch on fork; embabel PR blocked by fork-only rule |
 
 ## Branch policy
 

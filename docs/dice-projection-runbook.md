@@ -21,7 +21,7 @@ flowchart LR
         MD["Markdown artifacts<br/>spdd/canvas/*.md<br/>agent-context/memory/context-index.md"]
     end
 
-    subgraph Guide["Guide (sdlc-spdd-projection-v1) + Neo4j"]
+    subgraph Guide["Guide (sdlc-spdd-projection-v2) + Neo4j"]
         CH["RAG chunks<br/>(legs 1-2)"]
         EN["Domain entities __Entity__<br/>WorkId, Canvas, Area,<br/>Decision, Pitfall, Pattern<br/>(leg 3)"]
     end
@@ -46,7 +46,7 @@ flowchart LR
 | JDK 21 + Maven | Guide builds with `./mvnw` |
 | Docker | Neo4j runs via Guide's compose setup (or point at your own Neo4j) |
 | OpenAI API key | embeddings + chat models used by Guide |
-| Guide fork | `github.com/jmjava/guide`, tag **`sdlc-spdd-projection-v1`** (on `main` after PR #2; commit `a6e3246`) |
+| Guide fork | `github.com/jmjava/guide`, tag **`sdlc-spdd-projection-v2`** (on `main` through dual-read PR #7; commit `28bdb5d`; supersedes `sdlc-spdd-projection-v1` @ `a6e3246`) |
 | This repo | `sdlc-spdd-orchestrator` (any SDLC-SPDD project layout works) |
 
 ## 1. Get Guide (pinned tag)
@@ -55,7 +55,7 @@ flowchart LR
 git clone git@github.com:jmjava/guide.git
 cd guide
 git fetch --tags
-git checkout sdlc-spdd-projection-v1
+git checkout sdlc-spdd-projection-v2
 # or: git checkout main   # floating tip (includes the same merge)
 ```
 
@@ -66,7 +66,7 @@ change summary aimed at Guide developers. Upstream-vs-fork absorption research i
 **Complete** (hybrid accepted 2026-08-07); follow-on
 `FEAT-013-guide-git-incremental-upstream` upstreams Layer B only.
 Guide-side notes live in that repo’s `docs/spdd-upstream-absorption.md`. The orchestrator
-console defaults `guide_git_ref` to **`sdlc-spdd-projection-v1`**. Prefer
+console defaults `guide_git_ref` to **`sdlc-spdd-projection-v2`**. Prefer
 `./scripts/sdlc.sh console --target .` ([ops-console.md](ops-console.md)) for day-to-day
 dogfood start/stop instead of babysitting the JVM by hand.
 
@@ -194,7 +194,7 @@ When it reports `guide-dice`:
 | Symptom | Fix |
 |---------|-----|
 | `spdd_*` tools missing in client | Reload the MCP server entry in the client; confirm `guide.spdd-projection.enabled=true` and check Guide log for `Exposing N tools` |
-| 403 on projection endpoints | You are running a Guide build without SPDD projection permits — use tag `sdlc-spdd-projection-v1` (or a build that includes guide PR #2) |
+| 403 on projection endpoints | You are running a Guide build without SPDD projection permits — use tag `sdlc-spdd-projection-v2` (or a build that includes guide PR #2/#7) |
 | 400 `not under an allowed root` | Add the target to `guide.spdd-projection.allowed-roots` or use the default root |
 | JVM dies during startup re-ingest | Known native ONNX crash under heavy embedding load; append mode is idempotent — restart and it resumes |
 | Stats all zero after load | Wrong root: the loader needs `spdd/canvas/` and `agent-context/memory/context-index.md` under the root you posted |
