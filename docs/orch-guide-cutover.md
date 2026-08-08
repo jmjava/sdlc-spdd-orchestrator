@@ -51,9 +51,12 @@ Verified SHA parity:
 Inbound Embabel sync (optional, manual): fetch `embabel/guide` into **orch-guide**
 when you want product updates — never open a PR back to Embabel.
 
-## Phase 4 — Hard-reset `jmjava/guide` to Embabel (human, after Phase 3 merged)
+## Phase 4 — Hard-reset `jmjava/guide` to Embabel (deferred)
 
-Only after dogfood uses `orch-guide` and PR #128 is merged:
+**Deferred (2026-08-08):** leave `jmjava/guide` as-is for now. Do not hard-reset
+until a human explicitly asks.
+
+When resumed, only after dogfood uses `orch-guide`:
 
 ```bash
 cd /path/to/jmjava/guide
