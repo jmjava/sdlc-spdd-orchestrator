@@ -9,6 +9,7 @@ const props = defineProps({
 const combos = ref([]);
 const comboId = ref("feature");
 const workId = ref("");
+const writeAdf = ref(false);
 const statusText = ref("Load combos to begin.");
 const statusClass = ref("");
 const log = ref("No render yet.");
@@ -50,6 +51,7 @@ async function renderCombo() {
       target: props.target,
       work_id: workId.value.trim(),
       combo: comboId.value,
+      write: writeAdf.value,
     });
     log.value = JSON.stringify(data, null, 2);
     if (!ok) {
@@ -58,7 +60,8 @@ async function renderCombo() {
       return;
     }
     statusClass.value = "ok";
-    statusText.value = `Rendered ${data.combo_id} for ${data.work_id}`;
+    const written = data.output_path ? ` · wrote ${data.output_path}` : "";
+    statusText.value = `Rendered ${data.combo_id} for ${data.work_id}${written}`;
   } catch (err) {
     statusClass.value = "err";
     statusText.value = String(err?.message || err);
@@ -95,6 +98,12 @@ onMounted(loadCombos);
           placeholder="FEAT-001-shared-script-library"
           data-testid="templates-work-id"
         />
+      </label>
+    </div>
+    <div class="checks">
+      <label class="check">
+        <input v-model="writeAdf" type="checkbox" data-testid="templates-write" />
+        Write ADF to <code>adf/&lt;work-id&gt;.adf.json</code>
       </label>
     </div>
     <div class="actions">

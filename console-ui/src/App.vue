@@ -1,25 +1,28 @@
 <script setup>
-import { computed, onMounted, ref } from "vue";
+import { onMounted, ref } from "vue";
 import { getHealth } from "./api.js";
 import PersistenceTab from "./components/PersistenceTab.vue";
 import TemplatesTab from "./components/TemplatesTab.vue";
+import InstallTab from "./components/InstallTab.vue";
+import SqliteTab from "./components/SqliteTab.vue";
+import RollbackTab from "./components/RollbackTab.vue";
+import GuideTab from "./components/GuideTab.vue";
+import AdfTab from "./components/AdfTab.vue";
 
 const tabs = [
   { id: "persistence", label: "Persistence" },
   { id: "templates", label: "Templates" },
-  { id: "install", label: "Install", stub: true },
-  { id: "sqlite", label: "SQLite", stub: true },
-  { id: "rollback", label: "Rollback", stub: true },
-  { id: "guide", label: "Guide", stub: true },
-  { id: "adf", label: "ADF", stub: true },
+  { id: "install", label: "Install" },
+  { id: "sqlite", label: "SQLite" },
+  { id: "rollback", label: "Rollback" },
+  { id: "guide", label: "Guide" },
+  { id: "adf", label: "ADF" },
 ];
 
 const active = ref("persistence");
 const target = ref("");
 const health = ref(null);
 const healthError = ref("");
-
-const activeMeta = computed(() => tabs.find((t) => t.id === active.value));
 
 async function refreshHealth() {
   healthError.value = "";
@@ -46,8 +49,7 @@ onMounted(refreshHealth);
     <header class="brand-row">
       <h1 class="brand" data-testid="console-brand">SDLC-SPDD</h1>
       <p class="tagline">
-        Vue3 ops console — Persistence + ADF Templates first; remaining tabs stubbed
-        pending parity port from Flask.
+        Vue3 ops console — Persistence, Templates, Install, SQLite, Rollback, Guide, and ADF.
       </p>
     </header>
 
@@ -91,12 +93,10 @@ onMounted(refreshHealth);
 
     <PersistenceTab v-if="active === 'persistence'" :target="target" />
     <TemplatesTab v-else-if="active === 'templates'" :target="target" />
-    <section v-else class="panel" data-testid="stub-panel">
-      <h2 data-testid="stub-title">{{ activeMeta?.label }}</h2>
-      <p class="lead" data-testid="stub-lead">
-        Stub — port from Flask <code>installer/pages.py</code> in a later slice. APIs remain on
-        the Flask BFF (<code>/api/*</code>).
-      </p>
-    </section>
+    <InstallTab v-else-if="active === 'install'" :target="target" />
+    <SqliteTab v-else-if="active === 'sqlite'" :target="target" />
+    <RollbackTab v-else-if="active === 'rollback'" :target="target" />
+    <GuideTab v-else-if="active === 'guide'" :target="target" />
+    <AdfTab v-else-if="active === 'adf'" :target="target" />
   </div>
 </template>

@@ -92,7 +92,7 @@ Dev: see [`console-ui/README.md`](../console-ui/README.md).
 - [x] Schema validation test
 - [x] Vue3 shell loads against live `/api/persistence/status` (smoke)
 - [x] Docs + draft PR off this branch
-- [x] Playwright GUI coverage for Vue3 shell (Persistence, Templates, stubs)
+- [x] Playwright GUI coverage for full Vue3 console (all tabs + Persistence save + Templates write)
 
 ## Playwright (Vue3)
 
@@ -110,10 +110,21 @@ Flask can serve the Vite build when `SDLC_VUE_CONSOLE_DIST=console-ui/dist` (or
 
 ## Next slices
 
-- Port remaining Flask tabs into Vue3 components (extend Playwright as each tab lands)
 - Default `console` to Vue dist when present (retire Flask `pages.py` HTML)
 - Chore / milestone-sync combos
-- Explicit “write ADF + open viewer” action (still no auto Jira push)
+- Explicit “open viewer after write” affordance (still no auto Jira push)
+
+## Vue3 tab parity (this branch)
+
+| Tab | Vue3 | Playwright |
+|-----|------|------------|
+| Persistence (load + save) | ✅ | ✅ |
+| Templates (feature/spike/bug + write) | ✅ | ✅ |
+| Install | ✅ | ✅ |
+| SQLite | ✅ | ✅ |
+| Rollback | ✅ | ✅ |
+| Guide | ✅ | ✅ (probe/config; no live Neo4j) |
+| ADF viewer + init-from-ADF | ✅ | ✅ (viewer stubbed) |
 
 ## Related open work
 

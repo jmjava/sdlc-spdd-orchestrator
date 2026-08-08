@@ -2,11 +2,15 @@
 
 Vite + Vue3 shell that talks to the existing Flask installer JSON API (`/api/*`).
 
-## First slice
+## Tabs (Vue3 parity)
 
-- **Persistence** tab → `POST /api/persistence/status`
-- **Templates** tab → `POST /api/templates` + `/api/templates/render`
-- Other tabs stubbed until ported from `engine/src/sdlc_engine/installer/pages.py`
+- **Persistence** → status + save (`/api/persistence/*`)
+- **Templates** → list/render/write ADF (`/api/templates/*`)
+- **Install** → detect + run/verify (`/api/detect`, `/api/run`)
+- **SQLite** → status + rebuild (`/api/sqlite/*`)
+- **Rollback** → backups + restore (`/api/backups`, `/api/rollback`)
+- **Guide** → config/probe/lifecycle (`/api/guide/*`)
+- **ADF** → viewer lifecycle + browse/init (`/api/adf/*`)
 
 ## Dev
 
