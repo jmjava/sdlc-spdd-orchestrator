@@ -20,13 +20,13 @@ jmjava/orch-guide      ← durable home for SPDD + git-incremental + dogfood env
 
 ## Phase 1 — Create empty repo (human)
 
-Create **`jmjava/orch-guide`**:
-
-- Standalone (not “Fork” from Embabel)
-- Empty (no README / license / .gitignore)
-- Public or private — match `jmjava/guide` visibility preference
+**Done (2026-08-08):** `jmjava/orch-guide` exists, empty, `isFork=false`.
 
 ## Phase 2 — Copy current fork tip (agent or human)
+
+**Blocked on push credentials:** Cloud Agent `cursor[bot]` got HTTP 403 writing
+to `jmjava/orch-guide`. Human must push once (or grant the environment write
+access to that repo), then continue Phase 3.
 
 From a clean `jmjava/guide` checkout on `main` (includes pin tip + SPDD):
 

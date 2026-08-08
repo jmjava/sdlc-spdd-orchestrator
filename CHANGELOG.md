@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
-- Guide dogfood pin default `GUIDE_GIT_REF` → **`sdlc-spdd-projection-v2`** (lean+legacy dual-read on `jmjava/guide` [PR #7](https://github.com/jmjava/guide/pull/7))
+- Guide dogfood default → **`jmjava/orch-guide`** @ **`sdlc-spdd-projection-v2`** (standalone home; cutover from `jmjava/guide`)
 - SPIKE-089 / agent-context cleanup docs: Guide dual-read marked complete; issue #89 closeable
 - FEAT-013 closed **fork-only**; orchestrator rule `.cursor/rules/no-embabel-guide-upstream.mdc` forbids asking/opening Embabel Guide PRs
 

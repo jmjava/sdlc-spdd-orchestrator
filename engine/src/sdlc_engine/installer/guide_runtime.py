@@ -1,4 +1,4 @@
-"""Start/stop Neo4j + Guide from a local jmjava/guide clone."""
+"""Start/stop Neo4j + Guide from a local jmjava/orch-guide clone."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-DEFAULT_GIT_URL = "https://github.com/jmjava/guide.git"
+DEFAULT_GIT_URL = "https://github.com/jmjava/orch-guide.git"
 RUNTIME_REL = Path(".sdlc") / "guide-runtime.json"
 
 
@@ -117,7 +117,7 @@ def ensure_guide_repo(
     *,
     pull: bool = True,
 ) -> dict[str, Any]:
-    """Clone jmjava/guide if missing; optionally fast-forward pull."""
+    """Clone jmjava/orch-guide if missing; optionally fast-forward pull."""
     home = Path(str(cfg.get("guide_home") or "")).expanduser()
     url = str(cfg.get("guide_git_url") or DEFAULT_GIT_URL).strip() or DEFAULT_GIT_URL
     if not str(home):
@@ -242,7 +242,7 @@ def start_neo4j(cfg: dict[str, Any]) -> dict[str, Any]:
     if not home.is_dir() or not (home / "compose.yaml").is_file():
         return {
             "ok": False,
-            "error": "guide_home missing compose.yaml — ensure/pull jmjava/guide first",
+            "error": "guide_home missing compose.yaml — ensure/pull jmjava/orch-guide first",
             "log": "",
         }
     env = guide_env(cfg)
@@ -336,7 +336,7 @@ def start_guide(
     if not script.is_file():
         return {
             "ok": False,
-            "error": f"missing {script} — ensure/pull jmjava/guide first",
+            "error": f"missing {script} — ensure/pull jmjava/orch-guide first",
             "log": "",
         }
 

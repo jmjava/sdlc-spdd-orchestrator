@@ -167,7 +167,7 @@ def test_api_guide_save_and_mocked_lifecycle(
         "stack_status",
         lambda target, cfg: {
             "guide_home": cfg.get("guide_home"),
-            "guide_git_url": "https://github.com/jmjava/guide.git",
+            "guide_git_url": "https://github.com/jmjava/orch-guide.git",
             "neo4j": {"bolt_open": True, "http_open": True, "bolt_port": 7687, "http_port": 7474},
             "guide_process": {"alive": True, "pid": 111, "port_open": True},
             "guide_probe": {

@@ -75,7 +75,7 @@ the `--root` passed when starting the ADF Viewer.
 | **Persistence** | Toggle `CONTEXT_BACKENDS` backends (`git-pointers`, `sqlite`, `guide-dice`); optional Guide URL + notes → `.sdlc/persistence-config.json`. Operator guide: [triple-path-context.md](triple-path-context.md) |
 | **SQLite** | `.sdlc/index.sqlite` status + rebuild |
 | **Rollback** | List `.sdlc-spdd-upgrade-backups/<timestamp>/` and restore |
-| **Guide** | Config (`.sdlc/guide-config.json`), ensure `jmjava/guide` @ `sdlc-spdd-projection-v2`, Neo4j/Guide start/stop, projection load, ingest/purge operators |
+| **Guide** | Config (`.sdlc/guide-config.json`), ensure `jmjava/orch-guide` @ `sdlc-spdd-projection-v2`, Neo4j/Guide start/stop, projection load, ingest/purge operators |
 | **ADF** | Start / stop / restart viewer process; open URL. Editing stays in the viewer |
 
 Use `--no-browser` in CI/headless. `--port` / `--host` / `--lan` match the viewer CLI.

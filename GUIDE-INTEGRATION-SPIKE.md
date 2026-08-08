@@ -4,7 +4,7 @@ We are exploring integration between this project and Embabel Guide (RAG + optio
 DICE domain / context graph over Neo4j).
 
 Repository: https://github.com/jmjava/sdlc-spdd-orchestrator  
-Guide fork (durable pin): https://github.com/jmjava/guide (tag `sdlc-spdd-projection-v2`)
+Guide durable home: https://github.com/jmjava/orch-guide (tag `sdlc-spdd-projection-v2`; was jmjava/guide fork)
 
 ## Governed Work IDs
 

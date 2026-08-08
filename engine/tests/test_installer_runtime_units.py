@@ -37,7 +37,7 @@ def test_guide_runtime_ensure_clone_and_present(
     monkeypatch.setattr(gr, "_run", fake_run)
     cfg = {
         "guide_home": str(home),
-        "guide_git_url": "https://github.com/jmjava/guide.git",
+        "guide_git_url": "https://github.com/jmjava/orch-guide.git",
         "guide_git_ref": "main",
     }
     cloned = gr.ensure_guide_repo(cfg, pull=False)
@@ -52,7 +52,7 @@ def test_guide_runtime_ensure_clone_and_present(
     bare = tmp_path / "not-git"
     bare.mkdir()
     bad = gr.ensure_guide_repo(
-        {"guide_home": str(bare), "guide_git_url": "https://github.com/jmjava/guide.git"},
+        {"guide_home": str(bare), "guide_git_url": "https://github.com/jmjava/orch-guide.git"},
         pull=False,
     )
     assert bad["ok"] is False
