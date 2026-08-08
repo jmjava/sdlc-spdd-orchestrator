@@ -24,30 +24,18 @@ jmjava/orch-guide      ← durable home for SPDD + git-incremental + dogfood env
 
 ## Phase 2 — Copy current fork tip (agent or human)
 
-**Status: incorrect bootstrap — needs redo.**
+**Done (2026-08-08):** exact seed of `jmjava/guide` into `jmjava/orch-guide`
+via `git push` of all heads + tags (workflow-scoped token).
 
-What landed first was a **squash orphan** (wrong). Required seed is an **exact
-mirror of `jmjava/guide`** (same commits/tags as the fork).
+Verified SHA parity:
 
-Blocked: agent PAT lacks GitHub **`workflow`** scope, so `git push --mirror`
-rejects refs that contain `.github/workflows/*`.
+| Ref | SHA |
+|-----|-----|
+| `refs/heads/main` | `e38c4c82e0d6bc137412ef3c3b4b0e49a5b772f8` |
+| `refs/tags/sdlc-spdd-projection-v1` | `5f29fa4dbb2e8b54d43ee7dfa3f84853721b0dcf` |
+| `refs/tags/sdlc-spdd-projection-v2` | `972cd68ef96b4224011a5c009ddb076583584a6c` |
 
-When a workflow-scoped token is available (or you push locally):
-
-```bash
-git clone --mirror https://github.com/jmjava/guide.git /tmp/guide-mirror
-cd /tmp/guide-mirror
-git remote set-url origin https://github.com/jmjava/orch-guide.git
-git push --mirror
-```
-
-Verify (must match `jmjava/guide` SHAs):
-
-```bash
-git ls-remote https://github.com/jmjava/guide.git refs/heads/main
-git ls-remote https://github.com/jmjava/orch-guide.git refs/heads/main
-git ls-remote https://github.com/jmjava/orch-guide.git refs/tags/sdlc-spdd-projection-v2
-```
+`orch-guide` remains `isFork=false` (standalone repo, not a GitHub fork).
 
 ## Phase 3 — Retarget orchestrator
 
