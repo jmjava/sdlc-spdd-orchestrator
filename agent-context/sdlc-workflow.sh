@@ -6,6 +6,7 @@
 #   sdlc_workflow_status
 #   sdlc_workflow_resume WORK_ID [--phase PHASE]
 #   sdlc_workflow_advance [--to PHASE]
+#   sdlc_workflow_gate PHASE [WORK_ID]
 #   sdlc_workflow_skip PHASE [--reason TEXT]
 #   sdlc_workflow_shelf [--reason TEXT]
 #   sdlc_workflow_sync [--work-id WORK_ID]
@@ -670,6 +671,7 @@ SDLC workflow helper — short paths for humans and agents
 
   ${helper} resume <WORK-ID> [--phase PHASE] [--force]
   ${helper} advance [--to PHASE] [--force]
+  ${helper} gate <PHASE> [--work-id ID]   # check prerequisites to enter a phase (exit 0/1)
   ${helper} skip <PHASE> --reason "why"
   ${helper} shelf --reason "why"
   ${helper} sync [--work-id ID]
@@ -818,6 +820,166 @@ _wf_has_retro_evidence() {
   local n
   n="$(_wf_ledger_record_count "${root}" "${work_id}" "decision,pitfall,pattern")"
   [[ "${n:-0}" -gt 0 ]]
+}
+
+# --- phase gates (requirements-first enforcement) ---
+
+_wf_python_gate_available() {
+  # SDLC_ENGINE=shell forces the shell fallback; otherwise prefer the engine.
+  if [[ "${SDLC_ENGINE:-}" == "shell" ]]; then
+    return 1
+  fi
+  if [[ -d "${SDLC_ROOT}/engine/src/sdlc_engine" ]]; then
+    PYTHONPATH="${SDLC_ROOT}/engine/src${PYTHONPATH:+:${PYTHONPATH}}" \
+      python3 -c 'import sdlc_engine' 2>/dev/null
+    return $?
+  fi
+  python3 -c 'import sdlc_engine' 2>/dev/null
+}
+
+_wf_run_python_gate() {
+  local phase="$1"
+  local work_id="$2"
+  if [[ -d "${SDLC_ROOT}/engine/src/sdlc_engine" ]]; then
+    PYTHONPATH="${SDLC_ROOT}/engine/src${PYTHONPATH:+:${PYTHONPATH}}" \
+      python3 -m sdlc_engine --root "${SDLC_ROOT}" gate --phase "${phase}" --work-id "${work_id}"
+    return $?
+  fi
+  python3 -m sdlc_engine --root "${SDLC_ROOT}" gate --phase "${phase}" --work-id "${work_id}"
+}
+
+_wf_gate_ledger_files() {
+  if _wf_ensure_paths_lib 2>/dev/null && declare -F sdlc_ledger >/dev/null 2>&1; then
+    sdlc_ledger "${SDLC_ROOT}"
+    printf '\n'
+    sdlc_stage "${SDLC_ROOT}"
+    printf '\n'
+    return 0
+  fi
+  local home
+  home="$(_wf_home_path)"
+  printf '%s\n' "${home}/spdd/memory/lessons.jsonl"
+  printf '%s\n' "${home}/.sdlc/staged/lessons.jsonl"
+}
+
+_wf_gate_ledger_has_record() {
+  # $1 work id; $2 mode: "any" (default) or "retro" (decision/pitfall/pattern only)
+  local work_id="$1"
+  local mode="${2:-any}"
+  local file matches
+  while IFS= read -r file; do
+    [[ -n "${file}" && -f "${file}" ]] || continue
+    matches="$(grep -E "\"work_id\"[[:space:]]*:[[:space:]]*\"${work_id}\"" "${file}" 2>/dev/null || true)"
+    [[ -n "${matches}" ]] || continue
+    if [[ "${mode}" == "retro" ]]; then
+      if printf '%s\n' "${matches}" \
+        | grep -Eq '"kind"[[:space:]]*:[[:space:]]*"(decision|pitfall|pattern)"'; then
+        return 0
+      fi
+    else
+      return 0
+    fi
+  done < <(_wf_gate_ledger_files)
+  return 1
+}
+
+_wf_gate_has_skip() {
+  local work_id="$1"
+  local phase="$2"
+  [[ -n "$(_wf_read_state_var "$(_wf_state_file "${work_id}")" "skip_${phase}")" ]]
+}
+
+sdlc_workflow_gate() {
+  local phase="$1"
+  local work_id="${2:-}"
+
+  if [[ -z "${phase}" ]]; then
+    echo "sdlc_workflow_gate: usage: gate <phase> [--work-id ID]" >&2
+    return 2
+  fi
+  if ! _wf_valid_phase "${phase}"; then
+    echo "sdlc_workflow_gate: unknown phase '${phase}'" >&2
+    return 2
+  fi
+  if [[ -z "${work_id}" ]]; then
+    work_id="$(sdlc_get_pointer)"
+  fi
+  if [[ -z "${work_id}" ]]; then
+    echo "sdlc_workflow_gate: no Work ID (pass --work-id or set the pointer via claim/resume)" >&2
+    return 2
+  fi
+
+  if _wf_python_gate_available; then
+    _wf_run_python_gate "${phase}" "${work_id}"
+    return $?
+  fi
+
+  # Shell fallback — same checks as WorkflowEngine.gate_check.
+  local home req canvas
+  local -a failures=()
+  home="$(_wf_home_path)"
+  req="$(_wf_requirement_path "${work_id}")"
+  canvas="${home}/spdd/canvas/${work_id}.md"
+  local requirement_msg="requirement missing: create requirements/milestones/${work_id}.md first (requirements come before the REASONS canvas)"
+  local canvas_msg="canvas missing: create spdd/canvas/${work_id}.md via /sdlc-spdd-plan (the requirement and analysis come first)"
+
+  case "${phase}" in
+    init) ;;
+    analysis)
+      [[ -n "${req}" ]] || failures+=("${requirement_msg}")
+      ;;
+    plan)
+      [[ -n "${req}" ]] || failures+=("${requirement_msg}")
+      if [[ ! -f "${home}/spdd/analysis/${work_id}-analysis.md" ]] \
+        && ! _wf_gate_has_skip "${work_id}" analysis; then
+        failures+=("analysis missing: create spdd/analysis/${work_id}-analysis.md via /sdlc-spdd-analysis (or record an explicit skip: ./scripts/sdlc.sh skip analysis --reason \"...\")")
+      fi
+      ;;
+    architect)
+      [[ -f "${canvas}" ]] || failures+=("${canvas_msg}")
+      [[ -n "${req}" ]] || failures+=("${requirement_msg}")
+      ;;
+    code)
+      [[ -f "${canvas}" ]] || failures+=("${canvas_msg}")
+      if [[ -f "${canvas}" ]] \
+        && ! grep -Eqi 'ready[[:space:]]+for[[:space:]]+coding' "${canvas}" 2>/dev/null; then
+        failures+=("canvas not Ready For Coding: run /sdlc-spdd-architect on spdd/canvas/${work_id}.md and mark it Ready For Coding before coding")
+      fi
+      [[ -n "${req}" ]] || failures+=("${requirement_msg}")
+      ;;
+    api-test|review)
+      [[ -f "${canvas}" ]] || failures+=("${canvas_msg}")
+      if ! _wf_gate_ledger_has_record "${work_id}" any; then
+        failures+=("no ledger evidence for ${work_id}: stage progress via ./scripts/sdlc.sh capture before ${phase}")
+      fi
+      ;;
+    prompt-update)
+      [[ -f "${canvas}" ]] || failures+=("${canvas_msg}")
+      ;;
+    retro)
+      if [[ ! -f "${home}/spdd/reviews/${work_id}-review.md" ]] \
+        && ! _wf_gate_has_skip "${work_id}" review; then
+        failures+=("review missing: create spdd/reviews/${work_id}-review.md via /sdlc-spdd-review (or record an explicit skip: ./scripts/sdlc.sh skip review --reason \"...\")")
+      fi
+      ;;
+    sync)
+      if ! _wf_gate_ledger_has_record "${work_id}" retro \
+        && ! _wf_gate_has_skip "${work_id}" retro; then
+        failures+=("no retro lesson for ${work_id}: capture a decision/pitfall/pattern via ./scripts/sdlc.sh capture (or record an explicit skip: ./scripts/sdlc.sh skip retro --reason \"...\") before sync")
+      fi
+      ;;
+  esac
+
+  if ((${#failures[@]} == 0)); then
+    echo "gate ${phase}: OK for ${work_id}"
+    return 0
+  fi
+  echo "gate ${phase}: BLOCKED for ${work_id}" >&2
+  local failure
+  for failure in "${failures[@]}"; do
+    echo "  - ${failure}" >&2
+  done
+  return 1
 }
 
 _wf_progress_evidence_for_work() {
@@ -1681,6 +1843,23 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" && "${_SDLC_WORKFLOW_LOAD_DEPTH}" -eq 1 ]]; 
       done
       sdlc_workflow_sync "${work_id}"
       ;;
+    gate|/sdlc-workflow-gate)
+      phase=""
+      work_id=""
+      while [[ $# -gt 0 ]]; do
+        case "$1" in
+          --work-id) work_id="${2:-}"; shift 2 ;;
+          --phase) phase="${2:-}"; shift 2 ;;
+          *)
+            if [[ -z "${phase}" && "$1" != -* ]]; then
+              phase="$1"
+            fi
+            shift
+            ;;
+        esac
+      done
+      sdlc_workflow_gate "${phase}" "${work_id}"
+      ;;
     list-shelved|/sdlc-workflow-list-shelved)
       sdlc_workflow_list_shelved
       ;;
@@ -1797,7 +1976,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" && "${_SDLC_WORKFLOW_LOAD_DEPTH}" -eq 1 ]]; 
       fi
       ;;
     *)
-      echo "Usage: $0 {status|next|start|capture|accept|resume|advance|skip|shelf|sync|sync-team|team|list-work|claim|release|archive|list-shelved|help} ..." >&2
+      echo "Usage: $0 {status|next|start|capture|accept|resume|advance|gate|skip|shelf|sync|sync-team|team|list-work|claim|release|archive|list-shelved|help} ..." >&2
       echo "Try: $0 help" >&2
       exit 2
       ;;

@@ -52,9 +52,46 @@ def cmd_resume(args: argparse.Namespace) -> int:
 
 
 def cmd_advance(args: argparse.Namespace) -> int:
-    state = WorkflowEngine(_project(args)).advance(to=args.to)
+    try:
+        state = WorkflowEngine(_project(args)).advance(
+            to=args.to, force=getattr(args, "force", False)
+        )
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
     print(f"Advanced to phase: {state.phase}")
     return 0
+
+
+def cmd_gate(args: argparse.Namespace) -> int:
+    eng = WorkflowEngine(_project(args))
+    work_id = args.work_id or eng.pointer.get()
+    if not work_id:
+        print(
+            "gate: no Work ID (pass --work-id or set the pointer via claim/resume)",
+            file=sys.stderr,
+        )
+        return 2
+    try:
+        ok, failures = eng.gate_check(work_id, args.phase)
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    if args.json:
+        print(
+            json.dumps(
+                {"work_id": work_id, "phase": args.phase, "ok": ok, "failures": failures},
+                indent=2,
+            )
+        )
+    else:
+        if ok:
+            print(f"gate {args.phase}: OK for {work_id}")
+        else:
+            print(f"gate {args.phase}: BLOCKED for {work_id}", file=sys.stderr)
+            for failure in failures:
+                print(f"  - {failure}", file=sys.stderr)
+    return 0 if ok else 1
 
 
 def cmd_skip(args: argparse.Namespace) -> int:
@@ -737,9 +774,23 @@ def build_parser() -> argparse.ArgumentParser:
     rs.add_argument("--force", action="store_true")
     rs.set_defaults(func=cmd_resume)
 
-    adv = sub.add_parser("advance", help="Advance workflow phase")
+    adv = sub.add_parser("advance", help="Advance workflow phase (gated; --force bypasses)")
     adv.add_argument("--to")
+    adv.add_argument(
+        "--force",
+        action="store_true",
+        help="Bypass gate checks (a human decision, never the agent's)",
+    )
     adv.set_defaults(func=cmd_advance)
+
+    gt = sub.add_parser(
+        "gate",
+        help="Check prerequisites to enter a phase (exit 0 ok / 1 blocked)",
+    )
+    gt.add_argument("--phase", required=True)
+    gt.add_argument("--work-id", help="Work ID (default: active pointer)")
+    gt.add_argument("--json", action="store_true")
+    gt.set_defaults(func=cmd_gate)
 
     sk = sub.add_parser("skip", help="Skip a phase")
     sk.add_argument("phase")

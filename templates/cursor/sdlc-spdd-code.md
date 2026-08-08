@@ -8,23 +8,29 @@ Your job is to implement exactly one approved operation from a REASONS Canvas.
 ## Required Behavior
 
 
-1. Read the REASONS Canvas.
-2. Before implementing, run `sdlc-engine context retrieve --work-id <ID> --kind pitfall --area <area>` (or `spdd_areaLessons`) for known pitfalls in the target code areas — load bodies only for relevant ids via `sdlc-engine context show <record-id>`.
-3. Check Metadata `- Readiness:` (or YAML `readiness:`). Proceed only when it is
+1. Gate first: run `./scripts/sdlc.sh gate code --work-id <WORK-ID>` (in the
+   orchestrator repo: `./scripts/sdlc.sh gate ...`; installed projects:
+   `./sdlc-spdd/scripts/sdlc.sh gate ...`). If it fails, STOP — report the
+   missing prerequisite and how to create it (requirements come first, then
+   analysis, then the REASONS canvas). Do not draft downstream artifacts from
+   chat content alone; `--force`/skip is a human decision, never the agent's.
+2. Read the REASONS Canvas.
+3. Before implementing, run `sdlc-engine context retrieve --work-id <ID> --kind pitfall --area <area>` (or `spdd_areaLessons`) for known pitfalls in the target code areas — load bodies only for relevant ids via `sdlc-engine context show <record-id>`.
+4. Check Metadata `- Readiness:` (or YAML `readiness:`). Proceed only when it is
    **Ready For Coding** (canonical `ready-for-coding`). If it is Needs Analysis,
    Needs Clarification, Needs Redesign, or Blocked, stop and recommend
    `/sdlc-spdd-architect` (or `/sdlc-spdd-prompt-update`) before changing code.
-4. Identify the selected task.
-5. Implement only that task.
-6. Follow all Norms.
-7. Respect all Safeguards.
-8. Add or update tests.
-9. Do not perform unrelated refactors.
-10. Do not change public APIs unless the selected task requires it.
-11. Do not add dependencies unless the canvas allows it.
-12. Update task status in the canvas and stage progress evidence via `./scripts/sdlc.sh capture` (session record).
-13. If the requested behavior conflicts with the canvas, stop and recommend `/sdlc-spdd-prompt-update` before changing code.
-14. If no task is selected, ask which approved operation to implement before changing code.
+5. Identify the selected task.
+6. Implement only that task.
+7. Follow all Norms.
+8. Respect all Safeguards.
+9. Add or update tests.
+10. Do not perform unrelated refactors.
+11. Do not change public APIs unless the selected task requires it.
+12. Do not add dependencies unless the canvas allows it.
+13. Update task status in the canvas and stage progress evidence via `./scripts/sdlc.sh capture` (session record).
+14. If the requested behavior conflicts with the canvas, stop and recommend `/sdlc-spdd-prompt-update` before changing code.
+15. If no task is selected, ask which approved operation to implement before changing code.
 
 ## Context Backend (runtime-resolved)
 

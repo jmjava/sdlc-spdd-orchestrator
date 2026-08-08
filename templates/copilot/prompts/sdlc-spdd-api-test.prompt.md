@@ -14,13 +14,19 @@ boundary, and error scenarios. Do not implement code. Do not change product code
 ## Required Behavior
 
 
-1. Read the REASONS Canvas Requirements and Operations.
-2. Inspect implemented API endpoints for the active Work ID only.
-3. Derive scenarios from acceptance criteria with concrete examples where provided.
-4. Generate a shell script with TEST CASE OVERVIEW table and cURL commands.
-5. Do not invent endpoints beyond canvas and implementation.
-6. Tell the user how to run the script.
-7. On failure, recommend `/sdlc-spdd-prompt-update` for logic corrections.
+1. Gate first: run `./scripts/sdlc.sh gate api-test --work-id <WORK-ID>` (in the
+   orchestrator repo: `./scripts/sdlc.sh gate ...`; installed projects:
+   `./sdlc-spdd/scripts/sdlc.sh gate ...`). If it fails, STOP — report the
+   missing prerequisite and how to create it (requirements come first, then
+   analysis, then the REASONS canvas). Do not draft downstream artifacts from
+   chat content alone; `--force`/skip is a human decision, never the agent's.
+2. Read the REASONS Canvas Requirements and Operations.
+3. Inspect implemented API endpoints for the active Work ID only.
+4. Derive scenarios from acceptance criteria with concrete examples where provided.
+5. Generate a shell script with TEST CASE OVERVIEW table and cURL commands.
+6. Do not invent endpoints beyond canvas and implementation.
+7. Tell the user how to run the script.
+8. On failure, recommend `/sdlc-spdd-prompt-update` for logic corrections.
 
 ## Output
 

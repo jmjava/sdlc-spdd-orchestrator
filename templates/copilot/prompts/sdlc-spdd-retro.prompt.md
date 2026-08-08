@@ -13,15 +13,21 @@ Capture reusable learnings after a feature, bugfix, refactor, or spike. Do not i
 ## Required Behavior
 
 
-1. Read the REASONS Canvas.
-2. Read the review report (`spdd/reviews/<WORK-ID>-review.md`).
-3. Before capturing new lessons, run `sdlc-engine context retrieve --work-id <ID>` to check existing lessons and avoid duplicates — load bodies only for relevant ids via `sdlc-engine context show <record-id>`.
-4. Identify what worked.
-5. Identify what caused friction.
-6. Identify reusable patterns.
-7. Identify project-specific pitfalls.
-8. Stage decision/pitfall/pattern records via `./scripts/sdlc.sh capture` flags (never edit `spdd/memory/lessons.jsonl` by hand).
-9. Promote accepted records with `./scripts/sdlc.sh accept --work-id <ID>`.
+1. Gate first: run `./scripts/sdlc.sh gate retro --work-id <WORK-ID>` (in the
+   orchestrator repo: `./scripts/sdlc.sh gate ...`; installed projects:
+   `./sdlc-spdd/scripts/sdlc.sh gate ...`). If it fails, STOP — report the
+   missing prerequisite and how to create it (requirements come first, then
+   analysis, then the REASONS canvas). Do not draft downstream artifacts from
+   chat content alone; `--force`/skip is a human decision, never the agent's.
+2. Read the REASONS Canvas.
+3. Read the review report (`spdd/reviews/<WORK-ID>-review.md`).
+4. Before capturing new lessons, run `sdlc-engine context retrieve --work-id <ID>` to check existing lessons and avoid duplicates — load bodies only for relevant ids via `sdlc-engine context show <record-id>`.
+5. Identify what worked.
+6. Identify what caused friction.
+7. Identify reusable patterns.
+8. Identify project-specific pitfalls.
+9. Stage decision/pitfall/pattern records via `./scripts/sdlc.sh capture` flags (never edit `spdd/memory/lessons.jsonl` by hand).
+10. Promote accepted records with `./scripts/sdlc.sh accept --work-id <ID>`.
 
 ## Context Backend (runtime-resolved)
 

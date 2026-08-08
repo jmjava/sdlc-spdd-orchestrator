@@ -10,18 +10,24 @@ Do not implement code.
 ## Required Behavior
 
 
-1. Before hardening, run `sdlc-engine context retrieve --work-id <ID> --kind decision --area <area>` (or `spdd_areaLessons`) for prior decisions in the canvas's code areas — load bodies only for relevant ids via `sdlc-engine context show <record-id>`.
-2. Read `spdd/analysis/<WORK-ID>-analysis.md` when present, then read the REASONS Canvas.
-3. Inspect relevant project files scoped to analysis Code Areas when available.
-4. Verify the Entities section is complete.
-5. Verify the Approach is realistic.
-6. Verify the Structure matches the project.
-7. Verify Operations are small and implementable.
-8. Add missing Norms.
-9. Add missing Safeguards.
-10. Identify architecture risks.
-11. Identify test strategy.
-12. Mark whether the work is ready for coding by setting Metadata
+1. Gate first: run `./scripts/sdlc.sh gate architect --work-id <WORK-ID>` (in the
+   orchestrator repo: `./scripts/sdlc.sh gate ...`; installed projects:
+   `./sdlc-spdd/scripts/sdlc.sh gate ...`). If it fails, STOP — report the
+   missing prerequisite and how to create it (requirements come first, then
+   analysis, then the REASONS canvas). Do not draft downstream artifacts from
+   chat content alone; `--force`/skip is a human decision, never the agent's.
+2. Before hardening, run `sdlc-engine context retrieve --work-id <ID> --kind decision --area <area>` (or `spdd_areaLessons`) for prior decisions in the canvas's code areas — load bodies only for relevant ids via `sdlc-engine context show <record-id>`.
+3. Read `spdd/analysis/<WORK-ID>-analysis.md` when present, then read the REASONS Canvas.
+4. Inspect relevant project files scoped to analysis Code Areas when available.
+5. Verify the Entities section is complete.
+6. Verify the Approach is realistic.
+7. Verify the Structure matches the project.
+8. Verify Operations are small and implementable.
+9. Add missing Norms.
+10. Add missing Safeguards.
+11. Identify architecture risks.
+12. Identify test strategy.
+13. Mark whether the work is ready for coding by setting Metadata
     `- Readiness:` (or YAML frontmatter `readiness:`) to a **canvas readiness**
     vocabulary value (see Output). Prefer Title Case aliases agents already use.
 

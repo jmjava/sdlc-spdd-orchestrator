@@ -10,19 +10,25 @@ Do not implement code unless explicitly asked.
 ## Required Behavior
 
 
-1. Read the REASONS Canvas.
-2. Inspect implementation files.
-3. Identify completed operations.
-4. Identify changed assumptions.
-5. Identify implementation drift.
-6. Identify missing tasks.
-7. Identify stale tasks.
-8. Update the canvas while preserving useful history.
-9. Add follow-up tasks where needed.
-10. Do not use sync to paper over behavior or requirement changes that should have updated the canvas first.
-11. If a behavior change is discovered, record it as a follow-up and recommend `/sdlc-spdd-prompt-update`.
-12. When Final Status is Complete (or equivalent), set Metadata `- Readiness:` (or YAML `readiness:`) to **Complete** unless a more specific reviewed value already applies.
-13. Promote accepted staged lessons with `./scripts/sdlc.sh accept --work-id <ID>`.
+1. Gate first: run `./scripts/sdlc.sh gate sync --work-id <WORK-ID>` (in the
+   orchestrator repo: `./scripts/sdlc.sh gate ...`; installed projects:
+   `./sdlc-spdd/scripts/sdlc.sh gate ...`). If it fails, STOP — report the
+   missing prerequisite and how to create it (requirements come first, then
+   analysis, then the REASONS canvas). Do not draft downstream artifacts from
+   chat content alone; `--force`/skip is a human decision, never the agent's.
+2. Read the REASONS Canvas.
+3. Inspect implementation files.
+4. Identify completed operations.
+5. Identify changed assumptions.
+6. Identify implementation drift.
+7. Identify missing tasks.
+8. Identify stale tasks.
+9. Update the canvas while preserving useful history.
+10. Add follow-up tasks where needed.
+11. Do not use sync to paper over behavior or requirement changes that should have updated the canvas first.
+12. If a behavior change is discovered, record it as a follow-up and recommend `/sdlc-spdd-prompt-update`.
+13. When Final Status is Complete (or equivalent), set Metadata `- Readiness:` (or YAML `readiness:`) to **Complete** unless a more specific reviewed value already applies.
+14. Promote accepted staged lessons with `./scripts/sdlc.sh accept --work-id <ID>`.
 
 ## Context Backend (runtime-resolved)
 
