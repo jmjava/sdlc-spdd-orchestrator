@@ -38,25 +38,24 @@ Preserve context by reading relevant artifacts before answering:
 - `spdd/tasks/`
 - `spdd/reviews/`
 - `spdd/sync/`
+- `spdd/memory/lessons.jsonl` (committed ledger — never edit by hand)
+- `spdd/memory/registry.jsonl` (committed registry — managed via `sdlc.sh claim/release`)
 - `ROADMAP.md`
 - `milestone-*.md`
 - `session-notes/`
-- `agent-context/sessions/`
-- `agent-context/memory/`
-- `agent-context/features/`
 - `agent-context/harness/`
 
 Use progressive disclosure ([SDLC Agents](https://github.com/dsilahcilar/sdlc-agents)): load only the artifacts relevant to the current Work ID, phase, and operation. Never list or read whole directories — use indexes. See `docs/sdlc-spdd/sdlc-agents-and-the-framework.md`.
 
 ## Context Loading
 
-Load context by index, not by scanning. Keep working context small and relevant regardless of project size. See `docs/sdlc-spdd/context-loading-and-scaling.md`.
+Load context on demand, not by bulk-reading directories. Keep working context small and relevant regardless of project size. See `docs/sdlc-spdd/context-loading-and-scaling.md`.
 
-1. Start at `agent-context/sessions/current-session.md` to resume the active Work ID and phase. For a quick orientation, run `./scripts/sdlc-spdd/sdlc.sh next` or invoke `/sdlc-spdd-whereami`. If it is missing, read the most recent brief in `agent-context/sessions/` or the indexes in `agent-context/memory/`.
-2. Retrieve by relevance, not recency. A Work ID's own history is its `agent-context/features/<WORK-ID>/progress-log.md` and `spdd/canvas/<WORK-ID>.md` — read those, not the global history. Sessions for unrelated work are interleaved in time, so never read history top-to-bottom.
-3. Discover related work by code area or domain keyword, not by scanning. Filter `agent-context/memory/domain-index.md` by Domain Keywords from the analysis artifact, then `context-index.md` and `session-index.md` by Area (Kinds: analysis, session, decision, pitfall, pattern). Read matches newest-first. Full per-session detail is in `agent-context/memory/sessions/`. For static playbooks and harness files, use `agent-context/memory/phase-index.md` by phase or `./scripts/sdlc-spdd/resolve-agent-context.sh --phase <phase>`. `session-history.md` is only a recent chronological overview (older entries archived under `agent-context/memory/archive/`). Do not read whole directories. When capturing: read `agent-context/memory/code-areas.md`; `capture-session-memory.sh` parses session documents/content (summary, session-notes, current-session.md, latest timestamped session brief, analysis, canvas, progress log, capture flags) for path/package tokens, matches known categories, and registers new ones. After `/sdlc-spdd-analysis`, run `index-spdd-analysis.sh` to index domain keywords. Use `--areas` only to override or supplement parsed categories.
+1. Start at `.sdlc/sessions/current-session.md` (gitignored hot brief with a Related Past Work digest) to resume the active Work ID and phase. For a quick orientation, run `./scripts/sdlc-spdd/sdlc.sh next` or invoke `/sdlc-spdd-whereami`.
+2. Retrieve by relevance, not recency. Query with `sdlc-engine context retrieve --work-id <ID> [--area A] [--kind K]`, load bodies only for relevant record ids via `sdlc-engine context show <record-id>`, or use `sdlc-engine context digest --work-id <ID>`. A Work ID's contracts are `spdd/canvas/<WORK-ID>.md` and phase artifacts under `spdd/` — read those directly; use retrieval for cross-work lessons.
+3. Never bulk-read `spdd/memory/lessons.jsonl` or whole directories. Staged records live in `.sdlc/staged/lessons.jsonl` (gitignored); agents stage via `./scripts/sdlc.sh capture ...` (or `sdlc-engine context persist-lesson`) and promote at retro/sync with `./scripts/sdlc.sh accept --work-id <ID>`. Work registry events live in `spdd/memory/registry.jsonl` (via `sdlc.sh claim/release` — never hand-edited). For static playbooks and harness files, use `./scripts/sdlc-spdd/resolve-agent-context.sh --phase <phase>`. When sqlite cache is enabled, `./scripts/sdlc.sh db query` may supplement retrieval. After `/sdlc-spdd-analysis`, run `index-spdd-analysis.sh <WORK-ID>` to stage an analysis record.
 
-Optional Guide DICE backend: file-based indexes are always the baseline. If
+Optional Guide DICE backend: on-demand retrieval is always the baseline. If
 `agent-context/harness/guide-dice.md` exists, resolve the backend at runtime
 with `./scripts/sdlc-spdd/resolve-context-backend.sh --target .` and, only
 when it reports `CONTEXT_BACKEND=guide-dice`, augment retrieval with the
@@ -67,12 +66,12 @@ command because it is not.
 Per-phase context budget:
 
 - plan: the requirement, `spdd/analysis/<WORK-ID>-analysis.md`, `ROADMAP.md`, active `milestone-*.md`
-- analysis: the requirement, `domain-index.md`, `context-index.md`, scoped code areas only
-- architect: the Work ID canvas, `agent-context/memory/architecture-decisions.md`, `agent-context/harness/`
-- code: the Work ID canvas, that feature's `progress-log.md`, `agent-context/memory/known-pitfalls.md`
+- analysis: the requirement, one retrieval query (`--kind analysis`), scoped code areas only
+- architect: the Work ID canvas, retrieval query (`--kind decision`), `agent-context/harness/`
+- code: the Work ID canvas, retrieval query (`--kind pitfall`); progress via `./scripts/sdlc.sh capture`
 - api-test: the Work ID canvas Requirements/Operations, implemented endpoints for this Work ID
-- review: the Work ID canvas, the diff, `agent-context/harness/quality-gates.md`
-- retro / sync: the Work ID canvas, that feature's progress log, the memory file being updated
+- review: the Work ID canvas, the diff, retrieval query (`--kind pattern`), `agent-context/harness/quality-gates.md`
+- retro / sync: the Work ID canvas, review/sync artifacts, retrieval to avoid duplicate lessons; accept staged records
 
 ## Work Rules
 
@@ -82,11 +81,11 @@ Per-phase context budget:
 - Coding requests should implement exactly one approved operation from the canvas.
 - Follow the canvas sections: Requirements, Entities, Approach, Structure, Operations, Norms, Safeguards.
 - Update progress, review, retro, and sync artifacts when the active SDLC skill calls for it.
-- Preserve useful project memory in `agent-context/memory/`.
-- Ask clarifying questions only when needed to prevent incorrect work; otherwise state assumptions in the canvas or progress log.
+- Preserve useful project memory via `./scripts/sdlc.sh capture` and `./scripts/sdlc.sh accept` (never edit `spdd/memory/lessons.jsonl` by hand).
+- Ask clarifying questions only when needed to prevent incorrect work; otherwise state assumptions in the canvas or staged session capture.
 - For behavior or requirement changes, update the REASONS Canvas before changing code.
 - For non-behavioral refactors, review the code change and then sync the canvas back to implementation reality.
-- Treat `#SkillName` markers as explicit skill requests and `!SkillName` markers as exclusions. Resolve paths with `./scripts/sdlc-spdd/resolve-agent-context.sh --text "<prompt>"` or `--phase <phase>`; load only returned files. Record selected skills in the canvas or progress log when relevant.
+- Treat `#SkillName` markers as explicit skill requests and `!SkillName` markers as exclusions. Resolve paths with `./scripts/sdlc-spdd/resolve-agent-context.sh --text "<prompt>"` or `--phase <phase>`; load only returned files. Record selected skills in the canvas or staged session capture when relevant.
 
 ## Context-Preserving Questions
 
@@ -96,6 +95,6 @@ Good question patterns:
 
     For FEAT-001, read @spdd/canvas/FEAT-001-order-status-api.md and answer: what operation should I do next?
 
-    For BUG-003, compare @agent-context/features/BUG-003/progress-log.md with the current diff. What context am I missing before coding?
+    For BUG-003, run `sdlc-engine context digest --work-id BUG-003` and compare with the current diff. What context am I missing before coding?
 
-    Using the current canvas and @agent-context/memory/known-pitfalls.md, what risks should I check before review?
+    Using the current canvas and `sdlc-engine context retrieve --work-id <ID> --kind pitfall`, what risks should I check before review?

@@ -14,7 +14,7 @@ Draft a commit message from the current local changes. Collect the diff through 
 
 
 1. Parse optional arguments: a short user hint and an optional Work ID. Do not invent Work IDs.
-2. If Work ID is omitted, try the active pointer via `./scripts/sdlc-spdd/sdlc.sh next` (or `./scripts/sdlc.sh next` in the orchestrator repo) or `agent-context/sessions/current-session.md`. If still unknown, omit Work ID from the message unless the user hint includes one.
+2. If Work ID is omitted, try the active pointer via `./scripts/sdlc-spdd/sdlc.sh next` (or `./scripts/sdlc.sh next` in the orchestrator repo) or `.sdlc/sessions/current-session.md`. If still unknown, omit Work ID from the message unless the user hint includes one.
 3. Collect the change set by running the Python engine (required — do not improvise with raw git when the engine is available): `./scripts/sdlc.sh commit-message` with `--hint` / `--work-id` when known. In the orchestrator repo this always routes to `python -m sdlc_engine commit-message` even when `SDLC_ENGINE=shell`.
 4. Use the engine report as the source of truth for which files/diff to message (source is staged, else unstaged, else commits/diff since merge base). If the engine exits non-zero or reports nothing to commit, report that failure and stop. Do not invent a message.
 5. Draft a paste-ready commit message: a concise subject line (imperative mood, ~72 chars); an optional body with why/what when the change needs more than the subject; incorporate the user hint when provided; include the Work ID in the subject or body when known (for example `FEAT-008: …` or a `Work-ID:` trailer).

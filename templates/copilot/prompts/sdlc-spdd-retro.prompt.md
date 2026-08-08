@@ -14,32 +14,29 @@ Capture reusable learnings after a feature, bugfix, refactor, or spike. Do not i
 
 
 1. Read the REASONS Canvas.
-2. Read the progress log.
-3. Read the review report.
+2. Read the review report (`spdd/reviews/<WORK-ID>-review.md`).
+3. Before capturing new lessons, run `sdlc-engine context retrieve --work-id <ID>` to check existing lessons and avoid duplicates — load bodies only for relevant ids via `sdlc-engine context show <record-id>`.
 4. Identify what worked.
 5. Identify what caused friction.
 6. Identify reusable patterns.
 7. Identify project-specific pitfalls.
-8. Update project memory.
-9. **Append a prompt-optimization ledger entry** to
-   `agent-context/memory/prompt-optimization-log.md` with Date, Work ID, Change
-   (what you learned about prompts/process), Hypothesis (what you expected),
-   Signal (what happened), and Outcome (`improved` / `neutral` / `worse` / `unknown`).
+8. Stage decision/pitfall/pattern records via `./scripts/sdlc.sh capture` flags (never edit `spdd/memory/lessons.jsonl` by hand).
+9. Promote accepted records with `./scripts/sdlc.sh accept --work-id <ID>`.
 
 ## Context Backend (runtime-resolved)
 
 
-File-based indexes under `agent-context/memory/` are the baseline and always
-work. This install may optionally augment them with the Guide DICE entity
+On-demand retrieval via `sdlc-engine context retrieve` is the baseline and always
+works. This install may optionally augment it with the Guide DICE entity
 graph, but Guide is never assumed to be present. Resolve at runtime:
 
     ./scripts/sdlc-spdd/resolve-context-backend.sh --target .
 
 (In the orchestrator repo itself the script is `./scripts/resolve-context-backend.sh`.)
 
-- `CONTEXT_BACKEND=files` — proceed with file-based context only. This is the
+- `CONTEXT_BACKEND=files` — proceed with on-demand retrieval only. This is the
   normal case, not an error.
-- `CONTEXT_BACKEND=guide-dice` — after writing the retro artifacts, run
+- `CONTEXT_BACKEND=guide-dice` — after staging and accepting lessons, run
   `./scripts/sdlc-spdd/resolve-context-backend.sh --target . --project --work-id <WORK-ID>`
   so new lessons become graph entities for future runs (no-op when files).
 
@@ -48,13 +45,10 @@ Never block or fail this command because Guide is absent or unreachable.
 ## Output
 
 
-Create or update:
+Stage and accept lesson records (no retro.md, no hand-edited memory files):
 
-- `agent-context/features/<WORK-ID>/retro.md`
-- `agent-context/memory/project-memory.md`
-- `agent-context/memory/known-pitfalls.md`
-- `agent-context/memory/reusable-patterns.md`
-- `agent-context/memory/prompt-optimization-log.md` (required ledger entry)
+- Staged records in `.sdlc/staged/lessons.jsonl`
+- Accepted records promoted to `spdd/memory/lessons.jsonl` via `./scripts/sdlc.sh accept --work-id <ID>`
 
 Include:
 
@@ -63,4 +57,4 @@ Include:
 - Reusable patterns
 - Mistakes to avoid
 - Suggested future safeguards
-- Ledger entry summary (Change / Hypothesis / Outcome)
+- Record ids staged and accepted

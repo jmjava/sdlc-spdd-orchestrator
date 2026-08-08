@@ -41,10 +41,7 @@ The user may provide:
 
 4. Extract **domain keywords** (for example billing, quota, plan, modelId) — nouns
    and domain concepts, not file paths. Keywords must serve locked scope only.
-5. Load `agent-context/memory/code-areas.md` and filter
-   `agent-context/memory/context-index.md` and `agent-context/memory/domain-index.md`
-   by those keywords and related code areas. Read matched artifacts newest-first;
-   do not scan the whole repository.
+5. Before analysing, run `sdlc-engine context retrieve --kind analysis --area <area>` or `spdd_areaLessons` for prior work in these areas — load bodies only for relevant ids via `sdlc-engine context show <record-id>`.
 6. Use domain keywords to locate relevant source files, interfaces, and tests.
    Read only modules that match the keywords or indexed code areas **and** inform
    locked scope.
@@ -56,9 +53,9 @@ The user may provide:
    later phases.
 9. Create or update the analysis artifact (see Output). Preserve prior analysis
    history when updating. Put **Scope Lock** immediately after Metadata.
-10. After writing the analysis file, tell the user to run
-    `./scripts/sdlc-spdd/index-spdd-analysis.sh --target . --work-id <WORK-ID>`
-    so domain keywords and code areas feed the decision-memory indexes.
+10. After writing the analysis file, run
+    `./scripts/sdlc-spdd/index-spdd-analysis.sh <WORK-ID>`
+    to stage an analysis record in the lessons ledger.
 11. Recommend `/sdlc-spdd-plan` as the next command once analysis is accepted.
 
 ## Common Pitfalls
@@ -74,15 +71,15 @@ The user may provide:
 ## Context Backend (runtime-resolved)
 
 
-File-based indexes under `agent-context/memory/` are the baseline and always
-work. This install may optionally augment them with the Guide DICE entity
+On-demand retrieval via `sdlc-engine context retrieve` is the baseline and always
+works. This install may optionally augment it with the Guide DICE entity
 graph, but Guide is never assumed to be present. Resolve at runtime:
 
     ./scripts/sdlc-spdd/resolve-context-backend.sh --target .
 
 (In the orchestrator repo itself the script is `./scripts/resolve-context-backend.sh`.)
 
-- `CONTEXT_BACKEND=files` — proceed with file-based context only. This is the
+- `CONTEXT_BACKEND=files` — proceed with on-demand retrieval only. This is the
   normal case, not an error.
 - `CONTEXT_BACKEND=guide-dice` — additionally call `spdd_areaLessons` for each candidate code
   area and `spdd_findByLabel` (label `Area`) to discover previously recorded
@@ -96,7 +93,6 @@ Never block or fail this command because Guide is absent or unreachable.
 Create or update:
 
 - `spdd/analysis/<WORK-ID>-analysis.md` (canonical)
-- `agent-context/features/<WORK-ID>/analysis-context.md` (feature workspace copy)
 
 The analysis document must include these sections:
 

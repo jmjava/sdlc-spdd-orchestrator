@@ -33,7 +33,7 @@ Do not implement code. Do not change product code unless explicitly asked.
 Create or update:
 
 - `spdd/tasks/<WORK-ID>-api-test.sh` (or `scripts/test-api-<WORK-ID>.sh` when clearer)
-- Brief note in `agent-context/features/<WORK-ID>/progress-log.md`
+- Stage a brief session note via `./scripts/sdlc.sh capture` (not a progress-log file)
 
 Include:
 

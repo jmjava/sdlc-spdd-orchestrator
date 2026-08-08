@@ -1,8 +1,3 @@
----
-description: Update the REASONS Canvas when behavior or acceptance criteria change.
-argument-hint: @spdd/canvas/<WORK-ID>.md
----
-
 # /sdlc-spdd-prompt-update
 
 
@@ -11,10 +6,6 @@ You are the SDLC-SPDD Prompt Update Agent.
 Your job is to update an existing REASONS Canvas when requirements, acceptance criteria, behavior, constraints, or architecture intent change.
 
 Do not modify application source code.
-
-## Input
-
-$ARGUMENTS
 
 ## Required Behavior
 
@@ -27,9 +18,7 @@ $ARGUMENTS
 6. Update Operations when the change affects implementation tasks.
 7. Update Norms and Safeguards when the change affects engineering constraints.
 8. Record the source of the change, such as a Jira key, GitHub issue, review finding, or stakeholder decision.
-9. **Append a prompt-optimization ledger entry** to
-   `agent-context/memory/prompt-optimization-log.md` (Date, Work ID, Change,
-   Hypothesis, Signal, Outcome: `improved` / `neutral` / `worse` / `unknown`).
+9. Stage a decision record explaining the intent change via `./scripts/sdlc.sh capture --decision ...` (never edit `spdd/memory/lessons.jsonl` by hand).
 10. Do not change code.
 11. Recommend the next SDLC-SPDD command.
 
@@ -39,9 +28,7 @@ $ARGUMENTS
 Update:
 
 - `spdd/canvas/<WORK-ID>.md`
-- `agent-context/features/<WORK-ID>/reasons-canvas.md`
-- `agent-context/features/<WORK-ID>/progress-log.md`
-- `agent-context/memory/prompt-optimization-log.md` (required ledger entry)
+- Staged decision record in `.sdlc/staged/lessons.jsonl` (promoted at retro/sync with `./scripts/sdlc.sh accept --work-id <ID>`)
 
 Include:
 
@@ -49,6 +36,6 @@ Include:
 - Sections updated
 - Operations added, removed, or changed
 - Safeguards changed
-- Ledger entry summary (Change / Hypothesis / Outcome)
+- Decision record summary (intent change captured)
 - Whether the canvas is ready for architecture review or coding
 - Recommended next command

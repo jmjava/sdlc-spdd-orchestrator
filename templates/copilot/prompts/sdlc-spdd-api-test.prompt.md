@@ -28,6 +28,6 @@ boundary, and error scenarios. Do not implement code. Do not change product code
 Create or update:
 
 - `spdd/tasks/<WORK-ID>-api-test.sh`
-- Note in `agent-context/features/<WORK-ID>/progress-log.md`
+- Stage a brief session note via `./scripts/sdlc.sh capture` (not a progress-log file)
 
 Include TEST CASE OVERVIEW, runnable cURL commands, and run instructions.

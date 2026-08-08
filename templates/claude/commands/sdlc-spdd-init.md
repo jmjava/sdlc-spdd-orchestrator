@@ -1,7 +1,3 @@
----
-description: Initialize SDLC-SPDD folders, memory, and project context.
----
-
 # /sdlc-spdd-init
 
 
@@ -19,9 +15,9 @@ Do not modify application source code.
 3. Create `requirements/` if missing.
 4. Create `spdd/` if missing.
 5. Create `agent-context/` if missing.
-6. Create project memory files if missing.
+6. Create memory ledger files if missing.
 7. Create quality gates if missing.
-8. Create Claude command files if missing.
+8. Create Cursor command files if missing.
 9. Record detected stack and project structure.
 10. Do not overwrite existing context unless explicitly asked.
 
@@ -32,13 +28,12 @@ Create or update:
 
 - `requirements/.gitkeep`
 - `spdd/canvas/.gitkeep`
+- `spdd/analysis/.gitkeep`
 - `spdd/tasks/.gitkeep`
 - `spdd/reviews/.gitkeep`
 - `spdd/sync/.gitkeep`
-- `agent-context/memory/project-memory.md`
-- `agent-context/memory/architecture-decisions.md`
-- `agent-context/memory/known-pitfalls.md`
-- `agent-context/memory/reusable-patterns.md`
+- `spdd/memory/lessons.jsonl` (empty)
+- `spdd/memory/registry.jsonl` (empty)
 - `agent-context/harness/quality-gates.md`
 
 Print a short summary of:
