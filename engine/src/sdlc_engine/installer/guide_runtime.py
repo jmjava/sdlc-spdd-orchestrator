@@ -109,6 +109,10 @@ def guide_env(cfg: dict[str, Any]) -> dict[str, str]:
         env["ANTHROPIC_API_KEY"] = env.get(
             "ANTHROPIC_API_KEY_INGEST_PLACEHOLDER", "dummy-key"
         )
+    # Dual-repo Cloud Agent / native /opt/neo4j: Bolt is already open — do not
+    # ask append-ingest.sh to `docker compose up neo4j` (dockerd often unavailable).
+    if env.get("SKIP_COMPOSE_NEO4J") in {"", None} and _tcp_open("127.0.0.1", bolt, timeout=0.4):
+        env["SKIP_COMPOSE_NEO4J"] = "1"
     return env
 
 

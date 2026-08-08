@@ -84,6 +84,23 @@ async function loadAdf() {
   }
 }
 
+async function waitForViewerReady(maxAttempts = 40) {
+  let lastUrl = "";
+  for (let i = 0; i < maxAttempts; i++) {
+    await new Promise((r) => setTimeout(r, 250));
+    const { data: probeData } = await postJson("/api/adf", adfBody());
+    lastUrl = applyAdf(probeData) || lastUrl;
+    if (probeData?.probe?.http_ok || probeData?.probe?.tcp_open) {
+      return { ready: true, url: lastUrl, data: probeData };
+    }
+    // Process died before binding — surface immediately.
+    if (probeData?.process && probeData.process.alive === false && i > 2) {
+      return { ready: false, url: lastUrl, data: probeData };
+    }
+  }
+  return { ready: false, url: lastUrl, data: null };
+}
+
 async function adfAction(url, label, { openAfter } = {}) {
   busy.value = true;
   statusText.value = `${label}…`;
@@ -97,22 +114,29 @@ async function adfAction(url, label, { openAfter } = {}) {
       log.value = JSON.stringify(data, null, 2);
       return;
     }
-    statusText.value = `${label} OK`;
-    statusClass.value = "ok";
     if (data?.result) {
       log.value = JSON.stringify(data.result, null, 2);
     }
-    await loadAdf();
-    if (openAfter && openUrl) {
-      for (let i = 0; i < 20; i++) {
-        await new Promise((r) => setTimeout(r, 250));
-        const { data: probeData } = await postJson("/api/adf", adfBody());
-        applyAdf(probeData);
-        if (probeData?.probe?.http_ok) {
-          window.open(probeData.url || openUrl, "_blank", "noopener");
-          return;
+    // Start/restart return before the child binds — poll until TCP/HTTP is up.
+    const needsReady = url.includes("/start") || url.includes("/restart");
+    if (needsReady) {
+      const waited = await waitForViewerReady();
+      if (waited.ready) {
+        statusText.value = `${label} OK`;
+        statusClass.value = "ok";
+        if (openAfter) {
+          window.open(waited.url || openUrl || waited.data?.url, "_blank", "noopener");
         }
+        return;
       }
+      statusText.value = `${label} started but viewer not reachable yet`;
+      statusClass.value = "err";
+      return;
+    }
+    await loadAdf();
+    statusText.value = `${label} OK`;
+    statusClass.value = "ok";
+    if (openAfter && openUrl) {
       window.open(openUrl, "_blank", "noopener");
     }
   } catch (err) {

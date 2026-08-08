@@ -252,7 +252,7 @@ def test_vue3_live_adf_viewer_start_stop(page, live_vue_real) -> None:  # type: 
     page.wait_for_function(
         """() => {
           const meta = document.querySelector('[data-testid="adf-meta"]')?.textContent || '';
-          return meta.includes('process alive') || meta.includes('HTTP ok') || meta.includes('url http');
+          return meta.includes('HTTP ok') || meta.includes('TCP open');
         }""",
         timeout=60_000,
     )
@@ -262,7 +262,8 @@ def test_vue3_live_adf_viewer_start_stop(page, live_vue_real) -> None:  # type: 
     page.wait_for_function(
         """() => {
           const meta = document.querySelector('[data-testid="adf-meta"]')?.textContent || '';
-          return meta.includes('process stopped');
+          const status = document.querySelector('[data-testid="adf-status"]')?.textContent || '';
+          return meta.includes('process stopped') || status.toLowerCase().includes('not running');
         }""",
         timeout=60_000,
     )
