@@ -5,6 +5,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 # shellcheck source=/dev/null
 source "${REPO_ROOT}/scripts/lib/framework-install.sh"
+# shellcheck source=/dev/null
+source "${REPO_ROOT}/scripts/lib/skills.sh"
 
 usage() {
   cat <<'EOF'
@@ -18,7 +20,7 @@ Everything the framework owns is installed under a single folder — the home:
     requirements/      milestones + requirements
     spdd/              canvas/ analysis/ tasks/ reviews/ sync/ memory/
     spdd/memory/       lessons.jsonl (committed ledger) + registry.jsonl
-    harness/ playbooks/ extensions/
+    harness/ skills/
     scripts/           installed workflow CLI (sdlc.sh + runtime scripts)
     docs/              target-local SDLC-SPDD docs
     .sdlc/             gitignored runtime (sessions, staged lessons, sqlite)
@@ -167,18 +169,8 @@ for dir in \
   spdd/reviews \
   spdd/sync \
   session-notes \
-  playbooks \
-  extensions \
-  extensions/_all-agents \
-  extensions/initializer-agent \
-  extensions/planning-agent \
-  extensions/architect-agent \
-  extensions/coding-agent \
-  extensions/codereview-agent \
-  extensions/retro-agent \
-  extensions/curator-agent \
-  extensions/skills \
   harness \
+  harness/skills \
   docs \
   scripts \
   scripts/lib; do
@@ -227,31 +219,17 @@ copy_if_missing \
   "${REPO_ROOT}/templates/requirements/milestones/README.md" \
   "${HOME_DIR}/requirements/milestones/README.md"
 
-# Playbooks for SDLC Agents-style handoffs and repeatable workflows.
-for file in "${REPO_ROOT}"/agent-context/playbooks/*.md; do
-  copy_if_missing \
-    "${file}" \
-    "${HOME_DIR}/playbooks/$(basename "${file}")"
-done
-
-copy_if_missing \
-  "${REPO_ROOT}/templates/agent-context/extensions/README.md" \
-  "${HOME_DIR}/extensions/README.md"
-
-copy_if_missing \
-  "${REPO_ROOT}/templates/agent-context/extensions/manifest.md" \
-  "${HOME_DIR}/extensions/manifest.md"
-
-copy_if_missing \
-  "${REPO_ROOT}/templates/agent-context/extensions/_all-agents/example-manifest-extension.md" \
-  "${HOME_DIR}/extensions/_all-agents/example-manifest-extension.md"
-
-for file in "${REPO_ROOT}"/templates/agent-context/extensions/skills/*.md; do
+# Phase skills and harness index for SDLC Agents-style progressive loading.
+for file in "${REPO_ROOT}"/templates/agent-context/harness/skills/*.md; do
   [[ -f "${file}" ]] || continue
   copy_if_missing \
     "${file}" \
-    "${HOME_DIR}/extensions/skills/$(basename "${file}")"
+    "${HOME_DIR}/harness/skills/$(basename "${file}")"
 done
+
+copy_if_missing \
+  "${REPO_ROOT}/templates/agent-context/harness/phase-index.md" \
+  "${HOME_DIR}/harness/phase-index.md"
 
 copy_if_missing \
   "${REPO_ROOT}/agent-context/harness/quality-gates.md" \
@@ -260,6 +238,8 @@ copy_if_missing \
 copy_if_missing \
   "${REPO_ROOT}/agent-context/harness/validation-rules.md" \
   "${HOME_DIR}/harness/validation-rules.md"
+
+migrate_playbooks_extensions_to_skills "${TARGET}" "${DRY_RUN}"
 
 # Optional Guide DICE backend opt-in. The marker only enables runtime probing
 # (resolve-context-backend.sh); commands still fall back to file-based context

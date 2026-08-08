@@ -1,3 +1,9 @@
+---
+skill: java-feature
+aliases: java
+phases: code
+---
+
 # Java Feature Playbook
 
 1. From the orchestrator repo, run `./scripts/setup-agent-prompts.sh --target /path/to/project --all` if the project is not initialized.

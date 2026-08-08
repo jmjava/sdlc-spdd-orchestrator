@@ -24,8 +24,7 @@ framework_rewrite_adapter_paths() {
     -e 's#\./scripts/sdlc\.sh#./sdlc-spdd/scripts/sdlc.sh#g' \
     -e 's#docs/sdlc-spdd/#sdlc-spdd/docs/#g' \
     -e 's#agent-context/harness/#sdlc-spdd/harness/#g' \
-    -e 's#agent-context/playbooks/#sdlc-spdd/playbooks/#g' \
-    -e 's#agent-context/extensions/#sdlc-spdd/extensions/#g' \
+    -e 's#agent-context/harness/skills/#sdlc-spdd/harness/skills/#g' \
     -e 's#(^|[^/[:alnum:]-])spdd/#\1sdlc-spdd/spdd/#g' \
     -e 's#(^|[^/[:alnum:]])\.sdlc/#\1sdlc-spdd/.sdlc/#g' \
     -e 's#(^|[^/[:alnum:]-])requirements/#\1sdlc-spdd/requirements/#g' \

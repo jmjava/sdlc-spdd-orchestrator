@@ -1,7 +1,13 @@
+---
+skill: pr-review
+aliases: review
+phases: review
+---
+
 # PR Review Playbook
 
 1. Run `./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase review`.
-2. Read the linked REASONS Canvas and `agent-context/sessions/current-session.md`.
+2. Read the linked REASONS Canvas and `.sdlc/sessions/current-session.md`.
 3. Compare PR diff to Requirements, Operations, Norms, and Safeguards.
 4. Check tests and dependency changes.
 5. Use review result values: Approved, Approved With Notes, Changes Requested, Blocked.

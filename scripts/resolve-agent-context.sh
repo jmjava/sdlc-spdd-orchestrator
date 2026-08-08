@@ -8,10 +8,12 @@ source "${_SCRIPT_DIR}/lib/common.sh"
 source "${_SCRIPT_DIR}/lib/paths.sh"
 # shellcheck source=/dev/null
 source "${_SCRIPT_DIR}/lib/areas.sh"
+# shellcheck source=/dev/null
+source "${_SCRIPT_DIR}/lib/skills.sh"
 
 # Resolve SDLC Agents-style context for progressive disclosure:
+#   - phase core harness files (phase-index.md) + phase-matching skills
 #   - #SkillName / !SkillName directives in prompt text
-#   - Phase-specific extension folders (_all-agents + *-agent)
 #   - Work ID ledger progress excerpt (.sdlc/resolved/progress-<ID>.md)
 #
 # Prints paths relative to --target (one per line with --format paths).
@@ -20,7 +22,7 @@ usage() {
   cat <<'EOF'
 Usage: resolve-agent-context.sh [options]
 
-Resolve skills, phase extensions, and Work ID context for progressive loading.
+Resolve skills, phase harness files, and Work ID context for progressive loading.
 Combines SDLC Agents static resolution with a ledger progress excerpt (storage
 v3): matching lesson records are summarized into .sdlc/resolved/progress-<ID>.md.
 
@@ -204,104 +206,6 @@ add_work_id_artifacts() {
   fi
 }
 
-phase_agent_dir() {
-  case "${1:-}" in
-    init) printf '%s' "initializer-agent" ;;
-    analysis|plan|prompt-update) printf '%s' "planning-agent" ;;
-    architect) printf '%s' "architect-agent" ;;
-    code|api-test) printf '%s' "coding-agent" ;;
-    review) printf '%s' "codereview-agent" ;;
-    retro) printf '%s' "retro-agent" ;;
-    sync) printf '%s' "curator-agent" ;;
-    *) printf '%s' "" ;;
-  esac
-}
-
-extension_manifest_path() {
-  printf '%s' "$(sdlc_extensions_dir "${TARGET}")/manifest.md"
-}
-
-manifest_phase_table_usable() {
-  local manifest="$1"
-  [[ -f "${manifest}" ]] || return 1
-  grep -q '^## Phase extensions' "${manifest}" || return 1
-  grep -q '^| Folder | Phases |' "${manifest}" || return 1
-  return 0
-}
-
-manifest_phase_matches() {
-  local phases_col="$1"
-  local phase="$2"
-  phases_col="${phases_col#"${phases_col%%[![:space:]]*}"}"
-  phases_col="${phases_col%"${phases_col##*[![:space:]]}"}"
-  [[ "${phases_col}" == "*" ]] && return 0
-  local part
-  IFS=',' read -ra parts <<< "${phases_col}"
-  for part in "${parts[@]}"; do
-    part="${part#"${part%%[![:space:]]*}"}"
-    part="${part%"${part##*[![:space:]]}"}"
-    [[ "${part}" == "${phase}" ]] && return 0
-  done
-  return 1
-}
-
-collect_manifest_phase_extensions() {
-  local phase="$1"
-  local manifest
-  manifest="$(extension_manifest_path)"
-  manifest_phase_table_usable "${manifest}" || return 1
-
-  declare -A folders=()
-  local row folder phases_col
-  local collected=0
-  while IFS= read -r row; do
-    [[ -z "${row}" ]] || continue
-    folder="$(printf '%s' "${row}" | awk -F'|' '{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); gsub(/`/, "", $2); print $2}')"
-    phases_col="$(printf '%s' "${row}" | awk -F'|' '{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $3); print $3}')"
-    [[ -z "${folder}" || "${folder}" == "Folder" ]] && continue
-    manifest_phase_matches "${phases_col}" "${phase}" || continue
-    folders["${folder}"]=1
-  done < <(
-    awk '
-      /^## Phase extensions/ { in_section = 1; next }
-      in_section && /^## / { exit }
-      in_section && /^\| / && $0 !~ /^\|[- ]+\|/ && $0 !~ /^\| Folder \|/ { print }
-    ' "${manifest}"
-  )
-
-  if ((${#folders[@]} == 0)); then
-    return 1
-  fi
-
-  local -a ordered=()
-  if [[ -n "${folders[_all-agents]:-}" ]]; then
-    ordered+=("_all-agents")
-  fi
-  local name
-  for name in "${!folders[@]}"; do
-    [[ "${name}" == "_all-agents" ]] && continue
-    ordered+=("${name}")
-  done
-  IFS=$'\n' ordered_sorted=($(printf '%s\n' "${ordered[@]}" | sort))
-  unset IFS
-
-  for name in "${ordered_sorted[@]}"; do
-    collect_extension_md "${ext_base}/${name}"
-    collected=1
-  done
-  (( collected == 1 ))
-}
-
-collect_convention_phase_extensions() {
-  local phase="$1"
-  collect_extension_md "${ext_base}/_all-agents"
-  local agent_dir
-  agent_dir="$(phase_agent_dir "${phase}")"
-  if [[ -n "${agent_dir}" ]]; then
-    collect_extension_md "${ext_base}/${agent_dir}"
-  fi
-}
-
 rel_path() {
   local abs="$1"
   if [[ "${abs}" == "${FRAMEWORK_HOME}/"* ]]; then
@@ -327,39 +231,31 @@ add_path() {
   resolved_paths+=("${rel}")
 }
 
-collect_extension_md() {
-  local dir="$1"
-  [[ -d "${dir}" ]] || return 0
-  shopt -s nullglob
-  local f
-  for f in "${dir}"/*.md; do
-    [[ "$(basename "${f}")" == "README.md" ]] && continue
-    add_path "${f}"
-  done
-  shopt -u nullglob
-}
-
 resolve_skill_file() {
-  local skill="$1"
-  local lower
-  lower="$(printf '%s' "${skill}" | tr '[:upper:]' '[:lower:]')"
-  local ext_base play_base
-  ext_base="$(sdlc_extensions_dir "${TARGET}")"
-  play_base="$(sdlc_playbooks_dir "${TARGET}")"
-  local candidate
-  for candidate in \
-    "${ext_base}/skills/${skill}.md" \
-    "${ext_base}/skills/${lower}.md" \
-    "${play_base}/${lower}-playbook.md" \
-    "${play_base}/${skill}-playbook.md" \
-    "${play_base}/${lower}.md" \
-    "${play_base}/${skill}.md"; do
-    if [[ -f "${candidate}" ]]; then
-      add_path "${candidate}"
+  local token="$1"
+  local skills_dir row name aliases phases path
+  skills_dir="$(sdlc_skills_dir "${TARGET}")"
+  [[ -d "${skills_dir}" ]] || return 1
+  while IFS=$'\x1f' read -r name aliases phases path; do
+    [[ -n "${name}" ]] || continue
+    if skill_name_matches "${name}" "${aliases}" "${token}"; then
+      add_path "${path}"
       return 0
     fi
-  done
+  done < <(_skills_list_meta "${skills_dir}")
   return 1
+}
+
+collect_phase_skills() {
+  local phase="$1"
+  local skills_dir row name aliases phases path
+  skills_dir="$(sdlc_skills_dir "${TARGET}")"
+  [[ -d "${skills_dir}" ]] || return 0
+  while IFS=$'\x1f' read -r name aliases phases path; do
+    [[ -n "${phases}" ]] || continue
+    skill_phases_match "${phases}" "${phase}" || continue
+    add_path "${path}"
+  done < <(_skills_list_meta "${skills_dir}")
 }
 
 declare -a skill_includes=()
@@ -383,21 +279,21 @@ parse_skill_directives() {
 }
 
 list_discoverable_skills() {
+  local skills_dir="$1"
   declare -A names=()
-  shopt -s nullglob
-  local f base name ext_base play_base
-  ext_base="$(sdlc_extensions_dir "${TARGET}")"
-  play_base="$(sdlc_playbooks_dir "${TARGET}")"
-  for f in "${ext_base}"/skills/*.md; do
-    base="$(basename "${f}" .md)"
-    names["${base}"]=1
-  done
-  for f in "${play_base}"/*-playbook.md; do
-    base="$(basename "${f}")"
-    base="${base%-playbook.md}"
-    names["${base}"]=1
-  done
-  shopt -u nullglob
+  local row name aliases phases path token
+  [[ -d "${skills_dir}" ]] || return 0
+  while IFS=$'\x1f' read -r name aliases phases path; do
+    [[ -n "${name}" ]] || continue
+    names["${name}"]=1
+    [[ -z "${aliases}" ]] && continue
+    IFS=',' read -ra parts <<< "${aliases}"
+    for token in "${parts[@]}"; do
+      token="${token#"${token%%[![:space:]]*}"}"
+      token="${token%"${token##*[![:space:]]}"}"
+      [[ -n "${token}" ]] && names["${token}"]=1
+    done
+  done < <(_skills_list_meta "${skills_dir}")
   local n
   for n in "${!names[@]}"; do
     printf '%s\n' "${n}"
@@ -532,19 +428,14 @@ load_phase_index_paths() {
   done < <(awk '/^\| / && $0 !~ /^\| Phase/' "${index_file}")
 }
 
-declare -a index_rows=()
-
 if [[ "${LIST_SKILLS}" -eq 1 ]]; then
-  list_discoverable_skills
+  list_discoverable_skills "$(sdlc_skills_dir "${TARGET}")"
   exit 0
 fi
 
-ext_base="$(sdlc_extensions_dir "${TARGET}")"
 if [[ -n "${PHASE}" ]]; then
-  if ! collect_manifest_phase_extensions "${PHASE}"; then
-    collect_convention_phase_extensions "${PHASE}"
-  fi
   load_phase_index_paths "${PHASE}" "${area_scoped}"
+  collect_phase_skills "${PHASE}"
 fi
 
 if [[ -n "${WORK_ID}" ]]; then
@@ -577,10 +468,8 @@ emit_markdown() {
   echo "|------|------|"
   for p in "${resolved_paths[@]}"; do
     kind="file"
-    if [[ "${p}" == */extensions/* || "${p}" == agent-context/extensions/* ]]; then
-      kind="extension"
-    elif [[ "${p}" == */playbooks/* || "${p}" == agent-context/playbooks/* ]]; then
-      kind="playbook"
+    if [[ "${p}" == */harness/skills/* || "${p}" == agent-context/harness/skills/* ]]; then
+      kind="skill"
     elif [[ "${p}" == */harness/* || "${p}" == agent-context/harness/* ]]; then
       kind="harness"
     elif [[ "${p}" == spdd/* || "${p}" == */spdd/* ]]; then

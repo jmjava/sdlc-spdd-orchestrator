@@ -1,3 +1,7 @@
+---
+skill: security
+---
+
 # Security Skill
 
 Before implementing or reviewing:

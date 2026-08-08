@@ -1,3 +1,8 @@
+---
+skill: refactor
+phases: code
+---
+
 # Refactor Playbook
 
 1. Start or resume with `./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase architect`.

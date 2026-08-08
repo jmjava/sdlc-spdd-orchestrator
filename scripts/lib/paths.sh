@@ -9,6 +9,7 @@ SDLC_SHIPPED_LIB_FILES=(
   work-id.sh
   milestone.sh
   readiness.sh
+  skills.sh
 )
 
 # Orchestrator-only libs (never installed into targets).
@@ -99,23 +100,15 @@ sdlc_sessions_dir() {
   printf '%s' "$(sdlc_runtime_dir "$1")/sessions"
 }
 
-sdlc_extensions_dir() {
+sdlc_skills_dir() {
   local home
   home="$(sdlc_home "$1")"
-  if [[ -d "${home}/extensions" ]]; then
-    printf '%s' "${home}/extensions"
+  if [[ -d "${home}/harness/skills" ]]; then
+    printf '%s' "${home}/harness/skills"
+  elif [[ -d "${home}/agent-context/harness/skills" ]]; then
+    printf '%s' "${home}/agent-context/harness/skills"
   else
-    printf '%s' "${home}/agent-context/extensions"
-  fi
-}
-
-sdlc_playbooks_dir() {
-  local home
-  home="$(sdlc_home "$1")"
-  if [[ -d "${home}/playbooks" ]]; then
-    printf '%s' "${home}/playbooks"
-  else
-    printf '%s' "${home}/agent-context/playbooks"
+    printf '%s' "${home}/harness/skills"
   fi
 }
 

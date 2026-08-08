@@ -7,7 +7,7 @@ folder — ``<repo>/sdlc-spdd/`` — called the *home*:
       sdlc-spdd/           home (framework folder)
         requirements/      milestones + requirements
         spdd/              canvas/ analysis/ reviews/ sync/ memory/
-        harness/ playbooks/ extensions/
+        harness/ skills/
         scripts/           installed workflow CLI
         .sdlc/             gitignored runtime (sessions, staged, sqlite)
 
@@ -128,6 +128,11 @@ class Project:
         if direct.is_dir():
             return direct
         return self.home / "agent-context" / "harness"
+
+    @property
+    def skills_dir(self) -> Path:
+        """Phase and #SkillName playbooks under harness/skills/."""
+        return self.harness_dir / "skills"
 
     def canvas_path(self, work_id: str) -> Path:
         return self.spdd_dir / "canvas" / f"{work_id}.md"

@@ -1,3 +1,8 @@
+---
+skill: bugfix
+phases: code
+---
+
 # Bugfix Playbook
 
 1. Run `./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase plan` or create a new Work ID if one does not exist.

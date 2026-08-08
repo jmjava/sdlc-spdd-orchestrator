@@ -42,7 +42,7 @@ def _seed_noise(root: Path, work_id: str) -> None:
         encoding="utf-8",
     )
     (root / "agent-context" / "harness").mkdir(parents=True, exist_ok=True)
-    (root / "agent-context" / "playbooks").mkdir(parents=True, exist_ok=True)
+    (root / "agent-context" / "harness" / "skills").mkdir(parents=True, exist_ok=True)
 
 
 def test_quiet_mode_env_and_harness(tmp_path: Path, monkeypatch) -> None:

@@ -5,6 +5,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 # shellcheck source=/dev/null
 source "${REPO_ROOT}/scripts/lib/framework-install.sh"
+# shellcheck source=/dev/null
+source "${REPO_ROOT}/scripts/lib/skills.sh"
 
 usage() {
   cat <<'EOF'
@@ -20,13 +22,13 @@ Storage v3: all framework assets live under one folder — <target>/sdlc-spdd/
     into the lessons ledger via `sdlc-engine storage migrate` when the Python
     engine is available (otherwise data is left in place with instructions)
   - moves framework dirs (requirements/, spdd/, session-notes/, ROADMAP.md,
-    docs/sdlc-spdd/, agent-context harness/playbooks/extensions,
+    docs/sdlc-spdd/, agent-context harness/skills,
     scripts/sdlc-spdd/, .sdlc/) into <target>/sdlc-spdd/
 
 The upgrade is framework-only and idempotent:
   - updates SDLC-SPDD assistant prompts (IDE stubs stay at the repo root but
     reference paths under sdlc-spdd/)
-  - updates playbooks, harness files, docs, and runtime scripts under the home
+  - updates harness skills, docs, and runtime scripts under the home
   - creates missing ROADMAP.md, milestone scaffold, session-notes/, and the
     empty memory ledgers (spdd/memory/lessons.jsonl + registry.jsonl)
   - does not touch application source files
@@ -436,6 +438,7 @@ consolidate_move "${TARGET}/docs/sdlc-spdd" "${HOME_DIR}/docs"
 consolidate_move "${TARGET}/agent-context/harness" "${HOME_DIR}/harness"
 consolidate_move "${TARGET}/agent-context/playbooks" "${HOME_DIR}/playbooks"
 consolidate_move "${TARGET}/agent-context/extensions" "${HOME_DIR}/extensions"
+migrate_playbooks_extensions_to_skills "${TARGET}" "${DRY_RUN}"
 consolidate_move "${TARGET}/scripts/sdlc-spdd" "${HOME_DIR}/scripts"
 consolidate_move "${TARGET}/.sdlc" "${HOME_DIR}/.sdlc"
 shopt -s nullglob
@@ -476,18 +479,8 @@ for dir in \
   spdd/reviews \
   spdd/sync \
   session-notes \
-  playbooks \
-  extensions \
-  extensions/_all-agents \
-  extensions/initializer-agent \
-  extensions/planning-agent \
-  extensions/architect-agent \
-  extensions/coding-agent \
-  extensions/codereview-agent \
-  extensions/retro-agent \
-  extensions/curator-agent \
-  extensions/skills \
   harness \
+  harness/skills \
   docs \
   scripts \
   scripts/lib; do
@@ -530,35 +523,17 @@ create_missing_framework_file \
   "${HOME_DIR}/requirements/milestones/README.md" \
   "milestone README"
 
-# Framework-owned playbooks and harness files are upgraded, with backups.
-for file in "${REPO_ROOT}"/agent-context/playbooks/*.md; do
+# Framework-owned harness skills and core files are upgraded, with backups.
+for file in "${REPO_ROOT}"/templates/agent-context/harness/skills/*.md; do
+  [[ -f "${file}" ]] || continue
   copy_framework_file \
     "${file}" \
-    "${HOME_DIR}/playbooks/$(basename "${file}")"
+    "${HOME_DIR}/harness/skills/$(basename "${file}")"
 done
 
-create_missing_framework_file \
-  "${REPO_ROOT}/templates/agent-context/extensions/README.md" \
-  "${HOME_DIR}/extensions/README.md" \
-  "extensions README"
-
-create_missing_framework_file \
-  "${REPO_ROOT}/templates/agent-context/extensions/manifest.md" \
-  "${HOME_DIR}/extensions/manifest.md" \
-  "extensions manifest"
-
-create_missing_framework_file \
-  "${REPO_ROOT}/templates/agent-context/extensions/_all-agents/example-manifest-extension.md" \
-  "${HOME_DIR}/extensions/_all-agents/example-manifest-extension.md" \
-  "example extension"
-
-for file in "${REPO_ROOT}"/templates/agent-context/extensions/skills/*.md; do
-  [[ -f "${file}" ]] || continue
-  create_missing_framework_file \
-    "${file}" \
-    "${HOME_DIR}/extensions/skills/$(basename "${file}")" \
-    "skill extension"
-done
+copy_framework_file \
+  "${REPO_ROOT}/templates/agent-context/harness/phase-index.md" \
+  "${HOME_DIR}/harness/phase-index.md"
 
 for file in \
   quality-gates.md \
@@ -567,6 +542,8 @@ for file in \
     "${REPO_ROOT}/agent-context/harness/${file}" \
     "${HOME_DIR}/harness/${file}"
 done
+
+migrate_playbooks_extensions_to_skills "${TARGET}" "${DRY_RUN}"
 
 # User-facing docs are framework-owned when installed under <home>/docs/.
 # Skip orchestrator-internal docs (see scripts/lib/shipped-docs-boundary.sh).

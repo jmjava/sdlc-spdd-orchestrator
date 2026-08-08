@@ -7,7 +7,7 @@ Usage: verify-project-install.sh [--target <path>] [--require-cursor] [--require
 
 Verify that a target project has the SDLC-SPDD scaffold installed in the
 storage v3 single-folder layout: every framework asset under <target>/sdlc-spdd/
-(requirements, spdd + memory ledgers, harness/playbooks/extensions, workflow
+(requirements, spdd + memory ledgers, harness/skills, workflow
 scripts, docs) plus IDE adapter stubs at the target repo root.
 
 Also asserts that no legacy sprawled-layout paths remain (agent-context memory
@@ -179,13 +179,12 @@ run_part "SPDD (govern and remember)" \
   SPDD "lessons ledger (committed)" "${HOME_REL}/spdd/memory/lessons.jsonl" file \
   SPDD "work registry (committed)" "${HOME_REL}/spdd/memory/registry.jsonl" file
 
-run_part "Framework context (harness, playbooks, extensions)" \
+run_part "Framework context (harness and skills)" \
   SDLC "harness directory" "${HOME_REL}/harness" dir \
   SDLC "quality gates" "${HOME_REL}/harness/quality-gates.md" file \
   SDLC "validation rules" "${HOME_REL}/harness/validation-rules.md" file \
-  SDLC "playbooks directory" "${HOME_REL}/playbooks" dir \
-  SDLC "session handoff playbook" "${HOME_REL}/playbooks/session-handoff-playbook.md" file \
-  SDLC "extensions directory" "${HOME_REL}/extensions" dir
+  SDLC "phase index" "${HOME_REL}/harness/phase-index.md" file \
+  SDLC "skills directory" "${HOME_REL}/harness/skills" dir
 
 run_part "Workflow CLI and docs" \
   Runtime "workflow scripts directory" "${HOME_REL}/scripts" dir \

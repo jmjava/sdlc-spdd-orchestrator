@@ -1,15 +1,14 @@
 # Agent Context
 
-This folder holds project memory, feature workspaces, playbooks, and quality harness files for SDLC-SPDD agents.
+This folder holds project memory, feature workspaces, harness skills, and quality harness files for SDLC-SPDD agents.
 
 ## Layout
 
 - `memory/` — durable project context and retrieval indexes
-- `playbooks/` — repeatable workflows by work type
-- `extensions/` — SDLC Agents-style rules (`_all-agents/`, `*-agent/`, `skills/`); resolve with `resolve-agent-context.sh`
+- `harness/skills/` — phase-matching and `#SkillName` skills; resolve with `resolve-agent-context.sh`
 - `features/` — per-work workspaces
 - `sessions/` — generated session briefs and current-session handoffs
-- `harness/` — validation rules and quality gates
+- `harness/` — validation rules, quality gates, and `phase-index.md`
 
 ### Memory and indexes
 
@@ -25,12 +24,12 @@ replace directory scans and chronological history reads.
 
 | Step | Action |
 |------|--------|
-| Install | `setup-agent-prompts.sh` — grounding, memory seeds, `phase-index.md`, scripts |
+| Install | `setup-agent-prompts.sh` — grounding, memory seeds, `harness/phase-index.md`, scripts |
 | Every request | Tier 1 grounding loads automatically (operating model + index rules) |
 | Every session | `start-agent-session.sh` → read `sessions/current-session.md` (Framework Orientation + Resume Prompt) |
 | Before coding in an area | Filter `memory/domain-index.md` by keyword, then `memory/context-index.md` by Area |
 | After analysis | Run `index-spdd-analysis.sh` to index domain keywords and code areas |
-| Phase known, area not yet | Use `memory/phase-index.md` |
+| Phase known, area not yet | Use `harness/phase-index.md` + phase-matching skills |
 | At capture | Script parses session content (summary, `session-notes/`, analysis, canvas, …) for categories |
 
 **Indexes** (read these instead of scanning directories):
@@ -41,7 +40,7 @@ replace directory scans and chronological history reads.
 | `memory/domain-index.md` | Fowler/Troy scoped scan — filter by domain keyword before reading code |
 | `memory/context-index.md` | Before touching code — filter by Area; Kinds: analysis, session, decision, pitfall, pattern, metric |
 | `memory/session-index.md` | Session-only view — filter by Work ID or Area, newest first |
-| `memory/phase-index.md` | Phase-known — playbooks, harness, planning files by SDLC phase |
+| `harness/phase-index.md` | Phase-known — core harness files and planning artifacts by SDLC phase |
 
 **Supporting artifacts:** `memory/sessions/` (per-session detail),
 `memory/session-history.md` (recent window only; archive for older entries).
