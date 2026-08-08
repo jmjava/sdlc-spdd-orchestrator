@@ -24,47 +24,44 @@ jmjava/orch-guide      ← durable home for SPDD + git-incremental + dogfood env
 
 ## Phase 2 — Copy current fork tip (agent or human)
 
-**Blocked on push credentials:** Cloud Agent `cursor[bot]` got HTTP 403 writing
-to `jmjava/orch-guide`. Human must push once (or grant the environment write
-access to that repo), then continue Phase 3.
+**Done (2026-08-08):** bootstrap push to `jmjava/orch-guide`.
 
-From a clean `jmjava/guide` checkout on `main` (includes pin tip + SPDD):
-
-```bash
-./scripts/guide/push-orch-guide-bootstrap.sh
-# or manually:
-git remote add orch https://github.com/jmjava/orch-guide.git
-git push orch main
-git push orch --tags
-# especially: sdlc-spdd-projection-v1, sdlc-spdd-projection-v2
-```
+- Method: orphan squash from `jmjava/guide` `cursor/feat-013-absorption-status-f564`
+  (full history push blocked — PAT lacked GitHub `workflow` scope because tip
+  history includes `.github/workflows/*`).
+- Workflows omitted in the bootstrap commit; forbid script + Cursor rule retained.
+- `main` @ `edb1f9e`
+- Tag `sdlc-spdd-projection-v2` → that tip (orch-guide pin; distinct object from
+  the old `jmjava/guide` tag of the same name)
 
 Verify:
 
 ```bash
-gh repo view jmjava/orch-guide --json url,defaultBranchRef
+gh repo view jmjava/orch-guide --json url,defaultBranchRef,isEmpty
 git ls-remote https://github.com/jmjava/orch-guide.git HEAD
+git ls-remote https://github.com/jmjava/orch-guide.git refs/tags/sdlc-spdd-projection-v2
 ```
+
+Optional later: re-push full history + Actions workflows with a `workflow`-scoped
+token if you want CI parity.
 
 ## Phase 3 — Retarget orchestrator
 
-Defaults today: `GUIDE_GIT_URL=https://github.com/jmjava/guide.git`.
-
-After bootstrap:
+**Done on branch `cursor/guide-persistence-pin-f564` / PR #128** (merge when ready):
 
 | Setting | New value |
 |---------|-----------|
 | `GUIDE_GIT_URL` / console Git URL | `https://github.com/jmjava/orch-guide.git` |
 | `GUIDE_GIT_REF` | `sdlc-spdd-projection-v2` (or `main`) |
-| Dual-repo Cloud Agent env | swap Guide repo → `orch-guide` |
+| Dual-repo Cloud Agent env | swap Guide repo → `orch-guide` (still pending env edit) |
 | Docs (`guide-flow`, dice runbook, etc.) | point at `jmjava/orch-guide` |
 
 Inbound Embabel sync (optional, manual): fetch `embabel/guide` into **orch-guide**
 when you want product updates — never open a PR back to Embabel.
 
-## Phase 4 — Hard-reset `jmjava/guide` to Embabel (human, after Phase 3)
+## Phase 4 — Hard-reset `jmjava/guide` to Embabel (human, after Phase 3 merged)
 
-Only after dogfood uses `orch-guide`:
+Only after dogfood uses `orch-guide` and PR #128 is merged:
 
 ```bash
 cd /path/to/jmjava/guide

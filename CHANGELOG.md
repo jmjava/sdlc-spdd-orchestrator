@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 ### Changed
 
 - Guide dogfood default → **`jmjava/orch-guide`** @ **`sdlc-spdd-projection-v2`** (standalone home; cutover from `jmjava/guide`)
+- **`jmjava/orch-guide` bootstrapped** (Phase 2): standalone tip + pin tag; not an Embabel fork
 - SPIKE-089 / agent-context cleanup docs: Guide dual-read marked complete; issue #89 closeable
 - FEAT-013 closed **fork-only**; orchestrator rule `.cursor/rules/no-embabel-guide-upstream.mdc` forbids asking/opening Embabel Guide PRs
 
