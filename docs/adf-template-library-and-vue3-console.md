@@ -1,7 +1,7 @@
 # ADF template library + Vue3 ops console
 
 **Branch:** `cursor/adf-templates-vue3-console-decf` (off `v2.0.0a6` / `main`)  
-**Status:** planning / spike start  
+**Status:** first slice implemented  
 **Supersedes:** Flask-templated ops console + ad-hoc ADF drafts for the planning→Jira path
 
 ## Problem
@@ -38,43 +38,70 @@ Python/Flask multi-page string UI — hard to extend for template composition.
 | Research notes | `docs/research/jira-adf-and-requirements-sync.md` |
 | Requirements templates | `requirements/` CHORE/feature templates |
 | Persistence tab (new) | Flask console — port into Vue3 |
+| Template library | `templates/adf/` + `sdlc_engine.adf_templates` |
+| Vue3 shell | `console-ui/` (Vite) |
 
-## Proposed shape
+## Shape
 
 ```text
 templates/
   adf/
     parts/           # header_*, body_*, footer_* fragments
-    combos/          # named combinations (JSON or YAML manifests)
+    combos/          # named combinations (JSON manifests)
     schemas/         # JSON Schema for rendered ADF + combo manifests
-engine/…/templates/  # load + render + validate
-console-ui/          # Vue3 app (Vite) — Templates + existing console tabs
+engine/…/adf_templates.py  # load + render + validate
+console-ui/          # Vue3 app (Vite) — Templates + Persistence (+ stubs)
 ```
 
-Render pipeline (sketch):
+Render pipeline:
 
 1. Collect planning inputs for a Work ID (requirement, analysis, progress excerpt, …).
 2. Select combo (manual or by work-type heuristic).
-3. Bind variables → assemble parts → emit ADF JSON (+ pretty markdown preview).
-4. Validate against schema; write under `adf/` or show in viewer; push only on explicit action.
+3. Bind `{{variables}}` → assemble parts → emit ADF JSON (+ markdown preview).
+4. Validate against schema; optional write under `adf/`; push only on explicit action.
+
+## CLI / API
+
+```bash
+python -m sdlc_engine template list --json
+python -m sdlc_engine template validate
+python -m sdlc_engine template render --work-id FEAT-001-shared-script-library --combo feature
+python -m sdlc_engine template render --work-id SPIKE-089-x --combo spike -o adf/SPIKE-089.adf.json
+```
+
+Flask BFF (ops console):
+
+- `POST /api/templates` — list combos
+- `POST /api/templates/render` — `{ target, work_id, combo?, type?, write?, output? }`
 
 ## Vue3 migration approach
 
-1. Keep Flask (or FastAPI) as JSON API (`/api/*`) initially.
-2. Stand up `console-ui/` Vue3 + Vite; proxy to API in dev.
+1. Keep Flask as JSON API (`/api/*`) initially. ✅
+2. Stand up `console-ui/` Vue3 + Vite; proxy to API in dev. ✅
 3. Port tabs: Install, Persistence, SQLite, Rollback, Guide, ADF, **Templates**.
+   - Done: Persistence + Templates
+   - Stubbed: Install, SQLite, Rollback, Guide, ADF
 4. Retire Flask `pages.py` HTML once parity + e2e smoke exist.
+
+Dev: see [`console-ui/README.md`](../console-ui/README.md).
 
 ## Acceptance (first slice)
 
-- [ ] Combo manifest format + 2–3 stock templates (feature / spike / bug)
-- [ ] CLI or engine API: `template render --work-id … --combo … → ADF`
-- [ ] Schema validation test
-- [ ] Vue3 shell loads against live `/api/persistence/status` (smoke)
-- [ ] Docs + draft PR off this branch
+- [x] Combo manifest format + 2–3 stock templates (feature / spike / bug)
+- [x] CLI or engine API: `template render --work-id … --combo … → ADF`
+- [x] Schema validation test
+- [x] Vue3 shell loads against live `/api/persistence/status` (smoke)
+- [x] Docs + draft PR off this branch
+
+## Next slices
+
+- Port remaining Flask tabs into Vue3 components
+- Optional: serve `console-ui/dist` from Flask `/` when present
+- Chore / milestone-sync combos
+- Explicit “write ADF + open viewer” action (still no auto Jira push)
 
 ## Related open work
 
 - #103 PR Playback / report — complementary (decision report); keep separate unless
   templates become the shared rendering layer
-- #89 Guide dual-read — still open on `jmjava/guide` (not this branch)
+- #89 Guide projection contract — still open (not this branch)

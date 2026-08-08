@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jmjava.github.io/sdlc-spdd-orchestrator/schemas/adf-combo-manifest.json",
+  "title": "ADF combo manifest",
+  "type": "object",
+  "required": ["id", "title", "parts"],
+  "additionalProperties": true,
+  "properties": {
+    "id": { "type": "string", "minLength": 1, "pattern": "^[a-z][a-z0-9_-]*$" },
+    "title": { "type": "string", "minLength": 1 },
+    "description": { "type": "string" },
+    "work_types": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "parts": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    }
+  }
+}
