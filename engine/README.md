@@ -8,7 +8,7 @@ and a stable CLI/API that assistants and tools can call without bash.
 
 ## Status
 
-Alpha (`2.0.0a5`). Core workflow commands are implemented in Python and covered
+Alpha (`2.0.0a6`). Core workflow commands are implemented in Python and covered
 by pytest. Install/upgrade/adapter generation still use the existing shell
 scripts; the engine can shell out to them via `sdlc-engine shell …` when needed.
 

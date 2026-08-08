@@ -6,6 +6,36 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- (templating / Vue3 ops console — in progress)
+
+## [2.0.0a6] - 2026-08-08
+
+Agent-context cleanup program landed on `main` (#109).
+
+### Added
+
+- Lean stay-set memory under `spdd/memory/` + hot sessions under `.sdlc/sessions/`
+- Triple-path ContextStore (git-pointers / SQLite / Guide) with soft-fail secondaries
+- Pointer ledger, SQLite schema v4 graph + capability coverage
+- Quiet / product-test mode (`SDLC_QUIET`, harness marker)
+- Ops console **Persistence** tab + `sdlc-engine context backends` (`CONTEXT_BACKENDS`)
+- Work-scoped progress excerpts on resolve (`.sdlc/resolved/progress-<WID>.md`)
+- Program docs under `docs/agent-context-cleanup/`
+
+### Changed
+
+- Feature mirrors no longer required for progress/requirement/review/sync/retro verify paths
+- `resolve-context-backend.sh` emits `CONTEXT_BACKENDS` set; honors explicit guide-dice opt-out
+- DB rebuild ingests capture-format progress (`### <ts> - <WID> - <phase>`)
+
+### Notes
+
+- Guide lean+legacy dual-read (#89) still pending on `jmjava/guide` (`cursor/spdd-dual-context-index-decf`); orchestrator dual-writes both indexes so tag `sdlc-spdd-projection-v1` remains usable via legacy path.
+
+## [Prior unreleased notes (pre-2.0.0a6)]
+
+### Added
+
 - Analysis Scope Lock-In: `/sdlc-spdd-analysis` locks IN/NOT scope before generation;
   guidance in `docs/analysis-phase-scope-validation.md` (FEAT-009)
 - Jira-compatible requirements format: YAML frontmatter schema, CHORE/feature templates,
