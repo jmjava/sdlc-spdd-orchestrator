@@ -209,6 +209,23 @@ def cmd_context(args: argparse.Namespace) -> int:
 
         print(json.dumps(LocalIndex(_project(args)).capability_coverage(), indent=2))
         return 0
+    if action == "backends":
+        from .persistence import load_config, save_config, status_dict
+
+        project = _project(args)
+        if getattr(args, "set_backends", None):
+            raw = str(args.set_backends or "")
+            backends = [p.strip() for p in raw.replace(";", ",").split(",") if p.strip()]
+            cfg = load_config(project)
+            cfg["backends"] = backends
+            if getattr(args, "guide_base_url", None):
+                cfg["guide_base_url"] = args.guide_base_url
+            if getattr(args, "notes", None) is not None:
+                cfg["notes"] = args.notes
+            print(json.dumps(save_config(project, cfg), indent=2))
+            return 0
+        print(json.dumps(status_dict(project), indent=2))
+        return 0
     return 2
 
 
@@ -942,6 +959,19 @@ def build_parser() -> argparse.ArgumentParser:
     ctx_sub.add_parser(
         "coverage", help="Report agent-context capability coverage in SQLite"
     ).set_defaults(func=cmd_context)
+    cb = ctx_sub.add_parser(
+        "backends",
+        help="Show or set CONTEXT_BACKENDS persistence options (#79/#90)",
+    )
+    cb.add_argument(
+        "--set",
+        dest="set_backends",
+        default=None,
+        help="Comma-separated backends: git-pointers,sqlite,guide-dice",
+    )
+    cb.add_argument("--guide-base-url", default=None)
+    cb.add_argument("--notes", default=None)
+    cb.set_defaults(func=cmd_context)
 
     ac = sub.add_parser(
         "agent-context",

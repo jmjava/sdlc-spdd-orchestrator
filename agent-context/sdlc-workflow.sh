@@ -697,8 +697,13 @@ _wf_infer_phase_from_artifacts() {
   canvas="${root}/spdd/canvas/${work_id}.md"
   review="${root}/spdd/reviews/${work_id}-review.md"
   retro="${root}/agent-context/features/${work_id}/retro.md"
+  lean_retro="${root}/spdd/memory/entries/retro.md"
   sync_log="${root}/spdd/sync/${work_id}-sync.md"
-  progress="${root}/agent-context/features/${work_id}/progress-log.md"
+  # Prefer lean progress (#86); legacy feature progress-log is fallback.
+  progress="${root}/spdd/memory/entries/progress.md"
+  if [[ ! -f "${progress}" ]]; then
+    progress="${root}/agent-context/features/${work_id}/progress-log.md"
+  fi
 
   if [[ -n "${req}" || -f "${feature_req}" ]]; then
     inferred="analysis"
@@ -718,14 +723,18 @@ _wf_infer_phase_from_artifacts() {
   if [[ -f "${review}" ]]; then
     inferred="review"
   fi
-  if [[ -f "${retro}" ]]; then
+  if [[ -f "${retro}" ]] || { [[ -f "${lean_retro}" ]] && grep -Fq "${work_id}" "${lean_retro}"; }; then
     inferred="retro"
   fi
   if [[ -f "${sync_log}" ]]; then
     inferred="sync"
   fi
 
-  local session_file="${root}/agent-context/sessions/current-session.md"
+  # Prefer hot .sdlc/sessions (#85); legacy agent-context/sessions is fallback.
+  local session_file="${root}/.sdlc/sessions/current-session.md"
+  if [[ ! -f "${session_file}" ]]; then
+    session_file="${root}/agent-context/sessions/current-session.md"
+  fi
   if [[ -f "${session_file}" ]] && grep -Fq "${work_id}" "${session_file}"; then
     local session_phase
     session_phase="$(grep -m1 '^- Phase:' "${session_file}" 2>/dev/null | sed 's/^- Phase:[[:space:]]*//' || true)"
@@ -755,8 +764,12 @@ _wf_infer_gates_from_artifacts() {
   canvas="${root}/spdd/canvas/${work_id}.md"
   review="${root}/spdd/reviews/${work_id}-review.md"
   retro="${root}/agent-context/features/${work_id}/retro.md"
+  lean_retro="${root}/spdd/memory/entries/retro.md"
   sync_log="${root}/spdd/sync/${work_id}-sync.md"
-  progress="${root}/agent-context/features/${work_id}/progress-log.md"
+  progress="${root}/spdd/memory/entries/progress.md"
+  if [[ ! -f "${progress}" ]]; then
+    progress="${root}/agent-context/features/${work_id}/progress-log.md"
+  fi
 
   if [[ -n "${req}" || -f "${feature_req}" ]]; then
     echo "requirement_documented=passed"
@@ -791,7 +804,7 @@ _wf_infer_gates_from_artifacts() {
     echo "review_completed=passed"
     echo "safeguards_checked=passed"
   fi
-  if [[ -f "${retro}" ]]; then
+  if [[ -f "${retro}" ]] || { [[ -f "${lean_retro}" ]] && grep -Fq "${work_id}" "${lean_retro}"; }; then
     echo "retro_completed=passed"
   fi
   if [[ -f "${sync_log}" ]]; then

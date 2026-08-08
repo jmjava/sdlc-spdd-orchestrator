@@ -160,6 +160,18 @@ else
   ok "resume prompt skips redundant canvas mention"
 fi
 
+echo "== Test 13: lean progress ledger resolves for work-id =="
+mkdir -p "${WORK}/spdd/memory/entries"
+printf '# Progress Entries\n\n## FEAT-050-billing\n\n- T01 complete\n' \
+  >"${WORK}/spdd/memory/entries/progress.md"
+out="$("${RESOLVE}" --target "${WORK}" --phase code --work-id FEAT-050-billing --format paths)"
+assert_contains "${out}" "spdd/memory/entries/progress.md" "lean progress ledger"
+if grep -Fq "agent-context/features/FEAT-050-billing/progress-log.md" <<< "${out}"; then
+  bad "legacy feature progress-log should not resolve when lean progress exists"
+else
+  ok "legacy feature progress-log omitted when lean present"
+fi
+
 echo
 if (( fail > 0 )); then
   echo "${fail} failed, ${pass} passed" >&2

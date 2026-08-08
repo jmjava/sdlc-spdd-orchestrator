@@ -17,6 +17,13 @@ from typing import Any
 
 from .context_model import CONTEXT_KINDS
 from .db import LocalIndex
+from .persistence import (
+    BACKEND_GIT,
+    BACKEND_GUIDE,
+    BACKEND_SQLITE,
+    enabled as backend_enabled,
+    load_config as load_persistence_config,
+)
 from .pointers import PointerLedger, PointerRecord
 from .project import Project
 
@@ -46,10 +53,14 @@ class PersistResult:
     sqlite: dict[str, Any] = field(default_factory=dict)
     guide: dict[str, Any] = field(default_factory=dict)
     errors: list[str] = field(default_factory=list)
+    partial: bool = False
+    backends: list[str] = field(default_factory=list)
 
     def as_dict(self) -> dict[str, Any]:
         return {
             "ok": self.ok,
+            "partial": self.partial,
+            "backends": list(self.backends),
             "git": self.git,
             "sqlite": self.sqlite,
             "guide": self.guide,
@@ -72,10 +83,22 @@ class ContextStore:
         self.pointers = PointerLedger(self.project)
         env_url = os.environ.get("GUIDE_BASE_URL", "").strip()
         port = os.environ.get("GUIDE_PORT", "21337").strip() or "21337"
-        self.guide_base_url = (guide_base_url or env_url or f"http://localhost:{port}").rstrip(
-            "/"
-        )
+        persist_cfg = load_persistence_config(self.project)
+        cfg_url = str(persist_cfg.get("guide_base_url") or "").strip()
+        self.guide_base_url = (
+            guide_base_url or env_url or cfg_url or f"http://localhost:{port}"
+        ).rstrip("/")
         self.guide_timeout = guide_timeout
+
+    def _backends(self) -> list[str]:
+        return list(load_persistence_config(self.project).get("backends") or [])
+
+    def _finalize_persist(self, result: PersistResult) -> PersistResult:
+        """ok = required git path succeeded; partial = soft-fail secondaries."""
+        result.backends = self._backends()
+        result.ok = bool(result.git.get("ok"))
+        result.partial = bool(result.errors)
+        return result
 
     # --- persist ---
 
@@ -104,6 +127,14 @@ class ContextStore:
         result = PersistResult(ok=True)
         lid = _lesson_id(kind_n, wid, area, source)
         ts = _utc_now()
+        want_sqlite = backend_enabled(self.project, BACKEND_SQLITE)
+        want_guide = project_guide and backend_enabled(self.project, BACKEND_GUIDE)
+
+        if not backend_enabled(self.project, BACKEND_GIT):
+            result.ok = False
+            result.git = {"ok": False, "skipped": True, "error": "git-pointers disabled"}
+            result.errors.append("git: git-pointers backend disabled")
+            return self._finalize_persist(result)
 
         # Path 1: lean git
         try:
@@ -122,44 +153,47 @@ class ContextStore:
             result.ok = False
             result.git = {"ok": False, "error": str(exc)}
             result.errors.append(f"git: {exc}")
-            return result
+            return self._finalize_persist(result)
 
         # Path 2: SQLite relational
-        try:
-            self.index.upsert_lesson(
-                lesson_id=lid,
-                kind=kind_n,
-                work_id=wid,
-                area=area,
-                body=text,
-                source=source,
-                ts=ts,
-            )
-            self.index.upsert_pointer_row(
-                pointer_id=git_meta["pointer_id"],
-                kind="lesson",
-                work_id=wid,
-                intent=text[:200],
-                payload={"lesson_id": lid, "area": area, "subtype": kind_n},
-                ts=ts,
-            )
-            graph = self.index.graph_for_work(wid)
-            result.sqlite = {
-                "ok": True,
-                "lesson_id": lid,
-                "lessons_for_work": len(graph.get("lessons") or []),
-                "requirements": len(graph.get("requirements") or []),
-                "canvases": len(graph.get("canvases") or []),
-                "areas": len(graph.get("areas") or []),
-                "edges": len(graph.get("edges") or []),
-                "schema": "4",
-            }
-        except Exception as exc:  # noqa: BLE001
-            result.sqlite = {"ok": False, "error": str(exc)}
-            result.errors.append(f"sqlite: {exc}")
+        if want_sqlite:
+            try:
+                self.index.upsert_lesson(
+                    lesson_id=lid,
+                    kind=kind_n,
+                    work_id=wid,
+                    area=area,
+                    body=text,
+                    source=source,
+                    ts=ts,
+                )
+                self.index.upsert_pointer_row(
+                    pointer_id=git_meta["pointer_id"],
+                    kind="lesson",
+                    work_id=wid,
+                    intent=text[:200],
+                    payload={"lesson_id": lid, "area": area, "subtype": kind_n},
+                    ts=ts,
+                )
+                graph = self.index.graph_for_work(wid)
+                result.sqlite = {
+                    "ok": True,
+                    "lesson_id": lid,
+                    "lessons_for_work": len(graph.get("lessons") or []),
+                    "requirements": len(graph.get("requirements") or []),
+                    "canvases": len(graph.get("canvases") or []),
+                    "areas": len(graph.get("areas") or []),
+                    "edges": len(graph.get("edges") or []),
+                    "schema": "4",
+                }
+            except Exception as exc:  # noqa: BLE001
+                result.sqlite = {"ok": False, "error": str(exc)}
+                result.errors.append(f"sqlite: {exc}")
+        else:
+            result.sqlite = {"ok": False, "skipped": True}
 
         # Path 3: Guide DICE projection
-        if project_guide:
+        if want_guide:
             try:
                 guide_meta = self.project_to_guide()
                 result.guide = {"ok": True, **guide_meta}
@@ -169,12 +203,7 @@ class ContextStore:
         else:
             result.guide = {"ok": False, "skipped": True}
 
-        if result.errors:
-            # git succeeded; partial fan-out still reports ok=False when secondaries fail
-            result.ok = result.sqlite.get("ok") is True and (
-                result.guide.get("ok") is True or result.guide.get("skipped") is True
-            )
-        return result
+        return self._finalize_persist(result)
 
     def persist_context_entry(
         self,
@@ -210,6 +239,15 @@ class ContextStore:
 
         result = PersistResult(ok=True)
         ts = _utc_now()
+        want_sqlite = backend_enabled(self.project, BACKEND_SQLITE)
+        want_guide = project_guide and backend_enabled(self.project, BACKEND_GUIDE)
+
+        if not backend_enabled(self.project, BACKEND_GIT):
+            result.ok = False
+            result.git = {"ok": False, "skipped": True, "error": "git-pointers disabled"}
+            result.errors.append("git: git-pointers backend disabled")
+            return self._finalize_persist(result)
+
         try:
             git_meta = self._persist_entry_git(
                 kind=kind_n,
@@ -225,44 +263,47 @@ class ContextStore:
             result.ok = False
             result.git = {"ok": False, "error": str(exc)}
             result.errors.append(f"git: {exc}")
-            return result
+            return self._finalize_persist(result)
 
-        try:
-            eid = self.index.upsert_context_entry(
-                kind=kind_n,
-                work_id=wid,
-                area=area,
-                phase=phase,
-                path=git_meta.get("path", ""),
-                title=text[:120],
-                body=text,
-                source=source,
-                ts=ts,
-            )
-            self.index.upsert_pointer_row(
-                pointer_id=git_meta["pointer_id"],
-                kind=kind_n,
-                work_id=wid,
-                intent=text[:200],
-                payload={"entry_id": eid, "area": area},
-                ts=ts,
-            )
-            graph = self.index.graph_for_work(wid)
-            cov = self.index.capability_coverage()
-            result.sqlite = {
-                "ok": True,
-                "entry_id": eid,
-                "context_entries": len(graph.get("context_entries") or []),
-                "requirements": len(graph.get("requirements") or []),
-                "canvases": len(graph.get("canvases") or []),
-                "coverage_complete": cov.get("complete"),
-                "schema": "4",
-            }
-        except Exception as exc:  # noqa: BLE001
-            result.sqlite = {"ok": False, "error": str(exc)}
-            result.errors.append(f"sqlite: {exc}")
+        if want_sqlite:
+            try:
+                eid = self.index.upsert_context_entry(
+                    kind=kind_n,
+                    work_id=wid,
+                    area=area,
+                    phase=phase,
+                    path=git_meta.get("path", ""),
+                    title=text[:120],
+                    body=text,
+                    source=source,
+                    ts=ts,
+                )
+                self.index.upsert_pointer_row(
+                    pointer_id=git_meta["pointer_id"],
+                    kind=kind_n,
+                    work_id=wid,
+                    intent=text[:200],
+                    payload={"entry_id": eid, "area": area},
+                    ts=ts,
+                )
+                graph = self.index.graph_for_work(wid)
+                cov = self.index.capability_coverage()
+                result.sqlite = {
+                    "ok": True,
+                    "entry_id": eid,
+                    "context_entries": len(graph.get("context_entries") or []),
+                    "requirements": len(graph.get("requirements") or []),
+                    "canvases": len(graph.get("canvases") or []),
+                    "coverage_complete": cov.get("complete"),
+                    "schema": "4",
+                }
+            except Exception as exc:  # noqa: BLE001
+                result.sqlite = {"ok": False, "error": str(exc)}
+                result.errors.append(f"sqlite: {exc}")
+        else:
+            result.sqlite = {"ok": False, "skipped": True}
 
-        if project_guide:
+        if want_guide:
             try:
                 guide_meta = self.project_to_guide()
                 result.guide = {"ok": True, **guide_meta}
@@ -272,11 +313,7 @@ class ContextStore:
         else:
             result.guide = {"ok": False, "skipped": True}
 
-        if result.errors:
-            result.ok = result.sqlite.get("ok") is True and (
-                result.guide.get("ok") is True or result.guide.get("skipped") is True
-            )
-        return result
+        return self._finalize_persist(result)
 
     def _persist_entry_git(
         self,

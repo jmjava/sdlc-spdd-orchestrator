@@ -15,11 +15,13 @@ from .phases import (
     PHASE_ORDER,
     gates_for_phase,
     next_phase,
+    phase_index,
     recommended_command,
     valid_phase,
 )
 from .pointer import PointerStore
 from .project import Project
+from .quiet import is_quiet, quiet_resume_blurb
 
 
 def _utc_now() -> str:
@@ -137,12 +139,35 @@ class WorkflowEngine:
             text = canvas.read_text(encoding="utf-8")
             if re.search(r"ready\s+for\s+coding", text, re.IGNORECASE):
                 inferred = "code"
+        progress = self.project.progress_log_path(work_id)
+        legacy_progress = self.project.feature_dir(work_id) / "progress-log.md"
+        for prog in (progress, legacy_progress):
+            if prog.is_file() and re.search(
+                r"(T\d{2}.*complete|implemented|merged)",
+                prog.read_text(encoding="utf-8"),
+                re.IGNORECASE,
+            ):
+                inferred = "code"
+                break
         if self.project.review_path(work_id).is_file():
             inferred = "review"
-        if (self.project.feature_dir(work_id) / "retro.md").is_file():
+        lean_retro = root / "spdd" / "memory" / "entries" / "retro.md"
+        if (self.project.feature_dir(work_id) / "retro.md").is_file() or (
+            lean_retro.is_file()
+            and work_id in lean_retro.read_text(encoding="utf-8")
+        ):
             inferred = "retro"
         if self.project.sync_path(work_id).is_file():
             inferred = "sync"
+        session = self.project.current_session_path()
+        if session.is_file():
+            sess_text = session.read_text(encoding="utf-8")
+            if work_id in sess_text:
+                m = re.search(r"^- Phase:\s*(\S+)", sess_text, re.MULTILINE)
+                if m and valid_phase(m.group(1)):
+                    sess_phase = m.group(1)
+                    if phase_index(sess_phase) > phase_index(inferred):
+                        inferred = sess_phase
         return inferred
 
     def sync(self, work_id: str | None = None) -> WorkflowState:
@@ -273,6 +298,13 @@ class WorkflowEngine:
         if op:
             state.operation = op
             self.save_state(state)
+        if is_quiet(self.project):
+            return (
+                "== SDLC: what to do now (quiet) ==\n"
+                f"Work ID: {wid}\n"
+                f"Phase: {state.phase}\n\n"
+                f"{quiet_resume_blurb()}\n"
+            )
         cmd = recommended_command(state.phase, wid, state.operation)
         idx = PHASE_ORDER.index(state.phase) + 1 if state.phase in PHASE_ORDER else 0
         lines = [
@@ -322,14 +354,20 @@ class WorkflowEngine:
             state = self.sync(wid)
             canvas = self.project.canvas_path(wid)
             op, title = canvas_mod.next_operation(canvas) if canvas.is_file() else ("", "")
+            quiet = is_quiet(self.project)
             payload.update(
                 {
                     "phase": state.phase,
                     "operation": op or state.operation,
                     "operation_title": title,
                     "active": state.active,
-                    "recommended_command": recommended_command(
-                        state.phase, wid, op or state.operation
+                    "quiet": quiet,
+                    "recommended_command": (
+                        quiet_resume_blurb()
+                        if quiet
+                        else recommended_command(
+                            state.phase, wid, op or state.operation
+                        )
                     ),
                     "gates": state.gates,
                 }

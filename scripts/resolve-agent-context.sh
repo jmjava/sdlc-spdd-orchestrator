@@ -202,7 +202,12 @@ add_work_id_artifacts() {
   local wid="$1"
   add_path "${TARGET}/spdd/canvas/${wid}.md"
   add_path "${TARGET}/spdd/analysis/${wid}-analysis.md"
-  add_path "${TARGET}/agent-context/features/${wid}/progress-log.md"
+  # Lean progress is canonical (#86); legacy feature progress-log is fallback.
+  if [[ -f "${TARGET}/spdd/memory/entries/progress.md" ]]; then
+    add_path "${TARGET}/spdd/memory/entries/progress.md"
+  else
+    add_path "${TARGET}/agent-context/features/${wid}/progress-log.md"
+  fi
   add_path "${TARGET}/agent-context/features/${wid}/analysis-context.md"
 }
 

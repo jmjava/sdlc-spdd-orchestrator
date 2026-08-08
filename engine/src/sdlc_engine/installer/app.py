@@ -8,6 +8,12 @@ from typing import Any
 
 from sdlc_engine.adf_work import AdfWorkService
 from sdlc_engine.db import LocalIndex
+from sdlc_engine.persistence import (
+    ALL_BACKENDS,
+    load_config as load_persistence_config,
+    save_config as save_persistence_config,
+    status_dict as persistence_status,
+)
 from sdlc_engine.project import Project
 from sdlc_engine.viewer.store import AdfStore, AdfStoreError
 
@@ -176,6 +182,45 @@ def create_app(default_target: Path | str | None = None) -> Any:
                 "status": index.status_dict(),
             }
         )
+
+    @app.post("/api/persistence/status")
+    def api_persistence_status() -> Any:
+        """Report CONTEXT_BACKENDS / triple-path persist options (#79/#90)."""
+        body = request.get_json(silent=True) or {}
+        target = _target_from_body(body)
+        if not target.is_dir():
+            return jsonify({"error": f"target not found: {target}"}), 400
+        project = Project.resolve(target)
+        payload = persistence_status(project)
+        payload["available"] = list(ALL_BACKENDS)
+        payload["target"] = str(target)
+        return jsonify(payload)
+
+    @app.post("/api/persistence/save")
+    def api_persistence_save() -> Any:
+        """Save `.sdlc/persistence-config.json` from the ops console."""
+        body = request.get_json(silent=True) or {}
+        target = _target_from_body(body)
+        if not target.is_dir():
+            return jsonify({"error": f"target not found: {target}"}), 400
+        backends = body.get("backends")
+        if backends is None:
+            return jsonify({"error": "backends is required (list or comma string)"}), 400
+        if isinstance(backends, str):
+            backends = [p.strip() for p in backends.replace(";", ",").split(",") if p.strip()]
+        if not isinstance(backends, list):
+            return jsonify({"error": "backends must be a list"}), 400
+        project = Project.resolve(target)
+        cfg = load_persistence_config(project)
+        cfg["backends"] = backends
+        if "guide_base_url" in body:
+            cfg["guide_base_url"] = str(body.get("guide_base_url") or "").strip()
+        if "notes" in body:
+            cfg["notes"] = str(body.get("notes") or "")
+        saved = save_persistence_config(project, cfg)
+        saved["available"] = list(ALL_BACKENDS)
+        saved["target"] = str(target)
+        return jsonify(saved)
 
     @app.post("/api/backups")
     def api_backups() -> Any:
