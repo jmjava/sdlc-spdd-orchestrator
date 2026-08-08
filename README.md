@@ -2,35 +2,33 @@
 
 A multi-assistant scaffold for disciplined AI-assisted delivery.
 
-## Work in progress
+## Current focus
 
-**SPIKE-001 — Guide as an optional DICE context backend (on `main` for field confirmation).**
-SPDD markdown (canvases, memory indexes) can be projected into a Neo4j entity graph
-served by [Embabel Guide](https://github.com/embabel/guide) (`jmjava/guide` tag
-**`sdlc-spdd-projection-v1`**), so the next run can retrieve context by **typed edges**
-(Work ID subgraphs, cross-run lessons per code area) instead of similarity alone.
-The backend is **opt-in** per install and resolved at **runtime** — every command still
-works on file-based indexes when Guide is absent.
+**Release `v2.0.0a6`** landed the agent-context cleanup on `main` ([#109](https://github.com/jmjava/sdlc-spdd-orchestrator/pull/109)):
+lean stay-set under `spdd/memory/`, hot sessions under `.sdlc/sessions/`, and a
+**triple-path context store** (git pointers + SQLite + optional Guide) with operator
+toggles in the ops console **Persistence** tab.
 
-- **Status:** T06 **provisional go** for field dogfood ([#56](https://github.com/jmjava/sdlc-spdd-orchestrator/pull/56)); Guide projection landed ([guide #2](https://github.com/jmjava/guide/pull/2))
-- **How the flow works:** [docs/guide-flow.md](docs/guide-flow.md)
-- **Setup runbook:** [docs/dice-projection-runbook.md](docs/dice-projection-runbook.md)
-- **Local GUIs + Guide:** [docs/ops-console.md](docs/ops-console.md) — ops console (`:5051`) and ADF Viewer (`:5050`)
-- **Spike canvas:** [spdd/canvas/SPIKE-001-guide-rag-context-backend.md](spdd/canvas/SPIKE-001-guide-rag-context-backend.md)
+**Next:** ADF template library (header/body/footer combos from planning → Jira ADF)
+and a **Vue3** ops console — see
+[docs/adf-template-library-and-vue3-console.md](docs/adf-template-library-and-vue3-console.md)
+(`cursor/adf-templates-vue3-console-decf`).
 
-**Demo videos:** [Watch three narrated intro segments on GitHub Pages](https://jmjava.github.io/sdlc-spdd-orchestrator/) — SDLC-SPDD overview, install/workflow, and Guide RAG dogfooding.
+**Demo videos:** [GitHub Pages intros](https://jmjava.github.io/sdlc-spdd-orchestrator/) —
+overview, install/workflow, and Guide dogfooding.
 
 ## Local tools (two GUIs)
 
-These are **separate** localhost Flask apps. Prefer shell install scripts for production
-target installs; the ops console is an **experimental** dogfood UI.
+These are **separate** localhost Flask apps today (Vue3 console is the migration target).
+Prefer shell install scripts for production target installs; the ops console is an
+**experimental** dogfood UI.
 
 | UI | Port | Start | Job |
 | -- | ---- | ----- | --- |
-| **Ops console** | `5051` | `./scripts/sdlc.sh console --target /path/to/app` | Install/upgrade, SQLite, rollback, Guide+Neo4j lifecycle, **launch** ADF Viewer |
+| **Ops console** | `5051` | `./scripts/sdlc.sh console --target /path/to/app` | Install/upgrade, Persistence, SQLite, rollback, Guide+Neo4j, **launch** ADF Viewer |
 | **ADF Viewer** | `5050` | `./scripts/sdlc.sh viewer` (or console **ADF** tab) | Edit `adf/*.adf.json`, Jira upload/download |
 
-Guide is wired through the console **Guide** tab and optional slash-command context
+Guide is optional and wired through the console **Guide** tab + `CONTEXT_BACKENDS`
 (`guide-dice`); the ADF Viewer does **not** talk to Guide. Full diagram and tabs:
 [docs/ops-console.md](docs/ops-console.md).
 
@@ -44,23 +42,21 @@ python3 -m pip install -e './engine[viewer]'
 
 | What | Why it matters | Try it |
 | ---- | -------------- | ------ |
-| **Ops console + ADF tab** ([#54](https://github.com/jmjava/sdlc-spdd-orchestrator/pull/54), [#64](https://github.com/jmjava/sdlc-spdd-orchestrator/pull/64)) | Local UI for install/SQLite/rollback/Guide and viewer start/stop | `./scripts/sdlc.sh console` |
+| **Agent-context cleanup** (`v2.0.0a6`, [#109](https://github.com/jmjava/sdlc-spdd-orchestrator/pull/109)) | Lean git stay-set + hot sessions; triple-path persist/retrieve | [docs/agent-context-cleanup/](docs/agent-context-cleanup/) · `sdlc-engine context backends` |
+| **Ops console + Persistence** | Install/SQLite/rollback/Guide + backend toggles | `./scripts/sdlc.sh console` · [docs/ops-console.md](docs/ops-console.md) |
 | **ADF Viewer** | WYSIWYG + raw ADF editor with explicit Jira sync | `./scripts/sdlc.sh viewer` · [docs/adf-viewer.md](docs/adf-viewer.md) |
-| **Guide DICE path** ([#56](https://github.com/jmjava/sdlc-spdd-orchestrator/pull/56)) | Optional typed-graph context behind slash commands | [docs/guide-flow.md](docs/guide-flow.md) |
-| **SDLC pointer / workflow / team registry** ([#20](https://github.com/jmjava/sdlc-spdd-orchestrator/pull/20), [#21](https://github.com/jmjava/sdlc-spdd-orchestrator/pull/21)) | Persistent Work ID, phase gates, shared claims | `./scripts/sdlc.sh next` · `/sdlc-spdd-whereami` |
+| **Optional Guide DICE** | Typed-graph context when opted in; files still work offline | [docs/guide-flow.md](docs/guide-flow.md) |
+| **SDLC pointer / workflow / team registry** | Persistent Work ID, phase gates, shared claims | `./scripts/sdlc.sh next` · `/sdlc-spdd-whereami` |
 
-Pointer and workflow state stay local (`.sdlc/pointer`, `.sdlc/workflows/`); team claims live in `agent-context/work-registry.tsv` and sync through git. Details: [agent-context/README.md](agent-context/README.md#sdlc-pointer-current-choretask).
+Pointer and workflow state stay local (`.sdlc/pointer`, `.sdlc/workflows/`); lean registry
+also lives under `spdd/memory/`. Details: [agent-context/README.md](agent-context/README.md#sdlc-pointer-current-choretask).
 
-> **Project status: Milestone 1 make-it-right track is largely complete; make-it-fast measurement landed.**
-> We develop this framework through Kent Beck's progression — *make it work → make it
-> right → make it fast*. **Make it work** is done. **Make it right** refactors
-> (shared libs, command-spec generation, extension manifest, analysis Scope Lock,
-> Jira requirements format, milestone subdirs, session-brief archive) are Complete.
-> **Make it fast** measurement (prompt-optimization ledger + canvas readiness) is
-> Complete; SPIKE-001 (Guide) is on `main` for field confirmation; SPIKE-002 (local
-> models) remains parked. See the [ROADMAP](ROADMAP.md) and
-> [milestone-1](requirements/milestones/milestone-1/MILESTONE-1.md) (root
-> [`milestone-1.md`](milestone-1.md) is a compatibility stub).
+> **Project status:** Milestone 1 *make it work* / *make it right* tracks are largely
+> complete; *make it fast* measurement (ledger + readiness) and the optional Guide
+> context path are **shipped** (not a README “work in progress”). Active product work
+> is ADF templating + Vue3 console. SPIKE-002 (local models) remains parked. See the
+> [ROADMAP](ROADMAP.md) and
+> [milestone-1](requirements/milestones/milestone-1/MILESTONE-1.md).
 >
 > **We dogfood the framework on itself.** Improvements are governed Work IDs with
 > REASONS Canvases under [`spdd/canvas/`](spdd/canvas/) and requirements under

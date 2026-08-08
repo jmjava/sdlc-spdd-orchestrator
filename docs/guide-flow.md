@@ -1,7 +1,7 @@
 # Guide flow — how SPDD work feeds and retrieves the Guide context backend
 
-**Work ID:** SPIKE-001-guide-rag-context-backend  
-**Status:** On `main` for field confirmation (T06 provisional go). Guide pin:
+**Work ID:** SPIKE-001-guide-rag-context-backend (historical spike; path shipped)  
+**Status:** Optional Guide DICE backend is available on `main` (`v2.0.0a6`+). Guide pin:
 tag **`sdlc-spdd-projection-v1`** on `jmjava/guide`. Local dogfood UI:
 [ops-console.md](ops-console.md) (**Guide** tab). ADF editing is a separate app
 ([adf-viewer.md](adf-viewer.md)) and does not use Guide.
