@@ -304,9 +304,12 @@ your-app/
 4. [Daily runbook](docs/daily-runbook.md) · [Cheat sheet](docs/sdlc-spdd-cheat-sheet.md)  
 5. [Useful concepts and commands](docs/useful-concepts-and-commands.md)  
 
-**Shipped platform**
+**Shipped platform (`v2.0.0a6`)**
 
-- [Agent-context cleanup](docs/agent-context-cleanup/) — stay-set, triple-path, quiet mode  
+- [What's new in v2.0.0a6](docs/whats-new-v2.0.0a6.md) — feature tour  
+- [Hot sessions and lean memory](docs/hot-sessions-and-lean-memory.md)  
+- [Triple-path context](docs/triple-path-context.md) — git / SQLite / Guide backends  
+- [Quiet mode](docs/quiet-mode.md)  
 - [Local SQLite index](docs/local-sqlite-index.md)  
 - [Ops console](docs/ops-console.md) · [ADF Viewer](docs/adf-viewer.md)  
 - [Jira runbook](docs/jira-runbook.md) · [Jira-compatible requirements](docs/jira-compatible-requirements-format.md)  

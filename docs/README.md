@@ -10,14 +10,32 @@ Use this hub to choose the right guide for your current task. If you are new, re
 
     Planning: ROADMAP.md, milestone-*.md, requirements/, requirements/milestones/, session-notes/
             -> inform and summarize
-    spdd/canvas/ + agent-context/
+    spdd/canvas/ + spdd/memory/  (+ hot .sdlc/sessions/)
             -> govern and remember
     code / reviews / sync logs
             -> execute and validate
 
-Use roadmap, milestone, and session-note files for project planning and narrative. Use SDLC-SPDD artifacts for governed execution and durable agent memory.
+Use roadmap, milestone, and session-note files for project planning and narrative.
+Use SDLC-SPDD artifacts for governed execution and durable agent memory. Session
+briefs are hot under `.sdlc/sessions/` (not committed).
 
 **How do Planning, SPDD, and SDLC fit together in practice?** → [Three-part operating path](three-part-operating-path.md)
+
+## What's new (`v2.0.0a6`)
+
+Start here if you are catching up after the agent-context cleanup release:
+
+| Guide | Use it when |
+|-------|-------------|
+| [What's new in v2.0.0a6](whats-new-v2.0.0a6.md) | Tour of lean stay-set, hot sessions, triple-path, quiet mode |
+| [Hot sessions and lean memory](hot-sessions-and-lean-memory.md) | Where briefs and `spdd/memory/` live now |
+| [Triple-path context](triple-path-context.md) | Configure git / SQLite / Guide backends; persist & retrieve |
+| [Quiet mode](quiet-mode.md) | Product work without T## dogfood gravity |
+| [Local SQLite index](local-sqlite-index.md) | `db rebuild` / `lookup` / FTS |
+| [Ops console](ops-console.md) | Persistence tab + install / Guide / ADF viewer |
+| [ADF templates + Vue3 console](adf-template-library-and-vue3-console.md) | **Next** product slice (in progress) |
+
+Program / spike archive: [agent-context-cleanup/](agent-context-cleanup/).
 
 ## If You Are New, Read These in Order
 
@@ -27,14 +45,15 @@ Use roadmap, milestone, and session-note files for project planning and narrativ
 4. [Installing into your project](installing-into-your-project.md) — fresh install, upgrade path, verification, and troubleshooting.
 5. [Top useful concepts and commands](useful-concepts-and-commands.md) — Work IDs, canvases, sessions, commands, and prompt patterns.
 6. [Maintaining your project](maintaining-your-project.md) — upgrades, memory hygiene, canvas sync, links, and session maintenance.
+7. [What's new in v2.0.0a6](whats-new-v2.0.0a6.md) — current platform paths (hot sessions, lean memory, backends).
 
 **Workflow CLI reference** (pointer, phase tracking, team registry): [agent-context/README.md](../agent-context/README.md#sdlc-pointer-current-choretask) — installed in target projects at `agent-context/README.md`.
 
 **Python engine (v2):** [Engine v2](engine-v2.md) — reusable `sdlc_engine` package; `SDLC_ENGINE=auto|python|shell` on `scripts/sdlc.sh`.
 
-**Local GUIs (experimental ops console + ADF Viewer) and Guide wiring:** [Ops console and ADF Viewer](ops-console.md).
+**Local GUIs (experimental ops console + ADF Viewer):** [Ops console and ADF Viewer](ops-console.md).
 
-You can treat these six pages as the canonical onboarding path.
+You can treat the onboarding pages above as the canonical path.
 
 ## If You Are Installing or Upgrading
 

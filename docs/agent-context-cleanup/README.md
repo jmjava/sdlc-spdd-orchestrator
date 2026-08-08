@@ -1,7 +1,15 @@
 # Agent-context cleanup program
 
 Index: [GitHub #92](https://github.com/jmjava/sdlc-spdd-orchestrator/issues/92)  
-End-state: [GitHub #93](https://github.com/jmjava/sdlc-spdd-orchestrator/issues/93)
+End-state: [GitHub #93](https://github.com/jmjava/sdlc-spdd-orchestrator/issues/93)  
+**Shipped:** `v2.0.0a6` / [#109](https://github.com/jmjava/sdlc-spdd-orchestrator/pull/109)
+
+> **Operators:** start with the user guides, not this folder —  
+> [What's new in v2.0.0a6](../whats-new-v2.0.0a6.md) ·
+> [Hot sessions & lean memory](../hot-sessions-and-lean-memory.md) ·
+> [Triple-path context](../triple-path-context.md) ·
+> [Quiet mode](../quiet-mode.md).  
+> This directory is the program / spike archive.
 
 ## End-state (locked)
 

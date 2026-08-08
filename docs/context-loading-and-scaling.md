@@ -38,13 +38,18 @@ Everything below is pulled into context **only when needed**:
 - `spdd/analysis/`, `spdd/canvas/`, `spdd/tasks/`, `spdd/reviews/`, `spdd/sync/`
 - `ROADMAP.md`, root `milestone-*.md` and/or
   `requirements/milestones/milestone-N/MILESTONE-N.md`, `session-notes/`
-- `agent-context/sessions/`, `agent-context/memory/`,
-  `agent-context/features/`, `agent-context/harness/`, `agent-context/playbooks/`
+- `.sdlc/sessions/` (hot briefs, gitignored), `spdd/memory/` (lean stay-set)
+- `agent-context/harness/`, `agent-context/playbooks/`, `agent-context/extensions/`
+  (install-time; not the session bus)
+
+> **`v2.0.0a6` paths:** see [Hot sessions and lean memory](hot-sessions-and-lean-memory.md)
+> and [What's new in v2.0.0a6](whats-new-v2.0.0a6.md). Prefer `.sdlc/sessions/current-session.md`
+> and lean `spdd/memory/` over legacy `agent-context/sessions/` / feature mirrors.
 
 An artifact enters context only through one of three paths:
 
 1. **You `@`-mention it** in a prompt (for example `@spdd/canvas/FEAT-001.md`).
-2. **A session brief or command names it** — `agent-context/sessions/current-session.md`
+2. **A session brief or command names it** — `.sdlc/sessions/current-session.md`
    and the resume prompt written by `start-agent-session.sh` point at specific files.
 3. **The agent chooses to read it** based on the Tier 1 instruction.
 
@@ -69,8 +74,9 @@ instruction, not an enforced mechanism. Pressure points as a project grows:
 | Artifact | Growth | Risk | Mitigation |
 |----------|--------|------|------------|
 | `agent-context/memory/session-history.md` | Bounded recent window (rotates) | Low — `capture-session-memory.sh` keeps the most recent `--history-limit` entries inline and moves older ones to `agent-context/memory/archive/` | Retrieve via [bootstrap indexes](#bootstrap-and-index-based-loading), not by reading this file |
-| `agent-context/sessions/` | Session briefs (`current-session.md` + timestamped) | Low if agents read only `current-session.md`; count bounded by `--session-limit` (default 20; older → `sessions/archive/`) | Treat `current-session.md` as the single entry point |
-| `agent-context/features/`, `spdd/canvas/`, `spdd/reviews/`, `spdd/sync/` | One set per Work ID | Low when scoped to one Work ID; listings grow | Scope reads to the active Work ID subtree |
+| `.sdlc/sessions/` | Hot session briefs (`current-session.md` + timestamped) | Low if agents read only `current-session.md`; count bounded by `--session-limit` | Treat `.sdlc/sessions/current-session.md` as the single entry point |
+| `spdd/memory/entries/progress.md` | Shared progress ledger | Medium if loaded wholesale | Resolve injects `.sdlc/resolved/progress-<WID>.md` only |
+| `spdd/canvas/`, `spdd/reviews/`, `spdd/sync/` | One set per Work ID | Low when scoped to one Work ID | Scope reads to the active Work ID |
 | `session-notes/` | One file per day (unbounded count) | Low — only recent notes matter | Read only the current and recent dates |
 
 ## Bootstrap and index-based loading
@@ -89,7 +95,7 @@ point at the few artifacts that matter for the current Work ID, phase, or code a
 |-------|------|------------|
 | **1 — Install** | Once (`setup-agent-prompts.sh` / `init-project.sh`) | Tier 1 grounding files, memory seeds, `phase-index.md`, runtime scripts under `scripts/sdlc-spdd/`, framework docs under `docs/sdlc-spdd/` |
 | **2 — Every request** | Automatic (no script) | Tier 1 grounding injects operating model, artifact locations, and index-based loading rules on **every** chat request |
-| **3 — Every session** | `sdlc.sh start` (or `start-agent-session.sh`) before work | `agent-context/sessions/current-session.md` — Framework Orientation, **Resolved Context** (from `resolve-agent-context.sh`), artifact status, **Resume Prompt** (paste verbatim into chat) |
+| **3 — Every session** | `sdlc.sh start` (or `start-agent-session.sh`) before work | `.sdlc/sessions/current-session.md` — Framework Orientation, **Resolved Context** (from `resolve-agent-context.sh`), artifact status, **Resume Prompt** (paste verbatim into chat) |
 | **4 — Cold start** | Chat opened without a fresh brief | Tier 2 still applies; run `./scripts/sdlc-spdd/sdlc.sh next` or `/sdlc-spdd-whereami`, then read existing `current-session.md` or re-run `sdlc.sh start` — do not guess Work ID or scan directories |
 | **Close the loop** | `sdlc.sh capture` at session end | Indexes grow (`context-index`, `session-index`, `code-areas`) so the next bootstrap into the same area finds prior context immediately |
 
@@ -119,10 +125,10 @@ flowchart TD
 
 ### Loading rules
 
-1. **Start at `agent-context/sessions/current-session.md`.** Read Framework
+1. **Start at `.sdlc/sessions/current-session.md`.** Read Framework
    Orientation, then follow its pointers — not directory listings.
-2. **Scope to one Work ID.** Load `agent-context/features/<WORK-ID>/progress-log.md`
-   and `spdd/canvas/<WORK-ID>.md` for the active work item.
+2. **Scope to one Work ID.** Load `spdd/canvas/<WORK-ID>.md` and the work-scoped
+   progress excerpt (`.sdlc/resolved/progress-<WORK-ID>.md` when present).
 3. **Retrieve by area or phase via indexes** (catalog below). Unrelated sessions
    are interleaved in time — never read global history top-to-bottom.
 4. **`@`-mention deliberately.** Naming a specific file is cheaper and more precise

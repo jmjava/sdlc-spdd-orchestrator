@@ -27,7 +27,7 @@ For *which prompt standard to open*, see [Which prompt standard?](session-prompt
 | **Planning** | `session-notes/YYYY-MM-DD.md` | Daily agent-session narrative |
 | **SPDD** | `spdd/canvas/<WORK-ID>.md` | Canonical REASONS Canvas — **governs execution** |
 | **SPDD** | `spdd/reviews/`, `spdd/sync/` | Review and reconciliation evidence |
-| **SDLC** | `agent-context/sessions/`, `agent-context/memory/` | Session handoffs and durable memory |
+| **SDLC** | `.sdlc/sessions/` (hot), `spdd/memory/` (lean), harness/playbooks under `agent-context/` | Session handoffs and durable memory |
 | **SDLC** | Phase commands, playbooks | Lifecycle discipline |
 
 Install and upgrade scripts **create missing Planning scaffolding** and **never overwrite** existing `ROADMAP.md`, `milestone-*.md`, `requirements/milestones/`, or `session-notes/`.

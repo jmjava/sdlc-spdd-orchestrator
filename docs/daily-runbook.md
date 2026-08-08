@@ -55,7 +55,7 @@ If you already have an active pointer, resume or switch:
        ./scripts/sdlc-spdd/sdlc.sh start
        # or: ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase>
 
-4. **Paste the Resume Prompt** from `agent-context/sessions/current-session.md`. That generated prompt is the source of truth — it directs the agent to load only the files listed under **Resolved Context** in the same brief (phase extensions, Work ID artifacts, and area-filtered index rows).
+4. **Paste the Resume Prompt** from `.sdlc/sessions/current-session.md` (hot path; gitignored). That generated prompt is the source of truth — it directs the agent to load only the files listed under **Resolved Context** in the same brief (phase extensions, Work ID artifacts, area-filtered index rows, and work-scoped progress excerpt). See [Hot sessions and lean memory](hot-sessions-and-lean-memory.md).
 
 5. After completing a phase step: `./scripts/sdlc-spdd/sdlc.sh advance` (or `/sdlc-advance` in chat). Advance into `code` refuses when canvas readiness is not Ready For Coding (`advance --force` to override). To pause: `/sdlc-shelf` or `sdlc.sh shelf --reason "..."`.
 
