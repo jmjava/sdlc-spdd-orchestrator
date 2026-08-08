@@ -1,0 +1,32 @@
+@startuml 02-container
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title Containers - SDLC-SPDD Orchestrator installed in a project (storage v3)
+
+Person(agent, "AI Coding Agent", "Cursor / Copilot / Claude Code")
+
+System_Boundary(repo, "Project repository") {
+    Container(adapters, "Assistant adapters", "Markdown stubs at repo root", ".cursor/commands + rules, Copilot prompts, Claude commands. Thin pointers into sdlc-spdd/")
+
+    System_Boundary(home, "sdlc-spdd/ (framework home)") {
+        Container(contracts, "Contracts (committed)", "Markdown", "requirements/ + ROADMAP.md, spdd/canvas|analysis|reviews|sync, harness/ playbooks/ extensions/")
+        ContainerDb(ledger, "Lessons ledger + registry (committed)", "JSONL", "spdd/memory/lessons.jsonl - accepted records (decision, pitfall, pattern, session, analysis). spdd/memory/registry.jsonl - claim/release events")
+        Container(scripts, "Workflow CLI", "Bash", "scripts/sdlc.sh: capture, accept, claim, release, db; start-agent-session digest; paths.sh home resolution")
+        Container(engine, "sdlc-engine", "Python", "context retrieve/show/digest/accept/parity, storage migrate, sqlite rebuild, guide projection client")
+        ContainerDb(runtime, ".sdlc/ runtime (gitignored)", "Files", "sessions/current-session.md hot brief, staged/lessons.jsonl captures, index.sqlite opt-in cache (schema v5)")
+    }
+}
+
+System_Ext(guide, "Guide DICE", "Neo4j graph projection + spdd_* MCP tools")
+
+Rel(agent, adapters, "invokes /sdlc-spdd-* commands")
+Rel(adapters, scripts, "resolve context, capture, accept")
+Rel(agent, contracts, "reads canvas + phase artifacts directly")
+Rel(scripts, engine, "delegates when engine available")
+Rel(scripts, runtime, "stages captures, writes hot brief")
+Rel(engine, ledger, "sole write path: accept promotes staged records")
+Rel(engine, runtime, "rebuilds sqlite cache from ledger")
+Rel(engine, guide, "re-projects ledger", "HTTP")
+Rel(agent, guide, "on-demand graph queries", "MCP")
+
+@enduml

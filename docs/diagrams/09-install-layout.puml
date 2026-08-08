@@ -1,0 +1,31 @@
+@startwbs 09-install-layout
+
+title Single-folder install layout (storage v3)
+
+* <project repo root>
+** .cursor/ commands + rules\n(adapter stubs -> sdlc-spdd/)
+** .github/ copilot prompts (stub)
+** .claude/ commands (stub)
+** .gitignore (+ sdlc-spdd/.sdlc/)
+** application source (untouched)
+** sdlc-spdd/  <<framework home>>
+*** ROADMAP.md
+*** requirements/
+**** milestones/<WORK-ID>.md
+*** spdd/
+**** canvas/<WORK-ID>.md
+**** analysis/<WORK-ID>-analysis.md
+**** reviews/<WORK-ID>-review.md
+**** sync/<WORK-ID>-sync.md
+**** memory/
+***** lessons.jsonl  <<committed ledger>>
+***** registry.jsonl  <<claim/release events>>
+*** harness/ playbooks/ extensions/
+*** scripts/  <<installed workflow CLI>>
+*** session-notes/ (optional)
+*** .sdlc/  <<gitignored runtime>>
+**** sessions/current-session.md
+**** staged/lessons.jsonl
+**** index.sqlite (opt-in cache)
+
+@endwbs

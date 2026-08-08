@@ -15,29 +15,7 @@ Three retrieval legs over one Neo4j store, joined by **Work ID**:
    `Decision`, `Pitfall`, `Pattern`) connected by named edges. Every retrieved item is
    explainable by the edge that produced it, not a similarity score.
 
-```mermaid
-flowchart LR
-    subgraph SPDD["SPDD workflow (this repo)"]
-        MD["Markdown artifacts<br/>spdd/canvas/*.md<br/>agent-context/memory/context-index.md"]
-    end
-
-    subgraph Guide["Guide (sdlc-spdd-projection-v2) + Neo4j"]
-        CH["RAG chunks<br/>(legs 1-2)"]
-        EN["Domain entities __Entity__<br/>WorkId, Canvas, Area,<br/>Decision, Pitfall, Pattern<br/>(leg 3)"]
-    end
-
-    subgraph Retrieve["Retrieval for the next run"]
-        T1["docs_textSearch / docs_vectorSearch"]
-        T2["spdd_workSubgraph / spdd_areaLessons<br/>spdd_findByLabel / spdd_projectionStats"]
-    end
-
-    MD -->|"append-ingest (chunks)"| CH
-    MD -->|"projection load (entities + edges)"| EN
-    CH --> T1
-    EN --> T2
-    T1 --> CTX["Assembled prompt context<br/>join key: Work ID"]
-    T2 --> CTX
-```
+![Guide DICE - RAG chunks + entity graph from the same ledger](diagrams/13-guide-rag-legs.svg)
 
 ## Prerequisites
 

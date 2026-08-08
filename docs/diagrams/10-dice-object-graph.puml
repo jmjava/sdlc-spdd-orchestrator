@@ -1,0 +1,54 @@
+@startuml 10-dice-object-graph
+
+title Guide DICE object graph - SPDD projection v3
+
+skinparam object {
+  BackgroundColor White
+}
+
+object "WorkId" as work {
+  id = FEAT-001-order-status-api
+}
+object "Canvas" as canvas {
+  source = spdd/canvas/FEAT-001....md
+  sections = REASONS
+}
+object "Area" as area {
+  name = src/billing
+}
+object "Decision" as decision {
+  id = decision:FEAT-001:src/billing:capture
+  body (full text)
+  keywords = [...]
+}
+object "Pitfall" as pitfall
+object "Pattern" as pattern
+object "Session" as session {
+  full session body =
+  working store for large context
+}
+object "Analysis" as analysis
+
+work --> canvas : canvas
+work --> area : area
+work --> decision : decision
+work --> pitfall : pitfall
+work --> pattern : pattern
+work --> session : session
+work --> analysis : analysis
+decision --> area : about
+pitfall --> area : about
+pattern --> area : about
+session --> area : about
+analysis --> area : about
+
+note bottom of work
+  Ingested from spdd/memory/lessons.jsonl
+  + spdd/canvas/*.md. Effective root descends
+  into <rootPath>/sdlc-spdd/ when present.
+  MCP: spdd_workSubgraph, spdd_areaLessons,
+  spdd_findByLabel, spdd_projectionStats,
+  spdd_getLesson (full body).
+end note
+
+@enduml

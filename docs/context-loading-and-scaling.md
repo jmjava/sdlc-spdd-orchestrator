@@ -111,17 +111,7 @@ Work ID artifacts, area-filtered index rows), artifact status, and the Resume
 Prompt. Paste the Resume Prompt so Layer 2 (rules) and Layer 3 (work context)
 combine — load only files listed under Resolved Context.
 
-```mermaid
-flowchart TD
-  Install["setup-agent-prompts.sh (once)"] --> Grounding["Tier 1 grounding\n(every request)"]
-  Grounding --> SessionStart["sdlc.sh start\n(each new chat)"]
-  SessionStart --> Brief["current-session.md\nFramework Orientation + Resume Prompt"]
-  Brief --> Indexes["Load via indexes\n(not directory scans)"]
-  Indexes --> Work["Work ID canvas + matched context"]
-  Work --> Capture["sdlc.sh capture"]
-  Capture --> Grow["context-index, session-index,\ncode-areas grow"]
-  Grow --> SessionStart
-```
+![On-demand retrieval flow](diagrams/07-retrieval-flow.svg)
 
 ### Loading rules
 

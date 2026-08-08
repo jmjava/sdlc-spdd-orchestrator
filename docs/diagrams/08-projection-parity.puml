@@ -1,0 +1,30 @@
+@startuml 08-projection-parity
+
+title Parity by construction - one write path, regenerable projections
+
+database "Git (system of record)\nspdd/memory/lessons.jsonl\nspdd/memory/registry.jsonl" as git
+database "SQLite cache (opt-in)\n.sdlc/index.sqlite\nschema v5" as sqlite
+database "Guide DICE (default)\nNeo4j graph\nspdd-projection-v3" as guide
+participant "sdlc-engine\ncontext parity [--repair]" as parity
+
+git -> sqlite : sdlc.sh db rebuild\n(ledger + registry + canvases\n+ governance docs)
+git -> guide : projection API\n(re-project on accept\nor on demand)
+
+parity -> git : accepted record ids
+parity -> sqlite : lesson rows + claims
+parity -> guide : projection stats / ids
+parity -> parity : compare id sets and counts
+alt drift detected
+  parity -> sqlite : --repair: rebuild from ledger
+  parity -> guide : --repair: re-project ledger
+end
+
+note over git, guide
+  Backends never receive independent writes.
+  Delete sqlite or the graph at any time -
+  both regenerate from the committed JSONL.
+  Default backends: git + guide;
+  sqlite via CONTEXT_BACKENDS opt-in.
+end note
+
+@enduml

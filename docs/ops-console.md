@@ -25,35 +25,7 @@ python3 -m pip install -e './engine[viewer]'   # Flask extra
 
 ## How they relate (and Guide)
 
-```mermaid
-flowchart LR
-  subgraph Console["Ops console :5051"]
-    Inst["Install / Upgrade / SQLite / Rollback"]
-    GTab["Guide tab"]
-    ATab["ADF tab"]
-  end
-
-  subgraph Viewer["ADF Viewer :5050"]
-    Edit["WYSIWYG + raw ADF"]
-    Jira["Jira upload / download"]
-  end
-
-  subgraph GuideStack["Optional Guide + Neo4j"]
-    Neo["Neo4j"]
-    Guide["Guide tag sdlc-spdd-projection-v2"]
-  end
-
-  subgraph Slash["Slash commands"]
-    Resolve["resolve-context-backend.sh"]
-  end
-
-  ATab -->|"start / stop / open"| Viewer
-  Edit --> Jira
-  GTab --> Neo
-  GTab --> Guide
-  Resolve -->|"marker + live probe"| Guide
-  Resolve -.->|"Guide down → files"| Files["File indexes only"]
-```
+![Ops console and companion services](diagrams/14-ops-console.svg)
 
 | Concern | Where it lives |
 |---------|----------------|

@@ -17,29 +17,7 @@ indexes alone.
 The same markdown the workflow already produces is ingested twice, into two
 complementary shapes:
 
-```mermaid
-flowchart LR
-    subgraph SPDD["SPDD workflow (your repo)"]
-        MD["Markdown artifacts<br/>spdd/canvas/*.md<br/>agent-context/memory/context-index.md<br/>analysis, session notes"]
-    end
-
-    subgraph Guide["Guide (sdlc-spdd-projection-v2) + Neo4j"]
-        CH["RAG chunks<br/>embedding + BM25<br/>(legs 1-2)"]
-        EN["Domain entities __Entity__<br/>WorkId, Canvas, Area,<br/>Decision, Pitfall, Pattern<br/>typed edges (leg 3)"]
-    end
-
-    subgraph Retrieve["Retrieval for the next run"]
-        T1["docs_textSearch<br/>docs_vectorSearch"]
-        T2["spdd_workSubgraph<br/>spdd_areaLessons<br/>spdd_findByLabel<br/>spdd_projectionStats"]
-    end
-
-    MD -->|"append-ingest (chunks)"| CH
-    MD -->|"projection load (entities + edges)"| EN
-    CH --> T1
-    EN --> T2
-    T1 --> CTX["Assembled prompt context<br/>join key: Work ID"]
-    T2 --> CTX
-```
+![Guide DICE - RAG chunks + entity graph from the same ledger](diagrams/13-guide-rag-legs.svg)
 
 - **Chunks (legs 1–2)** answer "what prose is similar to this question?" —
   good discovery, but inclusion is justified only by a similarity score.
@@ -53,16 +31,7 @@ flowchart LR
 Installs opt in with a marker file, and even then availability is checked at
 runtime before any tool call:
 
-```mermaid
-flowchart TD
-    CMD["Slash command runs<br/>(analysis / architect / code / review / retro / sync)"]
-    CMD --> PROBE["resolve-context-backend.sh --target ."]
-    PROBE --> M{"agent-context/harness/<br/>guide-dice.md exists?"}
-    M -->|no| FILES["CONTEXT_BACKEND=files<br/>file-based indexes only<br/>(normal, not an error)"]
-    M -->|yes| L{"Guide stats endpoint<br/>answers within 2s?"}
-    L -->|no| FILES
-    L -->|yes| DICE["CONTEXT_BACKEND=guide-dice<br/>augment with spdd_* tools"]
-```
+![Context backend resolution](diagrams/12-context-backend-resolution.svg)
 
 - Opt in at install time: `./scripts/init-project.sh --target <app> --with-guide`
   (or copy `templates/agent-context/harness/guide-dice.md` into
@@ -84,22 +53,7 @@ flowchart TD
 
 ## The persist loop — lessons survive across runs
 
-```mermaid
-sequenceDiagram
-    participant A as Agent (retro/sync)
-    participant F as Markdown files
-    participant G as Guide projection API
-    participant N as Neo4j
-
-    A->>F: update canvas, context-index, progress log
-    A->>G: resolve-context-backend.sh --project --work-id WORK-ID
-    G->>F: parse spdd/canvas + context-index
-    G->>N: merge-by-id __Entity__ nodes + typed edges
-    Note over N: WorkId → canvas/area/decision/pitfall/pattern<br/>lesson → about → Area
-    A->>G: next run: spdd_areaLessons(area)
-    G->>N: walk incoming edges
-    N-->>A: decisions/pitfalls/patterns from ALL prior Work IDs
-```
+![Stage-then-accept and projection](diagrams/06-stage-then-accept.svg)
 
 The `about` edge is the cross-run memory: a pitfall recorded by FEAT-001
 against `scripts/` is returned to FEAT-009 the moment it touches `scripts/`,

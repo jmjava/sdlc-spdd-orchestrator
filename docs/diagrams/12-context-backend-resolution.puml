@@ -1,0 +1,26 @@
+@startuml 12-context-backend-resolution
+
+title Context backend resolution - Guide is optional, never assumed
+
+start
+:slash command runs
+(analysis / architect / code /
+review / retro / sync / accept);
+:resolve-context-backend.sh --target .;
+if (harness/guide-dice.md exists?) then (no)
+  :CONTEXT_BACKEND=files
+  on-demand ledger retrieval only
+  (normal case, not an error);
+  stop
+else (yes)
+  if (Guide stats endpoint\nanswers within 2s?) then (no)
+    :CONTEXT_BACKEND=files;
+    stop
+  else (yes)
+    :CONTEXT_BACKEND=guide-dice
+    augment retrieval with spdd_* MCP tools;
+    stop
+  endif
+endif
+
+@enduml

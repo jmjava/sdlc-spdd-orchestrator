@@ -1,0 +1,40 @@
+@startuml 07-retrieval-flow
+
+title On-demand retrieval - small context by construction (storage v3)
+
+actor "AI Agent\n(new session)" as agent
+participant "start-agent-session.sh" as start
+database ".sdlc/sessions/\ncurrent-session.md" as brief
+participant "sdlc-engine context" as engine
+database "lessons.jsonl\n(ledger)" as ledger
+database ".sdlc/index.sqlite" as sqlite
+participant "Guide MCP\n(spdd_* tools)" as mcp
+
+== Session start ==
+agent -> start : resume work
+start -> ledger : query records for active work id
+start -> brief : write hot brief:\nactive Work ID + phase,\nRelated Past Work digest (<= 15 lines),\nquery menu
+brief --> agent : read one small file
+
+== During a phase (per-phase budget) ==
+agent -> engine : context retrieve --work-id <ID>\n--kind decision|pitfall|pattern|analysis
+engine -> ledger : filter by relevance
+engine --> agent : record ids + titles (bounded)
+agent -> engine : context show <record-id>
+engine --> agent : full body for the few\nrecords that matter
+
+== Optional backends ==
+agent -> sqlite : ./scripts/sdlc.sh db query\n(when sqlite cache enabled)
+agent -> mcp : spdd_workSubgraph / spdd_areaLessons /\nspdd_findByLabel / spdd_projectionStats
+mcp --> agent : capped lists (20 default / 100 max,\ndescriptions truncated at 300 chars)
+agent -> mcp : spdd_getLesson(id)
+mcp --> agent : full untruncated record
+
+note over agent
+  Never bulk-read lessons.jsonl or whole
+  directories. Canvas + phase artifacts are
+  read directly; retrieval is for cross-work
+  memory only.
+end note
+
+@enduml
