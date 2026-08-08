@@ -1,4 +1,5 @@
 from pathlib import Path
+import subprocess
 
 from sdlc_engine.cli import main
 from sdlc_engine.local_sessions import LocalSessionService, is_local_id
@@ -16,8 +17,8 @@ def test_local_start_capture_promote(tmp_path: Path, monkeypatch) -> None:
     assert session.id.startswith("LOCAL-")
     assert (tmp_path / ".sdlc" / "pointer").read_text(encoding="utf-8").strip() == session.id
     assert (tmp_path / ".sdlc" / "local-sessions" / session.id / "session.json").is_file()
-    assert (tmp_path / ".sdlc" / "local-sessions" / session.id / "brief.md").is_file()
     assert (tmp_path / ".sdlc" / "current-local-session.md").is_file()
+    assert not (tmp_path / ".sdlc" / "local-sessions" / session.id / "brief.md").is_file()
     assert not (tmp_path / "agent-context" / "sessions" / "current-session.md").is_file()
 
     svc.capture("Tried a detached approach")
@@ -73,7 +74,52 @@ def test_next_shows_local_session(tmp_path: Path, monkeypatch) -> None:
 
 def test_next_without_pointer_hints_local_start(tmp_path: Path) -> None:
     text = WorkflowEngine(Project(tmp_path)).next_text()
-    assert "local start" in text
+    assert "quick" in text
+
+
+def test_cli_quick_start(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setenv("SDLC_USER", "cli")
+    assert main(["--root", str(tmp_path), "quick", "fix the flaky test"]) == 0
+    pointer = (tmp_path / ".sdlc" / "pointer").read_text(encoding="utf-8").strip()
+    assert pointer.startswith("LOCAL-")
+    brief = (tmp_path / ".sdlc" / "current-local-session.md").read_text(encoding="utf-8")
+    assert "fix the flaky test" in brief
+
+
+def test_promote_from_git_backfill(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setenv("SDLC_USER", "local-dev")
+    root = tmp_path / "repo"
+    root.mkdir()
+    subprocess.run(["git", "-C", str(root), "init"], check=True, capture_output=True)
+    subprocess.run(["git", "-C", str(root), "config", "user.email", "t@e.com"], check=True)
+    subprocess.run(["git", "-C", str(root), "config", "user.name", "T"], check=True)
+    (root / "README.md").write_text("# demo\n", encoding="utf-8")
+    subprocess.run(["git", "-C", str(root), "add", "README.md"], check=True)
+    subprocess.run(["git", "-C", str(root), "commit", "-m", "init"], check=True)
+    cur = subprocess.check_output(
+        ["git", "-C", str(root), "branch", "--show-current"], text=True
+    ).strip()
+    if cur != "main":
+        subprocess.run(["git", "-C", str(root), "branch", "-M", "main"], check=True)
+    subprocess.run(["git", "-C", str(root), "checkout", "-b", "feature"], check=True)
+    (root / "feat.txt").write_text("x\n", encoding="utf-8")
+    subprocess.run(["git", "-C", str(root), "add", "feat.txt"], check=True)
+    subprocess.run(["git", "-C", str(root), "commit", "-m", "add feat file"], check=True)
+
+    svc = LocalSessionService(Project(root))
+    session = svc.start(name="git-backfill", intent="promote with git notes")
+    _session, work_id = svc.promote(
+        work_type="feature",
+        name="Git Backfill Feature",
+        from_git="main..HEAD",
+        claim=False,
+    )
+    notes = (root / ".sdlc" / "local-sessions" / session.id / "notes.md").read_text(
+        encoding="utf-8"
+    )
+    assert "add feat file" in notes
+    canvas = (root / "spdd" / "canvas" / f"{work_id}.md").read_text(encoding="utf-8")
+    assert "add feat file" in canvas
 
 
 def test_cli_local_aliases(tmp_path: Path, monkeypatch) -> None:

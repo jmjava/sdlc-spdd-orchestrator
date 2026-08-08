@@ -624,6 +624,21 @@ def cmd_db(args: argparse.Namespace) -> int:
     return 2
 
 
+def cmd_quick(args: argparse.Namespace) -> int:
+    """Zero-ceremony LOCAL-* session start (alias for local start)."""
+    intent = (args.intent or "").strip()
+    if not intent:
+        print("quick requires an intent string", file=sys.stderr)
+        return 2
+    svc = LocalSessionService(_project(args))
+    session = svc.start(intent=intent, title=intent)
+    print(f"Started local session {session.id}")
+    print(f"Pointer set. Artifacts: .sdlc/local-sessions/{session.id}/")
+    print(f"Brief: .sdlc/current-local-session.md")
+    print("This work stays offline until: ./scripts/sdlc.sh local promote --type feature --name \"...\"")
+    return 0
+
+
 def cmd_local(args: argparse.Namespace) -> int:
     svc = LocalSessionService(_project(args))
     action = args.local_cmd
@@ -668,6 +683,7 @@ def cmd_local(args: argparse.Namespace) -> int:
             milestone=args.milestone or "",
             claim=not args.no_claim,
             dry_run=args.dry_run,
+            from_git=args.from_git or "",
         )
         if args.dry_run:
             print(f"[dry-run] would promote {session.id} -> {work_id}")
@@ -762,6 +778,13 @@ def build_parser() -> argparse.ArgumentParser:
     sub = p.add_subparsers(dest="command")
 
     sub.add_parser("next", help="Show what to do now").set_defaults(func=cmd_next)
+
+    qk = sub.add_parser(
+        "quick",
+        help='Start a LOCAL-* offline session from intent (zero ceremony)',
+    )
+    qk.add_argument("intent", help='One-line why this scratch work exists')
+    qk.set_defaults(func=cmd_quick)
 
     st = sub.add_parser("status", help="Show workflow status")
     st.add_argument("--json", action="store_true")
@@ -948,6 +971,10 @@ def build_parser() -> argparse.ArgumentParser:
     lp.add_argument("--milestone", help="Optional milestone-*.md to append Linked Work")
     lp.add_argument("--no-claim", action="store_true", help="Create artifacts without claiming")
     lp.add_argument("--dry-run", action="store_true")
+    lp.add_argument(
+        "--from-git",
+        help="Backfill session notes from git log range before promote (e.g. main..HEAD)",
+    )
     lp.set_defaults(func=cmd_local)
 
     work = sub.add_parser(

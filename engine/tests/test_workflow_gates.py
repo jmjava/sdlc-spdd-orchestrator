@@ -125,6 +125,21 @@ def test_cli_gate_exit_codes(proj: tuple[Project, WorkflowEngine], capsys) -> No
     assert rc == 0
 
 
+def test_gate_local_id_exempt(proj: tuple[Project, WorkflowEngine]) -> None:
+    _, eng = proj
+    wid = "LOCAL-001-quick-lane"
+    for phase in ("analysis", "plan", "code", "review", "sync"):
+        ok, failures = eng.gate_check(wid, phase)
+        assert ok and not failures, f"LOCAL should bypass {phase}: {failures}"
+
+
+def test_cli_gate_local_exempt(proj: tuple[Project, WorkflowEngine]) -> None:
+    p, _ = proj
+    wid = "LOCAL-002-quick-lane"
+    rc = main(["--root", str(p.root), "gate", "--phase", "code", "--work-id", wid])
+    assert rc == 0
+
+
 def test_gate_sync_requires_retro_lesson(proj: tuple[Project, WorkflowEngine]) -> None:
     p, eng = proj
     wid = "FEAT-008-gates"

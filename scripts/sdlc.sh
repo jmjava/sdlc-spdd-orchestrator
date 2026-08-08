@@ -72,6 +72,9 @@ case "${cmd}" in
   local-resume) _py_only_args=("local" "resume" "$@") ;;
   local-promote) _py_only_args=("local" "promote" "$@") ;;
   local-abandon) _py_only_args=("local" "abandon" "$@") ;;
+  quick)
+    _py_only_args=("quick" "$@")
+    ;;
   db)
     _py_only_args=("db" "$@")
     ;;

@@ -145,9 +145,12 @@ class WorkflowEngine:
         (plan) -> architect -> code -> api-test -> review -> retro -> sync.
         """
         from .lessons_ledger import LessonsLedger
+        from .local_sessions import is_local_id
 
         if not valid_phase(phase):
             raise ValueError(f"unknown phase: {phase}")
+        if is_local_id(work_id):
+            return True, []
         state = self.load_state(work_id)
         failures: list[str] = []
 
