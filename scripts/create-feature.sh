@@ -5,6 +5,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 # shellcheck source=/dev/null
 source "${SCRIPT_DIR}/lib/work-id.sh"
+# shellcheck source=/dev/null
+source "${SCRIPT_DIR}/lib/common.sh"
+# shellcheck source=/dev/null
+source "${SCRIPT_DIR}/lib/paths.sh"
 
 usage() {
   cat <<'EOF'
@@ -51,6 +55,8 @@ if [[ -z "${TYPE}" || -z "${NAME}" ]]; then
 fi
 
 TARGET="$(cd "${TARGET}" && pwd)"
+export SDLC_ROOT="${TARGET}"
+HOME="$(sdlc_home "${TARGET}")"
 
 case "${TYPE}" in
   feature) TEMPLATE="feature-template.md" ;;
@@ -65,9 +71,9 @@ esac
 
 PREFIX="$(work_type_prefix "${TYPE}")"
 slug="$(slugify "${NAME}" legacy)"
-canvas_dir="${TARGET}/spdd/canvas"
-req_dir="${TARGET}/requirements/milestones"
-mkdir -p "${canvas_dir}" "${req_dir}" "${TARGET}/spdd/memory/entries"
+canvas_dir="${HOME}/spdd/canvas"
+req_dir="${HOME}/requirements/milestones"
+mkdir -p "${canvas_dir}" "${req_dir}"
 
 next="$(next_work_number "${PREFIX}" "${TARGET}" "${canvas_dir}/${PREFIX}-"*.md)"
 work_id="$(printf '%s-%03d-%s' "${PREFIX}" "${next}" "${slug}")"
@@ -89,20 +95,15 @@ ${NAME}
 Add requirement details here.
 EOF
 
-# Lean progress ledger (not feature mirror).
-progress="${TARGET}/spdd/memory/entries/progress.md"
-if [[ ! -f "${progress}" ]]; then
-  printf '# Progress Entries\n\n' > "${progress}"
-fi
-{
-  echo ""
-  echo "## ${work_id}"
-  echo ""
-  echo "- Created stay-set canvas + requirement (no feature mirror)."
-} >> "${progress}"
+timestamp="$(sdlc_timestamp_iso)"
+stage_file="$(sdlc_stage "${TARGET}")"
+record="$(sdlc_build_lesson_json session "${work_id}" "" "init" "${timestamp}" \
+  "Created ${work_id}" "Created stay-set canvas + requirement for ${NAME}." "create-feature" "" "" "${TARGET}")"
+mkdir -p "$(dirname "${stage_file}")"
+sdlc_append_jsonl "${stage_file}" "${record}"
 
 echo "Created:"
 echo "  ${canvas_dir}/${work_id}.md"
 echo "  ${req_dir}/${work_id}.md"
-echo "  ${progress} (appended)"
+echo "  staged session record → ${stage_file#${TARGET}/}"
 # Hard rule: do not create agent-context/features/<WORK-ID>/

@@ -8,6 +8,8 @@ source "${_SCRIPT_DIR}/lib/common.sh"
 source "${_SCRIPT_DIR}/lib/work-id.sh"
 # shellcheck source=/dev/null
 source "${_SCRIPT_DIR}/lib/milestone.sh"
+# shellcheck source=/dev/null
+source "${_SCRIPT_DIR}/lib/paths.sh"
 
 usage() {
   cat <<'EOF'
@@ -167,7 +169,7 @@ append_milestone_map_header() {
 create_work() {
   local title="$1"
   local number slug work_id canvas_path milestone_requirement_path
-  local progress_log status_date milestone_requirement_rel
+  local stage_file status_date milestone_requirement_rel
   # Number from stay-set canvases only — no agent-context/features (#86).
   number="$(next_work_number "${PREFIX}" "${TARGET}" \
     "${TARGET}/spdd/canvas/${PREFIX}-"*.md)"
@@ -179,7 +181,7 @@ create_work() {
   canvas_path="${TARGET}/spdd/canvas/${work_id}.md"
   milestone_requirement_path="${requirement_parent}/${work_id}.md"
   milestone_requirement_rel="${requirement_parent_rel}/${work_id}.md"
-  progress_log="${TARGET}/spdd/memory/entries/progress.md"
+  stage_file="$(sdlc_stage "${TARGET}")"
   status_date="$(sdlc_timestamp_iso)"
   milestone_number="$(_milestone_number_from_path "${MILESTONE}" || true)"
   milestone_frontmatter_id="milestone-${milestone_number:-1}"
@@ -188,13 +190,13 @@ create_work() {
     echo "[dry-run] would create ${work_id} from milestone item: ${title}"
     echo "[dry-run] would write ${canvas_path}"
     echo "[dry-run] would write ${milestone_requirement_path}"
-    echo "[dry-run] would append ${progress_log}"
+    echo "[dry-run] would stage session record in ${stage_file}"
     echo "[dry-run] would update ${milestone_rel}"
     echo "${work_id}"
     return
   fi
 
-  mkdir -p "${TARGET}/spdd/canvas" "${requirement_parent}" "${TARGET}/spdd/memory/entries"
+  mkdir -p "${TARGET}/spdd/canvas" "${requirement_parent}"
 
   cat > "${canvas_path}" <<EOF
 # REASONS Canvas: ${work_id} - ${title}
@@ -444,15 +446,10 @@ Run:
     /sdlc-spdd-plan @${milestone_requirement_rel} @${roadmap_rel} @${milestone_rel}
 EOF
 
-  if [[ ! -f "${progress_log}" ]]; then
-    printf '# Progress Entries\n\n' > "${progress_log}"
-  fi
-  {
-    echo ""
-    echo "## ${work_id}"
-    echo ""
-    echo "- ${status_date}: Created from milestone item in ${milestone_rel}."
-  } >> "${progress_log}"
+  record="$(sdlc_build_lesson_json session "${work_id}" "" "init" "${status_date}" \
+    "Created from milestone" "Created from milestone item in ${milestone_rel}." "create-work-from-milestone" "" "" "${TARGET}")"
+  mkdir -p "$(dirname "${stage_file}")"
+  sdlc_append_jsonl "${stage_file}" "${record}"
 
   append_milestone_map_header
   echo "| ${work_id} | spdd/canvas/${work_id}.md | ${milestone_requirement_rel} | Draft | Created from milestone item |" >> "${MILESTONE}"
@@ -460,7 +457,7 @@ EOF
   echo "Created ${work_id}"
   echo "  ${canvas_path}"
   echo "  ${milestone_requirement_path}"
-  echo "  ${progress_log} (appended)"
+  echo "  staged session record → ${stage_file#${TARGET}/}"
   echo "${work_id}"
 }
 

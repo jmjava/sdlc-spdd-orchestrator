@@ -5,28 +5,23 @@ _SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=/dev/null
 source "${_SCRIPT_DIR}/lib/common.sh"
 # shellcheck source=/dev/null
+source "${_SCRIPT_DIR}/lib/paths.sh"
+# shellcheck source=/dev/null
 source "${_SCRIPT_DIR}/lib/areas.sh"
 
 usage() {
   cat <<'EOF'
 Usage: index-spdd-analysis.sh --work-id <WORK-ID> [options]
 
-Index a Fowler SPDD analysis artifact into decision-memory indexes:
-  - agent-context/memory/domain-index.md (keyword -> area + artifact)
-  - agent-context/memory/context-index.md (Kind: analysis, by code area)
-  - agent-context/memory/code-areas.md (append new code areas)
-
-Run after /sdlc-spdd-analysis writes spdd/analysis/<WORK-ID>-analysis.md.
+Stage ONE kind=analysis lesson record from spdd/analysis/<WORK-ID>-analysis.md.
+Run after /sdlc-spdd-analysis writes the analysis artifact.
 
 Options:
   --target <path>   Target project path (default: .)
   --work-id <id>    Work ID (required)
-  --phase <phase>   Phase label for index rows (default: analysis)
-  --dry-run         Print actions without writing files
+  --phase <phase>   Phase label (default: analysis)
+  --dry-run         Print staged record without writing
   --help            Print this help message
-
-Example:
-  ./scripts/sdlc-spdd/index-spdd-analysis.sh --target . --work-id FEAT-001-billing
 EOF
 }
 
@@ -37,31 +32,12 @@ DRY_RUN=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --target)
-      TARGET="${2:-}"
-      shift 2
-      ;;
-    --work-id)
-      WORK_ID="${2:-}"
-      shift 2
-      ;;
-    --phase)
-      PHASE="${2:-}"
-      shift 2
-      ;;
-    --dry-run)
-      DRY_RUN=1
-      shift
-      ;;
-    --help|-h)
-      usage
-      exit 0
-      ;;
-    *)
-      echo "Unknown option: $1" >&2
-      usage >&2
-      exit 1
-      ;;
+    --target) TARGET="${2:-}"; shift 2 ;;
+    --work-id) WORK_ID="${2:-}"; shift 2 ;;
+    --phase) PHASE="${2:-}"; shift 2 ;;
+    --dry-run) DRY_RUN=1; shift ;;
+    --help|-h) usage; exit 0 ;;
+    *) echo "Unknown option: $1" >&2; usage >&2; exit 1 ;;
   esac
 done
 
@@ -72,14 +48,11 @@ if [[ -z "${WORK_ID}" ]]; then
 fi
 
 TARGET="$(sdlc_resolve_target "${TARGET}")"
+export SDLC_ROOT="${TARGET}"
+HOME="$(sdlc_home "${TARGET}")"
 timestamp="$(sdlc_timestamp_iso)"
-memory_dir="${TARGET}/agent-context/memory"
-analysis_file="${TARGET}/spdd/analysis/${WORK_ID}-analysis.md"
-feature_analysis="${TARGET}/agent-context/features/${WORK_ID}/analysis-context.md"
-domain_index="${memory_dir}/domain-index.md"
-context_index="${memory_dir}/context-index.md"
-code_areas="${memory_dir}/code-areas.md"
-entry_rel="spdd/analysis/${WORK_ID}-analysis.md"
+analysis_file="${HOME}/spdd/analysis/${WORK_ID}-analysis.md"
+stage_file="$(sdlc_stage "${TARGET}")"
 
 if [[ ! -f "${analysis_file}" ]]; then
   echo "Analysis file not found: ${analysis_file}" >&2
@@ -100,150 +73,37 @@ done < <(parse_section_bullets "${analysis_file}" "Code Areas")
 
 if ((${#keywords[@]} == 0 && ${#areas[@]} == 0)); then
   echo "No Domain Keywords or Code Areas found in ${analysis_file}" >&2
-  echo "Ensure the analysis document has ## Domain Keywords and ## Code Areas sections." >&2
   exit 1
 fi
 
-declare -A known_areas=()
-if [[ -f "${code_areas}" ]]; then
-  while IFS= read -r _line; do
-    [[ "${_line}" =~ ^-\ (.+)$ ]] || continue
-    _canon="${BASH_REMATCH[1]}"
-    known_areas["$(normalize_area "${_canon}")"]="${_canon}"
-  done < "${code_areas}"
+primary_area=""
+if ((${#areas[@]} > 0)); then
+  primary_area="${areas[0]}"
 fi
 
-new_areas=()
-for _a in "${areas[@]}"; do
-  _norm="$(normalize_area "${_a}")"
-  if [[ -z "${known_areas[${_norm}]:-}" ]]; then
-    known_areas["${_norm}"]="${_a}"
-    new_areas+=("${_a}")
-  fi
-done
+all_keywords=("${keywords[@]}")
+if ((${#areas[@]} > 1)); then
+  all_keywords+=("${areas[@]:1}")
+fi
+keywords_csv="$(IFS=,; echo "${all_keywords[*]}")"
+
+scope_summary="$(awk '
+  /^## Scope Summary/ { in_s=1; next }
+  /^## / { if (in_s) exit }
+  in_s && /^[^#]/ { gsub(/^[[:space:]]+|[[:space:]]+$/, ""); if (length($0)) { print; exit } }
+' "${analysis_file}")"
+[[ -z "${scope_summary}" ]] && scope_summary="Analysis indexed for ${WORK_ID}"
+
+record="$(sdlc_build_lesson_json analysis "${WORK_ID}" "${primary_area}" "${PHASE}" \
+  "${timestamp}" "Analysis: ${WORK_ID}" "${scope_summary}" "analysis" "${keywords_csv}" "" "${TARGET}")"
 
 if [[ "${DRY_RUN}" -eq 1 ]]; then
-  echo "[dry-run] keywords: ${keywords[*]:-none}"
-  echo "[dry-run] areas: ${areas[*]:-none}"
-  echo "[dry-run] would update ${domain_index}, ${context_index}, ${code_areas}"
+  echo "${record}"
   exit 0
 fi
 
-mkdir -p "${memory_dir}" "$(dirname "${analysis_file}")"
-
-if ((${#new_areas[@]} > 0)); then
-  if [[ ! -f "${code_areas}" ]]; then
-    printf '# Code Areas\n\nCanonical code-area categories. Populated from session capture and analysis indexing.\n\n' > "${code_areas}"
-  fi
-  for _a in "${new_areas[@]}"; do
-    printf -- '- %s\n' "${_a}" >> "${code_areas}"
-  done
-fi
-
-domain_header="$(cat <<'DOM'
-# Domain Index
-
-Maps Fowler SPDD **domain keywords** to code areas and governed artifacts. Filter
-by Keyword before scanning code or loading prior analysis/canvas context. Populated
-by `index-spdd-analysis.sh` after `/sdlc-spdd-analysis`. Newest first within each
-keyword group.
-
-| Keyword | Area | Kind | Work ID | Timestamp | Entry |
-|---------|------|------|---------|-----------|-------|
-DOM
-)"
-
-domain_rows=""
-for _kw in "${keywords[@]}"; do
-  if ((${#areas[@]} == 0)); then
-    domain_rows+="| ${_kw} | - | analysis | ${WORK_ID} | ${timestamp} | ${entry_rel} |"$'\n'
-  else
-    for _a in "${areas[@]}"; do
-      domain_rows+="| ${_kw} | ${_a} | analysis | ${WORK_ID} | ${timestamp} | ${entry_rel} |"$'\n'
-    done
-  fi
-done
-domain_rows="${domain_rows%$'\n'}"
-
-# Drop prior analysis rows for this Work ID so re-runs refresh instead of
-# duplicating. Kind is column 4, Work ID column 5 (leading "| " gives empty $1).
-existing_domain=""
-if [[ -f "${domain_index}" ]]; then
-  existing_domain="$(awk -F'|' -v work="${WORK_ID}" '
-    /^\| / && $0 !~ /^\| Keyword/ {
-      kind = $4; id = $5
-      gsub(/^[[:space:]]+|[[:space:]]+$/, "", kind)
-      gsub(/^[[:space:]]+|[[:space:]]+$/, "", id)
-      if (kind == "analysis" && id == work) next
-      print
-    }
-  ' "${domain_index}")"
-fi
-{
-  printf '%s\n' "${domain_header}"
-  if [[ -n "${domain_rows}" ]]; then
-    printf '%s\n' "${domain_rows}"
-  fi
-  if [[ -n "${existing_domain}" ]]; then
-    printf '%s\n' "${existing_domain}"
-  fi
-} > "${domain_index}"
-
-context_header="$(cat <<'CTX'
-# Context Index
-
-Maps code areas to indexed project context. Filter by Area to find prior sessions,
-analysis artifacts, architecture decisions, known pitfalls, and reusable patterns
-for the code you are about to touch — across any Work ID or date. Newest first.
-
-| Area | Kind | Work ID | Phase | Timestamp | Source | Entry |
-|------|------|---------|-------|-----------|--------|-------|
-CTX
-)"
-
-context_rows=""
-if ((${#areas[@]} == 0)); then
-  context_rows+="| - | analysis | ${WORK_ID} | ${PHASE} | ${timestamp} | analysis | ${entry_rel} |"$'\n'
-else
-  for _a in "${areas[@]}"; do
-    context_rows+="| ${_a} | analysis | ${WORK_ID} | ${PHASE} | ${timestamp} | analysis | ${entry_rel} |"$'\n'
-  done
-fi
-context_rows="${context_rows%$'\n'}"
-
-# Drop prior analysis rows for this Work ID so re-runs refresh instead of
-# duplicating. Kind is column 3, Work ID column 4 (leading "| " gives empty $1).
-existing_context=""
-if [[ -f "${context_index}" ]]; then
-  existing_context="$(awk -F'|' -v work="${WORK_ID}" '
-    /^\| / && $0 !~ /^\| Area/ {
-      kind = $3; id = $4
-      gsub(/^[[:space:]]+|[[:space:]]+$/, "", kind)
-      gsub(/^[[:space:]]+|[[:space:]]+$/, "", id)
-      if (kind == "analysis" && id == work) next
-      print
-    }
-  ' "${context_index}")"
-fi
-{
-  printf '%s\n' "${context_header}"
-  if [[ -n "${context_rows}" ]]; then
-    printf '%s\n' "${context_rows}"
-  fi
-  if [[ -n "${existing_context}" ]]; then
-    printf '%s\n' "${existing_context}"
-  fi
-} > "${context_index}"
-
-if [[ ! -f "${feature_analysis}" ]] && [[ -f "${analysis_file}" ]]; then
-  mkdir -p "$(dirname "${feature_analysis}")"
-  cp "${analysis_file}" "${feature_analysis}"
-fi
-
-echo "Indexed analysis for ${WORK_ID}:"
+sdlc_append_jsonl "${stage_file}" "${record}"
+echo "Staged analysis record for ${WORK_ID} → ${stage_file#${TARGET}/}"
 echo "  keywords (${#keywords[@]}): ${keywords[*]:-none}"
 echo "  code areas (${#areas[@]}): ${areas[*]:-none}"
-echo "  updated: ${domain_index}, ${context_index}"
-if ((${#new_areas[@]} > 0)); then
-  echo "  new code areas: ${new_areas[*]}"
-fi
+echo "Run: ./scripts/sdlc.sh accept --work-id ${WORK_ID}"

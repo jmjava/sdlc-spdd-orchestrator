@@ -2,7 +2,7 @@
 # Team-visible Work ID registry — committed coordination layer on top of local .sdlc/ state.
 #
 # Local pointer (.sdlc/pointer) stays machine-private.
-# agent-context/work-registry.tsv is committed so teammates see claims, phase, and shelf notes.
+# spdd/memory/registry.jsonl is committed so teammates see claims, phase, and shelf notes.
 #
 # Usage (via sdlc-workflow.sh / scripts/sdlc.sh):
 #   team | list-work | claim WORK-ID | release [--reason TEXT]
@@ -14,9 +14,18 @@ fi
 _TEAM_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=/dev/null
 source "${_TEAM_SCRIPT_DIR}/sdlc-pointer.sh"
+_paths_lib="${SDLC_ROOT}/scripts/lib/paths.sh"
+if [[ ! -f "${_paths_lib}" ]]; then
+  _paths_lib="${SDLC_ROOT}/scripts/sdlc-spdd/lib/paths.sh"
+fi
+if [[ -f "${_paths_lib}" ]]; then
+  # shellcheck source=/dev/null
+  source "${_paths_lib}"
+fi
 
-SDLC_TEAM_REGISTRY="${SDLC_ROOT}/agent-context/work-registry.tsv"
-SDLC_TEAM_REGISTRY_LOCK="${SDLC_ROOT}/agent-context/.work-registry.lock"
+SDLC_TEAM_REGISTRY_JSONL="$(sdlc_registry "${SDLC_ROOT}" 2>/dev/null || printf '%s/spdd/memory/registry.jsonl' "${SDLC_ROOT}")"
+SDLC_TEAM_REGISTRY_LEGACY="${SDLC_ROOT}/agent-context/work-registry.tsv"
+SDLC_TEAM_REGISTRY_LOCK="${SDLC_ROOT}/.sdlc/registry.lock"
 
 _team_stale_days() {
   printf '%s' "${SDLC_TEAM_STALE_DAYS:-7}"
@@ -47,10 +56,13 @@ _team_stale_label() {
 _team_canvas_path() {
   local work_id="$1"
   local root="${SDLC_ROOT}"
-  local canvas="${root}/spdd/canvas/${work_id}.md"
-  if [[ ! -f "${canvas}" ]]; then
-    canvas="${root}/agent-context/features/${work_id}/reasons-canvas.md"
+  local home canvas
+  if declare -F sdlc_home >/dev/null 2>&1; then
+    home="$(sdlc_home "${root}")"
+  else
+    home="${root}"
   fi
+  canvas="${home}/spdd/canvas/${work_id}.md"
   [[ -f "${canvas}" ]] && printf '%s' "${canvas}"
 }
 
@@ -108,7 +120,12 @@ _team_canvas_is_archivable() {
 
 _team_registry_note_for() {
   local work_id="$1"
-  awk -F '\t' -v id="${work_id}" '$1 == id { print $7; exit }' "${SDLC_TEAM_REGISTRY}"
+  _team_registry_lookup_row "${work_id}" | awk -F '\t' '{ print $7; exit }'
+}
+
+_team_registry_lookup_row() {
+  local work_id="$1"
+  _team_registry_rows | awk -F '\t' -v id="${work_id}" '$1 == id { print; exit }'
 }
 
 _team_compose_note() {
@@ -236,7 +253,7 @@ sdlc_team_jira_status() {
   local work_id="${1:-}"
   [[ -n "${work_id}" ]] || { printf 'missing'; return 0; }
   local note="" key=""
-  if [[ -f "${SDLC_TEAM_REGISTRY}" ]]; then
+  if [[ -f "${SDLC_TEAM_REGISTRY_JSONL}" ]] || [[ -f "${SDLC_TEAM_REGISTRY_LEGACY}" ]]; then
     note="$(_team_registry_note_for "${work_id}" || true)"
     key="$(_team_jira_from_note "${note}")"
   fi
@@ -298,7 +315,7 @@ sdlc_team_refresh_done_status() {
       cancelled) target_status="cancelled"; note_token="canvas Final Status: Cancelled" ;;
       *) continue ;;
     esac
-    cur_status="$(awk -F '\t' -v id="${work_id}" '$1 == id { print $2; exit }' "${SDLC_TEAM_REGISTRY}")"
+    cur_status="$(awk -F '\t' -v id="${work_id}" '$1 == id { print $2; exit }' <<< "$(_team_registry_rows)")"
     # Do not reopen archived rows from canvas sync.
     [[ "${cur_status}" == "archived" ]] && continue
     if [[ -z "${cur_status}" ]]; then
@@ -306,8 +323,8 @@ sdlc_team_refresh_done_status() {
       continue
     fi
     [[ "${cur_status}" == "${target_status}" ]] && continue
-    cur_phase="$(awk -F '\t' -v id="${work_id}" '$1 == id { print $3; exit }' "${SDLC_TEAM_REGISTRY}")"
-    cur_op="$(awk -F '\t' -v id="${work_id}" '$1 == id { print $4; exit }' "${SDLC_TEAM_REGISTRY}")"
+    cur_phase="$(awk -F '\t' -v id="${work_id}" '$1 == id { print $3; exit }' <<< "$(_team_registry_rows)")"
+    cur_op="$(awk -F '\t' -v id="${work_id}" '$1 == id { print $4; exit }' <<< "$(_team_registry_rows)")"
     cur_note="$(_team_compose_note "$(_team_registry_note_for "${work_id}")" "" "" "" "${note_token}")"
     sdlc_team_register "${work_id}" "${target_status}" "${cur_phase}" "${cur_op}" "${cur_note}"
   done < <(sdlc_team_discover_work_ids)
@@ -333,16 +350,84 @@ _team_owner() {
 }
 
 _team_registry_init() {
-  mkdir -p "${SDLC_ROOT}/agent-context"
-  if [[ ! -f "${SDLC_TEAM_REGISTRY}" ]]; then
-    cat > "${SDLC_TEAM_REGISTRY}" <<'EOF'
-# Team Work Registry — tab-separated. Commit updates so teammates see who is on which Work ID.
-# Columns: work_id status phase operation owner updated note
-# status: active | shelved | done | cancelled | archived | available
-# note tokens: branch:<name> pr:<url-or-#> jira:<KEY> <free text>
-work_id	status	phase	operation	owner	updated	note
-EOF
+  mkdir -p "$(dirname "${SDLC_TEAM_REGISTRY_JSONL}")" "${SDLC_ROOT}/.sdlc"
+  if [[ ! -f "${SDLC_TEAM_REGISTRY_JSONL}" ]]; then
+    : > "${SDLC_TEAM_REGISTRY_JSONL}"
   fi
+}
+
+_team_registry_read_events() {
+  _team_registry_init
+  if [[ -f "${SDLC_TEAM_REGISTRY_JSONL}" ]] && [[ -s "${SDLC_TEAM_REGISTRY_JSONL}" ]]; then
+    python3 - <<PY
+import json
+from pathlib import Path
+for line in Path(${SDLC_TEAM_REGISTRY_JSONL@Q}).read_text(encoding="utf-8").splitlines():
+    line = line.strip()
+    if not line:
+        continue
+    try:
+        ev = json.loads(line)
+    except json.JSONDecodeError:
+        continue
+    if ev.get("work_id"):
+        print(json.dumps(ev, ensure_ascii=False))
+PY
+    return 0
+  fi
+  # Read-only TSV fallback (never written).
+  if [[ ! -f "${SDLC_TEAM_REGISTRY_LEGACY}" ]]; then
+    return 0
+  fi
+  python3 - <<PY
+import json
+from pathlib import Path
+tsv = Path(${SDLC_TEAM_REGISTRY_LEGACY@Q})
+for line in tsv.read_text(encoding="utf-8").splitlines():
+    if not line or line.startswith("#") or line.startswith("work_id"):
+        continue
+    parts = line.split("\t")
+    while len(parts) < 7:
+        parts.append("")
+    ev = {
+        "event": "legacy-tsv",
+        "work_id": parts[0],
+        "status": parts[1],
+        "phase": parts[2],
+        "operation": parts[3],
+        "owner": parts[4],
+        "ts": parts[5],
+        "note": parts[6],
+    }
+    print(json.dumps(ev, ensure_ascii=False))
+PY
+}
+
+_team_registry_rows() {
+  _team_registry_read_events | python3 - <<'PY'
+import json, sys
+by_id = {}
+for line in sys.stdin:
+    line = line.strip()
+    if not line:
+        continue
+    ev = json.loads(line)
+    wid = ev.get("work_id", "")
+    if not wid:
+        continue
+    by_id[wid] = ev
+for wid in sorted(by_id):
+    ev = by_id[wid]
+    print("\t".join([
+        ev.get("work_id", ""),
+        ev.get("status", "available"),
+        ev.get("phase", ""),
+        ev.get("operation", ""),
+        ev.get("owner", ""),
+        ev.get("ts", ""),
+        ev.get("note", ""),
+    ]))
+PY
 }
 
 _team_with_registry_lock() {
@@ -356,10 +441,6 @@ _team_with_registry_lock() {
   fi
 }
 
-_team_registry_rows() {
-  _team_registry_init
-  grep -v '^#' "${SDLC_TEAM_REGISTRY}" | grep -v '^work_id' | grep -v '^[[:space:]]*$' || true
-}
 
 _team_registry_lookup() {
   local work_id="$1"
@@ -372,35 +453,34 @@ _team_registry_upsert_impl() {
   local phase="${3:-}"
   local operation="${4:-}"
   local note="${5:-}"
-  local owner updated header tmp
+  local event="${6:-update}"
+  local owner updated
   owner="$(_team_owner)"
   updated="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
   _team_registry_init
-  header="$(grep -m1 '^work_id' "${SDLC_TEAM_REGISTRY}" || echo 'work_id	status	phase	operation	owner	updated	note')"
-  tmp="${SDLC_TEAM_REGISTRY}.tmp.$$"
-  {
-    grep '^#' "${SDLC_TEAM_REGISTRY}" || true
-    printf '%s\n' "${header}"
-    local found=0 row wid
-    while IFS= read -r row; do
-      wid="${row%%$'\t'*}"
-      if [[ "${wid}" == "${work_id}" ]]; then
-        found=1
-        if [[ -z "${note}" ]]; then
-          note="$(awk -F '\t' '{ print $7 }' <<< "${row}")"
-        fi
-        printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-          "${work_id}" "${status}" "${phase}" "${operation}" "${owner}" "${updated}" "${note}"
-      else
-        printf '%s\n' "${row}"
-      fi
-    done < <(_team_registry_rows)
-    if [[ "${found}" -eq 0 ]]; then
-      printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-        "${work_id}" "${status}" "${phase}" "${operation}" "${owner}" "${updated}" "${note}"
-    fi
-  } > "${tmp}"
-  mv -f "${tmp}" "${SDLC_TEAM_REGISTRY}"
+  if [[ -z "${note}" ]]; then
+    note="$(_team_registry_note_for "${work_id}")"
+  fi
+  local payload
+  payload="$(python3 - <<PY
+import json
+print(json.dumps({
+    "event": ${event@Q},
+    "work_id": ${work_id@Q},
+    "status": ${status@Q},
+    "phase": ${phase@Q},
+    "operation": ${operation@Q},
+    "owner": ${owner@Q},
+    "note": ${note@Q},
+    "ts": ${updated@Q},
+}, ensure_ascii=False))
+PY
+)"
+  if declare -F sdlc_append_jsonl >/dev/null 2>&1; then
+    sdlc_append_jsonl "${SDLC_TEAM_REGISTRY_JSONL}" "${payload}"
+  else
+    printf '%s\n' "${payload}" >> "${SDLC_TEAM_REGISTRY_JSONL}"
+  fi
 }
 
 sdlc_team_register() {
@@ -409,6 +489,7 @@ sdlc_team_register() {
   local phase="${3:-}"
   local operation="${4:-}"
   local note="${5:-}"
+  local event="${6:-update}"
   if [[ -z "${work_id}" ]]; then
     return 0
   fi
@@ -416,11 +497,12 @@ sdlc_team_register() {
     return 0
   fi
   _team_with_registry_lock _team_registry_upsert_impl \
-    "${work_id}" "${status}" "${phase}" "${operation}" "${note}"
-  local hook_owner hook_updated hook_note
-  hook_owner="$(awk -F '\t' -v id="${work_id}" '$1 == id { print $5; exit }' "${SDLC_TEAM_REGISTRY}")"
-  hook_updated="$(awk -F '\t' -v id="${work_id}" '$1 == id { print $6; exit }' "${SDLC_TEAM_REGISTRY}")"
-  hook_note="$(awk -F '\t' -v id="${work_id}" '$1 == id { print $7; exit }' "${SDLC_TEAM_REGISTRY}")"
+    "${work_id}" "${status}" "${phase}" "${operation}" "${note}" "${event}"
+  local hook_owner hook_updated hook_note row
+  row="$(_team_registry_lookup_row "${work_id}")"
+  hook_owner="$(awk -F '\t' '{ print $5 }' <<< "${row}")"
+  hook_updated="$(awk -F '\t' '{ print $6 }' <<< "${row}")"
+  hook_note="$(awk -F '\t' '{ print $7 }' <<< "${row}")"
   _team_run_hook "${work_id}" "${status}" "${phase}" "${operation}" \
     "${hook_owner}" "${hook_updated}" "${hook_note}"
 }
@@ -430,9 +512,9 @@ sdlc_team_check_claim() {
   local force="${2:-0}"
   local owner status updated me
   _team_registry_init
-  owner="$(awk -F '\t' -v id="${work_id}" '$1 == id { print $5; exit }' "${SDLC_TEAM_REGISTRY}")"
-  status="$(awk -F '\t' -v id="${work_id}" '$1 == id { print $2; exit }' "${SDLC_TEAM_REGISTRY}")"
-  updated="$(awk -F '\t' -v id="${work_id}" '$1 == id { print $6; exit }' "${SDLC_TEAM_REGISTRY}")"
+  owner="$(awk -F '\t' -v id="${work_id}" '$1 == id { print $5; exit }' <<< "$(_team_registry_rows)")"
+  status="$(awk -F '\t' -v id="${work_id}" '$1 == id { print $2; exit }' <<< "$(_team_registry_rows)")"
+  updated="$(awk -F '\t' -v id="${work_id}" '$1 == id { print $6; exit }' <<< "$(_team_registry_rows)")"
   [[ -n "${owner}" ]] || return 0
   me="$(_team_owner)"
   if [[ "${status}" == "active" && "${owner}" != "${me}" ]]; then
@@ -455,34 +537,40 @@ sdlc_team_sync_from_workflow() {
   local work_id="$1"
   local status="$2"
   local note="${3:-}"
-  local phase="" operation="" file
+  local phase="" operation="" file event="update"
   file="${SDLC_ROOT}/.sdlc/workflows/${work_id}.state"
   if [[ -f "${file}" ]]; then
     phase="$(grep -m1 '^phase=' "${file}" 2>/dev/null | cut -d= -f2- || true)"
     operation="$(grep -m1 '^operation=' "${file}" 2>/dev/null | cut -d= -f2- || true)"
   fi
-  sdlc_team_register "${work_id}" "${status}" "${phase}" "${operation}" "${note}"
+  case "${status}" in
+    active) event="claim" ;;
+    shelved) event="release" ;;
+    archived) event="archive" ;;
+    done|cancelled) event="refresh" ;;
+  esac
+  sdlc_team_register "${work_id}" "${status}" "${phase}" "${operation}" "${note}" "${event}"
 }
 
 sdlc_team_discover_work_ids() {
   local root="${SDLC_ROOT}"
+  local home
+  if declare -F sdlc_home >/dev/null 2>&1; then
+    home="$(sdlc_home "${root}")"
+  else
+    home="${root}"
+  fi
   local -A seen=()
   local path base
   shopt -s nullglob
   for path in \
-    "${root}"/agent-context/features/*/ \
-    "${root}"/spdd/canvas/*.md \
-    "${root}"/requirements/milestones/*.md \
-    "${root}"/requirements/milestones/milestone-*/*.md; do
-    if [[ -d "${path}" ]]; then
-      base="$(basename "${path}")"
-    else
-      base="$(basename "${path}" .md)"
-    fi
+    "${home}"/spdd/canvas/*.md \
+    "${home}"/requirements/milestones/*.md \
+    "${home}"/requirements/milestones/milestone-*/*.md; do
+    base="$(basename "${path}" .md)"
     [[ "${base}" == "README" || "${base}" == "archive" ]] && continue
     [[ "${base}" == MILESTONE-* || "${base}" == milestone-* ]] && continue
     [[ -n "${base}" ]] || continue
-    # Skip nested archive trees if a glob ever expands into them.
     [[ "${path}" == */archive/* || "${path}" == */archive ]] && continue
     seen["${base}"]=1
   done
@@ -538,24 +626,30 @@ sdlc_team_archive_work() {
     fi
   fi
 
-  local feature_src="${root}/agent-context/features/${work_id}"
-  local feature_dest="${root}/agent-context/features/archive/${work_id}"
-  if [[ -e "${feature_src}" ]]; then
-    _team_move_path "${feature_src}" "${feature_dest}" "${dry}" && moved=1
+  local feature_src="" feature_dest=""
+  # No agent-context/features moves (storage v3).
+
+  local canvas_src review_src analysis_src sync_src home
+  if declare -F sdlc_home >/dev/null 2>&1; then
+    home="$(sdlc_home "${root}")"
+  else
+    home="${root}"
   fi
+  canvas_src="${home}/spdd/canvas/${work_id}.md"
+  analysis_src="${home}/spdd/analysis/${work_id}-analysis.md"
+  review_src="${home}/spdd/reviews/${work_id}-review.md"
+  sync_src="${home}/spdd/sync/${work_id}-sync.md"
+  [[ -f "${canvas_src}" ]] && _team_move_path "${canvas_src}" "${home}/spdd/canvas/archive/${work_id}.md" "${dry}" && moved=1
+  [[ -f "${analysis_src}" ]] && _team_move_path "${analysis_src}" "${home}/spdd/analysis/archive/${work_id}-analysis.md" "${dry}" && moved=1
+  [[ -f "${review_src}" ]] && _team_move_path "${review_src}" "${home}/spdd/reviews/archive/${work_id}-review.md" "${dry}" && moved=1
+  [[ -f "${sync_src}" ]] && _team_move_path "${sync_src}" "${home}/spdd/sync/archive/${work_id}-sync.md" "${dry}" && moved=1
 
-  local canvas_src review_src analysis_src sync_src
-  canvas_src="${root}/spdd/canvas/${work_id}.md"
-  analysis_src="${root}/spdd/analysis/${work_id}-analysis.md"
-  review_src="${root}/spdd/reviews/${work_id}-review.md"
-  sync_src="${root}/spdd/sync/${work_id}-sync.md"
-  [[ -f "${canvas_src}" ]] && _team_move_path "${canvas_src}" "${root}/spdd/canvas/archive/${work_id}.md" "${dry}" && moved=1
-  [[ -f "${analysis_src}" ]] && _team_move_path "${analysis_src}" "${root}/spdd/analysis/archive/${work_id}-analysis.md" "${dry}" && moved=1
-  [[ -f "${review_src}" ]] && _team_move_path "${review_src}" "${root}/spdd/reviews/archive/${work_id}-review.md" "${dry}" && moved=1
-  [[ -f "${sync_src}" ]] && _team_move_path "${sync_src}" "${root}/spdd/sync/archive/${work_id}-sync.md" "${dry}" && moved=1
-
-  # Session briefs that mention this Work ID (keep current-session.md).
-  local session_dir="${root}/agent-context/sessions"
+  local session_dir
+  if declare -F sdlc_sessions_dir >/dev/null 2>&1; then
+    session_dir="$(sdlc_sessions_dir "${root}")"
+  else
+    session_dir="${home}/.sdlc/sessions"
+  fi
   if [[ -d "${session_dir}" ]]; then
     local sess
     shopt -s nullglob
@@ -573,17 +667,17 @@ sdlc_team_archive_work() {
   fi
 
   if [[ "${dry}" -eq 1 ]]; then
-    echo "[dry-run] would mark ${work_id} archived in work-registry.tsv"
+    echo "[dry-run] would mark ${work_id} archived in registry.jsonl"
     return 0
   fi
 
   local note_token="archived:${kind}"
   [[ "${force}" -eq 1 && "${kind}" == "other" ]] && note_token="archived:forced"
-  sdlc_team_register "${work_id}" "archived" "archive" "" "${note_token}"
+  sdlc_team_register "${work_id}" "archived" "archive" "" "${note_token}" "archive"
   if [[ "${moved}" -eq 0 ]]; then
     echo "archive: ${work_id} marked archived (no movable artifacts found; milestone left in place)"
   else
-    echo "Archived ${work_id} (${kind}). Commit moved paths + agent-context/work-registry.tsv."
+    echo "Archived ${work_id} (${kind}). Commit moved paths + spdd/memory/registry.jsonl."
   fi
   echo "Left in place: requirements/milestones/${work_id}.md (if present)."
 }
@@ -596,7 +690,7 @@ sdlc_team_archive_eligible() {
   while IFS= read -r work_id; do
     [[ -z "${work_id}" ]] && continue
     _team_canvas_is_archivable "${work_id}" || continue
-    cur="$(awk -F '\t' -v id="${work_id}" '$1 == id { print $2; exit }' "${SDLC_TEAM_REGISTRY}" 2>/dev/null || true)"
+    cur="$(awk -F '\t' -v id="${work_id}" '$1 == id { print $2; exit }' <<< "$(_team_registry_rows)" 2>/dev/null || true)"
     [[ "${cur}" == "archived" ]] && continue
     if sdlc_team_archive_work "${work_id}" "${dry}" 0; then
       count=$((count + 1))
@@ -608,9 +702,13 @@ sdlc_team_archive_eligible() {
 sdlc_team_infer_work_summary() {
   local work_id="$1"
   local root="${SDLC_ROOT}"
-  local parts=()
-  [[ -d "${root}/agent-context/features/${work_id}" ]] && parts+=("feature workspace")
-  [[ -f "${root}/spdd/canvas/${work_id}.md" ]] && parts+=("canvas")
+  local home parts=()
+  if declare -F sdlc_home >/dev/null 2>&1; then
+    home="$(sdlc_home "${root}")"
+  else
+    home="${root}"
+  fi
+  [[ -f "${home}/spdd/canvas/${work_id}.md" ]] && parts+=("canvas")
   if [[ -n "$(_team_milestone_path "${work_id}" || true)" ]]; then
     parts+=("milestone")
   fi
@@ -642,11 +740,11 @@ sdlc_team_list_work() {
     phase="-"
     owner="-"
     updated=""
-    reg_status="$(awk -F '\t' -v id="${work_id}" '$1 == id { print $2; exit }' "${SDLC_TEAM_REGISTRY}")"
+    reg_status="$(awk -F '\t' -v id="${work_id}" '$1 == id { print $2; exit }' <<< "$(_team_registry_rows)")"
     if [[ -n "${reg_status}" ]]; then
-      phase="$(awk -F '\t' -v id="${work_id}" '$1 == id { print $3; exit }' "${SDLC_TEAM_REGISTRY}")"
-      owner="$(awk -F '\t' -v id="${work_id}" '$1 == id { print $5; exit }' "${SDLC_TEAM_REGISTRY}")"
-      updated="$(awk -F '\t' -v id="${work_id}" '$1 == id { print $6; exit }' "${SDLC_TEAM_REGISTRY}")"
+      phase="$(awk -F '\t' -v id="${work_id}" '$1 == id { print $3; exit }' <<< "$(_team_registry_rows)")"
+      owner="$(awk -F '\t' -v id="${work_id}" '$1 == id { print $5; exit }' <<< "$(_team_registry_rows)")"
+      updated="$(awk -F '\t' -v id="${work_id}" '$1 == id { print $6; exit }' <<< "$(_team_registry_rows)")"
       phase="${phase:--}"
       owner="${owner:--}"
       stale="$(_team_stale_label "${updated}" "${reg_status}")"
@@ -682,7 +780,7 @@ sdlc_team_status() {
     echo "Your local pointer: (none)"
   fi
   echo
-  echo "Team registry (commit agent-context/work-registry.tsv to share):"
+  echo "Team registry (commit spdd/memory/registry.jsonl to share):"
   if _team_registry_rows | grep -q .; then
     printf '  %-36s %-14s %-10s %-6s %-16s %s\n' "WORK-ID" "STATUS" "PHASE" "OP" "OWNER" "NOTE"
     local wid status phase op owner updated note status_disp
@@ -740,7 +838,7 @@ sdlc_team_claim() {
   local resume_rc=$?
   unset _SDLC_TEAM_CLAIM_CHECKED
   (( resume_rc == 0 )) || return "${resume_rc}"
-  echo "Team registry updated — commit agent-context/work-registry.tsv to share with teammates."
+  echo "Team registry updated — commit spdd/memory/registry.jsonl to share with teammates."
 }
 
 sdlc_team_release() {
@@ -758,7 +856,7 @@ sdlc_team_release() {
   # shellcheck source=/dev/null
   source "${SDLC_ROOT}/agent-context/sdlc-workflow.sh"
   sdlc_workflow_shelf "${reason}"
-  echo "Team registry updated — commit agent-context/work-registry.tsv to share with teammates."
+  echo "Team registry updated — commit spdd/memory/registry.jsonl to share with teammates."
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then

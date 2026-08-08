@@ -5,6 +5,8 @@ _SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=/dev/null
 source "${_SCRIPT_DIR}/lib/common.sh"
 # shellcheck source=/dev/null
+source "${_SCRIPT_DIR}/lib/paths.sh"
+# shellcheck source=/dev/null
 source "${_SCRIPT_DIR}/lib/milestone.sh"
 
 usage() {
@@ -14,8 +16,7 @@ Usage: start-agent-session.sh [--target <path>] [--work-id <WORK-ID>] [--phase <
 Create a durable SDLC-SPDD session brief that helps a new agent session resume
 previous work with the right SDLC phase, REASONS Canvas, memory, and handoff context.
 
-Hot session briefs are written under .sdlc/sessions/ (gitignored). Legacy
-agent-context/sessions/ is read-only fallback.
+Hot session briefs are written under .sdlc/sessions/ (gitignored).
 
 Phases:
   init, analysis, plan, architect, code, api-test, review, prompt-update, retro, sync, resume
@@ -98,6 +99,8 @@ case "${PHASE}" in
 esac
 
 TARGET="$(sdlc_resolve_target "${TARGET}")"
+export SDLC_ROOT="${TARGET}"
+HOME="$(sdlc_home "${TARGET}")"
 
 pointer_script="${TARGET}/agent-context/sdlc-pointer.sh"
 if [[ -f "${pointer_script}" && -n "${WORK_ID}" ]]; then
@@ -134,9 +137,8 @@ fi
 timestamp="$(sdlc_timestamp_iso)"
 safe_timestamp="$(sdlc_timestamp_file)"
 # Hot path (#85): gitignored .sdlc/sessions — never write new briefs to agent-context/sessions.
-session_dir="${TARGET}/.sdlc/sessions"
+session_dir="$(sdlc_sessions_dir "${TARGET}")"
 mkdir -p "${session_dir}"
-legacy_session_dir="${TARGET}/agent-context/sessions"
 
 # Quiet / product-test mode (#91)
 if [[ "${QUIET}" -eq 0 ]]; then
@@ -154,32 +156,13 @@ if [[ -n "${WORK_ID}" ]]; then
 fi
 session_file="${session_dir}/${session_name}.md"
 current_file="${session_dir}/current-session.md"
-roadmap_file="${TARGET}/ROADMAP.md"
-session_notes_dir="${TARGET}/session-notes"
+roadmap_file="${HOME}/ROADMAP.md"
+session_notes_dir="${HOME}/session-notes"
 today_note="${session_notes_dir}/$(sdlc_timestamp_day).md"
 
-feature_dir=""
-feature_canvas=""
 canonical_canvas=""
-progress_log=""
-review_report=""
-sync_log=""
-retro_file=""
 if [[ -n "${WORK_ID}" ]]; then
-  # Stay-set paths are canonical (#86). Feature dir is legacy fallback only.
-  feature_dir="${TARGET}/agent-context/features/${WORK_ID}"
-  feature_canvas="${feature_dir}/reasons-canvas.md"
-  canonical_canvas="${TARGET}/spdd/canvas/${WORK_ID}.md"
-  progress_log="${TARGET}/spdd/memory/entries/progress.md"
-  if [[ ! -f "${progress_log}" && -f "${feature_dir}/progress-log.md" ]]; then
-    progress_log="${feature_dir}/progress-log.md"
-  fi
-  review_report="${TARGET}/spdd/reviews/${WORK_ID}-review.md"
-  sync_log="${TARGET}/spdd/sync/${WORK_ID}-sync.md"
-  retro_file="${TARGET}/spdd/memory/entries/retro.md"
-  if [[ ! -f "${retro_file}" && -f "${feature_dir}/retro.md" ]]; then
-    retro_file="${feature_dir}/retro.md"
-  fi
+  canonical_canvas="${HOME}/spdd/canvas/${WORK_ID}.md"
 fi
 
 status_for() {
@@ -194,18 +177,10 @@ status_for() {
 }
 
 canvas_sync_state="not applicable"
-if [[ -n "${WORK_ID}" ]]; then
-  if [[ -f "${feature_canvas}" && -f "${canonical_canvas}" ]]; then
-    if cmp -s "${feature_canvas}" "${canonical_canvas}"; then
-      canvas_sync_state="in sync"
-    else
-      canvas_sync_state="drift detected"
-    fi
-  elif [[ -f "${feature_canvas}" || -f "${canonical_canvas}" ]]; then
-    canvas_sync_state="one canvas copy missing"
-  else
-    canvas_sync_state="no canvas found"
-  fi
+if [[ -n "${WORK_ID}" && -f "${canonical_canvas}" ]]; then
+  canvas_sync_state="present"
+elif [[ -n "${WORK_ID}" ]]; then
+  canvas_sync_state="missing"
 fi
 
 recommended_command="/sdlc-spdd-init"
@@ -348,9 +323,6 @@ if [[ -n "${WORK_ID}" ]]; then
 fi
 
 resume_prompt="For ${WORK_ID:-<WORK-ID>}, read @.sdlc/sessions/current-session.md first."
-if [[ ! -f "${current_file}" && -f "${legacy_session_dir}/current-session.md" ]]; then
-  resume_prompt+=$'\n'"(Legacy fallback available: @agent-context/sessions/current-session.md)"
-fi
 resume_prompt+=$'\n\n'"Load only the files listed under **Resolved Context** in that brief for the ${PHASE} phase (SDLC Agents progressive disclosure)."
 if [[ "${sqlite_lookup_loaded}" -eq 1 ]]; then
   resume_prompt+=$'\n'"Also treat **Local SQLite Index (query cache)** in that brief as loaded lookup context for Work ID ${WORK_ID} (regenerable cache; prefer canvas/requirement files if they disagree)."
@@ -382,6 +354,104 @@ elif [[ -n "${jira_status}" && "${jira_status}" != "missing" && "${jira_status}"
 fi
 
 resume_prompt_indented="$(printf '%s\n' "${resume_prompt}" | sed 's/^/    /')"
+
+digest_md=""
+if [[ -n "${WORK_ID}" ]]; then
+  _milestone_path="${HOME}/requirements/milestones/${WORK_ID}.md"
+  _analysis_path="${HOME}/spdd/analysis/${WORK_ID}-analysis.md"
+  digest_md="$(python3 - <<PY
+import json, re, subprocess
+from pathlib import Path
+
+root = Path(${TARGET@Q})
+home = Path(${HOME@Q})
+wid = ${WORK_ID@Q}
+ledger = home / "spdd/memory/lessons.jsonl"
+stage = home / ".sdlc/staged/lessons.jsonl"
+milestone = Path(${_milestone_path@Q})
+analysis = Path(${_analysis_path@Q})
+
+areas = []
+keywords = []
+
+def bullets(path, heading):
+    if not path.is_file():
+        return []
+    out = []
+    in_sec = False
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if line.startswith("## "):
+            in_sec = line[3:].strip().lower() == heading.lower()
+            continue
+        if in_sec and re.match(r"^[-*]\s+", line):
+            out.append(re.sub(r"^[-*]\s+", "", line).strip())
+    return out
+
+areas.extend(bullets(analysis, "Code Areas"))
+keywords.extend(bullets(analysis, "Domain Keywords"))
+areas = [a for a in areas if a]
+keywords = [k for k in keywords if k]
+area_set = set(areas)
+kw_set = {k.lower() for k in keywords}
+
+def read_jsonl(path):
+    if not path.is_file():
+        return []
+    rows = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            rows.append(json.loads(line))
+        except json.JSONDecodeError:
+            continue
+    return rows
+
+matches = {}
+for rec in read_jsonl(ledger) + read_jsonl(stage):
+    hit = False
+    if rec.get("work_id") == wid:
+        hit = True
+    if rec.get("area") in area_set:
+        hit = True
+    if kw_set and kw_set.intersection(k.lower() for k in rec.get("keywords") or []):
+        hit = True
+    if hit:
+        matches[rec.get("id", "")] = rec
+
+sorted_recs = sorted(matches.values(), key=lambda r: (r.get("ts", ""), r.get("id", "")), reverse=True)
+counts = {}
+for rec in sorted_recs:
+    counts[rec.get("kind", "?")] = counts.get(rec.get("kind", "?"), 0) + 1
+
+lines = ["## Related Past Work (digest — fetch bodies on demand)", ""]
+if not sorted_recs:
+    lines.append("No matching ledger records yet.")
+else:
+    count_parts = [f"{k}={v}" for k, v in sorted(counts.items())]
+    lines.append("Counts: " + ", ".join(count_parts))
+    lines.append("")
+    for rec in sorted_recs[:8]:
+        lines.append(f"- {rec.get('id','')} — {rec.get('title','')}")
+lines.append("")
+lines.append("Query menu:")
+if areas:
+    lines.append(f"- sdlc-engine context retrieve --area {areas[0]} --kind decision")
+else:
+    lines.append("- sdlc-engine context retrieve --work-id " + wid)
+lines.append("- sdlc-engine context show <id>")
+lines.append("- spdd_areaLessons / spdd_workSubgraph MCP tools (when Guide enabled)")
+lines.append("- sdlc.sh db query <term> (when sqlite enabled)")
+
+# Hard cap ≤15 lines for digest section body (excluding heading)
+body = lines[1:]
+if len(body) > 14:
+    body = body[:13] + ["…"]
+print("\n".join([lines[0]] + body))
+PY
+)"
+fi
 
 cat > "${session_file}" <<EOF
 # SDLC-SPDD Agent Session
@@ -422,13 +492,7 @@ New agents: load these first so you know how to operate within the SDLC-SPDD fra
 
 | Artifact | Path | Status |
 |----------|------|--------|
-| Feature workspace | ${feature_dir:-not applicable} | $(status_for "${feature_dir}") |
-| Feature canvas | ${feature_canvas:-not applicable} | $(status_for "${feature_canvas}") |
 | Canonical canvas | ${canonical_canvas:-not applicable} | $(status_for "${canonical_canvas}") |
-| Progress log | ${progress_log:-not applicable} | $(status_for "${progress_log}") |
-| Review report | ${review_report:-not applicable} | $(status_for "${review_report}") |
-| Sync log | ${sync_log:-not applicable} | $(status_for "${sync_log}") |
-| Retro | ${retro_file:-not applicable} | $(status_for "${retro_file}") |
 
 ## Roadmap and Milestone Context
 
@@ -441,16 +505,7 @@ Milestone docs:
 
 ${milestone_list}
 
-## Persistent Memory To Read
-
-Use **Resolved Context** below first (static + area-filtered index rows). For manual lookup:
-
-- agent-context/memory/context-index.md — filter by Area when you know the code area
-- agent-context/memory/domain-index.md — filter by Keyword during analysis
-- agent-context/memory/session-index.md — session-only view (newest first)
-- agent-context/memory/code-areas.md — canonical area categories
-
-Do not read session-history.md top-to-bottom or load whole memory logs when index rows already point at the relevant entries.
+${digest_md}
 
 ## Resolved Context
 
