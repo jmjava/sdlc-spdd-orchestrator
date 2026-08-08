@@ -22,7 +22,8 @@ from sdlc_engine.project import Project
 from sdlc_engine.workflow import WorkflowEngine
 
 
-def test_default_backends_include_all_three(tmp_path: Path) -> None:
+def test_default_backends_include_all_three(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.delenv("CONTEXT_BACKENDS", raising=False)
     cfg = load_config(tmp_path)
     assert cfg["backends"] == [BACKEND_GIT, BACKEND_SQLITE, BACKEND_GUIDE]
 
@@ -112,9 +113,83 @@ def test_lean_only_progress_ingested_on_rebuild(tmp_path: Path) -> None:
     assert any(e.get("kind") == "progress" for e in graph.get("context_entries") or [])
 
 
+def test_capture_progress_format_ingested_on_rebuild(tmp_path: Path) -> None:
+    wid = "FEAT-capture-progress"
+    progress = tmp_path / "spdd" / "memory" / "entries" / "progress.md"
+    progress.parent.mkdir(parents=True)
+    progress.write_text(
+        "# Progress Entries\n\n"
+        f"### 2026-08-07T12:00:00Z - {wid} - code\n\n"
+        "- Code areas: billing\n"
+        "- T01 implemented greet helper\n",
+        encoding="utf-8",
+    )
+    idx = LocalIndex(Project(tmp_path))
+    stats = idx.rebuild()
+    assert stats.context_entries >= 1
+    graph = idx.graph_for_work(wid)
+    entries = [e for e in (graph.get("context_entries") or []) if e.get("kind") == "progress"]
+    assert entries
+    assert any(e.get("phase") == "code" for e in entries)
+    assert any("billing" in (e.get("area") or "") for e in entries)
+
+
+def test_persist_partial_when_sqlite_fails(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.delenv("CONTEXT_BACKENDS", raising=False)
+    project = Project(tmp_path)
+    (tmp_path / "spdd" / "canvas").mkdir(parents=True)
+    (tmp_path / "spdd" / "canvas" / "FEAT-partial.md").write_text(
+        "# canvas\n", encoding="utf-8"
+    )
+    store = ContextStore(project)
+
+    def boom(*_a, **_k):
+        raise RuntimeError("sqlite unavailable")
+
+    monkeypatch.setattr(store.index, "upsert_lesson", boom)
+    result = store.persist_lesson(
+        kind="decision",
+        work_id="FEAT-partial",
+        body="git ok, sqlite fails",
+        project_guide=False,
+    )
+    assert result.git.get("ok") is True
+    assert result.ok is True
+    assert result.partial is True
+    assert result.sqlite.get("ok") is False
+    assert any("sqlite:" in e for e in result.errors)
+    assert (tmp_path / "spdd" / "memory" / "lessons" / "decisions.md").is_file()
+
+
+def test_retrieve_honors_backend_gating(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setenv("CONTEXT_BACKENDS", "git-pointers")
+    project = Project(tmp_path)
+    (tmp_path / "spdd" / "canvas").mkdir(parents=True)
+    (tmp_path / "spdd" / "canvas" / "FEAT-retrieve-off.md").write_text(
+        "# canvas\n", encoding="utf-8"
+    )
+    # Seed sqlite while backends allow it, then gate retrieve off.
+    monkeypatch.delenv("CONTEXT_BACKENDS", raising=False)
+    store = ContextStore(project)
+    store.persist_lesson(
+        kind="pitfall",
+        work_id="FEAT-retrieve-off",
+        body="should not retrieve when sqlite off",
+        project_guide=False,
+    )
+    monkeypatch.setenv("CONTEXT_BACKENDS", "git-pointers")
+    gated = ContextStore(project)
+    out = gated.retrieve(work_id="FEAT-retrieve-off")
+    assert out["sqlite_lessons"] == []
+    assert out.get("sqlite_graph", {}).get("skipped") is True
+    assert out.get("guide", {}).get("skipped") is True
+    assert "sqlite" not in out["backends"]
+    assert "guide-dice" not in out["backends"]
+
+
 def test_workflow_next_honors_quiet(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setenv("SDLC_USER", "quiet-dev")
-    monkeypatch.setenv("SDLC_QUIET", "1")
+    monkeypatch.setenv("SDLC_QUIET", "ON")
     project = Project(tmp_path)
     wid = "FEAT-quiet-next"
     (tmp_path / "spdd" / "canvas").mkdir(parents=True)
@@ -127,6 +202,7 @@ def test_workflow_next_honors_quiet(tmp_path: Path, monkeypatch) -> None:
     text = engine.next_text()
     assert "quiet" in text.lower()
     assert "/sdlc-spdd-code" not in text
+    assert "Skip recommended" in text or "load resolved context" in text
     payload = json.loads(engine.status_json(wid))
     assert payload["quiet"] is True
     assert "/sdlc-spdd-code" not in payload["recommended_command"]

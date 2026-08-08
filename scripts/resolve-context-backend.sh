@@ -77,17 +77,32 @@ _uniq_backends() {
 }
 
 # Prefer explicit persistence-config / CONTEXT_BACKENDS when present.
+# Match Python parse_backends_env: drop unknown tokens; if every token is
+# garbage, treat as unset so defaults/file probe apply.
 if [[ -n "${CONTEXT_BACKENDS:-}" ]]; then
-  explicit_source=1
   IFS=',' read -r -a _env_backends <<< "${CONTEXT_BACKENDS}"
   backends=()
+  _any_known=0
   for b in "${_env_backends[@]}"; do
-    b="$(printf '%s' "${b}" | tr '[:upper:]' '[:lower:]' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+    b="$(printf '%s' "${b}" | tr '[:upper:]' '[:lower:]' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;s/_/-/g')"
     [[ -n "${b}" ]] || continue
-    case "$(_normalize_one "${b}")" in
-      git-pointers|sqlite|guide-dice) backends+=("$(_normalize_one "${b}")") ;;
+    n="$(_normalize_one "${b}")"
+    case "${n}" in
+      git-pointers|sqlite|guide-dice)
+        backends+=("${n}")
+        _any_known=1
+        ;;
     esac
   done
+  if [[ "${_any_known}" -eq 1 ]]; then
+    explicit_source=1
+  else
+    backends=("git-pointers")
+  fi
+fi
+
+if [[ "${explicit_source}" -eq 1 ]]; then
+  :
 elif [[ -f "${PERSIST_CFG}" ]] && command -v python3 >/dev/null 2>&1; then
   explicit_source=1
   mapfile -t backends < <(

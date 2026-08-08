@@ -233,15 +233,26 @@ _wf_work_readiness() {
   fi
 }
 
+_wf_is_quiet() {
+  local q
+  q="$(printf '%s' "${SDLC_QUIET:-}" | tr '[:upper:]' '[:lower:]')"
+  [[ "${q}" == "1" || "${q}" == "true" || "${q}" == "yes" || "${q}" == "on" ]] \
+    || [[ -f "${SDLC_ROOT:-.}/agent-context/harness/quiet-mode.md" ]]
+}
+
+_wf_quiet_blurb() {
+  # Keep in sync with sdlc_engine.quiet.quiet_resume_blurb (default, non-guide).
+  echo "Quiet mode: load resolved context and continue the product task. Skip recommended /sdlc-spdd-* T## dogfood commands unless explicitly requested."
+}
+
 sdlc_workflow_recommended_command() {
   local phase="${1:-init}"
   local work_id="${2:-}"
   local operation="${3:-}"
   local readiness=""
   # Quiet / product-test mode (#91): no T## dogfood gravity.
-  if [[ "${SDLC_QUIET:-}" == "1" || "${SDLC_QUIET:-}" == "true" || "${SDLC_QUIET:-}" == "yes" ]] \
-    || [[ -f "${SDLC_ROOT:-.}/agent-context/harness/quiet-mode.md" ]]; then
-    echo "Quiet mode: retrieve context (SQLite/Guide/context store); no /sdlc-spdd-* T## recommendation."
+  if _wf_is_quiet; then
+    _wf_quiet_blurb
     return 0
   fi
   if [[ -z "${operation}" && -n "${work_id}" ]]; then
@@ -467,6 +478,16 @@ sdlc_workflow_next() {
     op_title="$(_wf_operation_title "${work_id}" "${operation}")"
   fi
 
+  # Match Python WorkflowEngine.next_text quiet contract (#91).
+  if _wf_is_quiet; then
+    echo "== SDLC: what to do now (quiet) =="
+    echo "Work ID: ${work_id}"
+    echo "Phase: ${phase}"
+    echo
+    _wf_quiet_blurb
+    return 0
+  fi
+
   echo "== SDLC: what to do now =="
   echo "Work ID: ${work_id}"
   echo "Phase: ${phase} ($(( $(_wf_phase_index "${phase}") + 1 ))/${#SDLC_PHASE_ORDER[@]})"
@@ -600,6 +621,11 @@ sdlc_workflow_status_json() {
     printf '"operation":"%s",' "$(_wf_json_escape "${operation}")"
     printf '"operation_title":"%s",' "$(_wf_json_escape "${op_title}")"
     printf '"readiness":"%s",' "$(_wf_json_escape "$(_wf_work_readiness "${work_id}")")"
+    if _wf_is_quiet; then
+      printf '"quiet":true,'
+    else
+      printf '"quiet":false,'
+    fi
     printf '"recommended_command":"%s",' "$(_wf_json_escape "$(sdlc_workflow_recommended_command "${phase}" "${work_id}" "${operation}")")"
     printf '"shell_start":"%s",' "$(_wf_json_escape "$(sdlc_workflow_shell_start "${work_id}" "${phase}")")"
     printf '"shell_capture":"%s",' "$(_wf_json_escape "$(sdlc_workflow_shell_capture "${work_id}" "${phase}")")"

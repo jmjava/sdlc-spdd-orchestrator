@@ -18,7 +18,12 @@ def is_quiet(
     if quiet_flag:
         return True
     environ = env if env is not None else os.environ
-    if str(environ.get("SDLC_QUIET", "")).strip() in {"1", "true", "yes", "on"}:
+    if str(environ.get("SDLC_QUIET", "")).strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }:
         return True
     root = (project or Project.resolve()).root
     return (root / "agent-context" / "harness" / "quiet-mode.md").is_file()

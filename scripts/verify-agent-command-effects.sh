@@ -93,6 +93,10 @@ esac
 TARGET="$(sdlc_resolve_target "${TARGET}")"
 FEATURE_DIR="${TARGET}/agent-context/features/${WORK_ID}"
 CANVAS="${TARGET}/spdd/canvas/${WORK_ID}.md"
+MILESTONE_REQ="${TARGET}/requirements/milestones/${WORK_ID}.md"
+SPDD_REVIEW="${TARGET}/spdd/reviews/${WORK_ID}-review.md"
+SPDD_SYNC="${TARGET}/spdd/sync/${WORK_ID}-sync.md"
+LEAN_RETRO="${TARGET}/spdd/memory/entries/retro.md"
 # Hot path (#86): lean progress.md. Legacy feature progress-log.md is fallback.
 LEAN_PROGRESS="${TARGET}/spdd/memory/entries/progress.md"
 FEATURE_PROGRESS="${FEATURE_DIR}/progress-log.md"
@@ -152,6 +156,31 @@ check_progress_contains_regex() {
   failures=$((failures + 1))
 }
 
+check_requirement_exists() {
+  if [[ -f "${MILESTONE_REQ}" ]]; then
+    echo "  ok  requirement: ${MILESTONE_REQ}"
+  elif [[ -f "${FEATURE_DIR}/requirement.md" ]]; then
+    echo "  ok  requirement (legacy): ${FEATURE_DIR}/requirement.md"
+  else
+    echo "  FAIL requirement: ${MILESTONE_REQ} (or legacy ${FEATURE_DIR}/requirement.md)" >&2
+    failures=$((failures + 1))
+  fi
+}
+
+check_either_exists() {
+  local label="$1"
+  local primary="$2"
+  local legacy="$3"
+  if [[ -e "${primary}" ]]; then
+    echo "  ok  ${label}: ${primary}"
+  elif [[ -e "${legacy}" ]]; then
+    echo "  ok  ${label} (legacy): ${legacy}"
+  else
+    echo "  FAIL ${label}: ${primary} (or legacy ${legacy})" >&2
+    failures=$((failures + 1))
+  fi
+}
+
 check_any_session_note_contains_work_id() {
   local notes_dir="$1"
   if [[ ! -d "${notes_dir}" ]]; then
@@ -183,8 +212,8 @@ fi
 
 if [[ "${STEP}" == "plan" || "${STEP}" == "architect" || "${STEP}" == "code" || "${STEP}" == "review" || "${STEP}" == "prompt-update" || "${STEP}" == "sync" || "${STEP}" == "retro" || "${STEP}" == "capture" ]]; then
   check_exists "canvas" "${CANVAS}"
-  check_exists "feature dir" "${FEATURE_DIR}"
-  check_exists "feature requirement" "${FEATURE_DIR}/requirement.md"
+  # Stay-set requirement is canonical (#86); feature mirrors are optional legacy.
+  check_requirement_exists
   check_progress_exists
 fi
 
@@ -212,20 +241,31 @@ if [[ "${STEP}" == "prompt-update" ]]; then
 fi
 
 if [[ "${STEP}" == "review" ]]; then
-  check_exists "feature review" "${FEATURE_DIR}/review.md"
-  check_exists "spdd review" "${TARGET}/spdd/reviews/${WORK_ID}-review.md"
-  check_contains_regex "review status marker" "${FEATURE_DIR}/review.md" "Approved|Approved With Notes|Changes Requested|Blocked"
+  check_either_exists "review artifact" "${SPDD_REVIEW}" "${FEATURE_DIR}/review.md"
+  local_review="${SPDD_REVIEW}"
+  [[ -f "${local_review}" ]] || local_review="${FEATURE_DIR}/review.md"
+  if [[ -f "${local_review}" ]]; then
+    check_contains_regex "review status marker" "${local_review}" \
+      "Approved|Approved With Notes|Changes Requested|Blocked"
+  fi
 fi
 
 if [[ "${STEP}" == "sync" ]]; then
-  check_exists "feature sync log" "${FEATURE_DIR}/sync-log.md"
-  check_exists "spdd sync report" "${TARGET}/spdd/sync/${WORK_ID}-sync.md"
+  check_either_exists "sync report" "${SPDD_SYNC}" "${FEATURE_DIR}/sync-log.md"
 fi
 
 if [[ "${STEP}" == "retro" ]]; then
-  check_exists "feature retro" "${FEATURE_DIR}/retro.md"
-  check_exists "known pitfalls memory" "${TARGET}/agent-context/memory/known-pitfalls.md"
-  check_exists "reusable patterns memory" "${TARGET}/agent-context/memory/reusable-patterns.md"
+  if [[ -f "${LEAN_RETRO}" ]] || [[ -f "${FEATURE_DIR}/retro.md" ]]; then
+    check_either_exists "retro artifact" "${LEAN_RETRO}" "${FEATURE_DIR}/retro.md"
+  else
+    # Lessons stay-set is enough when no dedicated retro file exists yet.
+    check_either_exists "pitfalls memory" \
+      "${TARGET}/spdd/memory/lessons/pitfalls.md" \
+      "${TARGET}/agent-context/memory/known-pitfalls.md"
+  fi
+  check_either_exists "patterns memory" \
+    "${TARGET}/spdd/memory/lessons/patterns.md" \
+    "${TARGET}/agent-context/memory/reusable-patterns.md"
 fi
 
 if [[ "${STEP}" == "capture" ]]; then

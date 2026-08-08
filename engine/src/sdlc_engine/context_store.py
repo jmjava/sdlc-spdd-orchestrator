@@ -100,6 +100,36 @@ class ContextStore:
         result.partial = bool(result.errors)
         return result
 
+    def _fanout_sqlite_guide(
+        self,
+        result: PersistResult,
+        *,
+        want_sqlite: bool,
+        want_guide: bool,
+        sqlite_fn,
+    ) -> PersistResult:
+        """Shared soft-fail fan-out for SQLite + Guide after git succeeded."""
+        if want_sqlite:
+            try:
+                result.sqlite = {"ok": True, **(sqlite_fn() or {})}
+            except Exception as exc:  # noqa: BLE001
+                result.sqlite = {"ok": False, "error": str(exc)}
+                result.errors.append(f"sqlite: {exc}")
+        else:
+            result.sqlite = {"ok": False, "skipped": True}
+
+        if want_guide:
+            try:
+                guide_meta = self.project_to_guide()
+                result.guide = {"ok": True, **guide_meta}
+            except Exception as exc:  # noqa: BLE001
+                result.guide = {"ok": False, "error": str(exc)}
+                result.errors.append(f"guide: {exc}")
+        else:
+            result.guide = {"ok": False, "skipped": True}
+
+        return self._finalize_persist(result)
+
     # --- persist ---
 
     def persist_lesson(
@@ -149,55 +179,41 @@ class ContextStore:
             result.errors.append(f"git: {exc}")
             return self._finalize_persist(result)
 
-        # Path 2: SQLite relational
-        if want_sqlite:
-            try:
-                self.index.upsert_lesson(
-                    lesson_id=lid,
-                    kind=kind_n,
-                    work_id=wid,
-                    area=area,
-                    body=text,
-                    source=source,
-                    ts=ts,
-                )
-                self.index.upsert_pointer_row(
-                    pointer_id=git_meta["pointer_id"],
-                    kind="lesson",
-                    work_id=wid,
-                    intent=text[:200],
-                    payload={"lesson_id": lid, "area": area, "subtype": kind_n},
-                    ts=ts,
-                )
-                graph = self.index.graph_for_work(wid)
-                result.sqlite = {
-                    "ok": True,
-                    "lesson_id": lid,
-                    "lessons_for_work": len(graph.get("lessons") or []),
-                    "requirements": len(graph.get("requirements") or []),
-                    "canvases": len(graph.get("canvases") or []),
-                    "areas": len(graph.get("areas") or []),
-                    "edges": len(graph.get("edges") or []),
-                    "schema": "4",
-                }
-            except Exception as exc:  # noqa: BLE001
-                result.sqlite = {"ok": False, "error": str(exc)}
-                result.errors.append(f"sqlite: {exc}")
-        else:
-            result.sqlite = {"ok": False, "skipped": True}
+        def _sqlite() -> dict[str, Any]:
+            self.index.upsert_lesson(
+                lesson_id=lid,
+                kind=kind_n,
+                work_id=wid,
+                area=area,
+                body=text,
+                source=source,
+                ts=ts,
+            )
+            self.index.upsert_pointer_row(
+                pointer_id=git_meta["pointer_id"],
+                kind="lesson",
+                work_id=wid,
+                intent=text[:200],
+                payload={"lesson_id": lid, "area": area, "subtype": kind_n},
+                ts=ts,
+            )
+            graph = self.index.graph_for_work(wid)
+            return {
+                "lesson_id": lid,
+                "lessons_for_work": len(graph.get("lessons") or []),
+                "requirements": len(graph.get("requirements") or []),
+                "canvases": len(graph.get("canvases") or []),
+                "areas": len(graph.get("areas") or []),
+                "edges": len(graph.get("edges") or []),
+                "schema": "4",
+            }
 
-        # Path 3: Guide DICE projection
-        if want_guide:
-            try:
-                guide_meta = self.project_to_guide()
-                result.guide = {"ok": True, **guide_meta}
-            except Exception as exc:  # noqa: BLE001
-                result.guide = {"ok": False, "error": str(exc)}
-                result.errors.append(f"guide: {exc}")
-        else:
-            result.guide = {"ok": False, "skipped": True}
-
-        return self._finalize_persist(result)
+        return self._fanout_sqlite_guide(
+            result,
+            want_sqlite=want_sqlite,
+            want_guide=want_guide,
+            sqlite_fn=_sqlite,
+        )
 
     def persist_context_entry(
         self,
@@ -254,55 +270,43 @@ class ContextStore:
             result.errors.append(f"git: {exc}")
             return self._finalize_persist(result)
 
-        if want_sqlite:
-            try:
-                eid = self.index.upsert_context_entry(
-                    kind=kind_n,
-                    work_id=wid,
-                    area=area,
-                    phase=phase,
-                    path=git_meta.get("path", ""),
-                    title=text[:120],
-                    body=text,
-                    source=source,
-                    ts=ts,
-                )
-                self.index.upsert_pointer_row(
-                    pointer_id=git_meta["pointer_id"],
-                    kind=kind_n,
-                    work_id=wid,
-                    intent=text[:200],
-                    payload={"entry_id": eid, "area": area},
-                    ts=ts,
-                )
-                graph = self.index.graph_for_work(wid)
-                cov = self.index.capability_coverage()
-                result.sqlite = {
-                    "ok": True,
-                    "entry_id": eid,
-                    "context_entries": len(graph.get("context_entries") or []),
-                    "requirements": len(graph.get("requirements") or []),
-                    "canvases": len(graph.get("canvases") or []),
-                    "coverage_complete": cov.get("complete"),
-                    "schema": "4",
-                }
-            except Exception as exc:  # noqa: BLE001
-                result.sqlite = {"ok": False, "error": str(exc)}
-                result.errors.append(f"sqlite: {exc}")
-        else:
-            result.sqlite = {"ok": False, "skipped": True}
+        def _sqlite() -> dict[str, Any]:
+            eid = self.index.upsert_context_entry(
+                kind=kind_n,
+                work_id=wid,
+                area=area,
+                phase=phase,
+                path=git_meta.get("path", ""),
+                title=text[:120],
+                body=text,
+                source=source,
+                ts=ts,
+            )
+            self.index.upsert_pointer_row(
+                pointer_id=git_meta["pointer_id"],
+                kind=kind_n,
+                work_id=wid,
+                intent=text[:200],
+                payload={"entry_id": eid, "area": area},
+                ts=ts,
+            )
+            graph = self.index.graph_for_work(wid)
+            cov = self.index.capability_coverage()
+            return {
+                "entry_id": eid,
+                "context_entries": len(graph.get("context_entries") or []),
+                "requirements": len(graph.get("requirements") or []),
+                "canvases": len(graph.get("canvases") or []),
+                "coverage_complete": cov.get("complete"),
+                "schema": "4",
+            }
 
-        if want_guide:
-            try:
-                guide_meta = self.project_to_guide()
-                result.guide = {"ok": True, **guide_meta}
-            except Exception as exc:  # noqa: BLE001
-                result.guide = {"ok": False, "error": str(exc)}
-                result.errors.append(f"guide: {exc}")
-        else:
-            result.guide = {"ok": False, "skipped": True}
-
-        return self._finalize_persist(result)
+        return self._fanout_sqlite_guide(
+            result,
+            want_sqlite=want_sqlite,
+            want_guide=want_guide,
+            sqlite_fn=_sqlite,
+        )
 
     def _persist_entry_git(
         self,
@@ -491,9 +495,12 @@ class ContextStore:
             return json.loads(resp.read().decode("utf-8"))
 
     def retrieve(self, *, work_id: str = "", area: str = "") -> dict[str, Any]:
+        want_sqlite = backend_enabled(self.project, BACKEND_SQLITE)
+        want_guide = backend_enabled(self.project, BACKEND_GUIDE)
         out: dict[str, Any] = {
             "work_id": work_id,
             "area": area,
+            "backends": self._backends(),
             "git_pointers": [],
             "sqlite_lessons": [],
             "sqlite_graph": None,
@@ -507,18 +514,24 @@ class ContextStore:
             ]
         except Exception as exc:  # noqa: BLE001
             out["errors"].append(f"git: {exc}")
-        try:
-            if area:
-                out["sqlite_lessons"] = self.index.lessons_for_area(area)
-            elif work_id:
-                out["sqlite_lessons"] = self.index.lessons_for_work(work_id)
-            if work_id:
-                out["sqlite_graph"] = self.index.graph_for_work(work_id)
-        except Exception as exc:  # noqa: BLE001
-            out["errors"].append(f"sqlite: {exc}")
-        if work_id:
+        if want_sqlite:
+            try:
+                if area:
+                    out["sqlite_lessons"] = self.index.lessons_for_area(area)
+                elif work_id:
+                    out["sqlite_lessons"] = self.index.lessons_for_work(work_id)
+                if work_id:
+                    out["sqlite_graph"] = self.index.graph_for_work(work_id)
+            except Exception as exc:  # noqa: BLE001
+                out["errors"].append(f"sqlite: {exc}")
+        else:
+            out["sqlite_lessons"] = []
+            out["sqlite_graph"] = {"skipped": True}
+        if work_id and want_guide:
             try:
                 out["guide"] = self.guide_work(work_id)
             except Exception as exc:  # noqa: BLE001
                 out["errors"].append(f"guide: {exc}")
+        elif work_id:
+            out["guide"] = {"ok": False, "skipped": True}
         return out

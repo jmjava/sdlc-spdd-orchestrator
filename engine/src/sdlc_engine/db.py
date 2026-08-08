@@ -753,24 +753,59 @@ class LocalIndex:
                 except OSError:
                     continue
                 sectioned = False
+                wid_re = (
+                    r"((?:FEAT|BUG|SPIKE|REF|DOC|TEST|CHORE|LOCAL)-[A-Za-z0-9][\w.-]*)"
+                )
                 for block in re.split(r"(?m)^##\s+", text):
                     if not block.strip():
                         continue
                     first = block.splitlines()[0].strip()
-                    m = re.match(
-                        r"^((?:FEAT|BUG|SPIKE|REF|DOC|TEST|CHORE|LOCAL)-[A-Za-z0-9][\w.-]*)",
-                        first,
-                    )
+                    m = re.match(rf"^{wid_re}", first)
                     if not m:
                         continue
                     sectioned = True
                     wid = m.group(1)
+                    area_m = re.search(r"(?m)^-\s*Area:\s*(.+)$", block)
+                    phase_m = re.search(r"(?m)^-\s*Phase:\s*(.+)$", block)
                     self._upsert_entry_row(
                         conn,
                         kind=kind,
                         work_id=wid,
+                        area=(area_m.group(1).strip() if area_m else ""),
+                        phase=(phase_m.group(1).strip() if phase_m else ""),
                         path=self._rel(path),
                         title=first[:120],
+                        body=block[:4000],
+                        source="stay-set-entry",
+                    )
+                    stats.context_entries += 1
+                # Capture-session format: ### <ts> - <WORK-ID> - <phase>
+                for m in re.finditer(
+                    rf"(?m)^###\s+[^\n]*\b{wid_re}\b[^\n]*\n"
+                    r"(?:.*?)(?=^###\s+|^##\s+|\Z)",
+                    text,
+                    re.DOTALL,
+                ):
+                    sectioned = True
+                    wid = m.group(1)
+                    block = m.group(0)
+                    heading = block.splitlines()[0].strip()
+                    phase = ""
+                    pm = re.search(
+                        rf"\b{re.escape(wid)}\b\s*-\s*([A-Za-z0-9_-]+)\s*$",
+                        heading,
+                    )
+                    if pm:
+                        phase = pm.group(1)
+                    area_m = re.search(r"(?m)^-\s*(?:Code areas|Area):\s*(.+)$", block)
+                    self._upsert_entry_row(
+                        conn,
+                        kind=kind,
+                        work_id=wid,
+                        area=(area_m.group(1).strip() if area_m else ""),
+                        phase=phase,
+                        path=self._rel(path),
+                        title=heading[:120],
                         body=block[:4000],
                         source="stay-set-entry",
                     )

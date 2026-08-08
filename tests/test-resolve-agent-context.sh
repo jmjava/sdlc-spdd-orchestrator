@@ -160,12 +160,32 @@ else
   ok "resume prompt skips redundant canvas mention"
 fi
 
-echo "== Test 13: lean progress ledger resolves for work-id =="
+echo "== Test 13: lean progress ledger resolves as work-scoped excerpt =="
 mkdir -p "${WORK}/spdd/memory/entries"
-printf '# Progress Entries\n\n## FEAT-050-billing\n\n- T01 complete\n' \
+printf '%s\n' \
+  '# Progress Entries' '' \
+  '## FEAT-other' '' '- other work bleed' '' \
+  '## FEAT-050-billing' '' '- T01 complete' \
   >"${WORK}/spdd/memory/entries/progress.md"
 out="$("${RESOLVE}" --target "${WORK}" --phase code --work-id FEAT-050-billing --format paths)"
-assert_contains "${out}" "spdd/memory/entries/progress.md" "lean progress ledger"
+assert_contains "${out}" ".sdlc/resolved/progress-FEAT-050-billing.md" "scoped progress excerpt"
+if grep -Fq "spdd/memory/entries/progress.md" <<< "${out}"; then
+  bad "shared lean progress.md should not resolve wholesale"
+else
+  ok "shared lean progress.md not injected wholesale"
+fi
+excerpt="${WORK}/.sdlc/resolved/progress-FEAT-050-billing.md"
+if [[ -f "${excerpt}" ]]; then
+  ok "scoped excerpt file exists"
+  assert_contains "$(cat "${excerpt}")" "T01 complete" "excerpt includes this work"
+else
+  bad "scoped excerpt file missing"
+fi
+if grep -Fq "other work bleed" "${excerpt}"; then
+  bad "excerpt should not include other Work IDs"
+else
+  ok "excerpt scoped to work-id"
+fi
 if grep -Fq "agent-context/features/FEAT-050-billing/progress-log.md" <<< "${out}"; then
   bad "legacy feature progress-log should not resolve when lean progress exists"
 else

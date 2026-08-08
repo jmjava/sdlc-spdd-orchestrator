@@ -140,7 +140,8 @@ legacy_session_dir="${TARGET}/agent-context/sessions"
 
 # Quiet / product-test mode (#91)
 if [[ "${QUIET}" -eq 0 ]]; then
-  if [[ "${SDLC_QUIET:-}" == "1" || "${SDLC_QUIET:-}" == "true" || "${SDLC_QUIET:-}" == "yes" ]]; then
+  _q="$(printf '%s' "${SDLC_QUIET:-}" | tr '[:upper:]' '[:lower:]')"
+  if [[ "${_q}" == "1" || "${_q}" == "true" || "${_q}" == "yes" || "${_q}" == "on" ]]; then
     QUIET=1
   elif [[ -f "${TARGET}/agent-context/harness/quiet-mode.md" ]]; then
     QUIET=1

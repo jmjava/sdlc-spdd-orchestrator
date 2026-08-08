@@ -195,7 +195,15 @@ class WorkflowEngine:
         if self.project.review_path(wid).is_file():
             state.gates["review_completed"] = "passed"
             state.gates["safeguards_checked"] = "passed"
-        if (self.project.feature_dir(wid) / "retro.md").is_file():
+        lean_retro = self.project.root / "spdd" / "memory" / "entries" / "retro.md"
+        if (self.project.feature_dir(wid) / "retro.md").is_file() or (
+            lean_retro.is_file()
+            and bool(
+                Project.ledger_section_for_work(
+                    lean_retro.read_text(encoding="utf-8"), wid
+                )
+            )
+        ):
             state.gates["retro_completed"] = "passed"
         self.save_state(state)
         self._log(wid, "sync", f"phase={state.phase}")
