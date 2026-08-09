@@ -125,6 +125,7 @@ if [[ "${SKIP_GUIDE_BOOT:-}" == "1" ]]; then
 else
 # Write Embabel-aligned profile + start via console APIs.
 "${PYTHON_BIN}" <<PY
+import os
 from pathlib import Path
 from sdlc_engine.installer.app import create_app
 from sdlc_engine.installer.guide import save_config
