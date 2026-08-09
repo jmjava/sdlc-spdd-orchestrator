@@ -96,8 +96,9 @@ def default_config() -> dict[str, Any]:
 
 
 def config_path(project: Project | Path | str) -> Path:
-    root = project.root if isinstance(project, Project) else Path(project)
-    return Path(root).expanduser().resolve() / CONFIG_REL
+    if isinstance(project, Project):
+        return project.sdlc_dir / CONFIG_REL.name
+    return Project(Path(project).expanduser().resolve()).sdlc_dir / CONFIG_REL.name
 
 
 def parse_backends_env(raw: str | None) -> list[str] | None:
@@ -144,9 +145,8 @@ def load_config(project: Project | Path | str) -> dict[str, Any]:
 
 def save_config(project: Project | Path | str, cfg: dict[str, Any]) -> dict[str, Any]:
     """Write ``.sdlc/persistence-config.json`` and return operator status shape."""
-    root = project.root if isinstance(project, Project) else Path(project)
-    root = Path(root).expanduser().resolve()
-    path = root / CONFIG_REL
+    project_obj = project if isinstance(project, Project) else Project(Path(project))
+    path = config_path(project_obj)
     path.parent.mkdir(parents=True, exist_ok=True)
     backends, _unknown = normalize_backends(
         cfg.get("backends") or DEFAULT_BACKENDS, strict=True
@@ -157,7 +157,6 @@ def save_config(project: Project | Path | str, cfg: dict[str, Any]) -> dict[str,
         "notes": str(cfg.get("notes") or ""),
     }
     path.write_text(json.dumps(out, indent=2) + "\n", encoding="utf-8")
-    project_obj = project if isinstance(project, Project) else Project(root)
     status = status_dict(project_obj)
     status["path"] = str(path)
     status["saved"] = True

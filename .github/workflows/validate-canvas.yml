@@ -30,5 +30,10 @@ jobs:
             ./scripts/validate-reasons-canvas.sh "$file"
           done
 
-      - name: Validate dogfood canvases under spdd/canvas
-        run: ./scripts/validate-reasons-canvas.sh spdd/canvas
+      - name: Validate dogfood canvases under spdd/canvas (when present)
+        run: |
+          if compgen -G 'spdd/canvas/*.md' > /dev/null; then
+            ./scripts/validate-reasons-canvas.sh spdd/canvas
+          else
+            echo "skip: no dogfood canvases under spdd/canvas (storage v3 — active work only)"
+          fi

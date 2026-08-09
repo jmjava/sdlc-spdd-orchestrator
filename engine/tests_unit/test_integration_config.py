@@ -83,3 +83,12 @@ def test_integration_env_overlays_for_push(tmp_path: Path, monkeypatch: pytest.M
         assert svc._jira_base_url() == "https://cfg.atlassian.net"
         assert svc._jira_auth_mode() in {"basic", "bearer"}
     assert not svc._jira_base_url()
+
+
+def test_v3_home_writes_under_sdlc_spdd_runtime(tmp_path: Path) -> None:
+    (tmp_path / "sdlc-spdd").mkdir()
+    project = Project(tmp_path)
+    save_config(project, {"tracker": "github", "github": {"repo": "acme/app"}})
+    cfg = tmp_path / "sdlc-spdd" / ".sdlc" / "integrations-config.json"
+    assert cfg.is_file()
+    assert not (tmp_path / ".sdlc" / "integrations-config.json").exists()

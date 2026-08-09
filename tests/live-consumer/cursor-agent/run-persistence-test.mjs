@@ -4,7 +4,7 @@
  *
  * Proves durable SDLC state survives agent turns + process resume:
  *   1) Real agents create claim/analysis/plan artifacts
- *   2) Full capture-session-memory populates memory/milestone/roadmap
+ *   2) Full capture-session-memory populates staged lessons + planning docs
  *   3) Python engine rebuilds .sdlc/index.sqlite and queries it
  *   4) Agent.dispose + Agent.resume keeps conversation/work context
  *   5) SQLite regenerates after delete (cache, not source of truth)
@@ -25,10 +25,28 @@ const WORK_ID = process.env.LIVE_WORK_ID || "FEAT-001-hello-live";
 const ROOT = process.env.LIVE_CONSUMER_ROOT || "/tmp/sdlc-spdd-live";
 const MODEL = process.env.LIVE_CURSOR_MODEL || "composer-2.5";
 const API_KEY = process.env.CURSOR_API_KEY;
-const FEATURE = `agent-context/features/${WORK_ID}`;
 
 let pass = 0;
 let fail = 0;
+
+function liveHome(root) {
+  const home = path.join(root, "sdlc-spdd");
+  return fs.existsSync(home) ? home : root;
+}
+
+function liveScripts(root) {
+  return path.join(liveHome(root), "scripts");
+}
+
+function liveRuntime(root) {
+  return path.join(liveHome(root), ".sdlc");
+}
+
+function homeRel(subpath) {
+  const home = liveHome(ROOT);
+  if (home === ROOT) return subpath;
+  return path.join("sdlc-spdd", subpath);
+}
 
 function ok(msg) {
   console.log(`  ok   ${msg}`);
@@ -103,6 +121,7 @@ async function main() {
 
   console.log("Cursor SDK full persistence test");
   console.log(`  consumer: ${ROOT}`);
+  console.log(`  home:     ${liveHome(ROOT)}`);
   console.log(`  work-id:  ${WORK_ID}`);
   console.log(`  model:    ${MODEL}`);
   console.log(`  orch:     ${ORCH}`);
@@ -132,19 +151,15 @@ async function main() {
         },
         {
           slug: "sdlc-spdd-analysis",
-          args: `@requirements/milestones/${WORK_ID}.md`,
-          must: [
-            `spdd/analysis/${WORK_ID}-analysis.md`,
-            `${FEATURE}/analysis-context.md`,
-          ],
+          args: `@${homeRel(`requirements/milestones/${WORK_ID}.md`)}`,
+          must: [homeRel(`spdd/analysis/${WORK_ID}-analysis.md`)],
         },
         {
           slug: "sdlc-spdd-plan",
-          args: `@spdd/analysis/${WORK_ID}-analysis.md @requirements/milestones/${WORK_ID}.md`,
+          args: `@${homeRel(`spdd/analysis/${WORK_ID}-analysis.md`)} @${homeRel(`requirements/milestones/${WORK_ID}.md`)}`,
           must: [
-            `spdd/canvas/${WORK_ID}.md`,
-            `${FEATURE}/requirement.md`,
-            `${FEATURE}/progress-log.md`,
+            homeRel(`spdd/canvas/${WORK_ID}.md`),
+            homeRel(`requirements/milestones/${WORK_ID}.md`),
           ],
         },
       ]) {
@@ -173,9 +188,9 @@ async function main() {
   console.log();
   console.log("== phase B: durable capture + SQLite rebuild ==");
 
-  const milestone = "requirements/milestones/milestone-1/MILESTONE-1.md";
+  const milestoneRel = "requirements/milestones/milestone-1/MILESTONE-1.md";
   const cap = sh(
-    path.join(ROOT, "scripts/sdlc-spdd/capture-session-memory.sh"),
+    path.join(liveScripts(ROOT), "capture-session-memory.sh"),
     [
       "--target", ROOT,
       "--work-id", WORK_ID,
@@ -185,8 +200,8 @@ async function main() {
       "--decisions", "SQLite index is regenerable cache; git artifacts remain source of truth",
       "--pitfalls", "Do not treat .sdlc/index.sqlite as authoritative across machines",
       "--patterns", "agent create → capture → db rebuild → resume → query",
-      "--areas", "src/hello.py, tests/live-consumer, scripts/sdlc-spdd",
-      "--milestone", milestone,
+      "--areas", "src/hello.py, tests/live-consumer, sdlc-spdd/scripts",
+      "--milestone", milestoneRel,
       "--roadmap-note", "Persistence test populated index and session memory",
       "--next", `/sdlc-spdd-architect @spdd/canvas/${WORK_ID}.md`,
       "--readiness", "Ready For Coding",
@@ -198,33 +213,49 @@ async function main() {
   if (cap.status === 0) ok("capture-session-memory full flags");
   else bad(`capture failed: ${cap.stderr || cap.stdout}`);
 
-  const hist = fs.readFileSync(
-    path.join(ROOT, "agent-context/memory/session-history.md"),
-    "utf8",
-  );
-  for (const needle of [
-    "Validation: run-persistence-test.mjs",
-    "Decisions: SQLite index is regenerable",
-    "Pitfalls: Do not treat .sdlc/index.sqlite",
-    "Reusable patterns: agent create → capture",
-    `Milestone: ${milestone}`,
-    "Roadmap note: Persistence test populated",
-    "Next: /sdlc-spdd-architect",
-  ]) {
-    if (hist.includes(needle)) ok(`session-history has ${needle.split(":")[0]}`);
-    else bad(`session-history missing ${needle.split(":")[0]}`);
+  const stagePath = path.join(liveRuntime(ROOT), "staged/lessons.jsonl");
+  if (!fs.existsSync(stagePath)) {
+    bad("staged lessons.jsonl missing");
+  } else {
+    ok("staged lessons.jsonl exists");
+    const stage = fs.readFileSync(stagePath, "utf8");
+    for (const [label, needle] of [
+      ["session validation", "run-persistence-test.mjs phase A/B"],
+      ["session next", "/sdlc-spdd-architect"],
+      ["decision", "SQLite index is regenerable cache"],
+      ["pitfall", "Do not treat .sdlc/index.sqlite"],
+      ["pattern", "agent create → capture → db rebuild → resume → query"],
+    ]) {
+      if (stage.includes(needle)) ok(`staged ${label}`);
+      else bad(`staged missing ${label}`);
+    }
+  }
+
+  const milestonePath = path.join(liveHome(ROOT), milestoneRel);
+  if (fs.existsSync(milestonePath) && fs.readFileSync(milestonePath, "utf8").includes(WORK_ID)) {
+    ok("milestone mentions work_id");
+  } else {
+    bad("milestone missing work_id");
+  }
+
+  const roadmapPath = path.join(liveHome(ROOT), "ROADMAP.md");
+  if (fs.existsSync(roadmapPath)
+    && fs.readFileSync(roadmapPath, "utf8").includes("Persistence test populated")) {
+    ok("ROADMAP note written");
+  } else {
+    bad("ROADMAP note missing");
   }
 
   const rebuild = engine(["db", "rebuild"]);
   if (rebuild.status === 0 && /Rebuilt SQLite index/i.test(rebuild.stdout + rebuild.stderr)) {
     ok("db rebuild");
-  } else if (rebuild.status === 0 && fs.existsSync(path.join(ROOT, ".sdlc/index.sqlite"))) {
+  } else if (rebuild.status === 0 && fs.existsSync(path.join(liveRuntime(ROOT), "index.sqlite"))) {
     ok("db rebuild (sqlite present)");
   } else {
     bad(`db rebuild failed: ${rebuild.stdout}\n${rebuild.stderr}`);
   }
 
-  const dbPath = path.join(ROOT, ".sdlc/index.sqlite");
+  const dbPath = path.join(liveRuntime(ROOT), "index.sqlite");
   if (fs.existsSync(dbPath)) ok(".sdlc/index.sqlite exists");
   else bad(".sdlc/index.sqlite missing");
 
@@ -235,7 +266,6 @@ async function main() {
     WORK_ID,
     "--json",
   ]);
-  // CLI may take SQL as one arg without bind params — try alternate forms
   let queryOut = q.stdout + q.stderr;
   if (q.status !== 0 || !queryOut.includes(WORK_ID)) {
     const q2 = engine([
@@ -259,7 +289,7 @@ async function main() {
   if (status.status === 0) ok("db status");
   else bad("db status failed");
 
-  const exportPath = path.join(ROOT, ".sdlc/index-export.json");
+  const exportPath = path.join(liveRuntime(ROOT), "index-export.json");
   const exp = engine(["db", "export", "--format", "json", "-o", exportPath]);
   if (exp.status === 0 && fs.existsSync(exportPath)) {
     const exported = fs.readFileSync(exportPath, "utf8");
@@ -269,7 +299,6 @@ async function main() {
     bad(`db export failed: ${exp.stderr || exp.stdout}`);
   }
 
-  // Regenerable: delete and rebuild
   fs.unlinkSync(dbPath);
   const rebuild2 = engine(["db", "rebuild"]);
   if (rebuild2.status === 0 && fs.existsSync(dbPath)) ok("sqlite regenerates after delete");
@@ -285,12 +314,13 @@ async function main() {
     });
     try {
       ok("Agent.resume succeeded");
+      const sdlcCli = path.join(liveScripts(ROOT), "sdlc.sh");
       const { result } = await send(
         resumed,
         [
           `Persistence check for Work ID ${WORK_ID}.`,
-          "1) Run: ./scripts/sdlc-spdd/sdlc.sh next",
-          "2) Run: ./scripts/sdlc-spdd/sdlc.sh team",
+          `1) Run: ${sdlcCli} next`,
+          `2) Run: ${sdlcCli} team`,
           "3) Confirm the local pointer Work ID.",
           "4) Reply with the Work ID you see and the recommended next command.",
           "Do not modify application source code.",
@@ -300,7 +330,7 @@ async function main() {
       else bad(`resumed agent status=${result.status}`);
 
       const ptr = sh(
-        path.join(ROOT, "agent-context/sdlc-pointer.sh"),
+        path.join(liveScripts(ROOT), "sdlc-pointer.sh"),
         ["get"],
         { env: { SDLC_ROOT: ROOT } },
       );
@@ -308,7 +338,7 @@ async function main() {
       else bad(`pointer after resume: '${(ptr.stdout || "").trim()}'`);
 
       const next = sh(
-        path.join(ROOT, "scripts/sdlc-spdd/sdlc.sh"),
+        sdlcCli,
         ["next"],
         { env: { SDLC_ROOT: ROOT, SDLC_USER: "live-persist" } },
       );
@@ -332,9 +362,8 @@ async function main() {
   console.log();
   console.log("== phase D: SQLite lookup embedded in session context ==");
 
-  // Ship latest start-agent-session into the consumer (install may have older copy).
   const startSrc = path.join(ORCH, "scripts/start-agent-session.sh");
-  const startDst = path.join(ROOT, "scripts/sdlc-spdd/start-agent-session.sh");
+  const startDst = path.join(liveScripts(ROOT), "start-agent-session.sh");
   fs.copyFileSync(startSrc, startDst);
   fs.chmodSync(startDst, 0o755);
 
@@ -352,7 +381,7 @@ async function main() {
   if (start.status === 0) ok("start-agent-session (phase D)");
   else bad(`start-agent-session failed: ${start.stderr || start.stdout}`);
 
-  const briefPath = path.join(ROOT, ".sdlc/sessions/current-session.md");
+  const briefPath = path.join(liveRuntime(ROOT), "sessions/current-session.md");
   const brief = fs.existsSync(briefPath) ? fs.readFileSync(briefPath, "utf8") : "";
   if (brief.includes("Local SQLite Index (query cache)")) ok("brief has Local SQLite Index section");
   else bad("brief missing Local SQLite Index section");
@@ -372,10 +401,11 @@ async function main() {
       local: { cwd: ROOT, settingSources: ["project"] },
     });
     try {
+      const briefRel = path.relative(ROOT, briefPath);
       const { result } = await send(
         agent2,
         [
-          "Read ONLY .sdlc/sessions/current-session.md.",
+          `Read ONLY ${briefRel}.`,
           `Quote the Local SQLite Index fields for Work ID ${WORK_ID}.`,
           "Include has_canvas and registry_status if present.",
           "Do not invent values; do not modify files.",

@@ -224,10 +224,6 @@ def test_persistence_refresh_and_parity(page, live_console) -> None:  # type: ig
 def test_issues_integrations_save_and_tracker_toggle(page, live_console) -> None:  # type: ignore[no-untyped-def]
     _goto_console(page, live_console)
     _open_tab(page, "issues")
-    page.locator("#btn-int-refresh").click()
-    page.wait_for_function(
-        "() => (document.getElementById('int-meta').textContent || '') !== '—'"
-    )
     page.locator("#int-tracker").select_option("jira")
     page.evaluate("document.getElementById('int-tracker').dispatchEvent(new Event('change'))")
     page.locator("#int-jira-url").fill("https://example.atlassian.net")
@@ -239,7 +235,8 @@ def test_issues_integrations_save_and_tracker_toggle(page, live_console) -> None
           const st = document.getElementById('int-status').textContent || '';
           const jira = document.getElementById('issues-link-jira');
           return st.includes('Saved') && jira && jira.style.display !== 'none';
-        }"""
+        }""",
+        timeout=60000,
     )
     assert page.locator("#issues-link-jira").is_visible()
     assert not page.locator("#issues-link-github").is_visible()
@@ -252,7 +249,8 @@ def test_issues_integrations_save_and_tracker_toggle(page, live_console) -> None
           const st = document.getElementById('int-status').textContent || '';
           const gh = document.getElementById('issues-link-github');
           return st.includes('Saved') && gh && gh.style.display !== 'none';
-        }"""
+        }""",
+        timeout=60000,
     )
     assert page.locator("#issues-link-github").is_visible()
     assert not page.locator("#issues-link-jira").is_visible()

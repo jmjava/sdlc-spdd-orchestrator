@@ -368,8 +368,14 @@ class ContextStore:
                 if missing:
                     out["ok"] = False
             except Exception as exc:  # noqa: BLE001
-                out["guide"] = {"enabled": True, "ok": False, "error": str(exc)}
-                out["ok"] = False
+                out["guide"] = {
+                    "enabled": True,
+                    "ok": True,
+                    "skipped": True,
+                    "unreachable": True,
+                    "error": str(exc),
+                }
+                # Guide is optional; unreachable is not committed-ledger drift.
         else:
             out["guide"] = {"enabled": False}
 

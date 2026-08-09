@@ -59,7 +59,7 @@ def normalize_tracker(raw: str) -> str:
 
 
 def config_path(project: Project) -> Path:
-    return project.root / CONFIG_REL
+    return project.sdlc_dir / CONFIG_REL.name
 
 
 def _read_json(path: Path) -> dict[str, Any]:
@@ -117,7 +117,7 @@ def load_config(project: Project) -> dict[str, Any]:
     path = config_path(project)
     data = _read_json(path)
     if not data:
-        legacy = _read_json(project.root / LEGACY_TRACKER_REL)
+        legacy = _read_json(project.sdlc_dir / LEGACY_TRACKER_REL.name)
         if legacy:
             data = {
                 "tracker": legacy.get("tracker", DEFAULT_TRACKER),

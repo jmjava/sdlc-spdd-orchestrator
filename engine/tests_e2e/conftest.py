@@ -1,4 +1,8 @@
-"""Shared fixtures for suite 3 (E2E integration)."""
+"""Shared fixtures for suite 3 (E2E integration).
+
+Playwright/console fixtures import Flask only when used. GitHub Issues tests
+must not require ``[viewer]`` extras just because this conftest exists.
+"""
 
 from __future__ import annotations
 
@@ -10,12 +14,6 @@ from typing import Any
 
 import pytest
 
-pytest.importorskip("flask")
-
-from sdlc_engine.installer import app as installer_app
-from sdlc_engine.installer import viewer_runtime as vr
-from sdlc_engine.installer.app import create_app
-
 
 def _free_port() -> int:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
@@ -26,7 +24,12 @@ def _free_port() -> int:
 @pytest.fixture()
 def live_console(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     """Start ops console on a free port (for Guide tab Playwright probe)."""
+    pytest.importorskip("flask")
     from werkzeug.serving import make_server
+
+    from sdlc_engine.installer import app as installer_app
+    from sdlc_engine.installer import viewer_runtime as vr
+    from sdlc_engine.installer.app import create_app
 
     state: dict[str, Any] = {"alive": False, "pid": 424242, "host": "127.0.0.1", "port": 5050}
 
@@ -59,6 +62,10 @@ def live_console(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         vr._clear_runtime(root)
         state["alive"] = False
         return {"ok": True, "log": "stub stop"}
+
+    def fake_restart(target: Path | str, *, host: str = "127.0.0.1", port: int = 5050) -> dict[str, Any]:
+        fake_stop(target)
+        return fake_start(target, host=host, port=port)
 
     monkeypatch.setattr(vr, "_pid_alive", lambda pid: bool(state["alive"]))
     monkeypatch.setattr(vr, "_tcp_open", lambda *a, **k: bool(state["alive"]))
