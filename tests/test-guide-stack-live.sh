@@ -43,6 +43,11 @@ GUIDE_GIT_REF="${GUIDE_GIT_REF:-sdlc-spdd-projection-v2}"
 GUIDE_START_TIMEOUT_SEC="${GUIDE_START_TIMEOUT_SEC:-600}"
 SPRING_PROFILES_ACTIVE="${SPRING_PROFILES_ACTIVE:-neo4j,local,${GUIDE_PROFILE}}"
 
+guide_log_path() {
+  printf '/tmp/sdlc-guide-%s-%s.log\n' "${GUIDE_PROFILE}" "${GUIDE_PORT}"
+}
+GUIDE_LOG="$(guide_log_path)"
+
 resolve_guide_home() {
   if [[ -n "${GUIDE_HOME:-}" ]]; then
     echo "${GUIDE_HOME}"
@@ -72,6 +77,21 @@ if [[ ! -f "${GUIDE_HOME}/scripts/append-ingest.sh" ]]; then
   exit 1
 fi
 
+# shellcheck source=scripts/lib/test-preflight.sh
+source "${ROOT}/scripts/lib/test-preflight.sh"
+test_preflight_warn_stale_jobs || true
+if test_preflight_guide_health "${GUIDE_PORT}"; then
+  if [[ "${SDLC_GUIDE_FORCE_BOOT:-}" != "1" ]]; then
+    echo "Guide already healthy on :${GUIDE_PORT} — skipping boot (SDLC_GUIDE_FORCE_BOOT=1 to restart)"
+    SKIP_GUIDE_BOOT=1
+  fi
+fi
+if pgrep -f "append-ingest\.sh" >/dev/null 2>&1 && ! test_preflight_guide_health "${GUIDE_PORT}"; then
+  echo "FAIL: append-ingest still running but Guide not healthy — wait or: pkill -f append-ingest.sh" >&2
+  echo "  tail -20 ${GUIDE_LOG}" >&2
+  exit 1
+fi
+
 echo "== experimental Guide+Neo4j stack =="
 echo "  orchestrator: ${ROOT}"
 echo "  GUIDE_HOME:   ${GUIDE_HOME}"
@@ -81,17 +101,13 @@ echo "  profiles:     ${SPRING_PROFILES_ACTIVE}"
 
 command -v docker >/dev/null || { echo "FAIL: docker required" >&2; exit 1; }
 
-# Prefer Python ≥3.11 when available (engine requires it); fall back with PYTHONPATH.
-PYTHON_BIN="${PYTHON_BIN:-}"
-if [[ -z "${PYTHON_BIN}" ]]; then
-  for candidate in python3.12 python3.11 python3; do
-    if command -v "${candidate}" >/dev/null 2>&1; then
-      PYTHON_BIN="${candidate}"
-      break
-    fi
-  done
+# Prefer Python 3.12 (.venv first).
+# shellcheck source=scripts/lib/python.sh
+source "${ROOT}/scripts/lib/python.sh"
+if ! resolve_engine_python; then
+  exit 1
 fi
-[[ -n "${PYTHON_BIN}" ]] || { echo "FAIL: python3 required" >&2; exit 1; }
+PYTHON_BIN="${SDLC_PY}"
 
 export PYTHONPATH="${ROOT}/engine/src${PYTHONPATH:+:$PYTHONPATH}"
 if ! "${PYTHON_BIN}" -c "import flask" >/dev/null 2>&1; then
@@ -104,8 +120,12 @@ if ! "${PYTHON_BIN}" -c "import flask, sdlc_engine" >/dev/null 2>&1; then
 fi
 echo "Using ${PYTHON_BIN} ($("${PYTHON_BIN}" -c 'import sys; print(sys.version.split()[0])'))"
 
+if [[ "${SKIP_GUIDE_BOOT:-}" == "1" ]]; then
+  echo "== skip boot (Guide already up) =="
+else
 # Write Embabel-aligned profile + start via console APIs.
 "${PYTHON_BIN}" <<PY
+import os
 from pathlib import Path
 from sdlc_engine.installer.app import create_app
 from sdlc_engine.installer.guide import save_config
@@ -135,19 +155,19 @@ def must_ok(label, res):
         raise SystemExit(f"{label} failed")
     return body
 
+no_pull = os.environ.get("CI") == "true"
 must_ok("ensure", c.post("/api/guide/ensure", json={
     "target": str(root),
     "guide_home": str(guide),
     "guide_git_ref": ${GUIDE_GIT_REF@Q},
     "save_first": True,
-    "no_pull": False,
+    "no_pull": no_pull,
 }))
 must_ok("profile", c.post("/api/guide/ensure-profile", json={
     "target": str(root),
     "profile": ${GUIDE_PROFILE@Q},
 }))
 must_ok("neo4j", c.post("/api/guide/neo4j/start", json={"target": str(root)}))
-import os
 no_ingest = os.environ.get("GUIDE_WITH_INGEST", "") != "1"
 body = must_ok("guide-start", c.post("/api/guide/start", json={
     "target": str(root),
@@ -159,32 +179,27 @@ print("guide log", (body.get("result") or {}).get("log_path"))
 print("no_ingest", no_ingest)
 PY
 
-echo "== waiting for Guide on :${GUIDE_PORT} (timeout ${GUIDE_START_TIMEOUT_SEC}s) =="
+echo "== waiting for Guide health on :${GUIDE_PORT} (timeout ${GUIDE_START_TIMEOUT_SEC}s) =="
+echo "  log: ${GUIDE_LOG}"
 elapsed=0
 while (( elapsed < GUIDE_START_TIMEOUT_SEC )); do
-  if "${PYTHON_BIN}" - <<PY
-import socket, sys
-s=socket.socket(); s.settimeout(1.0)
-try:
-    s.connect(("127.0.0.1", int("${GUIDE_PORT}")))
-    sys.exit(0)
-except OSError:
-    sys.exit(1)
-finally:
-    s.close()
-PY
-  then
-    echo "Guide TCP open after ${elapsed}s"
+  if test_preflight_guide_health "${GUIDE_PORT}"; then
+    echo "Guide healthy after ${elapsed}s"
     break
   fi
   sleep 5
   elapsed=$((elapsed + 5))
-  if (( elapsed % 30 == 0 )); then
-    echo "  … ${elapsed}s"
+  if pgrep -f "append-ingest\.sh" >/dev/null 2>&1 && (( elapsed % 60 == 0 )); then
+    echo "  … append-ingest still running (${elapsed}s) — first boot can take 30–90+ min"
+    tail -3 "${GUIDE_LOG}" 2>/dev/null || true
+  elif (( elapsed % 30 == 0 )); then
+    echo "  … ${elapsed}s (probe: curl -sf --max-time 3 http://127.0.0.1:${GUIDE_PORT}/actuator/health)"
   fi
 done
 if (( elapsed >= GUIDE_START_TIMEOUT_SEC )); then
-  echo "FAIL: Guide did not open port ${GUIDE_PORT}" >&2
+  echo "FAIL: Guide did not become healthy on :${GUIDE_PORT}" >&2
+  echo "  Do NOT curl /sse — it hangs. Use /actuator/health with --max-time 3." >&2
+  tail -20 "${GUIDE_LOG}" 2>/dev/null || true
   "${PYTHON_BIN}" <<PY
 from pathlib import Path
 from sdlc_engine.installer.app import create_app
@@ -193,9 +208,7 @@ print(app.test_client().post("/api/guide/stop", json={"target": ${ROOT@Q}}).get_
 PY
   exit 1
 fi
-
-# Give Spring a moment after TCP bind.
-sleep 8
+fi
 
 "${PYTHON_BIN}" <<PY
 from pathlib import Path
@@ -214,7 +227,15 @@ for key in ("profiles", "neo4j", "named_entity", "mcp_sse"):
     if key in mech and not mech[key]:
         raise SystemExit(f"Embabel mechanics failed: {key}")
 
-proj = c.post("/api/guide/projection/load", json={"target": str(root)}).get_json() or {}
+# Storage v3: orchestrator dogfood spdd/canvas/ is often empty; use example fixture.
+proj_root = root / "examples" / "spring-boot-order-api"
+if not proj_root.is_dir():
+    raise SystemExit(f"missing Guide projection fixture: {proj_root}")
+print("projection root", proj_root)
+proj = c.post(
+    "/api/guide/projection/load",
+    json={"target": str(root), "root_path": str(proj_root)},
+).get_json() or {}
 print("projection", proj.get("ok"), (proj.get("result") or {}).get("status"))
 if not proj.get("ok"):
     # Projection may 409 if flag off — treat as hard fail for this experimental gate.
@@ -225,10 +246,56 @@ stats = (proj.get("projection") or {}).get("data") or (proj.get("result") or {})
 print("projection stats", stats)
 work = int(stats.get("workIdCount") or stats.get("workIds") or 0)
 if work < 1:
-    raise SystemExit(f"expected workIdCount >= 1 after projection, got {work}")
+    raise SystemExit(
+        f"expected workIdCount >= 1 after projection from {proj_root}, got {work}"
+    )
 
 print("PASS: experimental Guide+Neo4j stack (Neo4j up, Guide up, NamedEntity projection loaded)")
 PY
+
+_run_pytest() {
+  local _marker="$1"
+  shift
+  local -a env_pairs=()
+  local -a pytest_args=()
+  while [[ $# -gt 0 ]]; do
+    if [[ "$1" == *=* && "$1" != --* ]]; then
+      env_pairs+=("$1")
+    else
+      pytest_args+=("$1")
+    fi
+    shift
+  done
+  if [[ -x "${ROOT}/.venv/bin/pytest" ]]; then
+    env "${env_pairs[@]}" "${ROOT}/.venv/bin/pytest" -q "${pytest_args[@]}"
+  else
+    env "${env_pairs[@]}" PYTHONPATH="${ROOT}/engine/src${PYTHONPATH:+:${PYTHONPATH}}" \
+      "${PYTHON_BIN}" -m pytest -q "${pytest_args[@]}"
+  fi
+}
+
+if [[ "${SDLC_GUIDE_INTEGRATION:-1}" != "0" ]]; then
+  echo "== Guide live tests (engine/tests_e2e/) =="
+  _run_pytest guide_integration \
+    GUIDE_BASE_URL="http://127.0.0.1:${GUIDE_PORT}" \
+    "${ROOT}/engine/tests_e2e/test_guide_projection_roundtrip.py" \
+    "${ROOT}/engine/tests_e2e/test_context_store_guide_live.py" \
+    "${ROOT}/engine/tests_e2e/test_guide_repo_present.py"
+fi
+
+if [[ "${SDLC_GUIDE_E2E:-1}" != "0" ]]; then
+  echo "== ops console Playwright (live Guide probe) =="
+  if ! "${PYTHON_BIN}" -c "import playwright" >/dev/null 2>&1; then
+    echo "Installing Playwright e2e extras for ${PYTHON_BIN}..."
+    "${PYTHON_BIN}" -m pip install -q -e "${ROOT}/engine[dev,viewer-e2e]"
+    "${PYTHON_BIN}" -m playwright install --with-deps chromium
+  fi
+  _run_pytest guide_e2e \
+    GUIDE_PORT="${GUIDE_PORT}" \
+    GUIDE_BASE_URL="http://127.0.0.1:${GUIDE_PORT}" \
+    "${ROOT}/engine/tests_e2e/test_console_guide_live.py" \
+    --screenshot=only-on-failure
+fi
 
 if [[ "${GUIDE_KEEP:-}" == "1" ]]; then
   echo "GUIDE_KEEP=1 — leaving Guide and Neo4j running"

@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
-# Regression harness for resolve-agent-context.sh (SDLC Agents skill + extension loader).
+# Regression harness for resolve-agent-context.sh (harness/skills loader).
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 RESOLVE="${REPO_ROOT}/scripts/resolve-agent-context.sh"
+# shellcheck source=/dev/null
+source "${REPO_ROOT}/scripts/lib/skills.sh"
 WORK="$(mktemp -d)"
 trap 'rm -rf "${WORK}"' EXIT
 
@@ -16,71 +18,98 @@ assert_contains() {
   if grep -Fq "$2" <<< "$1"; then ok "$3"; else bad "$3 (missing: $2)"; fi
 }
 
-mkdir -p "${WORK}/agent-context/extensions/_all-agents" \
-  "${WORK}/agent-context/extensions/coding-agent" \
-  "${WORK}/agent-context/extensions/skills" \
-  "${WORK}/agent-context/playbooks" \
-  "${WORK}/agent-context/memory" \
-  "${WORK}/agent-context/harness"
+mkdir -p "${WORK}/harness/skills"
 
-cat > "${WORK}/agent-context/extensions/_all-agents/team-norms.md" <<'EOF'
+cat > "${WORK}/harness/skills/team-norms.md" <<'EOF'
+---
+skill: team-norms
+aliases: _
+phases: *
+---
 # Team norms
 Always run tests before review.
 EOF
 
-cat > "${WORK}/agent-context/extensions/coding-agent/style.md" <<'EOF'
+cat > "${WORK}/harness/skills/coding-style.md" <<'EOF'
+---
+skill: coding-style
+aliases: _
+phases: code, api-test
+---
 # Coding style
 Match surrounding module conventions.
 EOF
 
-cat > "${WORK}/agent-context/extensions/skills/TDD.md" <<'EOF'
+cat > "${WORK}/harness/skills/TDD.md" <<'EOF'
+---
+skill: TDD
+aliases: _
+phases: code
+---
 # TDD
 Write failing test first.
 EOF
 
-cp "${REPO_ROOT}/agent-context/playbooks/bugfix-playbook.md" "${WORK}/agent-context/playbooks/"
-cp "${REPO_ROOT}/agent-context/playbooks/java-feature-playbook.md" "${WORK}/agent-context/playbooks/" 2>/dev/null || true
-cp "${REPO_ROOT}/agent-context/playbooks/refactor-playbook.md" "${WORK}/agent-context/playbooks/" 2>/dev/null || true
-cp "${REPO_ROOT}/agent-context/playbooks/pr-review-playbook.md" "${WORK}/agent-context/playbooks/"
-cp "${REPO_ROOT}/agent-context/memory/phase-index.md" "${WORK}/agent-context/memory/"
-cp "${REPO_ROOT}/agent-context/memory/known-pitfalls.md" "${WORK}/agent-context/memory/" 2>/dev/null || \
-  printf '# Known Pitfalls\n\n' > "${WORK}/agent-context/memory/known-pitfalls.md"
-cp "${REPO_ROOT}/agent-context/harness/quality-gates.md" "${WORK}/agent-context/harness/" 2>/dev/null || \
-  printf '# Quality Gates\n\n' > "${WORK}/agent-context/harness/quality-gates.md"
+cp "${REPO_ROOT}/templates/agent-context/harness/skills/bugfix.md" \
+  "${WORK}/harness/skills/"
+cp "${REPO_ROOT}/templates/agent-context/harness/skills/pr-review.md" \
+  "${WORK}/harness/skills/"
+cp "${REPO_ROOT}/templates/agent-context/harness/phase-index.md" \
+  "${WORK}/harness/phase-index.md"
+cp "${REPO_ROOT}/agent-context/harness/quality-gates.md" "${WORK}/harness/" 2>/dev/null || \
+  printf '# Quality Gates\n\n' > "${WORK}/harness/quality-gates.md"
+# Tab-delimited skill metadata requires a non-empty aliases field when phases are present.
+for skill in bugfix pr-review; do
+  if ! grep -q '^aliases:' "${WORK}/harness/skills/${skill}.md"; then
+    sed -i "/^skill: ${skill}/a aliases: ${skill}" "${WORK}/harness/skills/${skill}.md"
+  fi
+done
 
-echo "== Test 1: phase extensions + static playbooks for code =="
+echo "== Test 1: phase skills for code =="
 out="$("${RESOLVE}" --target "${WORK}" --phase code --format paths)"
-assert_contains "${out}" "agent-context/extensions/_all-agents/team-norms.md" "all-agents extension"
-assert_contains "${out}" "agent-context/extensions/coding-agent/style.md" "coding-agent extension"
-assert_contains "${out}" "agent-context/playbooks/bugfix-playbook.md" "code phase playbook"
+assert_contains "${out}" "harness/skills/team-norms.md" "universal skill"
+assert_contains "${out}" "harness/skills/coding-style.md" "coding skill"
+assert_contains "${out}" "harness/skills/bugfix.md" "code phase bugfix skill"
 
-echo "== Test 2: #SkillName resolves extension skill =="
+echo "== Test 2: #SkillName resolves skill file =="
 out="$("${RESOLVE}" --target "${WORK}" --text "Implement retry #TDD" --format paths)"
-assert_contains "${out}" "agent-context/extensions/skills/TDD.md" "TDD skill file"
+assert_contains "${out}" "harness/skills/TDD.md" "TDD skill file"
 
 echo "== Test 3: !SkillName excludes included skill =="
 out="$("${RESOLVE}" --target "${WORK}" --text "#TDD !TDD" --format paths)"
-if grep -Fq "agent-context/extensions/skills/TDD.md" <<< "${out}"; then
+if grep -Fq "harness/skills/TDD.md" <<< "${out}"; then
   bad "excluded skill should not resolve"
 else
   ok "excluded skill not resolved"
 fi
 
-echo "== Test 4: #java resolves playbook suffix =="
+echo "== Test 4: #bugfix resolves skill by name =="
 out="$("${RESOLVE}" --target "${WORK}" --text "#bugfix" --format paths)"
-assert_contains "${out}" "agent-context/playbooks/bugfix-playbook.md" "bugfix playbook via #bugfix"
+assert_contains "${out}" "harness/skills/bugfix.md" "bugfix skill via #bugfix"
 
-echo "== Test 5: --list-skills discovers skills and playbooks =="
+echo "== Test 5: --list-skills discovers skills =="
 list="$("${RESOLVE}" --target "${WORK}" --list-skills)"
 assert_contains "${list}" "TDD" "lists TDD skill"
-assert_contains "${list}" "bugfix" "lists bugfix playbook skill name"
+assert_contains "${list}" "bugfix" "lists bugfix skill"
 
-echo "== Test 6: review phase uses codereview-agent folder =="
-mkdir -p "${WORK}/agent-context/extensions/codereview-agent"
-echo "# Review checklist" > "${WORK}/agent-context/extensions/codereview-agent/checklist.md"
+echo "== Test 6: review phase loads review skills only =="
+mkdir -p "${WORK}/harness/skills"
+cat > "${WORK}/harness/skills/review-checklist.md" <<'EOF'
+---
+skill: review-checklist
+aliases: _
+phases: review
+---
+# Review checklist
+EOF
 out="$("${RESOLVE}" --target "${WORK}" --phase review --format paths)"
-assert_contains "${out}" "agent-context/extensions/codereview-agent/checklist.md" "codereview-agent extension"
-assert_contains "${out}" "agent-context/playbooks/pr-review-playbook.md" "review playbook"
+assert_contains "${out}" "harness/skills/review-checklist.md" "review-checklist skill"
+assert_contains "${out}" "harness/skills/pr-review.md" "pr-review skill"
+if grep -Fq "coding-style.md" <<< "${out}"; then
+  bad "review phase should not load coding-style"
+else
+  ok "coding-style excluded from review"
+fi
 
 echo "== Test 7: json format includes paths array =="
 json="$("${RESOLVE}" --target "${WORK}" --phase code --format json)"
@@ -97,8 +126,8 @@ else
   bad "session brief missing Resolved Context"
 fi
 
-echo "== Test 9: --work-id + context-index area filter =="
-mkdir -p "${WORK}/spdd/analysis" "${WORK}/spdd/canvas" "${WORK}/agent-context/memory/sessions"
+echo "== Test 9: --work-id loads canvas and analysis =="
+mkdir -p "${WORK}/spdd/analysis" "${WORK}/spdd/canvas"
 cat > "${WORK}/spdd/analysis/FEAT-050-billing-analysis.md" <<'AN'
 # Analysis Context: FEAT-050-billing
 
@@ -109,50 +138,18 @@ AN
 cat > "${WORK}/spdd/canvas/FEAT-050-billing.md" <<'CV'
 # Canvas
 CV
-cat > "${WORK}/agent-context/memory/context-index.md" <<'CTX'
-# Context Index
-
-| Area | Kind | Work ID | Phase | Timestamp | Source | Entry |
-|------|------|---------|-------|-----------|--------|-------|
-| src/billing | session | BUG-001 | code | 2026-01-01T00:00:00Z | spdd/canvas/BUG-001.md | agent-context/memory/sessions/20260101-code-BUG-001.md |
-| src/payments | session | FEAT-002 | code | 2026-01-02T00:00:00Z | spdd/canvas/FEAT-002.md | agent-context/memory/sessions/20260102-code-FEAT-002.md |
-CTX
-echo "session detail" > "${WORK}/agent-context/memory/sessions/20260101-code-BUG-001.md"
 out="$("${RESOLVE}" --target "${WORK}" --phase code --work-id FEAT-050-billing --format paths)"
 assert_contains "${out}" "spdd/canvas/FEAT-050-billing.md" "work-id canvas artifact"
-assert_contains "${out}" "agent-context/memory/sessions/20260101-code-BUG-001.md" "billing area session entry"
-if grep -Fq "agent-context/memory/sessions/20260102-code-FEAT-002.md" <<< "${out}"; then
-  bad "unrelated payments area should not resolve"
-else
-  ok "payments area excluded"
-fi
-md="$("${RESOLVE}" --target "${WORK}" --phase code --work-id FEAT-050-billing --format markdown)"
-assert_contains "${md}" "Indexed context" "markdown index section"
-if grep -Fq "known-pitfalls.md" <<< "${out}"; then
-  bad "whole known-pitfalls should not load when area-scoped"
-else
-  ok "area-scoped skips whole pitfalls file"
-fi
+assert_contains "${out}" "spdd/analysis/FEAT-050-billing-analysis.md" "work-id analysis artifact"
 
-echo "== Test 10: anchor-only index rows do not load whole memory logs =="
-cat >> "${WORK}/agent-context/memory/context-index.md" <<'CTX2'
-| src/billing | pitfall | BUG-003 | code | 2026-01-03T00:00:00Z | known-pitfalls.md | ### 2026-01-03T00:00:00Z - BUG-003 |
-CTX2
-out="$("${RESOLVE}" --target "${WORK}" --phase code --work-id FEAT-050-billing --format paths)"
-if grep -Fq "known-pitfalls.md" <<< "${out}"; then
-  bad "anchor-only pitfall row should not load whole known-pitfalls.md"
-else
-  ok "anchor-only rows stay in index table only"
-fi
-
-echo "== Test 11: api-test resolves tasks from phase-index =="
+echo "== Test 10: api-test resolves tasks from phase-index =="
 mkdir -p "${WORK}/spdd/tasks"
 echo "# API tasks" > "${WORK}/spdd/tasks/FEAT-050-billing-api-test.md"
 out="$("${RESOLVE}" --target "${WORK}" --phase api-test --work-id FEAT-050-billing --format paths)"
 assert_contains "${out}" "spdd/tasks/FEAT-050-billing-api-test.md" "work-id api-test task"
-assert_contains "${out}" "agent-context/harness/quality-gates.md" "api-test quality gates from phase-index"
+assert_contains "${out}" "harness/quality-gates.md" "api-test quality gates from phase-index"
 
-echo "== Test 12: resume prompt omits canvas when already resolved =="
+echo "== Test 11: resume prompt omits canvas when already resolved =="
 "${START}" --target "${WORK}" --work-id FEAT-050-billing --phase code >/dev/null
 if grep -Fq "Also read @spdd/canvas/FEAT-050-billing.md" "${WORK}/.sdlc/sessions/current-session.md"; then
   bad "resume prompt should not duplicate canvas already in Resolved Context"
@@ -160,20 +157,13 @@ else
   ok "resume prompt skips redundant canvas mention"
 fi
 
-echo "== Test 13: lean progress ledger resolves as work-scoped excerpt =="
-mkdir -p "${WORK}/spdd/memory/entries"
+echo "== Test 12: ledger progress excerpt resolves for work-id =="
+mkdir -p "${WORK}/spdd/memory" "${WORK}/.sdlc/staged"
 printf '%s\n' \
-  '# Progress Entries' '' \
-  '## FEAT-other' '' '- other work bleed' '' \
-  '## FEAT-050-billing' '' '- T01 complete' \
-  >"${WORK}/spdd/memory/entries/progress.md"
+  '{"id":"progress:FEAT-050-billing:(none):capture","kind":"progress","work_id":"FEAT-050-billing","title":"T01 complete","ts":"2026-08-08T00:00:00Z"}' \
+  > "${WORK}/spdd/memory/lessons.jsonl"
 out="$("${RESOLVE}" --target "${WORK}" --phase code --work-id FEAT-050-billing --format paths)"
 assert_contains "${out}" ".sdlc/resolved/progress-FEAT-050-billing.md" "scoped progress excerpt"
-if grep -Fq "spdd/memory/entries/progress.md" <<< "${out}"; then
-  bad "shared lean progress.md should not resolve wholesale"
-else
-  ok "shared lean progress.md not injected wholesale"
-fi
 excerpt="${WORK}/.sdlc/resolved/progress-FEAT-050-billing.md"
 if [[ -f "${excerpt}" ]]; then
   ok "scoped excerpt file exists"
@@ -181,15 +171,42 @@ if [[ -f "${excerpt}" ]]; then
 else
   bad "scoped excerpt file missing"
 fi
-if grep -Fq "other work bleed" "${excerpt}"; then
-  bad "excerpt should not include other Work IDs"
+
+echo "== Test 13: legacy playbooks/extensions migrate idempotently =="
+mkdir -p "${WORK}/agent-context/playbooks" "${WORK}/agent-context/extensions/_all-agents" \
+  "${WORK}/agent-context/extensions/coding-agent" "${WORK}/agent-context/extensions/skills"
+echo "# Legacy bug playbook" > "${WORK}/agent-context/playbooks/legacy-widget-playbook.md"
+echo "# Legacy norm" > "${WORK}/agent-context/extensions/_all-agents/legacy-norm.md"
+echo "# Legacy style" > "${WORK}/agent-context/extensions/coding-agent/legacy-style.md"
+echo "# Legacy TDD" > "${WORK}/agent-context/extensions/skills/legacy-tdd.md"
+rm -f "${WORK}/harness/skills/legacy-widget.md" \
+  "${WORK}/harness/skills/legacy-norm.md" \
+  "${WORK}/harness/skills/legacy-style.md" \
+  "${WORK}/harness/skills/legacy-tdd.md"
+migrate_playbooks_extensions_to_skills "${WORK}" 0
+if [[ -f "${WORK}/harness/skills/legacy-widget.md" ]] && \
+   [[ -f "${WORK}/harness/skills/legacy-norm.md" ]] && \
+   [[ ! -d "${WORK}/agent-context/playbooks" ]] && \
+   [[ ! -d "${WORK}/agent-context/extensions" ]]; then
+  ok "legacy trees migrated and removed"
 else
-  ok "excerpt scoped to work-id"
+  bad "legacy migration failed"
 fi
-if grep -Fq "agent-context/features/FEAT-050-billing/progress-log.md" <<< "${out}"; then
-  bad "legacy feature progress-log should not resolve when lean progress exists"
+migrate_playbooks_extensions_to_skills "${WORK}" 0
+if [[ -f "${WORK}/harness/skills/legacy-widget.md" ]]; then
+  ok "second migrate is idempotent"
 else
-  ok "legacy feature progress-log omitted when lean present"
+  bad "idempotent migrate broke skills"
+fi
+
+echo "== Test 14: session-handoff playbook is not migrated =="
+mkdir -p "${WORK}/agent-context/playbooks"
+echo "# Session handoff" > "${WORK}/agent-context/playbooks/session-handoff-playbook.md"
+migrate_playbooks_extensions_to_skills "${WORK}" 0
+if [[ ! -f "${WORK}/harness/skills/session-handoff.md" ]]; then
+  ok "session-handoff skipped"
+else
+  bad "session-handoff should not migrate"
 fi
 
 echo

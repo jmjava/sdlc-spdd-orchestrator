@@ -1,8 +1,7 @@
-"""Local regenerable SQLite index — lightweight store before GUIDE/Neo4j.
+"""Local regenerable SQLite index — opt-in cache rebuilt from ledger + stay-set.
 
-The binary DB lives under gitignored `.sdlc/index.sqlite`. Multi-user sync stays
-git (markdown + work-registry.tsv). Rebuild anytime from on-disk artifacts.
-Optional JSON/SQL export is for inspection or hand-off — not a shared live DB.
+The binary DB lives under gitignored ``.sdlc/index.sqlite``. Multi-user sync stays
+git (ledger JSONL + registry JSONL + markdown). Rebuild anytime from on-disk artifacts.
 """
 
 from __future__ import annotations
@@ -18,11 +17,12 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from . import canvas as canvas_mod
+from .lessons_ledger import LessonRecord, LessonsLedger
 from .links import collect_links, note_token, parse_canvas_metadata, parse_milestone_requirement
 from .project import Project
 from .registry import TeamRegistry
 
-SCHEMA_VERSION = "4"
+SCHEMA_VERSION = "5"
 DEFAULT_DB_NAME = "index.sqlite"
 
 # Typed edge kinds (src/dst) and relationship names — aligned with Guide DICE
@@ -34,11 +34,8 @@ NODE_AREA = "area"
 NODE_LESSON = "lesson"
 NODE_CLAIM = "claim"
 NODE_SESSION = "session"
-NODE_POINTER = "pointer"
 NODE_ENTRY = "entry"
 NODE_KEYWORD = "keyword"
-NODE_PHASE_REF = "phase_ref"
-NODE_FACT = "fact"
 
 REL_CANVAS = "canvas"  # work —has canvas→ REASONS
 REL_REQUIREMENT = "requirement"  # work —has requirement→ requirement
@@ -46,9 +43,8 @@ REL_REASONS = "reasons"  # requirement —reasons→ canvas
 REL_AREA = "area"  # work|requirement|canvas|entry —in area→ area
 REL_ABOUT = "about"  # lesson|entry —about→ area|requirement|canvas
 REL_RECORDED_FOR = "recorded_for"  # lesson —recorded for→ work
-REL_FOR_WORK = "for_work"  # claim|session|pointer|entry —for→ work
-REL_PHASE = "phase"  # entry|phase_ref —phase→ phase_ref
-REL_KEYWORD = "keyword"  # keyword —about→ area|entry
+REL_FOR_WORK = "for_work"  # claim|session|entry —for→ work
+REL_KEYWORD = "keyword"  # keyword —about→ area|lesson
 
 # Safe read-only query surface for `db query` convenience filters.
 _SELECT_RE = re.compile(r"^\s*select\b", re.IGNORECASE | re.DOTALL)
@@ -69,10 +65,10 @@ class RebuildStats:
     local_sessions: int = 0
     requirements: int = 0
     canvases: int = 0
+    lessons: int = 0
+    staged_lessons: int = 0
     context_entries: int = 0
     domain_keywords: int = 0
-    phase_refs: int = 0
-    project_facts: int = 0
     edges: int = 0
     path: str = ""
     rebuilt_at: str = ""
@@ -84,10 +80,10 @@ class RebuildStats:
             f"  work_items: {self.work_items}\n"
             f"  requirements: {self.requirements}\n"
             f"  canvases: {self.canvases}\n"
+            f"  lessons: {self.lessons}\n"
+            f"  staged_lessons: {self.staged_lessons}\n"
             f"  context_entries: {self.context_entries}\n"
             f"  domain_keywords: {self.domain_keywords}\n"
-            f"  phase_refs: {self.phase_refs}\n"
-            f"  project_facts: {self.project_facts}\n"
             f"  edges: {self.edges}\n"
             f"  artifacts: {self.artifacts}\n"
             f"  local_sessions: {self.local_sessions}\n"
@@ -128,13 +124,10 @@ class LocalIndex:
             DROP TABLE IF EXISTS edges;
             DROP TABLE IF EXISTS artifacts;
             DROP TABLE IF EXISTS local_sessions;
-            DROP TABLE IF EXISTS pointers;
             DROP TABLE IF EXISTS context_sessions;
             DROP TABLE IF EXISTS claims;
             DROP TABLE IF EXISTS work_areas;
             DROP TABLE IF EXISTS lessons;
-            DROP TABLE IF EXISTS project_facts;
-            DROP TABLE IF EXISTS phase_refs;
             DROP TABLE IF EXISTS domain_keywords;
             DROP TABLE IF EXISTS context_entries;
             DROP TABLE IF EXISTS areas;
@@ -160,7 +153,6 @@ class LocalIndex:
               source_url TEXT,
               canvas_path TEXT,
               requirement_path TEXT,
-              feature_path TEXT,
               registry_status TEXT,
               registry_owner TEXT,
               registry_phase TEXT,
@@ -169,11 +161,9 @@ class LocalIndex:
               github_number TEXT,
               has_canvas INTEGER NOT NULL DEFAULT 0,
               has_requirement INTEGER NOT NULL DEFAULT 0,
-              has_feature INTEGER NOT NULL DEFAULT 0,
               updated TEXT
             );
 
-            -- Stay-set section nodes (schema v3): requirements + REASONS canvases.
             CREATE TABLE requirements (
               id TEXT PRIMARY KEY,
               work_id TEXT NOT NULL,
@@ -224,15 +214,18 @@ class LocalIndex:
               path TEXT
             );
 
-            -- Context-part nodes + typed edges (Guide DICE + requirement↔REASONS).
             CREATE TABLE lessons (
               id TEXT PRIMARY KEY,
               kind TEXT NOT NULL,
               work_id TEXT NOT NULL,
               area TEXT NOT NULL DEFAULT '',
+              title TEXT NOT NULL DEFAULT '',
               body TEXT NOT NULL DEFAULT '',
               source TEXT NOT NULL DEFAULT '',
+              phase TEXT NOT NULL DEFAULT '',
+              keywords TEXT NOT NULL DEFAULT '[]',
               ts TEXT NOT NULL DEFAULT '',
+              staged INTEGER NOT NULL DEFAULT 0,
               FOREIGN KEY(work_id) REFERENCES work_items(work_id)
             );
 
@@ -263,17 +256,6 @@ class LocalIndex:
               ts TEXT NOT NULL DEFAULT ''
             );
 
-            CREATE TABLE pointers (
-              id TEXT PRIMARY KEY,
-              kind TEXT NOT NULL DEFAULT '',
-              work_id TEXT NOT NULL DEFAULT '',
-              commit_sha TEXT NOT NULL DEFAULT '',
-              intent TEXT NOT NULL DEFAULT '',
-              payload_json TEXT NOT NULL DEFAULT '{}',
-              ts TEXT NOT NULL DEFAULT ''
-            );
-
-            -- Schema v4: remaining agent-context capabilities as first-class nodes.
             CREATE TABLE context_entries (
               id TEXT PRIMARY KEY,
               kind TEXT NOT NULL,
@@ -292,22 +274,6 @@ class LocalIndex:
               keyword TEXT NOT NULL
             );
 
-            CREATE TABLE phase_refs (
-              id TEXT PRIMARY KEY,
-              phase TEXT NOT NULL,
-              path TEXT NOT NULL,
-              purpose TEXT NOT NULL DEFAULT ''
-            );
-
-            CREATE TABLE project_facts (
-              id TEXT PRIMARY KEY,
-              work_id TEXT NOT NULL DEFAULT '',
-              phase TEXT NOT NULL DEFAULT '',
-              summary TEXT NOT NULL DEFAULT '',
-              next_step TEXT NOT NULL DEFAULT '',
-              ts TEXT NOT NULL DEFAULT ''
-            );
-
             CREATE TABLE edges (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
               src_kind TEXT NOT NULL,
@@ -320,6 +286,7 @@ class LocalIndex:
 
             CREATE INDEX idx_lessons_area ON lessons(area);
             CREATE INDEX idx_lessons_work ON lessons(work_id);
+            CREATE INDEX idx_lessons_staged ON lessons(staged);
             CREATE INDEX idx_claims_work ON claims(work_id);
             CREATE INDEX idx_requirements_work ON requirements(work_id);
             CREATE INDEX idx_canvases_work ON canvases(work_id);
@@ -394,19 +361,17 @@ class LocalIndex:
                     if links.milestone_req and links.milestone_req.is_file()
                     else ""
                 )
-                feat = self.project.feature_dir(wid)
-                feat_rel = self._rel(feat) if feat.is_dir() else ""
 
                 conn.execute(
                     """
                     INSERT INTO work_items(
                       work_id, title, work_type, canvas_status, final_status, milestone,
                       source_system, source_issue, source_url,
-                      canvas_path, requirement_path, feature_path,
+                      canvas_path, requirement_path,
                       registry_status, registry_owner, registry_phase, registry_note,
                       jira_key, github_number,
-                      has_canvas, has_requirement, has_feature, updated
-                    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                      has_canvas, has_requirement, updated
+                    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                     """,
                     (
                         wid,
@@ -420,7 +385,6 @@ class LocalIndex:
                         meta.get("source_url") or links.canvas_source_url or "",
                         canvas_rel,
                         req_rel,
-                        feat_rel,
                         reg.status if reg else "available",
                         reg.owner if reg else "",
                         reg.phase if reg else "",
@@ -429,7 +393,6 @@ class LocalIndex:
                         gh,
                         1 if canvas_rel else 0,
                         1 if req_rel else 0,
-                        1 if feat_rel else 0,
                         reg.updated if reg else stats.rebuilt_at,
                     ),
                 )
@@ -501,8 +464,8 @@ class LocalIndex:
                     body_bits.append(req_parsed.get("summary") or "")
                     body_bits.append(req_parsed.get("jira_description") or "")
 
-                for kind, path in self._artifact_paths(wid, links, feat):
-                    if not path.is_file() and not (kind == "feature" and path.is_dir()):
+                for kind, path in self._artifact_paths(wid, links):
+                    if not path.is_file():
                         continue
                     mtime = ""
                     try:
@@ -560,7 +523,7 @@ class LocalIndex:
                     )
                     stats.local_sessions += 1
 
-            # Full agent-context ingest (governance, mirrors, indexes, tooling).
+            # Ledger + governance + hot sessions (storage v3).
             self._ingest_full_context(conn, stats)
 
             conn.execute(
@@ -580,14 +543,12 @@ class LocalIndex:
         except ValueError:
             return str(path)
 
-    def _artifact_paths(self, wid: str, links, feat: Path) -> list[tuple[str, Path]]:
+    def _artifact_paths(self, wid: str, links) -> list[tuple[str, Path]]:
         out: list[tuple[str, Path]] = []
         if links.canvas:
             out.append(("canvas", links.canvas))
         if links.milestone_req:
             out.append(("requirement", links.milestone_req))
-        if feat.is_dir():
-            out.append(("feature", feat))
         analysis = self.project.analysis_path(wid)
         if analysis.is_file():
             out.append(("analysis", analysis))
@@ -705,17 +666,95 @@ class LocalIndex:
                     )
         return eid
 
+    def _ingest_lesson_row(
+        self,
+        conn: sqlite3.Connection,
+        record: LessonRecord,
+        *,
+        staged: bool,
+        stats: RebuildStats,
+    ) -> None:
+        """Insert one ledger record into lessons + edges + keyword nodes."""
+        from . import context_model as cm
+
+        wid = record.work_id
+        conn.execute(
+            "INSERT OR IGNORE INTO work_items(work_id, title, updated) VALUES (?,?,?)",
+            (wid, wid, _utc_now()),
+        )
+        kw_json = json.dumps(list(record.keywords or []), ensure_ascii=False)
+        conn.execute(
+            "INSERT INTO lessons("
+            "id, kind, work_id, area, title, body, source, phase, keywords, ts, staged) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?) "
+            "ON CONFLICT(id) DO UPDATE SET "
+            "kind=excluded.kind, work_id=excluded.work_id, area=excluded.area, "
+            "title=excluded.title, body=excluded.body, source=excluded.source, "
+            "phase=excluded.phase, keywords=excluded.keywords, ts=excluded.ts, "
+            "staged=excluded.staged",
+            (
+                record.id,
+                record.kind,
+                wid,
+                record.area or "",
+                record.title or "",
+                record.body or "",
+                record.source or "",
+                record.phase or "",
+                kw_json,
+                record.ts or _utc_now(),
+                1 if staged else 0,
+            ),
+        )
+        if staged:
+            stats.staged_lessons += 1
+        else:
+            stats.lessons += 1
+        self._insert_edge(conn, NODE_LESSON, record.id, REL_RECORDED_FOR, NODE_WORK, wid)
+        req_id = f"{wid}:requirement"
+        canvas_id = f"{wid}:canvas"
+        if conn.execute("SELECT 1 FROM requirements WHERE id = ?", (req_id,)).fetchone():
+            self._insert_edge(conn, NODE_LESSON, record.id, REL_ABOUT, NODE_REQUIREMENT, req_id)
+            stats.edges += 1
+        if conn.execute("SELECT 1 FROM canvases WHERE id = ?", (canvas_id,)).fetchone():
+            self._insert_edge(conn, NODE_LESSON, record.id, REL_ABOUT, NODE_CANVAS, canvas_id)
+            stats.edges += 1
+        if record.area:
+            area_id = self._ensure_area_row(conn, record.area)
+            self._insert_edge(conn, NODE_LESSON, record.id, REL_ABOUT, NODE_AREA, area_id)
+            self._insert_edge(conn, NODE_WORK, wid, REL_AREA, NODE_AREA, area_id)
+            conn.execute(
+                "INSERT OR IGNORE INTO work_areas(work_id, area) VALUES (?,?)",
+                (wid, area_id),
+            )
+            stats.edges += 2
+        for kw in record.keywords or []:
+            keyword = (kw or "").strip().lower()
+            if not keyword:
+                continue
+            kid = cm.stable_id("keyword", keyword)
+            conn.execute(
+                "INSERT INTO domain_keywords(id, keyword) VALUES (?,?) "
+                "ON CONFLICT(id) DO UPDATE SET keyword=excluded.keyword",
+                (kid, keyword),
+            )
+            stats.domain_keywords += 1
+            if record.area:
+                self._insert_edge(conn, cm.NODE_KEYWORD, kid, REL_ABOUT, NODE_AREA, record.area)
+            self._insert_edge(conn, cm.NODE_KEYWORD, kid, REL_ABOUT, NODE_LESSON, record.id)
+            stats.edges += 1
+
     def _ingest_full_context(
         self, conn: sqlite3.Connection, stats: RebuildStats
     ) -> None:
-        """Ingest stay-set governance + legacy agent-context into graph tables."""
+        """Ingest governance docs, lessons ledger, and hot sessions (storage v3)."""
         from . import context_model as cm
 
-        root = self.project.root
+        home = self.project.home
 
         # 1) Stay-set governance artifacts
         for rel_dir, kind, pattern in cm.GOVERNANCE_GLOBS:
-            d = root / rel_dir
+            d = home / rel_dir
             if not d.is_dir():
                 continue
             for path in sorted(d.glob(pattern)):
@@ -739,354 +778,15 @@ class LocalIndex:
                 stats.context_entries += 1
                 stats.edges += 1
 
-        # 2) Lean stay-set entry ledgers (canonical after #86)
-        entries_dir = root / "spdd" / "memory" / "entries"
-        if entries_dir.is_dir():
-            for path in sorted(entries_dir.glob("*.md")):
-                if not path.is_file():
-                    continue
-                kind = path.stem.strip().lower()
-                if kind not in cm.CONTEXT_KINDS:
-                    continue
-                try:
-                    text = path.read_text(encoding="utf-8")
-                except OSError:
-                    continue
-                sectioned = False
-                wid_re = (
-                    r"((?:FEAT|BUG|SPIKE|REF|DOC|TEST|CHORE|LOCAL)-[A-Za-z0-9][\w.-]*)"
-                )
-                for block in re.split(r"(?m)^##\s+", text):
-                    if not block.strip():
-                        continue
-                    first = block.splitlines()[0].strip()
-                    m = re.match(rf"^{wid_re}", first)
-                    if not m:
-                        continue
-                    sectioned = True
-                    wid = m.group(1)
-                    area_m = re.search(r"(?m)^-\s*Area:\s*(.+)$", block)
-                    phase_m = re.search(r"(?m)^-\s*Phase:\s*(.+)$", block)
-                    self._upsert_entry_row(
-                        conn,
-                        kind=kind,
-                        work_id=wid,
-                        area=(area_m.group(1).strip() if area_m else ""),
-                        phase=(phase_m.group(1).strip() if phase_m else ""),
-                        path=self._rel(path),
-                        title=first[:120],
-                        body=block[:4000],
-                        source="stay-set-entry",
-                    )
-                    stats.context_entries += 1
-                # Capture-session format: ### <ts> - <WORK-ID> - <phase>
-                for m in re.finditer(
-                    rf"(?m)^###\s+[^\n]*\b{wid_re}\b[^\n]*\n"
-                    r"(?:.*?)(?=^###\s+|^##\s+|\Z)",
-                    text,
-                    re.DOTALL,
-                ):
-                    sectioned = True
-                    wid = m.group(1)
-                    block = m.group(0)
-                    heading = block.splitlines()[0].strip()
-                    phase = ""
-                    pm = re.search(
-                        rf"\b{re.escape(wid)}\b\s*-\s*([A-Za-z0-9_-]+)\s*$",
-                        heading,
-                    )
-                    if pm:
-                        phase = pm.group(1)
-                    area_m = re.search(r"(?m)^-\s*(?:Code areas|Area):\s*(.+)$", block)
-                    self._upsert_entry_row(
-                        conn,
-                        kind=kind,
-                        work_id=wid,
-                        area=(area_m.group(1).strip() if area_m else ""),
-                        phase=phase,
-                        path=self._rel(path),
-                        title=heading[:120],
-                        body=block[:4000],
-                        source="stay-set-entry",
-                    )
-                    stats.context_entries += 1
-                if not sectioned:
-                    self._upsert_entry_row(
-                        conn,
-                        kind=kind,
-                        work_id="_entries",
-                        path=self._rel(path),
-                        title=path.stem,
-                        body=text[:4000],
-                        source="stay-set-entry",
-                    )
-                    stats.context_entries += 1
+        # 2) Lessons ledger (accepted + staged)
+        ledger = LessonsLedger(self.project)
+        staged_ids = ledger.staged_ids()
+        for rec in ledger.records(include_staged=True):
+            self._ingest_lesson_row(conn, rec, staged=(rec.id in staged_ids), stats=stats)
 
-        # 3) Legacy feature mirrors (transitional)
-        feat_root = root / "agent-context" / "features"
-        if feat_root.is_dir():
-            for work_dir in sorted(p for p in feat_root.iterdir() if p.is_dir()):
-                wid = work_dir.name
-                for fname, kind in cm.FEATURE_MIRROR_KIND.items():
-                    path = work_dir / fname
-                    if not path.is_file():
-                        continue
-                    body = ""
-                    try:
-                        body = path.read_text(encoding="utf-8")[:4000]
-                    except OSError:
-                        pass
-                    self._upsert_entry_row(
-                        conn,
-                        kind=kind,
-                        work_id=wid,
-                        path=self._rel(path),
-                        title=fname,
-                        body=body,
-                        source="feature-mirror",
-                    )
-                    stats.context_entries += 1
-
-        # 4) context-index.md (lean + legacy)
-        for index_rel in (
-            Path("spdd/memory/context-index.md"),
-            Path("agent-context/memory/context-index.md"),
-        ):
-            index_path = root / index_rel
-            if not index_path.is_file():
-                continue
-            try:
-                rows = cm.parse_md_table(index_path.read_text(encoding="utf-8"))
-            except OSError:
-                continue
-            for row in rows:
-                kind = (row.get("kind") or "").strip().lower()
-                if not kind:
-                    continue
-                area = (row.get("area") or "").strip()
-                wid = (row.get("work id") or row.get("work_id") or "").strip()
-                phase = (row.get("phase") or "").strip()
-                ts = (row.get("timestamp") or "").strip()
-                source = (row.get("source") or "").strip()
-                entry = (row.get("entry") or "").strip()
-                if kind in {"decision", "pitfall", "pattern"}:
-                    # Prefer lessons table for lesson kinds
-                    lesson_wid = wid or "_index"
-                    lid = f"{kind}:{lesson_wid}:{area or '(none)'}:{source or 'index'}"
-                    conn.execute(
-                        "INSERT OR IGNORE INTO work_items(work_id, title, updated) "
-                        "VALUES (?,?,?)",
-                        (lesson_wid, lesson_wid, _utc_now()),
-                    )
-                    conn.execute(
-                        "INSERT INTO lessons(id, kind, work_id, area, body, source, ts) "
-                        "VALUES (?,?,?,?,?,?,?) "
-                        "ON CONFLICT(id) DO UPDATE SET body=excluded.body, ts=excluded.ts",
-                        (lid, kind, lesson_wid, area, entry, source or "index", ts),
-                    )
-                    self._insert_edge(
-                        conn, NODE_LESSON, lid, REL_RECORDED_FOR, NODE_WORK, lesson_wid
-                    )
-                    if area:
-                        self._ensure_area_row(conn, area)
-                        self._insert_edge(
-                            conn, NODE_LESSON, lid, REL_ABOUT, NODE_AREA, area
-                        )
-                    continue
-                self._upsert_entry_row(
-                    conn,
-                    kind=kind if kind in cm.CONTEXT_KINDS else "metric",
-                    work_id=wid,
-                    area=area,
-                    phase=phase,
-                    path=str(index_rel),
-                    title=entry[:200],
-                    body=entry,
-                    source=source or str(index_rel),
-                    ts=ts,
-                )
-                stats.context_entries += 1
-
-        # 4) domain-index.md
-        for domain_rel in (
-            Path("agent-context/memory/domain-index.md"),
-            Path("spdd/memory/domain-index.md"),
-        ):
-            domain_path = root / domain_rel
-            if not domain_path.is_file():
-                continue
-            try:
-                rows = cm.parse_md_table(domain_path.read_text(encoding="utf-8"))
-            except OSError:
-                continue
-            for row in rows:
-                keyword = (row.get("keyword") or "").strip().lower()
-                if not keyword:
-                    continue
-                kid = cm.stable_id("keyword", keyword)
-                conn.execute(
-                    "INSERT INTO domain_keywords(id, keyword) VALUES (?,?) "
-                    "ON CONFLICT(id) DO UPDATE SET keyword=excluded.keyword",
-                    (kid, keyword),
-                )
-                stats.domain_keywords += 1
-                area = (row.get("area") or "").strip()
-                if area:
-                    self._ensure_area_row(conn, area)
-                    self._insert_edge(
-                        conn, cm.NODE_KEYWORD, kid, REL_ABOUT, NODE_AREA, area
-                    )
-                    stats.edges += 1
-                wid = (row.get("work id") or row.get("work_id") or "").strip()
-                entry_path = (row.get("entry") or "").strip()
-                kind = (row.get("kind") or "analysis").strip().lower()
-                if entry_path or wid:
-                    eid = self._upsert_entry_row(
-                        conn,
-                        kind=kind if kind in cm.CONTEXT_KINDS else "analysis",
-                        work_id=wid,
-                        area=area,
-                        path=entry_path,
-                        title=entry_path or keyword,
-                        source="domain-index",
-                        ts=(row.get("timestamp") or "").strip(),
-                    )
-                    self._insert_edge(
-                        conn, cm.NODE_KEYWORD, kid, REL_ABOUT, cm.NODE_ENTRY, eid
-                    )
-                    stats.context_entries += 1
-
-        # 5) phase-index.md
-        for phase_rel in (
-            Path("agent-context/memory/phase-index.md"),
-            Path("spdd/memory/phase-index.md"),
-        ):
-            phase_path = root / phase_rel
-            if not phase_path.is_file():
-                continue
-            try:
-                rows = cm.parse_md_table(phase_path.read_text(encoding="utf-8"))
-            except OSError:
-                continue
-            for row in rows:
-                phase = (row.get("phase") or "").strip()
-                path = (row.get("path") or "").strip().strip("`")
-                purpose = (row.get("purpose") or "").strip()
-                if not phase or not path:
-                    continue
-                pid = cm.stable_id("phase", phase, path)
-                conn.execute(
-                    "INSERT INTO phase_refs(id, phase, path, purpose) VALUES (?,?,?,?) "
-                    "ON CONFLICT(id) DO UPDATE SET purpose=excluded.purpose",
-                    (pid, phase, path, purpose),
-                )
-                stats.phase_refs += 1
-                # Also as context_entry kind=phase_ref for capability coverage
-                self._upsert_entry_row(
-                    conn,
-                    kind="phase_ref",
-                    phase=phase,
-                    path=path,
-                    title=purpose or path,
-                    body=purpose,
-                    source="phase-index",
-                    entry_id=pid,
-                )
-                stats.context_entries += 1
-
-        # 6) code-areas.md → areas
-        for areas_rel in (
-            Path("agent-context/memory/code-areas.md"),
-            Path("spdd/memory/code-areas.md"),
-        ):
-            areas_path = root / areas_rel
-            if not areas_path.is_file():
-                continue
-            try:
-                text = areas_path.read_text(encoding="utf-8")
-            except OSError:
-                continue
-            for area in cm.iter_code_areas(text):
-                self._ensure_area_row(conn, area)
-
-        # 7) project-memory facts
-        for mem_rel in (
-            Path("agent-context/memory/project-memory.md"),
-            Path("spdd/memory/project-memory.md"),
-        ):
-            mem_path = root / mem_rel
-            if not mem_path.is_file():
-                continue
-            try:
-                facts = cm.extract_memory_facts(mem_path.read_text(encoding="utf-8"))
-            except OSError:
-                continue
-            for fact in facts:
-                fid = cm.stable_id(
-                    "fact", fact.get("work_id", ""), fact.get("ts", ""), fact.get("summary", "")
-                )
-                conn.execute(
-                    "INSERT INTO project_facts(id, work_id, phase, summary, next_step, ts) "
-                    "VALUES (?,?,?,?,?,?) "
-                    "ON CONFLICT(id) DO UPDATE SET summary=excluded.summary",
-                    (
-                        fid,
-                        fact.get("work_id") or "",
-                        fact.get("phase") or "",
-                        fact.get("summary") or "",
-                        fact.get("next_step") or "",
-                        fact.get("ts") or "",
-                    ),
-                )
-                stats.project_facts += 1
-                self._upsert_entry_row(
-                    conn,
-                    kind="memory",
-                    work_id=fact.get("work_id") or "",
-                    phase=fact.get("phase") or "",
-                    path=str(mem_rel),
-                    title=(fact.get("summary") or "")[:200],
-                    body=fact.get("summary") or "",
-                    source="project-memory",
-                    ts=fact.get("ts") or "",
-                    entry_id=fid,
-                )
-                stats.context_entries += 1
-
-        # 8) prompt-optimization-log
-        for prompt_rel in (
-            Path("agent-context/memory/prompt-optimization-log.md"),
-            Path("spdd/memory/prompt-optimization-log.md"),
-        ):
-            prompt_path = root / prompt_rel
-            if not prompt_path.is_file():
-                continue
-            try:
-                entries = cm.extract_prompt_entries(
-                    prompt_path.read_text(encoding="utf-8")
-                )
-            except OSError:
-                continue
-            for ent in entries:
-                self._upsert_entry_row(
-                    conn,
-                    kind="prompt",
-                    path=str(prompt_rel),
-                    title=ent.get("title") or "",
-                    body=ent.get("body") or "",
-                    source="prompt-optimization-log",
-                )
-                stats.context_entries += 1
-
-        # 9) Sessions (hot + legacy)
-        session_dirs = [
-            self.project.sdlc_dir / "sessions",
-            root / "agent-context" / "sessions",
-            root / "agent-context" / "memory" / "sessions",
-        ]
-        for sdir in session_dirs:
-            if not sdir.is_dir():
-                continue
+        # 3) Hot session briefs (.sdlc/sessions/*.md)
+        sdir = self.project.hot_session_dir()
+        if sdir.is_dir():
             for path in sorted(sdir.glob("*.md")):
                 wid = cm.work_id_from_name(path.name)
                 body = ""
@@ -1103,9 +803,7 @@ class LocalIndex:
                     (sid, wid, "", self._rel(path), body[:500], _utc_now()),
                 )
                 if wid:
-                    self._insert_edge(
-                        conn, NODE_SESSION, sid, REL_FOR_WORK, NODE_WORK, wid
-                    )
+                    self._insert_edge(conn, NODE_SESSION, sid, REL_FOR_WORK, NODE_WORK, wid)
                 self._upsert_entry_row(
                     conn,
                     kind="session",
@@ -1113,66 +811,11 @@ class LocalIndex:
                     path=self._rel(path),
                     title=sid,
                     body=body,
-                    source="session",
+                    source="hot-session",
                     entry_id=f"session:{sid}",
                 )
                 stats.context_entries += 1
 
-        # 10) Playbooks / harness / extensions (tooling context)
-        tooling = (
-            ("agent-context/playbooks", "playbook"),
-            ("agent-context/harness", "harness"),
-            ("agent-context/extensions", "extension"),
-        )
-        for rel, kind in tooling:
-            d = root / rel
-            if not d.is_dir():
-                continue
-            for path in sorted(d.rglob("*.md")):
-                if path.name.startswith("."):
-                    continue
-                body = ""
-                try:
-                    body = path.read_text(encoding="utf-8")[:2000]
-                except OSError:
-                    pass
-                self._upsert_entry_row(
-                    conn,
-                    kind=kind,
-                    path=self._rel(path),
-                    title=path.stem,
-                    body=body,
-                    source=rel,
-                )
-                stats.context_entries += 1
-
-        # 11) Seed lesson files if present without index rows
-        for kind, rel in (
-            ("decision", Path("agent-context/memory/architecture-decisions.md")),
-            ("pitfall", Path("agent-context/memory/known-pitfalls.md")),
-            ("pattern", Path("agent-context/memory/reusable-patterns.md")),
-            ("decision", Path("spdd/memory/lessons/decisions.md")),
-            ("pitfall", Path("spdd/memory/lessons/pitfalls.md")),
-            ("pattern", Path("spdd/memory/lessons/patterns.md")),
-        ):
-            path = root / rel
-            if not path.is_file():
-                continue
-            # Ensure at least one lesson row exists so kind is covered
-            lid = f"{kind}:_file:{rel.as_posix()}"
-            try:
-                body = path.read_text(encoding="utf-8")[:500]
-            except OSError:
-                body = ""
-            conn.execute(
-                "INSERT OR IGNORE INTO work_items(work_id, title, updated) VALUES (?,?,?)",
-                ("_memory", "memory", _utc_now()),
-            )
-            conn.execute(
-                "INSERT INTO lessons(id, kind, work_id, area, body, source, ts) "
-                "VALUES (?,?,?,?,?,?,?) ON CONFLICT(id) DO NOTHING",
-                (lid, kind, "_memory", "", body, str(rel), _utc_now()),
-            )
 
     def _meta(self, conn: sqlite3.Connection, key: str) -> str:
         row = conn.execute("SELECT value FROM meta WHERE key = ?", (key,)).fetchone()
@@ -1192,10 +835,9 @@ class LocalIndex:
             "canvases": 0,
             "areas": 0,
             "lessons": 0,
+            "staged_lessons": 0,
             "context_entries": 0,
             "domain_keywords": 0,
-            "phase_refs": 0,
-            "project_facts": 0,
             "edges": 0,
             "artifacts": 0,
             "local_sessions": 0,
@@ -1227,8 +869,6 @@ class LocalIndex:
                     ("lessons", "lessons"),
                     ("context_entries", "context_entries"),
                     ("domain_keywords", "domain_keywords"),
-                    ("phase_refs", "phase_refs"),
-                    ("project_facts", "project_facts"),
                     ("edges", "edges"),
                 ):
                     try:
@@ -1237,6 +877,15 @@ class LocalIndex:
                         ).fetchone()["n"]
                     except sqlite3.Error:
                         base[key] = 0
+                try:
+                    base["staged_lessons"] = conn.execute(
+                        "SELECT COUNT(*) AS n FROM lessons WHERE staged = 1"
+                    ).fetchone()["n"]
+                    base["lessons"] = conn.execute(
+                        "SELECT COUNT(*) AS n FROM lessons WHERE staged = 0"
+                    ).fetchone()["n"]
+                except sqlite3.Error:
+                    base["staged_lessons"] = 0
                 rows = conn.execute(
                     "SELECT COALESCE(NULLIF(registry_status, ''), '(none)') AS s, "
                     "COUNT(*) AS n FROM work_items GROUP BY s ORDER BY n DESC"
@@ -1269,15 +918,14 @@ class LocalIndex:
             f"  canvases: {info.get('canvases', 0)}\n"
             f"  areas: {info.get('areas', 0)}\n"
             f"  lessons: {info.get('lessons', 0)}\n"
+            f"  staged_lessons: {info.get('staged_lessons', 0)}\n"
             f"  context_entries: {info.get('context_entries', 0)}\n"
             f"  domain_keywords: {info.get('domain_keywords', 0)}\n"
-            f"  phase_refs: {info.get('phase_refs', 0)}\n"
-            f"  project_facts: {info.get('project_facts', 0)}\n"
             f"  edges: {info.get('edges', 0)}\n"
             f"  artifacts: {info['artifacts']}\n"
             f"  local_sessions: {info['local_sessions']}\n"
             "\n"
-            "Multi-user sync: git (markdown + work-registry.tsv), not this file.\n"
+            "Multi-user sync: git (ledger JSONL + registry JSONL), not this file.\n"
             "Before GUIDE/Neo4j this is a local query cache only.\n"
         )
 
@@ -1568,88 +1216,33 @@ class LocalIndex:
             )
         return out
 
-    def upsert_lesson(
-        self,
-        *,
-        lesson_id: str,
-        kind: str,
-        work_id: str,
-        area: str = "",
-        body: str = "",
-        source: str = "",
-        ts: str = "",
-    ) -> None:
-        """Persist a lesson and link it to work, area, requirement, and REASONS canvas."""
-        self.ensure_work_item(work_id)
-        kind_n = (kind or "").strip().lower()
-        if kind_n not in {"decision", "pitfall", "pattern"}:
-            raise ValueError("kind must be decision|pitfall|pattern")
-        lid = (lesson_id or "").strip()
-        if not lid:
-            raise ValueError("lesson_id is required")
-        when = ts or _utc_now()
-        # Best-effort stay-set sync so lesson can attach to requirement/REASONS.
+    def upsert_lesson_record(self, record: LessonRecord, *, staged: bool) -> None:
+        """Upsert one ledger record + edges (hot-path projection write)."""
+        record.validate()
+        self.ensure_work_item(record.work_id)
         try:
-            self.sync_stay_set(work_id)
-        except Exception:  # noqa: BLE001 - stubs still allow lesson rows
+            self.sync_stay_set(record.work_id)
+        except Exception:  # noqa: BLE001
             pass
+        stats = RebuildStats()
         with self.connect() as conn:
-            conn.execute(
-                "INSERT INTO lessons(id, kind, work_id, area, body, source, ts) "
-                "VALUES (?,?,?,?,?,?,?) "
-                "ON CONFLICT(id) DO UPDATE SET "
-                "kind=excluded.kind, work_id=excluded.work_id, area=excluded.area, "
-                "body=excluded.body, source=excluded.source, ts=excluded.ts",
-                (lid, kind_n, work_id, area or "", body or "", source or "", when),
-            )
-            self._insert_edge(
-                conn, NODE_LESSON, lid, REL_RECORDED_FOR, NODE_WORK, work_id
-            )
-            req_id = f"{work_id}:requirement"
-            canvas_id = f"{work_id}:canvas"
-            if conn.execute(
-                "SELECT 1 FROM requirements WHERE id = ?", (req_id,)
-            ).fetchone():
-                self._insert_edge(
-                    conn, NODE_LESSON, lid, REL_ABOUT, NODE_REQUIREMENT, req_id
-                )
-            if conn.execute(
-                "SELECT 1 FROM canvases WHERE id = ?", (canvas_id,)
-            ).fetchone():
-                self._insert_edge(
-                    conn, NODE_LESSON, lid, REL_ABOUT, NODE_CANVAS, canvas_id
-                )
-            if area:
-                conn.execute(
-                    "INSERT INTO areas(id, name, description) VALUES (?,?,?) "
-                    "ON CONFLICT(id) DO NOTHING",
-                    (area, area, ""),
-                )
-                conn.execute(
-                    "INSERT OR IGNORE INTO work_areas(work_id, area) VALUES (?,?)",
-                    (work_id, area),
-                )
-                self._insert_edge(conn, NODE_WORK, work_id, REL_AREA, NODE_AREA, area)
-                self._insert_edge(conn, NODE_LESSON, lid, REL_ABOUT, NODE_AREA, area)
-                if conn.execute(
-                    "SELECT 1 FROM requirements WHERE id = ?", (req_id,)
-                ).fetchone():
-                    self._insert_edge(
-                        conn, NODE_REQUIREMENT, req_id, REL_AREA, NODE_AREA, area
-                    )
-                if conn.execute(
-                    "SELECT 1 FROM canvases WHERE id = ?", (canvas_id,)
-                ).fetchone():
-                    self._insert_edge(
-                        conn, NODE_CANVAS, canvas_id, REL_AREA, NODE_AREA, area
-                    )
+            self._ingest_lesson_row(conn, record, staged=staged, stats=stats)
             conn.commit()
+
+    def accepted_lesson_ids(self) -> set[str]:
+        self.ensure_schema()
+        with self.connect() as conn:
+            rows = conn.execute(
+                "SELECT id FROM lessons WHERE staged = 0"
+            ).fetchall()
+            return {str(r["id"]) for r in rows}
 
     def lessons_for_area(self, area: str) -> list[dict[str, Any]]:
         self.ensure_schema()
         with self.connect() as conn:
             rows = conn.execute(
-                "SELECT id, kind, work_id, area, body, source, ts FROM lessons "
+                "SELECT id, kind, work_id, area, title, body, source, phase, "
+                "keywords, ts, staged FROM lessons "
                 "WHERE area = ? ORDER BY ts DESC, id",
                 (area,),
             ).fetchall()
@@ -1659,7 +1252,8 @@ class LocalIndex:
         self.ensure_schema()
         with self.connect() as conn:
             rows = conn.execute(
-                "SELECT id, kind, work_id, area, body, source, ts FROM lessons "
+                "SELECT id, kind, work_id, area, title, body, source, phase, "
+                "keywords, ts, staged FROM lessons "
                 "WHERE work_id = ? ORDER BY ts DESC, id",
                 (work_id,),
             ).fetchall()
@@ -1725,45 +1319,6 @@ class LocalIndex:
                 )
             conn.commit()
 
-    def upsert_pointer_row(
-        self,
-        *,
-        pointer_id: str,
-        kind: str,
-        work_id: str = "",
-        commit_sha: str = "",
-        intent: str = "",
-        payload: dict[str, Any] | None = None,
-        ts: str = "",
-    ) -> None:
-        self.ensure_schema()
-        pid = (pointer_id or "").strip()
-        if not pid:
-            raise ValueError("pointer_id is required")
-        when = ts or _utc_now()
-        with self.connect() as conn:
-            conn.execute(
-                "INSERT INTO pointers(id, kind, work_id, commit_sha, intent, payload_json, ts) "
-                "VALUES (?,?,?,?,?,?,?) "
-                "ON CONFLICT(id) DO UPDATE SET "
-                "kind=excluded.kind, work_id=excluded.work_id, commit_sha=excluded.commit_sha, "
-                "intent=excluded.intent, payload_json=excluded.payload_json, ts=excluded.ts",
-                (
-                    pid,
-                    kind,
-                    work_id,
-                    commit_sha,
-                    intent,
-                    json.dumps(payload or {}, ensure_ascii=False),
-                    when,
-                ),
-            )
-            if work_id:
-                self._insert_edge(
-                    conn, NODE_POINTER, pid, REL_FOR_WORK, NODE_WORK, work_id
-                )
-            conn.commit()
-
     def upsert_context_entry(
         self,
         *,
@@ -1819,12 +1374,6 @@ class LocalIndex:
                 present.add(row["kind"])
             for row in conn.execute("SELECT DISTINCT kind FROM lessons"):
                 present.add(row["kind"])
-            if conn.execute("SELECT 1 FROM domain_keywords LIMIT 1").fetchone():
-                present.add("domain")
-            if conn.execute("SELECT 1 FROM phase_refs LIMIT 1").fetchone():
-                present.add("phase_ref")
-            if conn.execute("SELECT 1 FROM project_facts LIMIT 1").fetchone():
-                present.add("memory")
             if conn.execute("SELECT 1 FROM context_sessions LIMIT 1").fetchone():
                 present.add("session")
         missing = cm.assert_kinds_covered(present)
@@ -1872,13 +1421,6 @@ class LocalIndex:
                     (wid,),
                 ).fetchall()
             ]
-            facts = [
-                dict(r)
-                for r in conn.execute(
-                    "SELECT * FROM project_facts WHERE work_id = ? ORDER BY ts DESC",
-                    (wid,),
-                ).fetchall()
-            ]
             sessions = [
                 dict(r)
                 for r in conn.execute(
@@ -1915,7 +1457,6 @@ class LocalIndex:
                 "areas": areas,
                 "lessons": lessons,
                 "context_entries": entries,
-                "project_facts": facts,
                 "sessions": sessions,
                 "edges": edges,
             }
@@ -1996,10 +1537,8 @@ class LocalIndex:
         "final_status",
         "has_canvas",
         "has_requirement",
-        "has_feature",
         "canvas_path",
         "requirement_path",
-        "feature_path",
     )
 
     def lookup(

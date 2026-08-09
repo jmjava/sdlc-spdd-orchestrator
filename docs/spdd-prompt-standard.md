@@ -34,7 +34,7 @@ After `create-work-from-milestone.sh`, the script prints suggested plan and arch
 
 ### Validate canvas structure
 
-    ./scripts/sdlc-spdd/validate-reasons-canvas.sh spdd/canvas/<WORK-ID>.md
+    ./sdlc-spdd/scripts/validate-reasons-canvas.sh spdd/canvas/<WORK-ID>.md
 
 On success, continue with architect. On failure, fix missing REASONS sections before coding.
 
@@ -119,21 +119,21 @@ Repeat for T02, T03, and later operations.
 
 Before a new session:
 
-    ./scripts/sdlc-spdd/resync-agent-session.sh --target . --work-id <WORK-ID> --check-only
+    ./sdlc-spdd/scripts/resync-agent-session.sh --target . --work-id <WORK-ID> --check-only
 
 If drift exists:
 
-    ./scripts/sdlc-spdd/resync-agent-session.sh --target . --work-id <WORK-ID> --from-canvas --force --phase <phase>
+    ./sdlc-spdd/scripts/resync-agent-session.sh --target . --work-id <WORK-ID> --from-canvas --force --phase <phase>
 
 or:
 
-    ./scripts/sdlc-spdd/resync-agent-session.sh --target . --work-id <WORK-ID> --from-feature --force --phase <phase>
+    ./sdlc-spdd/scripts/resync-agent-session.sh --target . --work-id <WORK-ID> --from-feature --force --phase <phase>
 
 ## Milestone → SPDD Bridge Prompts
 
 Map milestone checklist to draft work:
 
-    ./scripts/sdlc-spdd/create-work-from-milestone.sh --target . --milestone milestone-1.md --all
+    ./sdlc-spdd/scripts/create-work-from-milestone.sh --target . --milestone milestone-1.md --all
 
 Then for each created Work ID:
 
@@ -178,7 +178,7 @@ Ensure canvas Metadata includes:
 
 ## Read Next
 
-- [What SPDD brings](what-spdd-brings.md) — SPDD value proposition
+- [Storage v3](storage-v3.md) — canvas, ledger, backends
 - [SPDD compliance](spdd-compliance.md) — full compliance checklist
 - [Session prompt standard](session-prompt-standard.md) — unified session prompts
 - [Planning prompt standard](planning-prompt-standard.md) — roadmap and milestone prompts

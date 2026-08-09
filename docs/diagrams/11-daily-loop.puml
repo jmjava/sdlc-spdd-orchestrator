@@ -1,0 +1,23 @@
+@startuml 11-daily-loop
+
+title Daily loop
+
+skinparam ActivityBackgroundColor White
+
+start
+:claim / resume
+./scripts/sdlc.sh claim <WORK-ID>;
+:start session
+start-agent-session.sh
+-> hot brief + Related Past Work digest;
+:orient
+./scripts/sdlc.sh next  or  /sdlc-spdd-whereami;
+:phase work
+analysis -> plan -> architect -> code -> review;
+:capture memory
+./scripts/sdlc.sh capture -> .sdlc/staged/;
+:accept at retro/sync
+/sdlc-spdd-accept -> lessons.jsonl;
+stop
+
+@enduml

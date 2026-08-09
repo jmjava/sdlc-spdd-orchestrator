@@ -17,8 +17,8 @@ whole framework through the stages in order.
 | Stage | State | Focus |
 |-------|-------|-------|
 | **Make it work** | mostly done | MVP delivered — three assistant adapters, capture, indexes, session briefs, and validation CI all function end to end. |
-| **Make it right** | **mostly complete** | Refactors landed (FEAT-001→003, FEAT-009→012). Residual: optional readability pass; dual root/subdir milestone stub still warns. |
-| **Make it fast** | **active (spikes)** | Measurement landed (FEAT-004 ledger + FEAT-005 readiness/indicators). Next: SPIKE-001/002 when Guide MCP is available. |
+| **Make it right** | **complete** | Refactors landed (FEAT-001→003, FEAT-009→012) and archived. Active: **storage v3** on integration branch. |
+| **Make it fast** | **spikes (shelved)** | Measurement landed (FEAT-004/005). SPIKE-001/002 archived pending Guide MCP; act on metrics when resumed. |
 
 Planning guidance:
 
@@ -66,15 +66,13 @@ come last.
 - Three-assistant adapters (Cursor, Copilot, Claude Code) with parity CI
 - Spring Boot example workflow and canvas-validation GitHub Action
 
-## Milestone 1 — Make it right (active)
+## Milestone 1 — Make it right (complete)
 
-See [requirements/milestones/milestone-1/MILESTONE-1.md](requirements/milestones/milestone-1/MILESTONE-1.md)
-(root [milestone-1.md](milestone-1.md) is a compatibility stub). Goal: take the
-framework from its current working state to "right" — refactor the existing code
-and docs for readability, maintainability, and extensibility, and ship each
-refactor as working code. Prompt-optimization *measurement* (FEAT-004/005) is
-complete under "make it fast"; remaining make-it-fast work is spikes and acting
-on metrics.
+See [requirements/milestones/milestone-1/MILESTONE-1.md](requirements/milestones/milestone-1/MILESTONE-1.md).
+Milestone 1 requirement stubs and canvases were removed from the working tree;
+use git history. **Current focus:** storage v3 (`docs/storage-v3.md`).
+`harness/skills`, `.sdlc/` runtime, test-suite restructure. Add new Work IDs under
+`requirements/milestones/milestone-2/` when formalized.
 
 ## Post-MVP backlog
 
@@ -89,19 +87,19 @@ Each item names the Beck stage it serves (see [Delivery posture](#delivery-postu
 | Analysis Scope Lock-In (`/sdlc-spdd-analysis`) | Maintainability (clearer analysis contract) — **FEAT-009 Complete** |
 | Jira-compatible requirements format + validator | Maintainability (planning / tracker alignment) — **FEAT-010 Complete** |
 | Milestone subdirectory layout (`requirements/milestones/milestone-N/`) | Maintainability (planning layout) — **FEAT-011 Complete** |
-| Session-brief archive/rotation (`agent-context/sessions/` → `archive/`; data is already extracted into memory at capture) | Maintainability — **FEAT-012 Complete** |
+| Session-brief rotation (`.sdlc/sessions/` → `archive/`; gitignored runtime) | Maintainability — **FEAT-012 Complete** |
 | Golden-path regression dogfood (fixed stub → analysis→plan→architect diff) | Maintainability |
-| Session-brief + completed/cancelled work archive (`sdlc.sh archive`; sessions/features/canvas → `archive/`) | Maintainability |
+| Completed/cancelled work cleanup (`sdlc.sh archive` removes contracts; git history retains) | Maintainability |
 | Python orchestration engine v2 (`engine/sdlc_engine`) with shell compatibility shim | Maintainability / Extensibility |
 | Code + docs readability pass (consistent structure, naming, examples) | Readability |
-| Extension/hook manifest in `agent-context/extensions/` | Extensibility |
+| Phase skills under `harness/skills/` (legacy extensions/playbooks migrate away) | Extensibility |
 | Initial `docgen` narrated-docs bundle (`docs/demos/`) | Readability / operator docs (CHORE-001) |
 
 ### Make it fast — prompt optimization (do last)
 
 | Item | Concern |
 |------|---------|
-| Prompt-optimization ledger (`agent-context/memory/prompt-optimization-log.md`) | Measurement — **FEAT-004 Complete** |
+| Prompt-optimization ledger (`spdd/memory/lessons.jsonl`, kind=metric) | Measurement — **FEAT-004 Complete** |
 | Capture metric flags (`--readiness`, `--review-result`, `--rework`, `--context-files`) → indexed rows (Kind: `metric`) | Measurement — **FEAT-004 Complete** |
 | Canvas `readiness:` / Metadata readiness + leading indicators (validate/review counts) | Measurement — **FEAT-005 Complete** |
 | `spdd --metrics` surface over the ledger and indexes | Optimization |
@@ -141,26 +139,26 @@ Work IDs are numbered in execution order: make-it-right refactors (FEAT-001→00
 FEAT-009→012) first, prompt optimization (FEAT-004→005) next, then spikes.
 Milestone 1 feature track is Complete on the integration branch.
 
-| Work ID | Canvas | Stage | Status |
-|---------|--------|-------|--------|
-| FEAT-001-shared-script-library | spdd/canvas/FEAT-001-shared-script-library.md | make it right | Complete |
-| FEAT-002-command-spec-generation | spdd/canvas/FEAT-002-command-spec-generation.md | make it right | Complete |
-| FEAT-003-extension-hook-manifest | spdd/canvas/FEAT-003-extension-hook-manifest.md | make it right | Complete |
-| FEAT-006-python-orchestration-engine | spdd/canvas/FEAT-006-python-orchestration-engine.md | make it right | Complete (PR #31) |
-| FEAT-007-local-sqlite-index | spdd/canvas/FEAT-007-local-sqlite-index.md | make it right | Complete (PR #38) |
-| FEAT-008-commit-message-command | spdd/canvas/FEAT-008-commit-message-command.md | make it right | Complete (PR #42) |
-| FEAT-009-analysis-scope-lock | spdd/canvas/FEAT-009-analysis-scope-lock.md | make it right | Complete (2026-07-15) |
-| FEAT-010-jira-compatible-requirements | spdd/canvas/FEAT-010-jira-compatible-requirements.md | make it right | Complete (2026-07-15) |
-| FEAT-011-milestone-subdirectory-layout | spdd/canvas/FEAT-011-milestone-subdirectory-layout.md | make it right | Complete (2026-07-15) |
-| FEAT-012-session-brief-archive | spdd/canvas/FEAT-012-session-brief-archive.md | make it right | Complete (2026-07-15) |
-| FEAT-004-prompt-optimization-ledger | spdd/canvas/FEAT-004-prompt-optimization-ledger.md | make it fast (measurement) | Complete (T01–T05) |
-| FEAT-005-canvas-readiness-indicators | spdd/canvas/FEAT-005-canvas-readiness-indicators.md | make it fast (measurement) | Complete (T01–T04) |
-| SPIKE-001-guide-rag-context-backend | spdd/canvas/SPIKE-001-guide-rag-context-backend.md | make it fast (spike — DICE hybrid) | Analysis ready — blocked on Guide MCP for A/B |
-| SPIKE-002-local-llm-and-embedding-format | spdd/canvas/SPIKE-002-local-llm-and-embedding-format.md | make it fast (spike — local models) | Analysis ready — blocked on Guide MCP for A/B |
-| SPIKE-003-embabel-context-graph-absorption | spdd/canvas/SPIKE-003-embabel-context-graph-absorption.md | make it fast (spike — absorption) | Complete (accepted 2026-08-07) |
-| FEAT-013-guide-git-incremental-upstream | spdd/canvas/FEAT-013-guide-git-incremental-upstream.md | make it fast (fork slice) | Complete — fork-only |
-| CHORE-001-docgen-initial-documentation | spdd/canvas/CHORE-001-docgen-initial-documentation.md | make it right (docs) | Complete |
-| CHORE-002-docgen-video-generation | spdd/canvas/CHORE-002-docgen-video-generation.md | make it right (docs) | Complete |
+| Work ID | Stage | Status |
+|---------|-------|--------|
+| FEAT-001-shared-script-library | make it right | Complete (git history) |
+| FEAT-002-command-spec-generation | make it right | Complete (git history) |
+| FEAT-003-extension-hook-manifest | make it right | Complete (git history) |
+| FEAT-006-python-orchestration-engine | make it right | Complete (PR #31) |
+| FEAT-007-local-sqlite-index | make it right | Complete (PR #38) |
+| FEAT-008-commit-message-command | make it right | Complete (PR #42) |
+| FEAT-009-analysis-scope-lock | make it right | Complete (2026-07-15) |
+| FEAT-010-jira-compatible-requirements | make it right | Complete (2026-07-15) |
+| FEAT-011-milestone-subdirectory-layout | make it right | Complete (2026-07-15) |
+| FEAT-012-session-brief-archive | make it right | Complete (2026-07-15) |
+| FEAT-004-prompt-optimization-ledger | make it fast (measurement) | Complete (T01–T05) |
+| FEAT-005-canvas-readiness-indicators | make it fast (measurement) | Complete (T01–T04) |
+| SPIKE-001-guide-rag-context-backend | make it fast (spike — DICE hybrid) | Shelved — Guide MCP A/B |
+| SPIKE-002-local-llm-and-embedding-format | make it fast (spike — local models) | Shelved |
+| SPIKE-003-embabel-context-graph-absorption | make it fast (spike — absorption) | Complete (accepted 2026-08-07) |
+| FEAT-013-guide-git-incremental-upstream | make it fast (fork slice) | Complete — fork-only |
+| CHORE-001-docgen-initial-documentation | make it right (docs) | Complete (git history) |
+| CHORE-002-docgen-video-generation | make it right (docs) | Complete (git history) |
 
 Deferred / residual (not Work IDs yet):
 
@@ -173,6 +171,9 @@ Deferred / residual (not Work IDs yet):
 Refresh the generated summary table from canvases with:
 
     ./scripts/sync-roadmap-from-spdd.sh --target .
+
+Completed Milestone 1 canvases were removed from the working tree; the table below
+is historical. Use git history for canvas bodies.
 
 <!-- SDLC-SPDD-ROADMAP-SUMMARY:START -->
 

@@ -26,7 +26,21 @@ const WORK_ID = process.env.LIVE_WORK_ID || "FEAT-001-hello-live";
 const ROOT = process.env.LIVE_CONSUMER_ROOT || "/tmp/sdlc-spdd-live";
 const MODEL = process.env.LIVE_CURSOR_MODEL || "composer-2.5";
 const API_KEY = process.env.CURSOR_API_KEY;
-const FEATURE = `agent-context/features/${WORK_ID}`;
+
+function liveHome(root) {
+  const home = path.join(root, "sdlc-spdd");
+  return fs.existsSync(home) ? home : root;
+}
+
+function liveScripts(root) {
+  return path.join(liveHome(root), "scripts");
+}
+
+function homeRel(subpath) {
+  const home = liveHome(ROOT);
+  if (home === ROOT) return subpath;
+  return path.join("sdlc-spdd", subpath);
+}
 
 // Lifecycle order matches Fowler SPDD: analysis → plan → architect → code → …
 const STEPS = [
@@ -45,43 +59,30 @@ const STEPS = [
     slug: "sdlc-spdd-analysis",
     userArgs: `@requirements/milestones/${WORK_ID}.md`,
     verify: [],
-    fileCheck: [
-      `spdd/analysis/${WORK_ID}-analysis.md`,
-      `${FEATURE}/analysis-context.md`,
-    ],
-    mustCreate: [
-      `spdd/analysis/${WORK_ID}-analysis.md`,
-      `${FEATURE}/analysis-context.md`,
-    ],
+    fileCheck: [homeRel(`spdd/analysis/${WORK_ID}-analysis.md`)],
+    mustCreate: [homeRel(`spdd/analysis/${WORK_ID}-analysis.md`)],
   },
   {
     slug: "sdlc-spdd-plan",
-    userArgs: `@spdd/analysis/${WORK_ID}-analysis.md @requirements/milestones/${WORK_ID}.md @ROADMAP.md`,
+    userArgs: `@${homeRel(`spdd/analysis/${WORK_ID}-analysis.md`)} @${homeRel(`requirements/milestones/${WORK_ID}.md`)} @${homeRel("ROADMAP.md")}`,
     verify: ["plan"],
     mustCreate: [
-      `spdd/canvas/${WORK_ID}.md`,
-      `${FEATURE}/requirement.md`,
-      `${FEATURE}/reasons-canvas.md`,
-      `${FEATURE}/progress-log.md`,
+      homeRel(`spdd/canvas/${WORK_ID}.md`),
+      homeRel(`requirements/milestones/${WORK_ID}.md`),
     ],
   },
   {
     slug: "sdlc-spdd-architect",
-    userArgs: `@spdd/canvas/${WORK_ID}.md`,
+    userArgs: `@${homeRel(`spdd/canvas/${WORK_ID}.md`)}`,
     verify: ["architect"],
-    mustCreate: [
-      `${FEATURE}/requirement.md`,
-      `${FEATURE}/progress-log.md`,
-      `spdd/canvas/${WORK_ID}.md`,
-    ],
+    mustCreate: [homeRel(`spdd/canvas/${WORK_ID}.md`)],
   },
   {
     slug: "sdlc-spdd-code",
-    userArgs: `@spdd/canvas/${WORK_ID}.md operation T01`,
+    userArgs: `@${homeRel(`spdd/canvas/${WORK_ID}.md`)} operation T01`,
     verify: ["code"],
     mustCreate: [
-      `${FEATURE}/progress-log.md`,
-      `${FEATURE}/requirement.md`,
+      homeRel(`spdd/canvas/${WORK_ID}.md`),
       "src/hello.py",
     ],
   },
@@ -95,43 +96,26 @@ const STEPS = [
     slug: "sdlc-spdd-review",
     userArgs: `@spdd/canvas/${WORK_ID}.md`,
     verify: ["review"],
-    mustCreate: [
-      `${FEATURE}/review.md`,
-      `spdd/reviews/${WORK_ID}-review.md`,
-      `${FEATURE}/requirement.md`,
-    ],
+    mustCreate: [homeRel(`spdd/reviews/${WORK_ID}-review.md`)],
   },
   {
     slug: "sdlc-spdd-sync",
     userArgs: `@spdd/canvas/${WORK_ID}.md`,
     verify: ["sync"],
-    mustCreate: [
-      `${FEATURE}/sync-log.md`,
-      `spdd/sync/${WORK_ID}-sync.md`,
-      `${FEATURE}/requirement.md`,
-    ],
+    mustCreate: [homeRel(`spdd/sync/${WORK_ID}-sync.md`)],
   },
   {
     slug: "sdlc-spdd-retro",
     userArgs: `@spdd/canvas/${WORK_ID}.md`,
     verify: ["retro"],
-    mustCreate: [
-      `${FEATURE}/retro.md`,
-      `${FEATURE}/requirement.md`,
-      "agent-context/memory/known-pitfalls.md",
-      "agent-context/memory/reusable-patterns.md",
-    ],
+    mustCreate: [homeRel("spdd/memory/lessons.jsonl")],
   },
   {
     slug: "sdlc-spdd-prompt-update",
     userArgs: `@spdd/canvas/${WORK_ID}.md clarify T01 acceptance wording`,
     verify: ["prompt-update"],
     soft: true,
-    mustCreate: [
-      `${FEATURE}/requirement.md`,
-      `${FEATURE}/progress-log.md`,
-      "agent-context/memory/prompt-optimization-log.md",
-    ],
+    mustCreate: [homeRel(".sdlc/staged/lessons.jsonl")],
   },
   {
     slug: "sdlc-spdd-commit-message",
@@ -205,9 +189,6 @@ function buildPrompt(commandPath, slug, userArgs, mustCreate = []) {
           "- You MUST create or update every Output path listed in the command definition.",
           "- Especially ensure these exist before you finish:",
           ...mustCreate.map((p) => `  - ${p}`),
-          `- If ${FEATURE}/requirement.md is missing, create it (copy/adapt from requirements/milestones/${WORK_ID}.md).`,
-          `- If ${FEATURE}/progress-log.md is missing, create it with a dated entry for this step.`,
-          "- Do not stop after writing only spdd/ artifacts; feature-workspace copies are required.",
         ];
   return [
     `Execute the Cursor project slash command /${slug} against this repository.`,
@@ -219,7 +200,7 @@ function buildPrompt(commandPath, slug, userArgs, mustCreate = []) {
     "Constraints:",
     "- Stay inside this repository working tree.",
     "- Prefer small, targeted edits that satisfy the command.",
-    "- When the command says to run ./scripts/sdlc-spdd/sdlc.sh ..., run those shell commands.",
+    `- When the command says to run sdlc.sh, use ${path.join(liveScripts(ROOT), "sdlc.sh")}.`,
     "- When finished, summarize what files you created or changed.",
     ...must,
     "",
@@ -238,15 +219,12 @@ function buildRepairPrompt(slug, missing, verifyStderr = "") {
     "Missing paths:",
     ...missing.map((p) => `- ${p}`),
     "",
-    `If requirement.md is missing: copy requirements/milestones/${WORK_ID}.md to ${FEATURE}/requirement.md (adapt title if needed).`,
-    `If progress-log.md is missing: create ${FEATURE}/progress-log.md with a short entry for /${slug}.`,
-    "",
     verifyStderr ? `Verifier output:\n${verifyStderr}` : "",
   ].join("\n");
 }
 
 function runVerify(step) {
-  const script = path.join(ROOT, "scripts/sdlc-spdd/verify-agent-command-effects.sh");
+  const script = path.join(liveScripts(ROOT), "verify-agent-command-effects.sh");
   const r = spawnSync(
     script,
     ["--target", ROOT, "--work-id", WORK_ID, "--step", step, "--operation", "T01"],
@@ -257,7 +235,7 @@ function runVerify(step) {
 
 function checkPointerClaimed() {
   const r = spawnSync(
-    path.join(ROOT, "agent-context/sdlc-pointer.sh"),
+    path.join(liveScripts(ROOT), "sdlc-pointer.sh"),
     ["get"],
     { encoding: "utf8", env: { ...process.env, SDLC_ROOT: ROOT } },
   );

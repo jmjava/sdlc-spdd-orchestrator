@@ -29,11 +29,11 @@ For REASONS Canvas governance, see [SPDD prompt standard](spdd-prompt-standard.m
 
 ### Map checklist items to Work IDs and draft canvases
 
-    ./scripts/sdlc-spdd/create-work-from-milestone.sh --target . --milestone milestone-1.md --all
+    ./sdlc-spdd/scripts/create-work-from-milestone.sh --target . --milestone milestone-1.md --all
 
 Single item:
 
-    ./scripts/sdlc-spdd/create-work-from-milestone.sh --target . --milestone milestone-1.md --item "Add order status API" --type feature
+    ./sdlc-spdd/scripts/create-work-from-milestone.sh --target . --milestone milestone-1.md --item "Add order status API" --type feature
 
 The script prints **Next SPDD prompts** for each created Work ID. Each stub includes a scaffolded `## Jira` section — see [requirements/milestones/README.md](../requirements/milestones/README.md).
 
@@ -53,18 +53,18 @@ Metadata prompt:
 
 Generate session brief (includes planning files in resume prompt when present):
 
-    ./scripts/sdlc-spdd/sdlc.sh resume <WORK-ID> --phase <phase>
-    ./scripts/sdlc-spdd/sdlc.sh start --milestone milestone-1.md
+    ./sdlc-spdd/scripts/sdlc.sh resume <WORK-ID> --phase <phase>
+    ./sdlc-spdd/scripts/sdlc.sh start --milestone milestone-1.md
 
 Low-level equivalent:
 
-    ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase> --milestone milestone-1.md
+    ./sdlc-spdd/scripts/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase> --milestone milestone-1.md
 
 Morning status with planning layer (prefer orientation first):
 
     /sdlc-spdd-whereami
 
-    For <WORK-ID>, read @spdd/canvas/<WORK-ID>.md and @agent-context/features/<WORK-ID>/progress-log.md. Summarize current status, next operation, and open risks.
+    For <WORK-ID>, read @spdd/canvas/<WORK-ID>.md and run `sdlc-engine context digest --work-id <WORK-ID>`. Summarize current status, next operation, and open risks.
 
     Also read @ROADMAP.md, @milestone-1.md, and @session-notes/YYYY-MM-DD.md if they exist.
 
@@ -74,7 +74,7 @@ Morning status with planning layer (prefer orientation first):
 
 ### Full capture with milestone and roadmap
 
-    ./scripts/sdlc-spdd/capture-session-memory.sh \
+    ./sdlc-spdd/scripts/capture-session-memory.sh \
       --target . \
       --work-id <WORK-ID> \
       --phase <phase> \
@@ -88,7 +88,7 @@ When `--milestone` is omitted, the script auto-detects the milestone from `miles
 
 ### Session note only (skip milestone/roadmap)
 
-    ./scripts/sdlc-spdd/capture-session-memory.sh \
+    ./sdlc-spdd/scripts/capture-session-memory.sh \
       --target . \
       --work-id <WORK-ID> \
       --phase <phase> \
@@ -98,7 +98,7 @@ When `--milestone` is omitted, the script auto-detects the milestone from `miles
 
 ### Skip daily session note
 
-    ./scripts/sdlc-spdd/capture-session-memory.sh \
+    ./sdlc-spdd/scripts/capture-session-memory.sh \
       --target . \
       --work-id <WORK-ID> \
       --summary "<summary>" \
@@ -112,7 +112,7 @@ When `--milestone` is omitted, the script auto-detects the milestone from `miles
 
 Sync managed summary from canvas metadata:
 
-    ./scripts/sdlc-spdd/sync-roadmap-from-spdd.sh --target .
+    ./sdlc-spdd/scripts/sync-roadmap-from-spdd.sh --target .
 
 After sync, review prompt:
 
@@ -120,7 +120,7 @@ After sync, review prompt:
 
 Dry-run first:
 
-    ./scripts/sdlc-spdd/sync-roadmap-from-spdd.sh --target . --dry-run
+    ./sdlc-spdd/scripts/sync-roadmap-from-spdd.sh --target . --dry-run
 
 The managed section is between:
 
@@ -129,19 +129,23 @@ The managed section is between:
 
 Handwritten roadmap content outside those markers is preserved.
 
-## Import Historical Session Notes
+## Summarize session notes into the ledger
 
-Import all:
+Summarize all:
 
-    ./scripts/sdlc-spdd/summarize-session-notes.sh --target . --all
+    ./sdlc-spdd/scripts/summarize-session-notes.sh --target . --all
 
-Import one file:
+Summarize one file:
 
-    ./scripts/sdlc-spdd/summarize-session-notes.sh --target . --file session-notes/2026-06-06.md
+    ./sdlc-spdd/scripts/summarize-session-notes.sh --target . --file session-notes/2026-06-06.md
 
-After import, review prompt:
+Then accept at the gate:
 
-    Read @agent-context/memory/session-history.md entries imported from session-notes. Summarize recurring themes, open risks, and Work IDs mentioned.
+    /sdlc-spdd-accept
+
+After accept, review prompt:
+
+    Run `sdlc-engine context retrieve --kind session` for records from session-notes. Summarize recurring themes, open risks, and Work IDs mentioned.
 
 ## Suggested Roadmap Content Prompts
 
@@ -161,7 +165,7 @@ Draft milestone linked-work row:
 | Replacing canvas with milestone checklist | Milestones inform; canvases govern |
 | Editing roadmap without syncing from SPDD | Summary drifts from canvas metadata |
 | Skipping milestone link when Work ID is not in any `milestone-*.md` yet | Milestone story becomes stale — add `--milestone` or link the Work ID in Linked Work first |
-| Deleting session notes after capture | Historical narrative lost — import first with summarize script |
+| Deleting session notes after capture | Daily narrative lost — summarize into staged lessons first, then accept |
 
 ## Planning Scripts and Generated Prompts
 
@@ -171,7 +175,7 @@ Draft milestone linked-work row:
 | `capture-session-memory.sh` | Writes session notes, milestone, roadmap; suggests full capture command |
 | `create-work-from-milestone.sh` | Updates milestone work map; prints SPDD next steps |
 | `sync-roadmap-from-spdd.sh` | Refreshes managed roadmap summary; prints review prompt |
-| `summarize-session-notes.sh` | Imports notes to memory; prints review prompt |
+| `summarize-session-notes.sh` | Stages session-note themes; accept at gate |
 
 ## Where Planning Prompts Are Defined
 
@@ -185,7 +189,6 @@ Draft milestone linked-work row:
 
 ## Read Next
 
-- [What planning brings](what-planning-brings.md) — planning layer value proposition
 - [Roadmap, milestones, and session notes](roadmap-milestones-and-session-notes.md) — file layout and workflows
 - [SPDD prompt standard](spdd-prompt-standard.md) — canvas governance prompts
 - [Session prompt standard](session-prompt-standard.md) — unified session prompts

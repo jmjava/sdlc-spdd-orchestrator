@@ -1,6 +1,6 @@
 # Design Decisions
 
-> Deep theory. For onboarding, read [Three-part operating path](three-part-operating-path.md) and the [What each part brings](README.md#what-each-part-brings-read-before-deep-theory) value guides first.
+> Rationale for major choices. For day-to-day use, start with [Three-part operating path](three-part-operating-path.md) and [Storage v3](storage-v3.md).
 
 ## SDLC Agents own lifecycle, SPDD owns prompt governance
 

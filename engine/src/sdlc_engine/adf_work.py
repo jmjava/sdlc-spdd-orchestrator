@@ -436,7 +436,7 @@ class AdfWorkService:
 
         canvas_path = self.project.root / canvas_rel
         req_path = self.project.root / req_rel
-        # Stay-set only (#86) — do not create agent-context/features mirrors.
+        # Stay-set only (#86) — no committed per-feature mirror folders.
         canvas_path.parent.mkdir(parents=True, exist_ok=True)
         req_path.parent.mkdir(parents=True, exist_ok=True)
         progress = self.project.root / "spdd" / "memory" / "entries" / "progress.md"

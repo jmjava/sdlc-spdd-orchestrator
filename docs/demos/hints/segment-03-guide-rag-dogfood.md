@@ -25,9 +25,9 @@ docgen:
           .venv, regenerable docgen outputs.
       context:
         paths:
-          - docs/guide-rag-research-and-dogfooding.md
-          - spdd/analysis/SPIKE-retrieval-reference-corpus.md
-          - spdd/canvas/SPIKE-001-guide-rag-context-backend.md
+          - docs/guide-flow.md
+          - docs/dice-projection-runbook.md
+          - docs/mcp-guide-for-agents.md
           - docs/context-loading-and-scaling.md
     visual:
       type: manim

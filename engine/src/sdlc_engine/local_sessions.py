@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import subprocess
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -149,7 +150,6 @@ class LocalSessionService:
         max_n = 0
         pattern = re.compile(rf"^{re.escape(prefix)}-(\d+)-", re.IGNORECASE)
         roots = [
-            self.project.root / "agent-context" / "features",
             self.project.root / "spdd" / "canvas",
             self.project.root / "requirements" / "milestones",
             self.root,
@@ -223,9 +223,8 @@ class LocalSessionService:
         self._write_session_brief(session)
         return session
 
-    def _write_session_brief(self, session: LocalSession) -> None:
-        # Default: keep briefs machine-private under .sdlc/ (offline until promote).
-        brief = "\n".join(
+    def _session_brief_text(self, session: LocalSession) -> str:
+        return "\n".join(
             [
                 f"# Current Session — {session.id}",
                 "",
@@ -251,16 +250,11 @@ class LocalSessionService:
                 "",
             ]
         )
-        self._dir(session.id).mkdir(parents=True, exist_ok=True)
-        (self._dir(session.id) / "brief.md").write_text(brief, encoding="utf-8")
+
+    def _write_session_brief(self, session: LocalSession) -> None:
+        # Single hot brief under .sdlc/ (offline until promote).
+        brief = self._session_brief_text(session)
         (self.project.sdlc_dir / "current-local-session.md").write_text(brief, encoding="utf-8")
-        # Opt-in only: also write committed agent-context/sessions (usually unwanted).
-        if os.environ.get("SDLC_LOCAL_WRITE_SESSION_BRIEF", "0") == "1":
-            sessions = self.project.root / "agent-context" / "sessions"
-            sessions.mkdir(parents=True, exist_ok=True)
-            (sessions / "current-session.md").write_text(brief, encoding="utf-8")
-            stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-            (sessions / f"{stamp}-local-{session.id}.md").write_text(brief, encoding="utf-8")
 
     def status_text(self, session_id: str | None = None) -> str:
         sid = session_id or self.pointer.get()
@@ -270,6 +264,7 @@ class LocalSessionService:
                 "No active local session pointer.",
                 "",
                 "Start one:",
+                '  ./scripts/sdlc.sh quick "why this scratch work"',
                 '  ./scripts/sdlc.sh local start --name <slug> --intent "..."',
             ]
             if open_rows:
@@ -300,7 +295,7 @@ class LocalSessionService:
         if not rows:
             return (
                 "No local/offline sessions.\n"
-                'Start: ./scripts/sdlc.sh local start --name <slug> --intent "..."\n'
+                'Start: ./scripts/sdlc.sh quick "why this scratch work"\n'
             )
         lines = [
             "Local/offline sessions (machine-private under .sdlc/local-sessions/)",
@@ -399,6 +394,38 @@ class LocalSessionService:
             self.pointer.reset()
         return session
 
+    def _git_log_oneline(self, git_range: str) -> list[str]:
+        try:
+            proc = subprocess.run(
+                ["git", "-C", str(self.project.root), "log", "--oneline", git_range],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+        except FileNotFoundError as exc:
+            raise ValueError("git is not available on PATH") from exc
+        if proc.returncode != 0:
+            err = (proc.stderr or proc.stdout or "").strip() or f"exit {proc.returncode}"
+            raise ValueError(f"git log {git_range} failed: {err}")
+        return [line for line in proc.stdout.splitlines() if line.strip()]
+
+    def backfill_from_git(
+        self,
+        git_range: str,
+        *,
+        session_id: str | None = None,
+    ) -> LocalSession:
+        """Append commit summaries from ``git_range`` into the local session notes."""
+        sid = session_id or self.pointer.get()
+        if not sid or not is_local_id(sid):
+            raise ValueError("local backfill requires an active LOCAL-* pointer or --session")
+        commits = self._git_log_oneline(git_range)
+        if not commits:
+            raise ValueError(f"no commits in git range: {git_range}")
+        for line in commits:
+            self.capture(f"[git] {line}", session_id=sid)
+        return self.load(sid)
+
     def promote(
         self,
         *,
@@ -408,10 +435,13 @@ class LocalSessionService:
         milestone: str = "",
         claim: bool = True,
         dry_run: bool = False,
+        from_git: str = "",
     ) -> tuple[LocalSession, str]:
         sid = session_id or self.pointer.get()
         if not sid or not is_local_id(sid):
             raise ValueError("local promote requires an active LOCAL-* pointer or --session")
+        if from_git:
+            self.backfill_from_git(from_git, session_id=sid)
         session = self.load(sid)
         if session.status == _STATUS_PROMOTED:
             raise ValueError(f"{sid} already promoted to {session.promoted_to}")
@@ -466,19 +496,27 @@ class LocalSessionService:
             encoding="utf-8",
         )
 
-        # Stay-set progress only (#86) — do not create agent-context/features mirrors.
-        progress = self.project.progress_log_path(work_id)
-        progress.parent.mkdir(parents=True, exist_ok=True)
-        if not progress.is_file():
-            progress.write_text("# Progress Entries\n\n", encoding="utf-8")
-        with progress.open("a", encoding="utf-8") as fh:
-            fh.write(
-                f"\n## {work_id}\n\n"
-                f"- Promoted from local session `{sid}` at {_utc_now()}\n"
-                f"- Intent: {intent}\n"
+        # Stage progress evidence in the ledger (storage v3).
+        from .lessons_ledger import LessonRecord, LessonsLedger
+
+        ledger = LessonsLedger(self.project)
+        body = (
+            f"- Promoted from local session `{sid}` at {_utc_now()}\n"
+            f"- Intent: {intent}\n"
+        )
+        if notes_text:
+            body += f"\n### Notes from {sid}\n\n{notes_text}\n"
+        ledger.stage(
+            LessonRecord(
+                id="",
+                kind="session",
+                work_id=work_id,
+                title=f"Promoted from {sid}",
+                body=body,
+                source="local-promote",
+                phase="code",
             )
-            if notes_text:
-                fh.write(f"\n### Notes from {sid}\n\n{notes_text}\n")
+        )
 
         # Canvas
         canvas_dir = self.project.root / "spdd" / "canvas"
@@ -626,7 +664,7 @@ class LocalSessionService:
         lines = [
             "",
             "Offline / detached agent work:",
-            '  ./scripts/sdlc.sh local start --name <slug> --intent "why this scratch work"',
+            '  ./scripts/sdlc.sh quick "why this scratch work"',
             "  ./scripts/sdlc.sh local list",
         ]
         if open_rows:

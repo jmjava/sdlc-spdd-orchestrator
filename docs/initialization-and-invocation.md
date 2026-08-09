@@ -44,7 +44,7 @@ The command runs as a chat message. Claude Code reads `.claude/commands/sdlc-spd
 
 | Kind | Example | Where you run it |
 |------|---------|------------------|
-| **Shell** (terminal) | `./scripts/sdlc-spdd/sdlc.sh next`, `./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>` | Terminal in the target project |
+| **Shell** (terminal) | `./sdlc-spdd/scripts/sdlc.sh next`, `./sdlc-spdd/scripts/sdlc.sh claim <WORK-ID>` | Terminal in the target project |
 | **Assistant lifecycle** (chat) | `/sdlc-spdd-whereami`, `/sdlc-spdd-init`, `/sdlc-spdd-plan @requirements/foo.md` | Cursor, Copilot, or Claude Code **chat** |
 | **Assistant workflow** (chat) | `/sdlc-claim <WORK-ID>`, `/sdlc-next`, `/sdlc-advance`, `/sdlc-shelf`, `/sdlc-team` | Same chat — wraps `sdlc.sh` without leaving the assistant |
 
@@ -100,23 +100,23 @@ Before asking a new agent to continue previous work:
 
 1. Orient:
 
-       ./scripts/sdlc-spdd/sdlc.sh next
+       ./sdlc-spdd/scripts/sdlc.sh next
 
    In chat: `/sdlc-next` or `/sdlc-spdd-whereami`
 
 2. Claim or resume and open a session brief:
 
        cd /path/to/your/project
-       ./scripts/sdlc-spdd/sdlc.sh claim FEAT-001-order-status-api
+       ./sdlc-spdd/scripts/sdlc.sh claim FEAT-001-order-status-api
        # or in chat: /sdlc-claim FEAT-001-order-status-api
-       ./scripts/sdlc-spdd/sdlc.sh resume FEAT-001-order-status-api --phase code
-       ./scripts/sdlc-spdd/sdlc.sh start
+       ./sdlc-spdd/scripts/sdlc.sh resume FEAT-001-order-status-api --phase code
+       ./sdlc-spdd/scripts/sdlc.sh start
 
-3. **Paste the Resume Prompt** from `agent-context/sessions/current-session.md`. Do not paraphrase — the brief embeds **Resolved Context** (phase files, extensions, Work ID artifacts, area-filtered index rows) and the Resume Prompt points at only those files. See [Session prompt standard](session-prompt-standard.md).
+3. **Paste the Resume Prompt** from `.sdlc/sessions/current-session.md` (gitignored hot brief). Do not paraphrase — the brief embeds **Resolved Context** (phase files, extensions, Work ID artifacts) plus a Related Past Work digest, and the Resume Prompt points at only those files. See [Session prompt standard](session-prompt-standard.md).
 
 Optional canvas sync before step 2:
 
-       ./scripts/sdlc-spdd/resync-agent-session.sh --target . --work-id FEAT-001-order-status-api --check-only
+       ./sdlc-spdd/scripts/resync-agent-session.sh --target . --work-id FEAT-001-order-status-api --check-only
 
 ## How to Start Work
 
@@ -192,7 +192,7 @@ Always include the Work ID and point to the active artifacts. More examples and 
 
 Good (Cursor, Copilot, or Claude Code):
 
-    For FEAT-001, read @spdd/canvas/FEAT-001-order-status-api.md and @agent-context/features/FEAT-001-order-status-api/progress-log.md. What should I do next?
+    For FEAT-001, read @spdd/canvas/FEAT-001-order-status-api.md and run `sdlc-engine context digest --work-id FEAT-001-order-status-api`. What should I do next?
 
 Avoid:
 
@@ -240,4 +240,4 @@ If a refactor changes only internal structure, review the change and then sync t
 
 End each meaningful session by persisting memory:
 
-    ./scripts/sdlc-spdd/sdlc.sh capture --summary "<summary>" --validation "<tests>" --next "<next command>"
+    ./sdlc-spdd/scripts/sdlc.sh capture --summary "<summary>" --validation "<tests>" --next "<next command>"

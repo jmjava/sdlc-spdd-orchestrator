@@ -1,45 +1,17 @@
-"""Upgrade/re-init noisy agent-context runtime off git (#80, #86)."""
+"""Upgrade/re-init noisy agent-context runtime off git (#80, #86).
+
+Prefer ``sdlc-engine storage migrate`` for storage v3; this class remains for
+``agent-context upgrade`` CLI compatibility and delegates to :class:`StorageMigration`.
+"""
 
 from __future__ import annotations
 
-import shutil
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any
 
 from .db import LocalIndex
 from .project import Project
-
-RUNTIME_NOISE_DIRS = (
-    Path("agent-context/sessions"),
-    Path("agent-context/features"),
-    Path("agent-context/memory/sessions"),
-)
-
-LEAN_KEEP_DIRS = (
-    Path("agent-context/harness"),
-    Path("agent-context/playbooks"),
-    Path("agent-context/extensions"),
-)
-
-MEMORY_EXPORT_FILES = (
-    "context-index.md",
-    "domain-index.md",
-    "phase-index.md",
-    "code-areas.md",
-    "project-memory.md",
-    "prompt-optimization-log.md",
-    "architecture-decisions.md",
-    "known-pitfalls.md",
-    "reusable-patterns.md",
-    "session-history.md",
-    "session-index.md",
-)
-
-
-def _utc_stamp() -> str:
-    return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+from .storage_migrate import StorageMigration
 
 
 @dataclass
@@ -67,120 +39,55 @@ class UpgradeResult:
 
 
 class AgentContextUpgrade:
-    """Archive sessions/features mirrors; seed lean runtime; rebuild SQLite."""
+    """Delegate to storage v3 migration; keep legacy CLI surface."""
 
     def __init__(self, project: Project | None = None) -> None:
         self.project = project or Project.resolve()
+        self._migration = StorageMigration(self.project)
 
     def detect(self) -> dict[str, Any]:
-        root = self.project.root
-        found: dict[str, Any] = {"noise": [], "memory_files": [], "lean_present": []}
-        for rel in RUNTIME_NOISE_DIRS:
-            path = root / rel
-            if path.exists():
-                found["noise"].append(str(rel))
-        mem = root / "agent-context" / "memory"
-        if mem.is_dir():
-            for name in MEMORY_EXPORT_FILES:
-                if (mem / name).is_file():
-                    found["memory_files"].append(f"agent-context/memory/{name}")
-        for rel in LEAN_KEEP_DIRS:
-            if (root / rel).is_dir():
-                found["lean_present"].append(str(rel))
-        found["needs_upgrade"] = bool(found["noise"]) or bool(found["memory_files"])
-        found["already_upgraded"] = (
-            self.project.root / "agent-context" / "UPGRADED.md"
-        ).is_file()
+        mig = self._migration.detect()
+        found: dict[str, Any] = {
+            "noise": mig.get("legacy_present") or [],
+            "memory_files": [
+                p for p in (mig.get("legacy_present") or []) if "memory" in p
+            ],
+            "lean_present": [],
+            "needs_upgrade": mig.get("needs_migration", False),
+            "already_upgraded": mig.get("migrated", False),
+            "storage_v3": mig,
+            "prefer_command": "storage migrate",
+        }
+        home = self.project.home
+        for rel in (
+            "agent-context/harness",
+            "agent-context/playbooks",
+            "agent-context/extensions",
+            "harness",
+        ):
+            if (home / rel).is_dir():
+                found["lean_present"].append(rel)
         return found
 
     def run(self, *, dry_run: bool = False, rebuild_db: bool = True) -> UpgradeResult:
-        root = self.project.root
-        export = self.project.sdlc_dir / "legacy-export" / _utc_stamp()
-        result = UpgradeResult(ok=True, dry_run=dry_run, export_dir=str(export))
-        detect = self.detect()
-        if detect.get("already_upgraded") and not detect["noise"]:
-            hot = self.project.hot_session_dir()
-            if not dry_run:
-                hot.mkdir(parents=True, exist_ok=True)
-                (root / "spdd" / "memory" / "entries").mkdir(parents=True, exist_ok=True)
-            result.notes.append("Already upgraded (idempotent).")
-            result.created = [str(hot.relative_to(root)), "spdd/memory/entries"]
-            return result
-        if not detect["needs_upgrade"]:
-            hot = self.project.hot_session_dir()
-            if not dry_run:
-                hot.mkdir(parents=True, exist_ok=True)
-                (root / "spdd" / "memory" / "entries").mkdir(parents=True, exist_ok=True)
-            result.notes.append("No agent-context runtime noise detected (idempotent).")
-            result.created = [str(hot.relative_to(root)), "spdd/memory/entries"]
-            return result
-
-        if dry_run:
-            result.notes.append(f"Would export to {export}")
-            result.moved = list(detect["noise"])
-            result.copied_memory = list(detect["memory_files"])
-            return result
-
-        export.mkdir(parents=True, exist_ok=True)
-        # Export durable memory before moving trees.
-        mem_src = root / "agent-context" / "memory"
-        mem_dst = export / "memory"
-        if mem_src.is_dir():
-            mem_dst.mkdir(parents=True, exist_ok=True)
-            for name in MEMORY_EXPORT_FILES:
-                src = mem_src / name
-                if src.is_file():
-                    shutil.copy2(src, mem_dst / name)
-                    result.copied_memory.append(f"agent-context/memory/{name}")
-        lean_mem = root / "spdd" / "memory"
-        if lean_mem.is_dir():
-            dst = export / "spdd-memory"
-            shutil.copytree(lean_mem, dst, dirs_exist_ok=True)
-            result.notes.append("Copied spdd/memory into legacy-export.")
-
-        for rel in RUNTIME_NOISE_DIRS:
-            src = root / rel
-            if not src.exists():
-                continue
-            dest = export / rel
-            dest.parent.mkdir(parents=True, exist_ok=True)
-            if dest.exists():
-                shutil.rmtree(dest)
-            shutil.move(str(src), str(dest))
-            result.moved.append(str(rel))
-
-        # Ensure lean session dir + stay-set memory scaffold.
-        hot = self.project.hot_session_dir()
-        hot.mkdir(parents=True, exist_ok=True)
-        result.created.append(str(hot.relative_to(root)))
-        lean_entries = root / "spdd" / "memory" / "entries"
-        lean_entries.mkdir(parents=True, exist_ok=True)
-        result.created.append("spdd/memory/entries")
-        for rel in LEAN_KEEP_DIRS:
-            path = root / rel
-            path.mkdir(parents=True, exist_ok=True)
-            result.created.append(str(rel))
-
-        # Marker so quiet/upgrade tooling can see migration happened.
-        marker = root / "agent-context" / "UPGRADED.md"
-        marker.write_text(
-            "# Agent-context upgraded\n\n"
-            f"- Exported runtime noise to `{export.relative_to(root)}`\n"
-            "- Hot sessions: `.sdlc/sessions/`\n"
-            "- Feature mirrors archived; use stay-set requirements + REASONS.\n",
-            encoding="utf-8",
-        )
-        result.created.append("agent-context/UPGRADED.md")
-
-        if rebuild_db:
+        result = UpgradeResult(ok=True, dry_run=dry_run)
+        mig_out = self._migration.run(dry_run=dry_run)
+        result.export_dir = mig_out.get("export_dir") or ""
+        result.moved = list(mig_out.get("exported") or [])
+        result.notes.append("Delegated to storage v3 migration.")
+        if mig_out.get("records_migrated"):
+            result.notes.append(f"records_migrated={mig_out['records_migrated']}")
+        self.project.ensure_runtime_dirs()
+        result.created = [
+            str(self.project.hot_session_dir().relative_to(self.project.root)),
+        ]
+        if rebuild_db and not dry_run and not mig_out.get("sqlite_rebuilt"):
             try:
                 stats = LocalIndex(self.project).rebuild()
                 result.notes.append(
-                    f"Rebuilt SQLite: work_items={stats.work_items} "
-                    f"context_entries={stats.context_entries}"
+                    f"Rebuilt SQLite: work_items={stats.work_items} lessons={stats.lessons}"
                 )
             except Exception as exc:  # noqa: BLE001
                 result.ok = False
                 result.errors.append(f"db rebuild: {exc}")
-
         return result

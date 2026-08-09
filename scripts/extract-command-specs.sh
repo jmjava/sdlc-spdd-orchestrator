@@ -7,7 +7,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 SPEC_DIR="${REPO_ROOT}/spec/commands"
 
 lifecycle_commands=(
-  init analysis plan architect code api-test review commit-message prompt-update retro sync whereami
+  init analysis plan architect code api-test review commit-message prompt-update retro accept sync whereami
 )
 workflow_commands=(
   claim shelf advance next team
@@ -79,27 +79,32 @@ write_spec() {
   local claude_file="$5"
   local out="${SPEC_DIR}/${family}-${slug}.spec.md"
 
-  local rb_c rb_p rb_cl out_c out_p out_cl
+  local rb_c rb_p rb_cl out_c out_p out_cl cb_c cb_p cb_cl
   rb_c="$(section_body "${cursor_file}" "Required Behavior")"
   rb_p="$(section_body "${copilot_file}" "Required Behavior")"
   rb_cl="$(section_body "${claude_file}" "Required Behavior")"
   out_c="$(section_body "${cursor_file}" "Output")"
   out_p="$(section_body "${copilot_file}" "Output")"
   out_cl="$(section_body "${claude_file}" "Output")"
+  cb_c="$(section_body "${cursor_file}" "Context Backend \\(runtime-resolved\\)")"
+  cb_p="$(section_body "${copilot_file}" "Context Backend \\(runtime-resolved\\)")"
+  cb_cl="$(section_body "${claude_file}" "Context Backend \\(runtime-resolved\\)")"
 
   {
     echo "---"
     echo "family: ${family}"
     echo "slug: ${slug}"
     if [[ -f "${copilot_file}" ]]; then
-      echo "copilot_description: $(front_matter_value "${copilot_file}" description)"
-      local mode
+      local cp_desc mode
+      cp_desc="$(front_matter_value "${copilot_file}" description)"
+      [[ -n "${cp_desc}" ]] && echo "copilot_description: ${cp_desc}"
       mode="$(front_matter_value "${copilot_file}" mode)"
       [[ -n "${mode}" ]] && echo "copilot_mode: ${mode}"
     fi
     if [[ -f "${claude_file}" ]]; then
-      echo "claude_description: $(front_matter_value "${claude_file}" description)"
-      local hint
+      local cl_desc hint
+      cl_desc="$(front_matter_value "${claude_file}" description)"
+      [[ -n "${cl_desc}" ]] && echo "claude_description: ${cl_desc}"
       hint="$(front_matter_value "${claude_file}" argument-hint)"
       [[ -n "${hint}" ]] && echo "claude_argument_hint: ${hint}"
     fi
@@ -118,6 +123,17 @@ write_spec() {
       write_block "cursor:Required Behavior" "${rb_c}"
       write_block "copilot:Required Behavior" "${rb_p}"
       write_block "claude:Required Behavior" "${rb_cl}"
+    fi
+
+    # Optional section; the generator emits it only when the block exists.
+    if [[ -n "${cb_c}" || -n "${cb_p}" || -n "${cb_cl}" ]]; then
+      if [[ "${cb_c}" == "${cb_p}" && "${cb_p}" == "${cb_cl}" ]]; then
+        write_block "shared:Context Backend (runtime-resolved)" "${cb_c}"
+      else
+        write_block "cursor:Context Backend (runtime-resolved)" "${cb_c}"
+        write_block "copilot:Context Backend (runtime-resolved)" "${cb_p}"
+        write_block "claude:Context Backend (runtime-resolved)" "${cb_cl}"
+      fi
     fi
 
     if [[ "${out_c}" == "${out_p}" && "${out_p}" == "${out_cl}" ]]; then

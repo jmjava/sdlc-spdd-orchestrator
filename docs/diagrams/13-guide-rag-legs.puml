@@ -1,0 +1,35 @@
+@startuml 13-guide-rag-legs
+
+title Guide DICE - RAG chunks + entity graph from the same ledger (v3)
+
+rectangle "SPDD workflow (your repo)" {
+  file "Committed sources\nspdd/canvas/*.md\nspdd/memory/lessons.jsonl" as MD
+}
+
+rectangle "Guide (spdd-projection-v3) + Neo4j" {
+  database "RAG chunks\nembedding + BM25\n(legs 1-2)" as CH
+  database "Domain entities __Entity__\nWorkId, Canvas, Area,\nDecision, Pitfall, Pattern,\nSession, Analysis\ntyped edges (leg 3)" as EN
+}
+
+rectangle "Retrieval for the next run" {
+  agent "docs_textSearch\ndocs_vectorSearch" as T1
+  agent "spdd_workSubgraph\nspdd_areaLessons\nspdd_findByLabel\nspdd_projectionStats\nspdd_getLesson" as T2
+}
+
+card "Assembled prompt context\njoin key: Work ID" as CTX
+
+MD --> CH : append-ingest (chunks)
+MD --> EN : projection load\n(entities + edges)
+CH --> T1
+EN --> T2
+T1 --> CTX
+T2 --> CTX
+
+note bottom of MD
+  Effective root descends into
+  <root>/sdlc-spdd/ when present.
+  Keyless retrieval: local ONNX
+  embeddings, no LLM key needed.
+end note
+
+@enduml

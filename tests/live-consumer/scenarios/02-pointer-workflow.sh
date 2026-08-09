@@ -5,9 +5,10 @@ set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/lib.sh"
 
 ROOT="${1:?target root required}"
+HOME="$(live_home "${ROOT}")"
 echo "== 02 pointer + workflow lifecycle =="
 
-PTR="${ROOT}/agent-context/sdlc-pointer.sh"
+PTR="${HOME}/scripts/sdlc-pointer.sh"
 
 if SDLC_ROOT="${ROOT}" "${PTR}" reset >/dev/null 2>&1 || true; then
   ok "pointer reset"
@@ -37,17 +38,17 @@ else
 fi
 
 # Early-phase advance may require --force while canvas readiness is Needs Analysis.
-phase_before="$(grep '^phase=' "${ROOT}/.sdlc/workflows/${WORK_ID}.state" 2>/dev/null | cut -d= -f2 || true)"
+phase_before="$(grep '^phase=' "${HOME}/.sdlc/workflows/${WORK_ID}.state" 2>/dev/null | cut -d= -f2 || true)"
 if live_sdlc "${ROOT}" advance --force >/dev/null; then
   ok "advance --force"
 else
   bad "advance --force"
 fi
-phase_after="$(grep '^phase=' "${ROOT}/.sdlc/workflows/${WORK_ID}.state" | cut -d= -f2)"
+phase_after="$(grep '^phase=' "${HOME}/.sdlc/workflows/${WORK_ID}.state" | cut -d= -f2)"
 [[ -n "${phase_after}" && "${phase_after}" != "${phase_before}" ]] && ok "phase moved (${phase_before:-?}→${phase_after})" || bad "phase did not move"
 
 # Guardrail: unforced advance while Needs Analysis should refuse.
-sed -i 's/^- Readiness: .*/- Readiness: Needs Analysis/' "${ROOT}/spdd/canvas/${WORK_ID}.md"
+sed -i 's/^- Readiness: .*/- Readiness: Needs Analysis/' "${HOME}/spdd/canvas/${WORK_ID}.md"
 if live_sdlc "${ROOT}" advance >/dev/null 2>&1; then
   # If workflow allows this transition without readiness, still ok.
   ok "advance without force (allowed)"

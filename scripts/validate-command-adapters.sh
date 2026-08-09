@@ -22,7 +22,7 @@ Works in two contexts:
 Examples:
   ./scripts/validate-command-adapters.sh
   ./scripts/validate-command-adapters.sh --target /path/to/app
-  ./scripts/sdlc-spdd/validate-command-adapters.sh --target .
+  ./sdlc-spdd/scripts/validate-command-adapters.sh --target .
 EOF
 }
 
@@ -216,9 +216,8 @@ check_pack() {
       ;;
     prompt-update)
       require_contains "${path}" "Do not modify application source code." "source-code guardrail"
-      require_contains "${path}" "prompt-optimization-log.md" "prompt-update ledger path"
-      require_contains "${path}" '`improved` / `neutral` / `worse` / `unknown`' \
-        "prompt-update Outcome enum"
+      require_contains "${path}" "sdlc.sh capture" "prompt-update staged capture"
+      require_contains "${path}" ".sdlc/staged/lessons.jsonl" "prompt-update staged ledger path"
       ;;
     code)
       require_contains "${path}" "Implement only that task." "single-operation scope guardrail"
@@ -256,9 +255,8 @@ check_pack() {
       ;;
     retro)
       require_contains "${path}" "Do not implement code" "retro no-code guardrail"
-      require_contains "${path}" "prompt-optimization-log.md" "retro ledger path"
-      require_contains "${path}" '`improved` / `neutral` / `worse` / `unknown`' \
-        "retro Outcome enum"
+      require_contains "${path}" "sdlc.sh capture" "retro staged capture"
+      require_contains "${path}" "sdlc.sh accept" "retro accept promotion"
       ;;
     api-test)
       require_contains "${path}" "Do not implement code" "api-test no-code guardrail"
@@ -299,8 +297,8 @@ grounding_path_for() {
 
 # Shared anchors every grounding file must contain so all assistants understand
 # the full ecosystem: the lifecycle, the operating model + work rules sections,
-# and the Planning (roadmap/milestones/session-notes), SPDD (canvas), and SDLC
-# (session briefs and memory) artifacts.
+# and the Planning (roadmap/milestones/session-notes), SPDD (canvas), and
+# storage v3 memory artifacts (committed ledger + registry, staged captures).
 grounding_anchors=(
   "Initialize -> Analysis -> Plan -> Architect -> Code -> API Test -> Review -> Retro -> Sync"
   "## Operating Model"
@@ -316,8 +314,9 @@ grounding_anchors=(
   "session-notes/"
   "spdd/analysis/"
   "spdd/canvas/"
-  "agent-context/sessions/"
-  "agent-context/memory/"
+  "spdd/memory/lessons.jsonl"
+  "spdd/memory/registry.jsonl"
+  ".sdlc/staged/lessons.jsonl"
   "/sdlc-spdd-analysis"
 )
 

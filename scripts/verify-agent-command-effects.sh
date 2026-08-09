@@ -4,24 +4,30 @@ set -euo pipefail
 _SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=/dev/null
 source "${_SCRIPT_DIR}/lib/common.sh"
+# shellcheck source=/dev/null
+source "${_SCRIPT_DIR}/lib/paths.sh"
 
 usage() {
   cat <<'EOF'
 Usage: verify-agent-command-effects.sh --target <path> --work-id <WORK-ID> --step <step> [--operation <Txx>] [--milestone <file>] [--require-roadmap]
 
 Best-effort verification that an assistant command was invoked and produced
-expected repository artifacts. This checks deterministic side-effects only.
+expected repository artifacts (storage v3: single sdlc-spdd/ home, lessons
+ledger + staged captures). This checks deterministic side-effects only.
 
 Steps:
-  init           Verify SDLC-SPDD scaffold and memory files
-  plan           Verify canvas + feature workspace artifacts
+  init           Verify SDLC-SPDD home scaffold and memory ledgers
+  plan           Verify canvas + requirement artifacts
   architect      Verify plan artifacts + readiness marker in canvas
-  code           Verify progress log includes operation/activity evidence
+  code           Verify session evidence for the operation in staged/ledger records
   review         Verify review artifacts and status marker
-  prompt-update  Verify canvas + progress artifacts for updated intent
+  prompt-update  Verify canvas + captured evidence for updated intent
   sync           Verify sync artifacts
-  retro          Verify retro + durable memory artifacts
-  capture        Verify session-memory + planning sync artifacts after capture-session-memory.sh
+  retro          Verify retro evidence (accepted lessons in the committed ledger)
+  capture        Verify staged session records after capture-session-memory.sh
+
+When the sdlc-engine Python CLI is importable, `sdlc-engine context parity`
+also runs as an extra consistency check (skipped otherwise).
 
 Examples:
   ./scripts/verify-agent-command-effects.sh --target . --work-id FEAT-001-foo --step plan
@@ -91,15 +97,14 @@ case "${STEP}" in
 esac
 
 TARGET="$(sdlc_resolve_target "${TARGET}")"
-FEATURE_DIR="${TARGET}/agent-context/features/${WORK_ID}"
-CANVAS="${TARGET}/spdd/canvas/${WORK_ID}.md"
-MILESTONE_REQ="${TARGET}/requirements/milestones/${WORK_ID}.md"
-SPDD_REVIEW="${TARGET}/spdd/reviews/${WORK_ID}-review.md"
-SPDD_SYNC="${TARGET}/spdd/sync/${WORK_ID}-sync.md"
-LEAN_RETRO="${TARGET}/spdd/memory/entries/retro.md"
-# Hot path (#86): lean progress.md. Legacy feature progress-log.md is fallback.
-LEAN_PROGRESS="${TARGET}/spdd/memory/entries/progress.md"
-FEATURE_PROGRESS="${FEATURE_DIR}/progress-log.md"
+export SDLC_ROOT="${TARGET}"
+HOME_DIR="$(sdlc_home "${TARGET}")"
+CANVAS="${HOME_DIR}/spdd/canvas/${WORK_ID}.md"
+MILESTONE_REQ="${HOME_DIR}/requirements/milestones/${WORK_ID}.md"
+SPDD_REVIEW="${HOME_DIR}/spdd/reviews/${WORK_ID}-review.md"
+SPDD_SYNC="${HOME_DIR}/spdd/sync/${WORK_ID}-sync.md"
+LEDGER="$(sdlc_ledger "${TARGET}")"
+STAGE="$(sdlc_stage "${TARGET}")"
 
 failures=0
 
@@ -131,90 +136,80 @@ check_contains_regex() {
   fi
 }
 
-check_progress_exists() {
-  if [[ -f "${LEAN_PROGRESS}" ]]; then
-    echo "  ok  progress log: ${LEAN_PROGRESS}"
-  elif [[ -f "${FEATURE_PROGRESS}" ]]; then
-    echo "  ok  progress log (legacy): ${FEATURE_PROGRESS}"
-  else
-    echo "  FAIL progress log: ${LEAN_PROGRESS} (or legacy ${FEATURE_PROGRESS})" >&2
-    failures=$((failures + 1))
-  fi
-}
-
-check_progress_contains_regex() {
+# Session/lesson evidence lives in JSONL records: staged captures first
+# (.sdlc/staged/lessons.jsonl), then the committed ledger after accept.
+check_records_contain_regex() {
   local label="$1"
   local regex="$2"
   local path
-  for path in "${LEAN_PROGRESS}" "${FEATURE_PROGRESS}"; do
+  for path in "${STAGE}" "${LEDGER}"; do
     if [[ -f "${path}" ]] && grep -Eq "${regex}" "${path}"; then
       echo "  ok  ${label}: ${path}"
       return
     fi
   done
-  echo "  FAIL ${label}: ${LEAN_PROGRESS} (pattern not found: ${regex})" >&2
+  echo "  FAIL ${label}: no staged or committed record matches: ${regex}" >&2
+  echo "        (stage: ${STAGE}; ledger: ${LEDGER})" >&2
   failures=$((failures + 1))
 }
 
-check_requirement_exists() {
-  if [[ -f "${MILESTONE_REQ}" ]]; then
-    echo "  ok  requirement: ${MILESTONE_REQ}"
-  elif [[ -f "${FEATURE_DIR}/requirement.md" ]]; then
-    echo "  ok  requirement (legacy): ${FEATURE_DIR}/requirement.md"
-  else
-    echo "  FAIL requirement: ${MILESTONE_REQ} (or legacy ${FEATURE_DIR}/requirement.md)" >&2
-    failures=$((failures + 1))
-  fi
-}
-
-check_either_exists() {
+check_ledger_contains_regex() {
   local label="$1"
-  local primary="$2"
-  local legacy="$3"
-  if [[ -e "${primary}" ]]; then
-    echo "  ok  ${label}: ${primary}"
-  elif [[ -e "${legacy}" ]]; then
-    echo "  ok  ${label} (legacy): ${legacy}"
+  local regex="$2"
+  if [[ -f "${LEDGER}" ]] && grep -Eq "${regex}" "${LEDGER}"; then
+    echo "  ok  ${label}: ${LEDGER}"
   else
-    echo "  FAIL ${label}: ${primary} (or legacy ${legacy})" >&2
+    echo "  FAIL ${label}: ${LEDGER} (pattern not found: ${regex}; run 'sdlc.sh accept --work-id ${WORK_ID}')" >&2
     failures=$((failures + 1))
   fi
 }
 
-check_any_session_note_contains_work_id() {
-  local notes_dir="$1"
-  if [[ ! -d "${notes_dir}" ]]; then
-    echo "  FAIL session-notes directory: ${notes_dir}" >&2
-    failures=$((failures + 1))
+run_engine_parity() {
+  local engine_cmd=()
+  if command -v sdlc-engine >/dev/null 2>&1; then
+    engine_cmd=(sdlc-engine)
+  else
+    local candidate
+    for candidate in python3 python; do
+      if command -v "${candidate}" >/dev/null 2>&1 \
+        && "${candidate}" -c 'import sdlc_engine' >/dev/null 2>&1; then
+        engine_cmd=("${candidate}" -m sdlc_engine)
+        break
+      fi
+    done
+  fi
+  if ((${#engine_cmd[@]} == 0)); then
+    echo "  skip engine parity: sdlc-engine not importable"
     return
   fi
-  if grep -Rqs "${WORK_ID}" "${notes_dir}"; then
-    echo "  ok  session-notes mention work-id: ${WORK_ID}"
+  if (cd "${TARGET}" && "${engine_cmd[@]}" context parity); then
+    echo "  ok  engine parity: sdlc-engine context parity"
   else
-    echo "  FAIL session-notes mention work-id: ${WORK_ID} (run capture-session-memory.sh with --summary/--milestone)" >&2
+    echo "  FAIL engine parity: sdlc-engine context parity reported drift (try --repair)" >&2
     failures=$((failures + 1))
   fi
 }
 
 echo "Verifying command effects"
 echo "  target: ${TARGET}"
+echo "  home:   ${HOME_DIR}"
 echo "  work-id: ${WORK_ID}"
 echo "  step: ${STEP}"
 echo
 
 if [[ "${STEP}" == "init" ]]; then
-  check_exists "requirements dir" "${TARGET}/requirements"
-  check_exists "spdd dir" "${TARGET}/spdd"
-  check_exists "agent-context dir" "${TARGET}/agent-context"
-  check_exists "project memory" "${TARGET}/agent-context/memory/project-memory.md"
-  check_exists "quality gates" "${TARGET}/agent-context/harness/quality-gates.md"
+  check_exists "framework home" "${HOME_DIR}"
+  check_exists "requirements dir" "${HOME_DIR}/requirements"
+  check_exists "spdd dir" "${HOME_DIR}/spdd"
+  check_exists "lessons ledger" "${LEDGER}"
+  check_exists "work registry" "$(sdlc_registry "${TARGET}")"
+  check_exists "quality gates" "$(sdlc_harness_dir "${TARGET}")/quality-gates.md"
+  check_exists "workflow CLI" "${HOME_DIR}/scripts/sdlc.sh"
 fi
 
 if [[ "${STEP}" == "plan" || "${STEP}" == "architect" || "${STEP}" == "code" || "${STEP}" == "review" || "${STEP}" == "prompt-update" || "${STEP}" == "sync" || "${STEP}" == "retro" || "${STEP}" == "capture" ]]; then
   check_exists "canvas" "${CANVAS}"
-  # Stay-set requirement is canonical (#86); feature mirrors are optional legacy.
-  check_requirement_exists
-  check_progress_exists
+  check_exists "requirement" "${MILESTONE_REQ}"
 fi
 
 if [[ "${STEP}" == "plan" || "${STEP}" == "architect" || "${STEP}" == "prompt-update" ]]; then
@@ -227,7 +222,7 @@ if [[ "${STEP}" == "architect" ]]; then
 fi
 
 if [[ "${STEP}" == "code" ]]; then
-  check_progress_contains_regex "progress log operation evidence" \
+  check_records_contain_regex "session evidence of operation" \
     "${OPERATION}|[Ii]mplement|[Cc]omplete|[Ff]iles changed"
   # Soft gate: when readiness is declared, it should be Ready For Coding.
   if grep -qE '^-[[:space:]]*[Rr]eadiness:[[:space:]]*|^readiness:[[:space:]]*' "${CANVAS}" 2>/dev/null; then
@@ -236,52 +231,49 @@ if [[ "${STEP}" == "code" ]]; then
 fi
 
 if [[ "${STEP}" == "prompt-update" ]]; then
-  check_exists "prompt-optimization ledger" "${TARGET}/agent-context/memory/prompt-optimization-log.md"
-  check_contains_regex "ledger mentions work-id" "${TARGET}/agent-context/memory/prompt-optimization-log.md" "${WORK_ID}"
+  check_records_contain_regex "captured record mentions work-id" "${WORK_ID}"
 fi
 
 if [[ "${STEP}" == "review" ]]; then
-  check_either_exists "review artifact" "${SPDD_REVIEW}" "${FEATURE_DIR}/review.md"
-  local_review="${SPDD_REVIEW}"
-  [[ -f "${local_review}" ]] || local_review="${FEATURE_DIR}/review.md"
-  if [[ -f "${local_review}" ]]; then
-    check_contains_regex "review status marker" "${local_review}" \
+  check_exists "review artifact" "${SPDD_REVIEW}"
+  if [[ -f "${SPDD_REVIEW}" ]]; then
+    check_contains_regex "review status marker" "${SPDD_REVIEW}" \
       "Approved|Approved With Notes|Changes Requested|Blocked"
   fi
 fi
 
 if [[ "${STEP}" == "sync" ]]; then
-  check_either_exists "sync report" "${SPDD_SYNC}" "${FEATURE_DIR}/sync-log.md"
+  check_exists "sync report" "${SPDD_SYNC}"
 fi
 
 if [[ "${STEP}" == "retro" ]]; then
-  if [[ -f "${LEAN_RETRO}" ]] || [[ -f "${FEATURE_DIR}/retro.md" ]]; then
-    check_either_exists "retro artifact" "${LEAN_RETRO}" "${FEATURE_DIR}/retro.md"
-  else
-    # Lessons stay-set is enough when no dedicated retro file exists yet.
-    check_either_exists "pitfalls memory" \
-      "${TARGET}/spdd/memory/lessons/pitfalls.md" \
-      "${TARGET}/agent-context/memory/known-pitfalls.md"
-  fi
-  check_either_exists "patterns memory" \
-    "${TARGET}/spdd/memory/lessons/patterns.md" \
-    "${TARGET}/agent-context/memory/reusable-patterns.md"
+  # Retro promotes staged captures into the committed ledger.
+  check_ledger_contains_regex "accepted lesson for work-id" "\"work_id\": ?\"${WORK_ID}\"|${WORK_ID}"
 fi
 
 if [[ "${STEP}" == "capture" ]]; then
-  check_exists "session history memory" "${TARGET}/agent-context/memory/session-history.md"
-  check_any_session_note_contains_work_id "${TARGET}/session-notes"
-  # capture-session-memory.sh appends "### <ts> - <WORK-ID> - <phase>" to lean
-  # spdd/memory/entries/progress.md (#86); legacy feature progress-log is fallback.
-  check_progress_contains_regex "progress log mention work-id" "${WORK_ID}"
+  # capture-session-memory.sh stages kind=session records for the work-id.
+  check_records_contain_regex "staged session record for work-id" "${WORK_ID}"
 
   if [[ -n "${MILESTONE}" ]]; then
-    check_contains_regex "milestone mention work-id" "${TARGET}/${MILESTONE}" "${WORK_ID}"
+    milestone_path="${MILESTONE}"
+    if [[ "${milestone_path}" != /* ]]; then
+      if [[ -f "${HOME_DIR}/${milestone_path#./}" ]]; then
+        milestone_path="${HOME_DIR}/${milestone_path#./}"
+      else
+        milestone_path="${TARGET}/${milestone_path#./}"
+      fi
+    fi
+    check_contains_regex "milestone mention work-id" "${milestone_path}" "${WORK_ID}"
   fi
   if [[ "${REQUIRE_ROADMAP}" -eq 1 ]]; then
-    check_contains_regex "roadmap mention work-id" "${TARGET}/ROADMAP.md" "${WORK_ID}"
+    roadmap_path="${HOME_DIR}/ROADMAP.md"
+    [[ -f "${roadmap_path}" ]] || roadmap_path="${TARGET}/ROADMAP.md"
+    check_contains_regex "roadmap mention work-id" "${roadmap_path}" "${WORK_ID}"
   fi
 fi
+
+run_engine_parity
 
 echo
 if [[ "${failures}" -gt 0 ]]; then

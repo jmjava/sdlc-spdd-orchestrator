@@ -124,12 +124,131 @@ class WorkflowEngine:
             return state
         return self.load_state(work_id)
 
+    def _requirement_path(self, work_id: str) -> Path | None:
+        """Requirement document, accepting the flat and milestone-N variants."""
+        direct = self.project.milestone_path(work_id)
+        if direct.is_file():
+            return direct
+        milestones_dir = self.project.requirements_dir / "milestones"
+        for candidate in sorted(milestones_dir.glob(f"milestone-*/{work_id}.md")):
+            if candidate.is_file():
+                return candidate
+        return None
+
+    def gate_check(self, work_id: str, phase: str) -> tuple[bool, list[str]]:
+        """Validate prerequisites to ENTER ``phase`` for ``work_id``.
+
+        Returns ``(ok, failures)``. Explicit skips recorded in the workflow
+        state (``state.skips``) act as audited bypasses where the lifecycle
+        allows them (analysis before plan, review before retro, retro before
+        sync). Requirements-first: requirement document -> analysis -> canvas
+        (plan) -> architect -> code -> api-test -> review -> retro -> sync.
+        """
+        from .lessons_ledger import LessonsLedger
+        from .local_sessions import is_local_id
+
+        if not valid_phase(phase):
+            raise ValueError(f"unknown phase: {phase}")
+        if is_local_id(work_id):
+            return True, []
+        state = self.load_state(work_id)
+        failures: list[str] = []
+
+        requirement_msg = (
+            f"requirement missing: create requirements/milestones/{work_id}.md first "
+            "(requirements come before the REASONS canvas)"
+        )
+        canvas_msg = (
+            f"canvas missing: create spdd/canvas/{work_id}.md via /sdlc-spdd-plan "
+            "(the requirement and analysis come first)"
+        )
+        canvas = self.project.canvas_path(work_id)
+
+        def require_requirement() -> None:
+            if self._requirement_path(work_id) is None:
+                failures.append(requirement_msg)
+
+        def require_canvas() -> None:
+            if not canvas.is_file():
+                failures.append(canvas_msg)
+
+        def ledger_records():
+            return LessonsLedger(self.project).records(work_id=work_id, include_staged=True)
+
+        if phase == "init":
+            return True, []
+        if phase == "analysis":
+            require_requirement()
+        elif phase == "plan":
+            require_requirement()
+            if (
+                not self.project.analysis_path(work_id).is_file()
+                and "analysis" not in state.skips
+            ):
+                failures.append(
+                    f"analysis missing: create spdd/analysis/{work_id}-analysis.md via "
+                    "/sdlc-spdd-analysis (or record an explicit skip: "
+                    "./scripts/sdlc.sh skip analysis --reason \"...\")"
+                )
+        elif phase == "architect":
+            require_canvas()
+            require_requirement()
+        elif phase == "code":
+            require_canvas()
+            if canvas.is_file():
+                text = canvas.read_text(encoding="utf-8")
+                if not re.search(r"ready\s+for\s+coding", text, re.IGNORECASE):
+                    failures.append(
+                        f"canvas not Ready For Coding: run /sdlc-spdd-architect on "
+                        f"spdd/canvas/{work_id}.md and mark it Ready For Coding before coding"
+                    )
+            require_requirement()
+        elif phase in {"api-test", "review"}:
+            require_canvas()
+            if not ledger_records():
+                failures.append(
+                    f"no ledger evidence for {work_id}: stage progress via "
+                    f"./scripts/sdlc.sh capture before {phase}"
+                )
+        elif phase == "prompt-update":
+            require_canvas()
+        elif phase == "retro":
+            if (
+                not self.project.review_path(work_id).is_file()
+                and "review" not in state.skips
+            ):
+                failures.append(
+                    f"review missing: create spdd/reviews/{work_id}-review.md via "
+                    "/sdlc-spdd-review (or record an explicit skip: "
+                    "./scripts/sdlc.sh skip review --reason \"...\")"
+                )
+        elif phase == "sync":
+            retro_kinds = {"decision", "pitfall", "pattern"}
+            if (
+                not any(r.kind in retro_kinds for r in ledger_records())
+                and "retro" not in state.skips
+            ):
+                failures.append(
+                    f"no retro lesson for {work_id}: capture a decision/pitfall/pattern via "
+                    "./scripts/sdlc.sh capture (or record an explicit skip: "
+                    "./scripts/sdlc.sh skip retro --reason \"...\") before sync"
+                )
+        return (not failures), failures
+
+    def _gate_error(self, phase: str, failures: list[str]) -> ValueError:
+        detail = "\n".join(f"  - {f}" for f in failures)
+        return ValueError(
+            f"gate check failed for phase '{phase}':\n{detail}\n"
+            "Fix the prerequisite(s) above, record an explicit skip "
+            "(./scripts/sdlc.sh skip <phase> --reason \"...\"), or pass --force "
+            "(a human decision, never the agent's)."
+        )
+
     def infer_phase_from_artifacts(self, work_id: str) -> str:
-        root = self.project.root
+        from .lessons_ledger import LessonsLedger
+
         inferred = "init"
-        if (root / "requirements" / "milestones" / f"{work_id}.md").is_file() or (
-            self.project.feature_dir(work_id) / "requirement.md"
-        ).is_file():
+        if self.project.milestone_path(work_id).is_file():
             inferred = "analysis"
         if self.project.analysis_path(work_id).is_file():
             inferred = "plan"
@@ -139,30 +258,17 @@ class WorkflowEngine:
             text = canvas.read_text(encoding="utf-8")
             if re.search(r"ready\s+for\s+coding", text, re.IGNORECASE):
                 inferred = "code"
-        progress = self.project.progress_log_path(work_id)
-        legacy_progress = self.project.feature_dir(work_id) / "progress-log.md"
-        evidence = ""
-        if progress.is_file():
-            evidence = Project.ledger_section_for_work(
-                progress.read_text(encoding="utf-8"), work_id
-            )
-        elif legacy_progress.is_file():
-            evidence = legacy_progress.read_text(encoding="utf-8")
-        if evidence and re.search(
-            r"(T\d{2}.*complete|implemented|merged)", evidence, re.IGNORECASE
+        ledger = LessonsLedger(self.project)
+        progress_records = ledger.records(work_id=work_id, include_staged=True)
+        if progress_records and any(
+            re.search(r"(T\d{2}.*complete|implemented|merged)", (r.body or r.title), re.IGNORECASE)
+            for r in progress_records
         ):
             inferred = "code"
         if self.project.review_path(work_id).is_file():
             inferred = "review"
-        lean_retro = root / "spdd" / "memory" / "entries" / "retro.md"
-        if (self.project.feature_dir(work_id) / "retro.md").is_file() or (
-            lean_retro.is_file()
-            and bool(
-                Project.ledger_section_for_work(
-                    lean_retro.read_text(encoding="utf-8"), work_id
-                )
-            )
-        ):
+        retro_kinds = {"decision", "pitfall", "pattern"}
+        if any(r.kind in retro_kinds for r in ledger.records(work_id=work_id, include_staged=True)):
             inferred = "retro"
         if self.project.sync_path(work_id).is_file():
             inferred = "sync"
@@ -178,6 +284,8 @@ class WorkflowEngine:
         return inferred
 
     def sync(self, work_id: str | None = None) -> WorkflowState:
+        from .lessons_ledger import LessonsLedger
+
         wid = work_id or self.pointer.get()
         if not wid:
             raise ValueError("sync requires a Work ID or active pointer")
@@ -188,28 +296,27 @@ class WorkflowEngine:
             state.gates["canvas_exists"] = "passed"
             op, _title = canvas_mod.next_operation(canvas)
             state.operation = op
-        if self.project.analysis_path(wid).is_file() or (
-            self.project.feature_dir(wid) / "requirement.md"
-        ).is_file() or self.project.milestone_path(wid).is_file():
+        if self.project.analysis_path(wid).is_file() or self.project.milestone_path(wid).is_file():
             state.gates["requirement_documented"] = "passed"
         if self.project.review_path(wid).is_file():
             state.gates["review_completed"] = "passed"
             state.gates["safeguards_checked"] = "passed"
-        lean_retro = self.project.root / "spdd" / "memory" / "entries" / "retro.md"
-        if (self.project.feature_dir(wid) / "retro.md").is_file() or (
-            lean_retro.is_file()
-            and bool(
-                Project.ledger_section_for_work(
-                    lean_retro.read_text(encoding="utf-8"), wid
-                )
-            )
-        ):
+        ledger = LessonsLedger(self.project)
+        retro_kinds = {"decision", "pitfall", "pattern"}
+        if any(r.kind in retro_kinds for r in ledger.records(work_id=wid, include_staged=True)):
             state.gates["retro_completed"] = "passed"
         self.save_state(state)
         self._log(wid, "sync", f"phase={state.phase}")
         return state
 
     def resume(self, work_id: str, phase: str | None = None, force: bool = False) -> WorkflowState:
+        if phase:
+            if not valid_phase(phase):
+                raise ValueError(f"unknown phase: {phase}")
+            if not force:
+                ok, failures = self.gate_check(work_id, phase)
+                if not ok:
+                    raise self._gate_error(phase, failures)
         current = self.pointer.get()
         if current and current != work_id:
             # Auto-shelf previous work
@@ -233,7 +340,7 @@ class WorkflowEngine:
         self._log(work_id, "resume", f"phase={state.phase}")
         return state
 
-    def advance(self, to: str | None = None) -> WorkflowState:
+    def advance(self, to: str | None = None, force: bool = False) -> WorkflowState:
         wid = self.pointer.get()
         if not wid:
             raise ValueError("advance requires an active pointer")
@@ -241,12 +348,17 @@ class WorkflowEngine:
         if to:
             if not valid_phase(to):
                 raise ValueError(f"unknown phase: {to}")
-            state.phase = to
+            target = to
         else:
             nxt = next_phase(state.phase)
             if not nxt:
                 raise ValueError(f"already at final phase: {state.phase}")
-            state.phase = nxt
+            target = nxt
+        if not force:
+            ok, failures = self.gate_check(wid, target)
+            if not ok:
+                raise self._gate_error(target, failures)
+        state.phase = target
         self.save_state(state)
         self._log(wid, "advance", f"phase={state.phase}")
         return state

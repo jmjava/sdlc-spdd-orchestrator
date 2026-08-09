@@ -22,16 +22,13 @@ Every artifact path is `<location>/<WORK-ID>`:
     FEAT-004-prompt-optimization-ledger
       ├── requirements/milestones/FEAT-004-prompt-optimization-ledger.md   (Requirement: why + acceptance)
       ├── spdd/canvas/FEAT-004-prompt-optimization-ledger.md               (REASONS Canvas: design contract)
-      └── agent-context/features/FEAT-004-prompt-optimization-ledger/      (Feature workspace: memory)
-            ├── requirement.md
-            ├── reasons-canvas.md
-            └── progress-log.md
+      └── spdd/memory/lessons.jsonl                                        (ledger records with work_id = FEAT-004-…)
                     │
                     └── inside the canvas → Operations T01, T02, … (restart at T01 per canvas)
 
 The two levels to keep straight:
 
-- **Work ID** (`FEAT-004-…`) names *the work* and all of its files.
+- **Work ID** (`FEAT-004-…`) names *the work*, all of its files, and its ledger records.
 - **Operation** (`T01`, `T02`, …) names *a step inside* that work's canvas. It never appears in a file name, branch, or roadmap entry.
 
 | Naming scheme | Names | Derived from |
@@ -40,7 +37,7 @@ The two levels to keep straight:
 | Prefix | Work type | first segment of the Work ID |
 | Requirement | Intent | `requirements/milestones/<WORK-ID>.md` |
 | Canvas | Design contract | `spdd/canvas/<WORK-ID>.md` |
-| Feature workspace | Working memory | `agent-context/features/<WORK-ID>/` |
+| Ledger records | Durable memory | `spdd/memory/lessons.jsonl`, ids `<kind>:<WORK-ID>:<area>:<source>` |
 | Operation (`T0x`) | A task inside one canvas | scoped to that canvas |
 
 ### Work ID
@@ -53,7 +50,7 @@ Examples:
 - `BUG-003-null-discount-checkout`
 - `REF-002-split-billing-service`
 
-Use the Work ID in prompts, canvas files, progress logs, reviews, sync logs, branches, commits, and Jira updates.
+Use the Work ID in prompts, canvas files, lesson captures, reviews, sync logs, branches, commits, and Jira updates.
 
 ### REASONS Canvas
 
@@ -113,32 +110,32 @@ Rule:
 
 A file that lets a new agent session resume work from repository context.
 
-Current session:
+Current session (hot path, gitignored):
 
-    agent-context/sessions/current-session.md
+    .sdlc/sessions/current-session.md
 
 Create one:
 
-    ./scripts/sdlc-spdd/sdlc.sh start
-    # or: ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase>
+    ./sdlc-spdd/scripts/sdlc.sh start
+    # or: ./sdlc-spdd/scripts/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase>
 
 ### SDLC Pointer
 
 The active Work ID on **this machine**. Stored in `.sdlc/pointer` (gitignored). Guarded commands (for example `sdlc.sh capture`) refuse to run when the pointer does not match the requested Work ID.
 
-    ./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>    # sets pointer + team registry
+    ./sdlc-spdd/scripts/sdlc.sh claim <WORK-ID>    # sets pointer + team registry
     ./agent-context/sdlc-pointer.sh get
 
 See [agent-context/README.md](../agent-context/README.md#sdlc-pointer-current-choretask).
 
 ### Workflow CLI
 
-Phase and gate tracking for the active Work ID. State lives in `.sdlc/workflows/` (gitignored). Committed artifacts (canvas, progress log) remain the audit trail.
+Phase and gate tracking for the active Work ID. State lives in `.sdlc/workflows/` (gitignored). Committed artifacts (canvas, ledger, reviews) remain the audit trail.
 
-    ./scripts/sdlc-spdd/sdlc.sh next       # what to do now
-    ./scripts/sdlc-spdd/sdlc.sh advance    # move to next phase
-    ./scripts/sdlc-spdd/sdlc.sh advance --force  # override Ready For Coding gate into code
-    ./scripts/sdlc-spdd/sdlc.sh shelf --reason "..."
+    ./sdlc-spdd/scripts/sdlc.sh next       # what to do now
+    ./sdlc-spdd/scripts/sdlc.sh advance    # move to next phase
+    ./sdlc-spdd/scripts/sdlc.sh advance --force  # override Ready For Coding gate into code
+    ./sdlc-spdd/scripts/sdlc.sh shelf --reason "..."
 
 In chat (wrappers for the same actions):
 
@@ -153,25 +150,27 @@ In chat (wrappers for the same actions):
 
 Shared coordination via git. Who owns which Work ID, phase, branch, PR, and Jira key.
 
-    ./scripts/sdlc-spdd/sdlc.sh team
-    ./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>    # commit agent-context/work-registry.tsv
+    ./sdlc-spdd/scripts/sdlc.sh team
+    ./sdlc-spdd/scripts/sdlc.sh claim <WORK-ID>    # appends a claim event; commit registry.jsonl
     /sdlc-team
     /sdlc-claim <WORK-ID>
     /sdlc-claim <WORK-ID> --force    # take over after coordinating with the current owner
 
-File: `agent-context/work-registry.tsv`.
+File: `spdd/memory/registry.jsonl` — an append-only claim/release event log,
+written only by `claim`/`release`, never hand-edited.
 
 ### Durable Memory
 
-Project knowledge that survives chat sessions.
+Project knowledge that survives chat sessions — one committed ledger of typed
+lesson records (`decision`, `pitfall`, `pattern`, `session`, `analysis`):
 
-Important files:
+    spdd/memory/lessons.jsonl      # committed system of record (never hand-edited)
+    .sdlc/staged/lessons.jsonl     # gitignored stage — captures land here first
 
-- `agent-context/memory/project-memory.md`
-- `agent-context/memory/session-history.md`
-- `agent-context/memory/architecture-decisions.md`
-- `agent-context/memory/known-pitfalls.md`
-- `agent-context/memory/reusable-patterns.md`
+Stage with `sdlc.sh capture`; promote at gates with `/sdlc-spdd-accept`.
+Retrieve with `sdlc-engine context retrieve|show|digest` or, when Guide is
+enabled, the `spdd_*` MCP tools against the Guide working store. Full model:
+[Storage v3](storage-v3.md).
 
 ### Roadmap and Milestones
 
@@ -184,7 +183,7 @@ Common files:
 - `milestone-2.md`
 - `session-notes/YYYY-MM-DD.md`
 
-Milestone requirements may include a `## Jira` draft section (`requirements/milestones/<WORK-ID>.md`). On claim, `./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>` auto-links the Jira Key into the team registry. See [requirements/milestones/README.md](../requirements/milestones/README.md).
+Milestone requirements may include a `## Jira` draft section (`requirements/milestones/<WORK-ID>.md`). On claim, `./sdlc-spdd/scripts/sdlc.sh claim <WORK-ID>` auto-links the Jira Key into the team registry. See [requirements/milestones/README.md](../requirements/milestones/README.md).
 
 Use roadmap and milestone docs to give planning agents delivery context. Use REASONS Canvas files to govern each Work ID.
 
@@ -205,13 +204,15 @@ Copy-paste prompts: [Session prompt standard](session-prompt-standard.md) — se
 - Implementing multiple operations in one coding pass.
 - Using `/sdlc-spdd-sync` for a new behavior requirement.
 - Forgetting to capture memory at the end of a session (use `sdlc.sh capture`).
+- Leaving staged records unpromoted at retro/sync (run `/sdlc-spdd-accept`).
+- Editing `spdd/memory/lessons.jsonl` or `registry.jsonl` by hand.
 - Running capture against the wrong Work ID (pointer mismatch — use `sdlc.sh claim`/`resume` first).
-- Claiming work without committing `agent-context/work-registry.tsv` on shared repos.
+- Claiming work without committing `spdd/memory/registry.jsonl` on shared repos.
 - Editing application behavior after Jira acceptance criteria changed without prompt-update.
 
 ## Read Next
 
-- [What SDLC brings](what-sdlc-brings.md)
+- [Workflow](workflow.md)
 - [Session prompt standard](session-prompt-standard.md)
 - [First day with SDLC-SPDD](first-day-with-sdlc-spdd.md)
 - [Daily runbook](daily-runbook.md)

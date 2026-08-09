@@ -42,27 +42,37 @@ but the commit surface is lean, and the same facts can live in three stores at o
 
 | Concern | Old default | Now (`v2.0.0a6`) |
 | ------- | ----------- | ---------------- |
-| Session briefs | Committed under `agent-context/sessions/` | Hot path: **`.sdlc/sessions/`** (gitignored) |
-| Progress / lessons | Feature mirrors + sprawling memory trees | Lean ledgers under **`spdd/memory/`** |
-| Local query | Grep the tree | Regenerable **SQLite** graph (`.sdlc/index.sqlite`) |
-| Optional graph | Manual / spike-shaped Guide wiring | **Triple-path** persist/retrieve: git + SQLite + Guide |
+| Session briefs | Legacy installs may have committed briefs | Hot path: **`.sdlc/sessions/`** (gitignored) |
+| Progress / lessons | Feature mirrors + sprawling memory trees | One committed ledger: **`spdd/memory/lessons.jsonl`** (+ `registry.jsonl`), staged via `.sdlc/staged/` |
+| Local query | Grep the tree | Opt-in **SQLite** cache (`.sdlc/index.sqlite`), rebuilt from the ledger |
+| Optional graph | Manual / spike-shaped Guide wiring | Ledger-first persist: git ledger + optional SQLite cache + Guide |
 | Operator control | Env vars only | Ops console **Persistence** tab + `CONTEXT_BACKENDS` |
 | Product dogfood | T## gravity always on | **Quiet mode** (`SDLC_QUIET` / harness marker) |
 
-### Triple-path context (shipped)
+### Ledger-first context (storage v3)
 
-Every accepted lesson or context entry can fan out concurrently:
+One committed system of record, derived projections:
 
-1. **Git pointers + stay-set files** — always on; reviewable contracts  
-2. **SQLite** — relational graph for local lookup / FTS (soft-fail)  
+1. **Committed ledger** — `spdd/memory/lessons.jsonl` (decision / pitfall / pattern / session / analysis records) plus the append-only registry `spdd/memory/registry.jsonl` — always on; reviewable contracts  
+2. **SQLite** — opt-in local cache (`.sdlc/index.sqlite`), rebuilt from the ledger at any time (soft-fail)  
 3. **Guide (Neo4j)** — typed-edge retrieve when opted in (soft-fail)
 
+Captures **stage first** in gitignored `.sdlc/staged/lessons.jsonl`; retro/sync **accept**
+promotes them into the committed ledger. Nothing is auto-committed — ledger changes land
+in your working tree and are reviewed like any other diff.
+
 ```text
-capture / persist
-        │
-        ├─► spdd/memory/…  + pointers.jsonl     (required)
-        ├─► .sdlc/index.sqlite                   (if enabled)
-        └─► Guide SPDD projection                (if enabled + reachable)
+capture  ─►  .sdlc/staged/lessons.jsonl          (gitignored stage)
+                │  accept (retro / sync)
+                ├─► spdd/memory/lessons.jsonl     (committed ledger — source of truth)
+                ├─► .sdlc/index.sqlite            (opt-in cache, rebuilt from ledger)
+                └─► Guide SPDD projection         (if enabled + reachable)
+```
+
+```bash
+./scripts/sdlc.sh capture --work-id <ID> --phase code --summary "…"   # stage
+./scripts/sdlc.sh accept --work-id <ID>                               # promote
+sdlc-engine context parity [--repair]                                 # verify projections
 ```
 
 Toggle backends with:
@@ -74,7 +84,7 @@ sdlc-engine context backends --set git-pointers,sqlite
 # or: CONTEXT_BACKENDS=git-pointers,sqlite,guide-dice
 ```
 
-Program detail: [docs/agent-context-cleanup/](docs/agent-context-cleanup/)
+Program detail: [Storage v3](docs/storage-v3.md)
 
 ---
 
@@ -96,17 +106,10 @@ header / body / footer libraries) and replaces the Flask dogfood console with **
 
 One Work ID. One operation at a time. Capture before you leave.
 
-```mermaid
-flowchart LR
-  claim["claim / resume"] --> start["start session"]
-  start --> orient["next / whereami"]
-  orient --> phase["analysis → plan → architect → code → review"]
-  phase --> capture["capture memory"]
-  capture --> claim
-```
+![Daily loop](docs/diagrams/11-daily-loop.svg)
 
 ```bash
-# Terminal (installed target: scripts/sdlc-spdd/ … · this repo: scripts/sdlc.sh …)
+# Terminal (installed target: sdlc-spdd/scripts/ … · this repo: scripts/ …)
 ./scripts/sdlc.sh claim FEAT-001-order-status
 ./scripts/sdlc.sh start
 ./scripts/sdlc.sh next
@@ -146,8 +149,9 @@ What lands in the target:
 
 - Assistant adapters (Cursor commands, Copilot prompts, Claude Code commands)
 - Always-on grounding (`.cursor/rules/sdlc-spdd.mdc`, Copilot instructions, `CLAUDE.md`)
-- Runtime CLI under `scripts/sdlc-spdd/`
-- Scaffolding: `ROADMAP.md`, milestones, `requirements/`, `spdd/`, `agent-context/` harness
+- A single framework home folder **`sdlc-spdd/`**: workflow CLI (`scripts/`), scaffolding
+  (`ROADMAP.md`, `requirements/`, `spdd/` with the lessons ledger), harness/playbooks, and
+  gitignored runtime under `.sdlc/` (legacy sprawled installs keep working until you upgrade)
 
 Upgrade without clobbering app source, canvases, or notes:
 
@@ -166,7 +170,7 @@ More: [Installing into your project](docs/installing-into-your-project.md) ·
 | ---- | ------- | ------------- |
 | **Assistant** | `/sdlc-spdd-plan @requirements/…` | Cursor / Copilot / Claude **chat** in the target |
 | **Install / upgrade** | `./scripts/setup-agent-prompts.sh --target …` | Terminal in the **orchestrator** clone |
-| **Daily workflow** | `./scripts/sdlc-spdd/sdlc.sh next` | Terminal in an **installed target** |
+| **Daily workflow** | `./sdlc-spdd/scripts/sdlc.sh next` | Terminal in an **installed target** |
 | **Dogfood this repo** | `./scripts/sdlc.sh next` | Terminal here |
 
 `/sdlc-spdd-*` is **never** a shell command. Details:
@@ -197,7 +201,7 @@ More: [Installing into your project](docs/installing-into-your-project.md) ·
 | `sdlc.sh start` / `resume` | Hot session brief + Resume Prompt |
 | `sdlc.sh next` / `status` | What to do now (honors quiet mode) |
 | `sdlc.sh advance` | Move phase when gates pass |
-| `sdlc.sh capture` | Persist summary, lessons, lean progress |
+| `sdlc.sh capture` / `accept` | Stage lessons in `.sdlc/staged/`; accept promotes to the committed ledger |
 | `sdlc.sh db rebuild \| query \| lookup` | Local SQLite index |
 | `sdlc.sh local start \| promote` | Offline `LOCAL-*` sessions → real Work IDs |
 | `sdlc.sh console` / `viewer` | Ops console · ADF Viewer |
@@ -223,7 +227,7 @@ Sessions must not reload the whole tree.
 1. **Tier 1 — always on** — a small grounding file per assistant  
 2. **Tier 2 — resolved** — `sdlc.sh start` writes `.sdlc/sessions/current-session.md` with a **Resolved Context** table (phase files, skills/extensions, Work ID artifacts, area-filtered index rows, scoped progress)  
 3. **Paste the Resume Prompt** — open only those paths  
-4. **Capture** — grow `spdd/memory/` (+ SQLite / Guide when enabled) for the next run  
+4. **Capture** — stage lessons in `.sdlc/staged/lessons.jsonl`; retro/sync `accept` promotes them into `spdd/memory/lessons.jsonl` (+ SQLite / Guide projections when enabled) for the next run  
 
 ```bash
 ./scripts/sdlc.sh claim <WORK-ID>
@@ -242,7 +246,7 @@ is the migration target (see Current focus).
 
 | UI | Default URL | Start | Responsibility |
 | -- | ----------- | ----- | -------------- |
-| **Ops console** | `http://127.0.0.1:5051/` | `./scripts/sdlc.sh console --target <path>` | Install/upgrade, **Persistence**, SQLite, rollback, optional Guide lifecycle, launch ADF Viewer |
+| **Ops console** | `http://127.0.0.1:5051/` | `./scripts/sdlc.sh console --target <path>` | Install/upgrade, **Persistence** (backends + ledger parity), SQLite cache, rollback, optional Guide lifecycle, launch ADF Viewer |
 | **ADF Viewer** | `http://127.0.0.1:5050/` | `./scripts/sdlc.sh viewer --root <path>` | Edit `adf/*.adf.json`; explicit Jira upload/download |
 
 ```bash
@@ -264,23 +268,30 @@ only if you turn that path on.
 
 ```text
 your-app/
-  ROADMAP.md                 Planning narrative
-  requirements/              Requirements (often → Jira)
-  session-notes/             Daily human/agent narrative
-  spdd/
-    canvas/<WORK-ID>.md      REASONS Canvas (governs execution)
-    analysis/ reviews/ sync/ Governance siblings
-    memory/                  Lean stay-set (lessons, entries, pointers, index)
-  .sdlc/
-    sessions/                Hot session briefs (gitignored)
-    index.sqlite             Local graph cache (gitignored)
-    resolved/                Ephemeral resolve excerpts
-  agent-context/
+  sdlc-spdd/                 Single framework home folder (installed)
+    ROADMAP.md               Planning narrative
+    requirements/            Requirements (often → Jira)
+    session-notes/           Daily human/agent narrative
+    spdd/
+      canvas/<WORK-ID>.md    REASONS Canvas (governs execution)
+      analysis/ reviews/ sync/  Governance siblings
+      memory/
+        lessons.jsonl        Committed lessons ledger (source of truth)
+        registry.jsonl       Append-only claim/release event log
     harness/ playbooks/      Install-time rules & playbooks
     extensions/              Phase extensions / skills
-  scripts/sdlc-spdd/         Installed workflow CLI
+    scripts/                 Installed workflow CLI
+    .sdlc/                   Gitignored runtime
+      sessions/              Hot session briefs
+      staged/lessons.jsonl   Staged captures awaiting accept
+      index.sqlite           Opt-in SQLite cache (rebuilt from ledger)
+      resolved/              Ephemeral resolve excerpts
   adf/                       Optional checked-in ADF JSON
 ```
+
+Legacy sprawled installs (framework folders at the repo root, `agent-context/`
+trees, `work-registry.tsv`) keep working read-only and are consolidated by
+`upgrade` + `sdlc-engine storage migrate`.
 
 | Path (this repo) | Purpose |
 | ---------------- | ------- |
@@ -290,7 +301,7 @@ your-app/
 | `templates/` | Canvas + assistant command templates |
 | `spdd/` | Dogfood canvases + lean memory |
 | `requirements/` | Dogfood requirements |
-| `examples/` | Sample workflows |
+| `examples/` | v3 sample workflow (`spring-boot-order-api/`) |
 
 ---
 
@@ -306,8 +317,8 @@ your-app/
 
 **Shipped platform (`v2.0.0a6`)**
 
-- [What's new in v2.0.0a6](docs/whats-new-v2.0.0a6.md) — feature tour  
-- [Hot sessions and lean memory](docs/hot-sessions-and-lean-memory.md)  
+- [Storage v3](docs/storage-v3.md) — ledger, staged captures, Guide DICE working store  
+- [Context loading and scaling](docs/context-loading-and-scaling.md) — progressive disclosure for agents  
 - [Triple-path context](docs/triple-path-context.md) — git / SQLite / Guide backends  
 - [Quiet mode](docs/quiet-mode.md)  
 - [Local SQLite index](docs/local-sqlite-index.md)  

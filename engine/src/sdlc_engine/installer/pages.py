@@ -58,6 +58,11 @@ PAGE = """<!DOCTYPE html>
     }
     .panel h3 { font-size: 0.95rem; margin-top: 1rem; }
     label.field { display: block; font-size: 0.85rem; font-weight: 600; color: var(--muted); margin-bottom: 0.35rem; }
+    .grid-2 {
+      display: grid; grid-template-columns: minmax(8rem, 11rem) 1fr;
+      gap: 0.45rem 0.75rem; align-items: center; margin-bottom: 0.75rem;
+    }
+    .grid-2 input { flex: none; width: 100%; min-width: 0; }
     .row { display: flex; gap: 0.6rem; align-items: stretch; flex-wrap: wrap; }
     input[type="text"], input[type="number"], select, textarea {
       flex: 1 1 14rem; min-width: 10rem; border: 1px solid var(--line);
@@ -140,6 +145,16 @@ PAGE = """<!DOCTYPE html>
     .check-list .mark.ok { color: var(--ok); }
     .check-list .mark.bad { color: var(--bad); }
     .check-list .hint { display: block; color: var(--muted); font-size: 0.82rem; margin-top: 0.15rem; }
+    .feed-list { list-style: none; padding: 0; margin: 0; max-height: 22rem; overflow: auto; }
+    .feed-list li {
+      display: grid; grid-template-columns: 5.2rem 1fr; gap: 0.45rem;
+      padding: 0.4rem 0; border-bottom: 1px solid var(--line); font-size: 0.88rem;
+    }
+    .feed-list .src {
+      font-family: var(--mono); font-size: 0.7rem; font-weight: 500;
+      text-transform: uppercase; color: var(--muted); padding-top: 0.15rem;
+    }
+    .feed-list .hint { display: block; color: var(--muted); font-size: 0.78rem; margin-top: 0.1rem; }
     .status-line { margin-bottom: 0.55rem; font-family: var(--mono); font-size: 0.78rem; color: var(--muted); }
     .status-line.ok { color: var(--ok); }
     .status-line.bad { color: var(--bad); }
@@ -188,26 +203,89 @@ PAGE = """<!DOCTYPE html>
     </section>
 
     <nav class="tabs" role="tablist">
-      <button type="button" class="tab active" data-tab="install">Install / Upgrade</button>
+      <button type="button" class="tab active" data-tab="dashboard">Dashboard</button>
+      <button type="button" class="tab" data-tab="install">Install / Upgrade</button>
       <button type="button" class="tab" data-tab="persist">Persistence</button>
       <button type="button" class="tab" data-tab="sqlite">SQLite</button>
       <button type="button" class="tab" data-tab="rollback">Rollback</button>
       <button type="button" class="tab" data-tab="guide">Guide</button>
+      <button type="button" class="tab" data-tab="issues">Issues</button>
       <button type="button" class="tab" data-tab="adf">ADF</button>
     </nav>
+
+    <section class="tab-pane active" id="pane-dashboard">
+      <div class="panel">
+        <h2>Today</h2>
+        <p class="meta">Deterministic suggested actions from the ledger, registry, workflow state, and config — no LLM.</p>
+        <ul class="check-list" id="dash-suggestions"><li>Refresh to load.</li></ul>
+        <div class="actions">
+          <button type="button" class="btn-secondary" id="btn-dash-refresh">Refresh dashboard</button>
+        </div>
+        <div class="status-line" id="dash-status">Ready.</div>
+      </div>
+
+      <div class="panel">
+        <h2>Active work</h2>
+        <div class="stats">
+          <div class="stat-card"><div class="n" id="dw-id">—</div><div class="l">work id</div></div>
+          <div class="stat-card"><div class="n" id="dw-phase">—</div><div class="l">phase</div></div>
+          <div class="stat-card"><div class="n" id="dw-gates">—</div><div class="l">open gates</div></div>
+          <div class="stat-card"><div class="n" id="dw-op">—</div><div class="l">next op</div></div>
+        </div>
+        <h3>Do now</h3>
+        <pre class="cmd" id="dash-work-cmd">—</pre>
+        <ul class="check-list" id="dash-work-gates"></ul>
+        <div class="meta">Claim/advance from the terminal: <code class="inline">./scripts/sdlc.sh next</code></div>
+      </div>
+
+      <div class="panel">
+        <h2>Memory &amp; backends</h2>
+        <div class="stats">
+          <div class="stat-card"><div class="n" id="dm-accepted">—</div><div class="l">accepted</div></div>
+          <div class="stat-card"><div class="n" id="dm-staged">—</div><div class="l">staged</div></div>
+          <div class="stat-card"><div class="n" id="db-sqlite">—</div><div class="l">sqlite cache</div></div>
+          <div class="stat-card"><div class="n" id="db-guide">—</div><div class="l">guide</div></div>
+        </div>
+        <div class="meta" id="dash-memory-meta">—</div>
+        <div class="meta" id="dash-backends-meta">—</div>
+        <div class="actions">
+          <button type="button" class="btn-secondary dash-configure" data-goto-tab="persist">Configure → Persistence (parity buttons)</button>
+          <button type="button" class="btn-ghost dash-configure" data-goto-tab="sqlite">Configure → SQLite</button>
+          <button type="button" class="btn-ghost dash-configure" data-goto-tab="guide">Configure → Guide</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Integrations</h2>
+        <ul class="check-list" id="dash-integrations"><li>—</li></ul>
+        <div class="actions">
+          <button type="button" class="btn-ghost dash-configure" data-goto-tab="issues">Configure → Issues &amp; integrations</button>
+          <button type="button" class="btn-ghost dash-configure" data-goto-tab="adf">Configure → ADF / Viewer</button>
+          <button type="button" class="btn-ghost dash-configure" data-goto-tab="guide">Configure → Guide</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Recent activity — catch up here</h2>
+        <ul class="feed-list" id="dash-activity"><li><span class="src">—</span><span>Refresh to load.</span></li></ul>
+      </div>
+    </section>
 
     <section class="tab-pane" id="pane-persist">
       <div class="panel">
         <h2>Persistence options</h2>
         <p class="meta">
-          Triple-path ContextStore fan-out (#79/#90). Git stay-set is always required.
-          SQLite and Guide soft-fail when enabled. Config:
+          Ledger-first ContextStore (storage v3). The committed lessons ledger
+          <code class="inline">spdd/memory/lessons.jsonl</code> and registry
+          <code class="inline">spdd/memory/registry.jsonl</code> are the system of record;
+          captures stage in <code class="inline">.sdlc/staged/lessons.jsonl</code> until accepted.
+          SQLite is an opt-in local cache rebuilt from the ledger; Guide soft-fails. Config:
           <code class="inline">.sdlc/persistence-config.json</code>
           (override with <code class="inline">CONTEXT_BACKENDS</code>).
         </p>
         <div class="checks" style="margin-bottom: 0.9rem;">
-          <label><input type="checkbox" id="pb-git" checked disabled /> git-pointers (required)</label>
-          <label><input type="checkbox" id="pb-sqlite" checked /> sqlite</label>
+          <label><input type="checkbox" id="pb-git" checked disabled /> git-pointers — ledger + registry (required)</label>
+          <label><input type="checkbox" id="pb-sqlite" checked /> sqlite (opt-in cache)</label>
           <label><input type="checkbox" id="pb-guide" checked /> guide-dice</label>
         </div>
         <div class="row" style="margin-bottom: 0.75rem;">
@@ -221,6 +299,8 @@ PAGE = """<!DOCTYPE html>
         <div class="actions">
           <button type="button" class="btn-secondary" id="btn-persist-refresh">Refresh</button>
           <button type="button" class="btn-primary" id="btn-persist-save">Save options</button>
+          <button type="button" class="btn-secondary" id="btn-persist-parity">Check ledger parity</button>
+          <button type="button" class="btn-warn" id="btn-persist-parity-repair">Parity + repair</button>
         </div>
         <div class="stats" id="persist-stats">
           <div class="stat-card"><div class="n" id="ps-git">—</div><div class="l">git</div></div>
@@ -234,7 +314,7 @@ PAGE = """<!DOCTYPE html>
       </div>
     </section>
 
-    <section class="tab-pane active" id="pane-install">
+    <section class="tab-pane" id="pane-install">
       <div class="panel">
         <h2>Install options</h2>
         <div class="checks" style="margin-bottom: 0.9rem;">
@@ -270,7 +350,7 @@ PAGE = """<!DOCTYPE html>
     <section class="tab-pane" id="pane-sqlite">
       <div class="panel">
         <h2>Local SQLite index</h2>
-        <p class="meta">Regenerable cache under <code class="inline">.sdlc/index.sqlite</code> — pre-GUIDE query layer. Git remains source of truth.</p>
+        <p class="meta">Opt-in cache under <code class="inline">.sdlc/index.sqlite</code>, rebuilt from the committed ledger (<code class="inline">spdd/memory/lessons.jsonl</code>) and registry (<code class="inline">spdd/memory/registry.jsonl</code>). The ledger remains the source of truth.</p>
         <div class="stats" id="sqlite-stats">
           <div class="stat-card"><div class="n" id="sq-work">—</div><div class="l">work items</div></div>
           <div class="stat-card"><div class="n" id="sq-art">—</div><div class="l">artifacts</div></div>
@@ -436,6 +516,114 @@ PAGE = """<!DOCTYPE html>
         <pre class="cmd" id="guide-cmd">—</pre>
         <h3>Known profiles</h3>
         <div id="guide-profiles" class="meta">—</div>
+      </div>
+    </section>
+
+    <section class="tab-pane" id="pane-issues">
+      <div class="panel">
+        <h2>Integrations config</h2>
+        <p class="meta">
+          Saved to gitignored <code class="inline">.sdlc/integrations-config.json</code>.
+          Shell <code class="inline">JIRA_*</code> / <code class="inline">GH_TOKEN</code> env vars override file values.
+          Tokens are never echoed back — leave blank to keep an existing saved token.
+        </p>
+        <div class="grid-2">
+          <label class="field" for="int-tracker">Active tracker</label>
+          <select id="int-tracker">
+            <option value="github">GitHub Issues</option>
+            <option value="jira">Jira</option>
+            <option value="none">None (link only)</option>
+          </select>
+          <label class="field" for="int-jira-url">Jira base URL</label>
+          <input id="int-jira-url" type="text" spellcheck="false" placeholder="https://yourorg.atlassian.net" />
+          <label class="field" for="int-jira-email">Jira email</label>
+          <input id="int-jira-email" type="email" spellcheck="false" placeholder="you@yourorg.com" />
+          <label class="field" for="int-jira-token">Jira API token</label>
+          <input id="int-jira-token" type="password" autocomplete="off" placeholder="Leave blank to keep saved token" />
+          <label class="field" for="int-jira-project">Jira project key</label>
+          <input id="int-jira-project" type="text" spellcheck="false" placeholder="PROJ" />
+          <label class="field" for="int-gh-token">GitHub token</label>
+          <input id="int-gh-token" type="password" autocomplete="off" placeholder="ghp_… or leave blank to keep saved" />
+          <label class="field" for="int-gh-repo">GitHub repo</label>
+          <input id="int-gh-repo" type="text" spellcheck="false" placeholder="owner/repo" />
+        </div>
+        <div class="actions">
+          <button type="button" class="btn-secondary" id="btn-int-refresh">Refresh</button>
+          <button type="button" class="btn-primary" id="btn-int-save">Save config</button>
+        </div>
+        <div class="status-line" id="int-status">Ready.</div>
+        <div class="meta" id="int-meta">—</div>
+      </div>
+
+      <div class="panel" id="issues-link-jira">
+        <h2>Link existing Jira issue</h2>
+        <p class="meta">
+          Create the Jira issue <strong>manually in Jira</strong>, copy the key
+          (e.g. <code class="inline">PROJ-123</code>), then record it here. This
+          updates the requirement doc, canvas Metadata, and registry — it does
+          <strong>not</strong> create issues in Jira.
+        </p>
+        <div class="grid-2">
+          <label class="field" for="jira-work-id">Work ID</label>
+          <input id="jira-work-id" type="text" spellcheck="false" placeholder="FEAT-001-order-status-api" />
+          <label class="field" for="jira-key">Jira key (from Jira UI)</label>
+          <input id="jira-key" type="text" spellcheck="false" placeholder="PROJ-123" />
+          <label class="field" for="jira-summary">Summary (optional, local doc)</label>
+          <input id="jira-summary" type="text" spellcheck="false" placeholder="Matches Jira summary if known" />
+          <label class="field" for="jira-issue-type">Issue type (optional)</label>
+          <input id="jira-issue-type" type="text" spellcheck="false" placeholder="Story" />
+        </div>
+        <div class="actions">
+          <button type="button" class="btn-secondary" id="btn-jira-refresh">Refresh status</button>
+          <button type="button" class="btn-secondary" id="btn-jira-link-dry">Preview link</button>
+          <button type="button" class="btn-primary" id="btn-jira-link">Apply link</button>
+        </div>
+        <div class="status-line" id="jira-link-status">Ready.</div>
+        <div class="meta" id="jira-link-meta">—</div>
+        <pre class="log" id="jira-link-log">No link action yet.</pre>
+      </div>
+
+      <div class="panel" id="issues-link-github" style="display:none;">
+        <h2>Link existing GitHub issue</h2>
+        <p class="meta">
+          Create the issue <strong>manually in GitHub</strong>, copy the number
+          (e.g. <code class="inline">42</code>), then record it here. Updates the
+          requirement doc, canvas, and registry — does not create issues via API.
+        </p>
+        <div class="grid-2">
+          <label class="field" for="gh-work-id">Work ID</label>
+          <input id="gh-work-id" type="text" spellcheck="false" placeholder="FEAT-001-order-status-api" />
+          <label class="field" for="gh-number">Issue number</label>
+          <input id="gh-number" type="text" spellcheck="false" placeholder="42" />
+          <label class="field" for="gh-title">Title (optional, local doc)</label>
+          <input id="gh-title" type="text" spellcheck="false" placeholder="Matches GitHub title if known" />
+          <label class="field" for="gh-url">URL (optional)</label>
+          <input id="gh-url" type="text" spellcheck="false" placeholder="https://github.com/org/repo/issues/42" />
+        </div>
+        <div class="actions">
+          <button type="button" class="btn-secondary" id="btn-gh-refresh">Refresh status</button>
+          <button type="button" class="btn-secondary" id="btn-gh-link-dry">Preview link</button>
+          <button type="button" class="btn-primary" id="btn-gh-link">Apply link</button>
+        </div>
+        <div class="status-line" id="gh-link-status">Ready.</div>
+        <div class="meta" id="gh-link-meta">—</div>
+        <pre class="log" id="gh-link-log">No link action yet.</pre>
+      </div>
+
+      <div class="panel">
+        <h2 id="issues-sync-title">Sync with server</h2>
+        <p class="meta" id="issues-sync-meta">
+          Configure credentials above. Link an issue first, then pull or push requirement markdown.
+        </p>
+        <div class="actions">
+          <button type="button" class="btn-secondary" id="btn-jira-pull-dry">Prepare pull</button>
+          <button type="button" class="btn-primary" id="btn-jira-pull">Pull from server</button>
+          <button type="button" class="btn-secondary" id="btn-jira-push-dry">Prepare push</button>
+          <button type="button" class="btn-primary" id="btn-jira-push">Push to server</button>
+        </div>
+        <div class="status-line" id="jira-sync-status">Ready.</div>
+        <pre class="cmd" id="jira-sync-cli">—</pre>
+        <pre class="log" id="jira-sync-log">No sync yet.</pre>
       </div>
     </section>
 
@@ -1170,14 +1358,444 @@ PAGE = """<!DOCTYPE html>
       }
     }
 
+    async function parityPersist(repair) {
+      setBusy(["btn-persist-parity", "btn-persist-parity-repair"], true);
+      $("persist-status").textContent = repair ? "Checking ledger parity (repair)…" : "Checking ledger parity…";
+      $("persist-status").className = "status-line";
+      try {
+        const res = await fetch("/api/persistence/parity", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ target: target(), repair: !!repair }),
+        });
+        const data = await res.json();
+        $("persist-log").textContent = JSON.stringify(data, null, 2);
+        if (!res.ok) {
+          $("persist-status").textContent = data.error || "Parity check failed";
+          $("persist-status").className = "status-line bad";
+          return;
+        }
+        const parity = data.parity || {};
+        const ledger = parity.ledger || {};
+        $("persist-status").textContent =
+          (parity.ok ? "Parity OK" : "Parity drift") +
+          " · ledger " + (ledger.count != null ? ledger.count : "?") + " accepted (" + (ledger.path || "spdd/memory/lessons.jsonl") + ")" +
+          (parity.repaired ? " · repair ran (db rebuild / Guide reproject)" : "");
+        $("persist-status").className = "status-line " + (parity.ok ? "ok" : "bad");
+      } catch (err) {
+        $("persist-status").textContent = String(err);
+        $("persist-status").className = "status-line bad";
+        $("persist-log").textContent = String(err);
+      } finally {
+        setBusy(["btn-persist-parity", "btn-persist-parity-repair"], false);
+      }
+    }
+
+    function esc(v) {
+      return String(v == null ? "" : v).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+    }
+
+    function gotoTab(name) {
+      const btn = document.querySelector('.tab[data-tab="' + name + '"]');
+      if (btn) btn.click();
+    }
+
+    function fillDashboardStatus(data) {
+      const work = data.work || {};
+      $("dw-id").textContent = work.pointer || "(none)";
+      $("dw-phase").textContent = work.phase || "—";
+      $("dw-gates").textContent = String((work.open_gates || []).length);
+      $("dw-op").textContent = work.operation || "—";
+      $("dash-work-cmd").textContent = work.recommended_command
+        || (work.pointer ? "—" : "./scripts/sdlc.sh claim <WORK-ID>");
+      const gates = work.open_gates || [];
+      $("dash-work-gates").innerHTML = gates.length
+        ? gates.map((g) => `<li><span class="mark bad">!!</span><span>${esc(g.label || g.gate)}</span></li>`).join("")
+        : '<li><span class="mark ok">OK</span><span>No open gates'
+          + (work.pointer ? " — ready to advance." : " — no active Work ID.") + "</span></li>";
+      const mem = data.memory || {};
+      $("dm-accepted").textContent = mem.accepted_count != null ? mem.accepted_count : "—";
+      $("dm-staged").textContent = mem.staged_count != null ? mem.staged_count : "—";
+      const last = mem.registry_last_event;
+      $("dash-memory-meta").textContent =
+        "ledger " + (mem.ledger_path || "") +
+        (mem.last_accepted_ts ? " · last accepted " + mem.last_accepted_ts : " · nothing accepted yet") +
+        (mem.needs_accept ? " · staged records need accept" : "") +
+        (last
+          ? " · registry: " + [last.event, last.work_id, last.owner ? "by " + last.owner : "", last.ts].filter(Boolean).join(" ")
+          : " · registry empty");
+      const be = data.backends || {};
+      const sq = be.sqlite || {};
+      const gd = be.guide || {};
+      $("db-sqlite").textContent = sq.enabled ? (sq.exists ? "READY" : "ON") : "OFF";
+      $("db-guide").textContent = gd.enabled ? (gd.reachable ? "UP" : "DOWN") : "OFF";
+      $("dash-backends-meta").textContent =
+        "backends=" + (be.backends || []).join(",") +
+        " · source=" + (be.source || "—") +
+        (gd.enabled ? " · guide " + (gd.reachable ? "reachable" : "unreachable") + " at " + (gd.host || "?") + ":" + (gd.port || "?") : "") +
+        " · " + (be.parity_hint || "");
+      const integ = data.integrations || {};
+      const jira = integ.jira || {};
+      const gh = integ.github || {};
+      const viewer = integ.viewer || {};
+      const item = (ok, label, hint) => `<li>
+          <span class="mark ${ok ? "ok" : "bad"}">${ok ? "OK" : "!!"}</span>
+          <span><strong>${esc(label)}</strong><span class="hint">${esc(hint || "")}</span></span>
+        </li>`;
+      $("dash-integrations").innerHTML = [
+        item(jira.configured, "Jira env " + (jira.configured ? "set" : "not set"), jira.hint),
+        item(gh.authenticated, "GitHub CLI " + (gh.authenticated ? "authenticated" : "not ready"), gh.detail),
+        item(
+          viewer.running,
+          "ADF Viewer (:" + (viewer.port || 5050) + ") " + (viewer.running ? "running" : "stopped"),
+          viewer.running ? viewer.url : "Start it from the ADF tab."
+        ),
+      ].join("");
+    }
+
+    async function loadDashboard() {
+      setBusy(["btn-dash-refresh"], true);
+      $("dash-status").textContent = "Loading…";
+      $("dash-status").className = "status-line";
+      try {
+        const opts = {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ target: target() }),
+        };
+        const [statusRes, activityRes, suggestRes] = await Promise.all([
+          fetch("/api/dashboard/status", opts),
+          fetch("/api/dashboard/activity?limit=20", opts),
+          fetch("/api/dashboard/suggestions", opts),
+        ]);
+        const status = await statusRes.json();
+        if (!statusRes.ok) {
+          $("dash-status").textContent = status.error || "Dashboard load failed";
+          $("dash-status").className = "status-line bad";
+        } else {
+          fillDashboardStatus(status);
+        }
+        const activity = await activityRes.json();
+        const items = activity.items || [];
+        $("dash-activity").innerHTML = items.length
+          ? items.map((it) => `<li>
+              <span class="src">${esc(it.source)}</span>
+              <span>${esc(it.text)}<span class="hint">${esc(it.ts)}${it.work_id ? " · " + esc(it.work_id) : ""}</span></span>
+            </li>`).join("")
+          : '<li><span class="src">—</span><span>No activity yet (fresh install).</span></li>';
+        const sug = await suggestRes.json();
+        const list = sug.suggestions || [];
+        $("dash-suggestions").innerHTML = list.length
+          ? list.map((s) => `<li><span class="mark">[ ]</span><span>${esc(s.text)}</span></li>`).join("")
+          : '<li><span class="mark ok">OK</span><span>Nothing pending — all caught up.</span></li>';
+        if (statusRes.ok) {
+          $("dash-status").textContent = "Loaded.";
+          $("dash-status").className = "status-line ok";
+        }
+      } catch (err) {
+        $("dash-status").textContent = String(err);
+        $("dash-status").className = "status-line bad";
+      } finally {
+        setBusy(["btn-dash-refresh"], false);
+      }
+    }
+
+    function activeTracker() {
+      return $("int-tracker").value || "github";
+    }
+
+    function activeWorkId() {
+      return activeTracker() === "jira"
+        ? $("jira-work-id").value.trim()
+        : $("gh-work-id").value.trim() || $("jira-work-id").value.trim();
+    }
+
+    function applyIssuesPanels() {
+      const t = activeTracker();
+      $("issues-link-jira").style.display = t === "jira" ? "" : "none";
+      $("issues-link-github").style.display = t === "github" ? "" : "none";
+      $("issues-sync-title").textContent = t === "jira"
+        ? "Sync with Jira server"
+        : (t === "github" ? "Sync with GitHub" : "Sync disabled (tracker=none)");
+      $("issues-sync-meta").textContent = t === "jira"
+        ? "Pull refreshes ## Jira from the server; push sends local markdown → ADF (update only)."
+        : (t === "github"
+          ? "Pull refreshes ## GitHub from the server; push sends composed GFM markdown (update only)."
+          : "Set tracker to Jira or GitHub to enable server sync.");
+    }
+
+    async function loadIntegrations() {
+      const res = await fetch("/api/integrations/status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ target: target() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        $("int-meta").textContent = data.error || "Load failed";
+        return;
+      }
+      $("int-tracker").value = data.effective_tracker || data.tracker || "github";
+      const j = data.jira || {};
+      const g = data.github || {};
+      $("int-jira-url").value = j.base_url || "";
+      $("int-jira-email").value = j.email || "";
+      $("int-jira-project").value = j.project || "";
+      $("int-gh-repo").value = g.repo || "";
+      $("int-jira-token").value = "";
+      $("int-gh-token").value = "";
+      $("int-meta").textContent =
+        "tracker=" + (data.effective_tracker || "—")
+        + " · jira " + (j.configured ? "ready" : "incomplete")
+        + " · github " + (g.configured ? "ready" : "incomplete")
+        + " · " + (data.config_path || ".sdlc/integrations-config.json");
+      applyIssuesPanels();
+    }
+
+    async function saveIntegrations() {
+      $("int-status").textContent = "Saving…";
+      $("int-status").className = "status-line";
+      setBusy(["btn-int-save", "btn-int-refresh"], true);
+      try {
+        const payload = {
+          target: target(),
+          tracker: $("int-tracker").value,
+          jira: {
+            base_url: $("int-jira-url").value.trim(),
+            email: $("int-jira-email").value.trim(),
+            project: $("int-jira-project").value.trim(),
+            api_token: $("int-jira-token").value.trim(),
+          },
+          github: {
+            repo: $("int-gh-repo").value.trim(),
+            token: $("int-gh-token").value.trim(),
+          },
+        };
+        const res = await fetch("/api/integrations/save", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          $("int-status").textContent = data.error || "Save failed";
+          $("int-status").className = "status-line bad";
+          return;
+        }
+        $("int-status").textContent = "Saved.";
+        $("int-status").className = "status-line ok";
+        applyIssuesPanels();
+        await loadIntegrations();
+        await loadDashboard();
+      } catch (err) {
+        $("int-status").textContent = String(err);
+        $("int-status").className = "status-line bad";
+      } finally {
+        setBusy(["btn-int-save", "btn-int-refresh"], false);
+      }
+    }
+
+    function jiraBody(extra) {
+      return Object.assign({
+        target: target(),
+        system: "jira",
+        work_id: $("jira-work-id").value.trim(),
+        issue_ref: $("jira-key").value.trim(),
+        summary: $("jira-summary").value.trim(),
+        issue_type: $("jira-issue-type").value.trim(),
+      }, extra || {});
+    }
+
+    function ghBody(extra) {
+      return Object.assign({
+        target: target(),
+        system: "github",
+        work_id: $("gh-work-id").value.trim(),
+        issue_ref: $("gh-number").value.trim(),
+        title: $("gh-title").value.trim(),
+        url: $("gh-url").value.trim(),
+      }, extra || {});
+    }
+
+    function fillJiraStatus(data) {
+      const bits = [];
+      if (data.linked) bits.push("linked " + data.jira_key);
+      else if (data.jira_draft) bits.push("Key not set (TBD)");
+      else bits.push("not linked");
+      if (data.canvas_source_issue) bits.push("canvas " + data.canvas_source_issue);
+      if (data.registry_jira) bits.push("registry " + data.registry_jira);
+      if (data.jira_url) bits.push(data.jira_url);
+      $("jira-link-meta").textContent = bits.join(" · ") || "—";
+      if (data.jira_key && !$("jira-key").value.trim()) {
+        $("jira-key").value = data.jira_key;
+      }
+    }
+
+    async function loadJiraStatus() {
+      const workId = $("jira-work-id").value.trim();
+      if (!workId) {
+        $("jira-link-meta").textContent = "Enter a Work ID.";
+        return;
+      }
+      const res = await fetch("/api/issues/status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ target: target(), work_id: workId, system: "jira" }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        $("jira-link-meta").textContent = data.error || "Status failed";
+        return;
+      }
+      fillJiraStatus(data);
+    }
+
+    async function linkJira(dryRun) {
+      const workId = $("jira-work-id").value.trim();
+      const jiraKey = $("jira-key").value.trim();
+      if (!workId || !jiraKey) {
+        $("jira-link-status").textContent = "Work ID and Jira key required.";
+        $("jira-link-status").className = "status-line bad";
+        return;
+      }
+      const label = dryRun ? "Preview link" : "Apply link";
+      $("jira-link-status").textContent = label + "…";
+      $("jira-link-status").className = "status-line";
+      setBusy(["btn-jira-link", "btn-jira-link-dry", "btn-jira-refresh"], true);
+      try {
+        const res = await fetch("/api/issues/link", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(jiraBody({ dry_run: dryRun, apply: !dryRun })),
+        });
+        const data = await res.json();
+        $("jira-link-log").textContent = JSON.stringify(data, null, 2);
+        if (!res.ok) {
+          $("jira-link-status").textContent = data.error || (label + " failed");
+          $("jira-link-status").className = "status-line bad";
+          return;
+        }
+        $("jira-link-status").textContent = dryRun
+          ? "Preview OK — apply when ready."
+          : "Linked " + jiraKey + " to " + workId;
+        $("jira-link-status").className = "status-line ok";
+        fillJiraStatus(data);
+        if (!dryRun) await loadDashboard();
+      } catch (err) {
+        $("jira-link-status").textContent = String(err);
+        $("jira-link-status").className = "status-line bad";
+        $("jira-link-log").textContent = String(err);
+      } finally {
+        setBusy(["btn-jira-link", "btn-jira-link-dry", "btn-jira-refresh"], false);
+      }
+    }
+
+    async function linkGithub(dryRun) {
+      const workId = $("gh-work-id").value.trim();
+      const num = $("gh-number").value.trim();
+      if (!workId || !num) {
+        $("gh-link-status").textContent = "Work ID and issue number required.";
+        $("gh-link-status").className = "status-line bad";
+        return;
+      }
+      const label = dryRun ? "Preview link" : "Apply link";
+      $("gh-link-status").textContent = label + "…";
+      setBusy(["btn-gh-link", "btn-gh-link-dry", "btn-gh-refresh"], true);
+      try {
+        const res = await fetch("/api/issues/link", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(ghBody({ dry_run: dryRun, apply: !dryRun })),
+        });
+        const data = await res.json();
+        $("gh-link-log").textContent = JSON.stringify(data, null, 2);
+        if (!res.ok) {
+          $("gh-link-status").textContent = data.error || (label + " failed");
+          $("gh-link-status").className = "status-line bad";
+          return;
+        }
+        $("gh-link-status").textContent = dryRun ? "Preview OK" : ("Linked #" + num);
+        $("gh-link-status").className = "status-line ok";
+        if (!dryRun) await loadDashboard();
+      } catch (err) {
+        $("gh-link-status").textContent = String(err);
+        $("gh-link-status").className = "status-line bad";
+      } finally {
+        setBusy(["btn-gh-link", "btn-gh-link-dry", "btn-gh-refresh"], false);
+      }
+    }
+
+    async function syncIssues(direction, apply) {
+      const system = activeTracker();
+      const workId = activeWorkId();
+      if (system === "none") {
+        $("jira-sync-status").textContent = "Tracker is none — enable Jira or GitHub above.";
+        $("jira-sync-status").className = "status-line bad";
+        return;
+      }
+      if (!workId) {
+        $("jira-sync-status").textContent = "Work ID required.";
+        $("jira-sync-status").className = "status-line bad";
+        return;
+      }
+      const verb = direction === "pull" ? "Pull" : "Push";
+      const label = apply ? verb + " to server" : "Prepare " + direction;
+      if (apply && !confirm("Sync " + direction + " for " + workId + " (" + system + ")?")) return;
+      $("jira-sync-status").textContent = label + "…";
+      setBusy(["btn-jira-pull", "btn-jira-pull-dry", "btn-jira-push", "btn-jira-push-dry"], true);
+      try {
+        const res = await fetch("/api/issues/sync", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ target: target(), work_id: workId, system, direction, apply }),
+        });
+        const data = await res.json();
+        $("jira-sync-log").textContent = data.report || JSON.stringify(data, null, 2);
+        $("jira-sync-cli").textContent = data.cli || "—";
+        if (!res.ok) {
+          $("jira-sync-status").textContent = data.error || (label + " failed");
+          $("jira-sync-status").className = "status-line bad";
+          return;
+        }
+        $("jira-sync-status").textContent = apply ? (verb + " OK") : (verb + " preview OK");
+        $("jira-sync-status").className = "status-line ok";
+      } catch (err) {
+        $("jira-sync-status").textContent = String(err);
+        $("jira-sync-log").textContent = String(err);
+      } finally {
+        setBusy(["btn-jira-pull", "btn-jira-pull-dry", "btn-jira-push", "btn-jira-push-dry"], false);
+      }
+    }
+
+    async function syncJira(direction, apply) {
+      syncIssues(direction, apply);
+    }
+
+    async function loadJira() {
+      await loadIntegrations();
+      const active = $("dw-id").textContent;
+      if (active && active !== "(none)" && active !== "—") {
+        if (!$("jira-work-id").value.trim()) $("jira-work-id").value = active;
+        if (!$("gh-work-id").value.trim()) $("gh-work-id").value = active;
+      }
+      await loadJiraStatus();
+    }
+
     async function refreshAll() {
       await detect();
-      await Promise.all([loadPersist(), loadSqlite(), loadBackups(), loadGuide(), loadAdf()]);
+      await Promise.all([loadDashboard(), loadPersist(), loadSqlite(), loadBackups(), loadGuide(), loadJira(), loadAdf()]);
       await loadAdfBrowse($("adf-browse-path").value.trim() || adfBrowsePath || "");
     }
 
     $("btn-detect").addEventListener("click", detect);
     $("btn-refresh-all").addEventListener("click", refreshAll);
+    $("btn-dash-refresh").addEventListener("click", loadDashboard);
+    document.querySelectorAll(".dash-configure").forEach((el) => {
+      el.addEventListener("click", (e) => {
+        e.preventDefault();
+        gotoTab(el.dataset.gotoTab);
+      });
+    });
     $("btn-run").addEventListener("click", () => run());
     $("btn-verify").addEventListener("click", () => run("verify"));
     $("btn-clear").addEventListener("click", () => {
@@ -1187,6 +1805,11 @@ PAGE = """<!DOCTYPE html>
     });
     $("btn-persist-refresh").addEventListener("click", loadPersist);
     $("btn-persist-save").addEventListener("click", savePersist);
+    $("btn-persist-parity").addEventListener("click", () => parityPersist(false));
+    $("btn-persist-parity-repair").addEventListener("click", () => {
+      if (!confirm("Repair re-derives projections (SQLite rebuild + Guide reproject) when parity drifts. Continue?")) return;
+      parityPersist(true);
+    });
     $("btn-sqlite-refresh").addEventListener("click", loadSqlite);
     $("btn-sqlite-rebuild").addEventListener("click", rebuildSqlite);
     $("btn-backups-refresh").addEventListener("click", loadBackups);
@@ -1242,6 +1865,22 @@ PAGE = """<!DOCTYPE html>
     $("btn-adf-init").addEventListener("click", () => initFromAdf(false));
     $("adf-browse-path").addEventListener("keydown", (e) => {
       if (e.key === "Enter") loadAdfBrowse($("adf-browse-path").value.trim());
+    });
+    $("btn-int-refresh").addEventListener("click", loadIntegrations);
+    $("btn-int-save").addEventListener("click", saveIntegrations);
+    $("int-tracker").addEventListener("change", applyIssuesPanels);
+    $("btn-jira-refresh").addEventListener("click", loadJiraStatus);
+    $("btn-jira-link-dry").addEventListener("click", () => linkJira(true));
+    $("btn-jira-link").addEventListener("click", () => linkJira(false));
+    $("btn-gh-link-dry").addEventListener("click", () => linkGithub(true));
+    $("btn-gh-link").addEventListener("click", () => linkGithub(false));
+    $("btn-jira-pull-dry").addEventListener("click", () => syncIssues("pull", false));
+    $("btn-jira-pull").addEventListener("click", () => syncIssues("pull", true));
+    $("btn-jira-push-dry").addEventListener("click", () => syncIssues("push", false));
+    $("btn-jira-push").addEventListener("click", () => syncIssues("push", true));
+    $("jira-work-id").addEventListener("change", loadJiraStatus);
+    $("jira-work-id").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") loadJiraStatus();
     });
     $("as-all").addEventListener("change", () => {
       if ($("as-all").checked) {

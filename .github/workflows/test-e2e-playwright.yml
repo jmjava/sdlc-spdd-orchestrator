@@ -1,0 +1,36 @@
+name: Test E2E Playwright (suite 3)
+
+on:
+  pull_request:
+    paths:
+      - 'engine/**'
+      - 'adf/**'
+      - 'scripts/run-test-suites.sh'
+      - '.github/workflows/test-e2e-playwright.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'engine/tests_e2e/**'
+      - '.github/workflows/test-e2e-playwright.yml'
+
+concurrency:
+  group: e2e-playwright-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  playwright:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Playwright extras
+        run: |
+          python3 -m pip install -e './engine[dev,viewer-e2e]'
+          python3 -m playwright install --with-deps chromium
+      - name: Suite 3 — viewer Playwright
+        run: PYTHONPATH=engine/src pytest -q engine/tests_e2e/test_viewer_playwright.py --screenshot=only-on-failure
+      - name: Suite 3 — ops console Playwright
+        run: PYTHONPATH=engine/src pytest -q engine/tests_e2e/test_console_playwright.py --screenshot=only-on-failure

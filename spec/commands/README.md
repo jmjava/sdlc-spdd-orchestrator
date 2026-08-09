@@ -31,4 +31,4 @@ To refresh specs from current adapter files (e.g. after a one-off hand edit):
 
 The generator must pass `--check` before committing spec or template changes.
 
-**Contributor guide:** [docs/contributing-command-specs.md](../docs/contributing-command-specs.md)
+**Contributor guide:** [docs/contributing-command-specs.md](../../docs/contributing-command-specs.md)

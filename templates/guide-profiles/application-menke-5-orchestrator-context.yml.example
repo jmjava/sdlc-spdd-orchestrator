@@ -7,8 +7,15 @@
 # Prerequisite: guide on branch ingest-to-hub (git incremental ingestion + operator purge API).
 # Run as an append pass on top of menke / menke-2 / menke-3 / menke-4 (do not fresh-ingest).
 #
-# Paths below assume guide is started from ~/github/jmjava/guide and the orchestrator
-# clone lives at ~/github/jmjava/sdlc-spdd-orchestrator. Adjust ORCHESTRATOR_ROOT if needed.
+# Paths below assume guide is started from ~/github/jmjava/guide. Export
+# ORCHESTRATOR_ROOT to your orchestrator clone (or replace the placeholder
+# inline), e.g. ORCHESTRATOR_ROOT=~/github/jmjava/<orchestrator-clone>.
+#
+# Storage v3 note: in an *installed* project, Guide resolves the framework home
+# <root>/sdlc-spdd/ automatically when that folder is present — point default
+# root paths at the project root and it finds sdlc-spdd/spdd/... on its own.
+# The orchestrator repo itself uses the legacy sprawled layout (spdd/ at root),
+# so the explicit directories below stay root-relative.
 
 guide:
   reload-content-on-startup: true
@@ -20,14 +27,12 @@ guide:
   # No new URLs — reference corpus already loaded by menke-2.
   urls: []
   directories:
-    # Decision memory + indexes (context-index, domain-index, session-index, phase-index, …)
-    - ~/github/jmjava/sdlc-spdd-orchestrator/agent-context/memory
+    # Committed memory ledgers (lessons.jsonl + registry.jsonl)
+    - ${ORCHESTRATOR_ROOT}/spdd/memory
     # REASONS canvases (Work ID metadata, Operations, Sync Notes)
-    - ~/github/jmjava/sdlc-spdd-orchestrator/spdd/canvas
+    - ${ORCHESTRATOR_ROOT}/spdd/canvas
     # Analysis artifacts (scoped codebase findings, research notes)
-    - ~/github/jmjava/sdlc-spdd-orchestrator/spdd/analysis
-    # Work-ID feature folders (progress logs, requirement snapshots) — uncomment if needed:
-    # - ~/github/jmjava/sdlc-spdd-orchestrator/agent-context/features
+    - ${ORCHESTRATOR_ROOT}/spdd/analysis
   # Incremental ingest: only changed markdown since last append (ideal for capture-as-we-go).
   git-ingestion:
     enabled: true

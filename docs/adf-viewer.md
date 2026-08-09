@@ -2,6 +2,12 @@
 
 Team-ready editor for checked-in Atlassian Document Format (ADF) ticket descriptions.
 
+**Not the starting point for Jira.** Create the issue in Jira UI, link the key
+locally (`issues link` or ops console **Jira** tab), then sync requirement
+markdown with `issues pull` / `issues push`. Use this viewer when you need
+formatting beyond what markdown supports (panels, GWT blocks, complex tables).
+See [Jira runbook](jira-runbook.md).
+
 ## What it is
 
 - **Storage:** JSON files under repo-root [`adf/`](../adf/) (e.g. `ORCH-123.adf.json`).
@@ -41,12 +47,32 @@ and Jira sync still happen only in the viewer UI.
 
 ## Workflow
 
-1. Add or edit an ADF file under `adf/` (seed examples: `ORCH-demo.adf.json`, `ORCH-rich.adf.json`).
+Typical sequence: `issues push --apply` from the requirement doc → optional
+`issues download-adf <KEY> --apply` to materialize `adf/<KEY>.adf.json` → edit
+here → `upload-adf`.
+
+1. Open or create an ADF file under `adf/` (often via `download-adf` after push;
+   seed examples: `ORCH-demo.adf.json`, `ORCH-rich.adf.json`).
 2. Open the file in the viewer. Use the toolbar for common formatting (H1–H3, bold/italic/strike/underline, link, lists, panel, code block, GWT, table, image-by-URL, quote, clear format).
 3. Add, delete, or rewrite text in the WYSIWYG pane — the raw ADF pane updates automatically. Or edit the JSON directly — the WYSIWYG re-renders.
 4. Click either pane to navigate: block click ↔ raw cursor sync helps you verify structure while editing.
 5. Autosave writes the checked-in file after ~1.5s (or click **Save**). Prefer saving when JSON is valid.
 6. Commit the `adf/*.json` change like any other source file.
+
+## Init Work from ADF (ops console)
+
+The ops console **ADF** tab can seed a new Work ID from a selected `adf/*.adf.json`:
+
+1. **Browse** → select an ADF file under the target `adf/` folder.
+2. Enter **Work ID** and title → **Init work (dry run)** previews; **Init work** creates requirement, canvas (Source System: ADF), and registry claim.
+
+```bash
+SDLC_ENGINE=python ./scripts/sdlc.sh work init-from-adf \
+  --root /path/to/target --adf adf/ORCH-77.adf.json \
+  --work-id FEAT-013-from-adf --title "Title from ADF"
+```
+
+API: `POST /api/adf/init-work`.
 
 ## Sync with Jira (explicit apply)
 
@@ -84,7 +110,7 @@ If two people save the same file, the later save wins. Use `git checkout -- adf/
 
 ```bash
 python3 -m pip install -e './engine[dev,viewer]'
-pytest -q engine/tests/test_viewer_*.py
+pytest -q engine/tests_integration/test_viewer_*.py
 ```
 
 **Playwright GUI (optional):** covers index, browser, WYSIWYG/raw sync, toolbar inserts, save/undo, and Jira upload/download prepare+apply (mocked).
@@ -92,7 +118,8 @@ pytest -q engine/tests/test_viewer_*.py
 ```bash
 python3 -m pip install -e './engine[dev,viewer-e2e]'
 playwright install chromium
-SDLC_VIEWER_E2E=1 pytest -q engine/tests/test_viewer_playwright.py -m viewer_e2e
+./scripts/run-test-suites.sh e2e
+pytest -q engine/tests_e2e/test_viewer_playwright.py
 # or: pytest … --run-viewer-e2e
 ```
 

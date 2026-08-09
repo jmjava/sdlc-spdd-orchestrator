@@ -1,23 +1,34 @@
-# Local SQLite index (pre-GUIDE)
+# Local SQLite index (opt-in cache)
 
-Lightweight, **zero-install** query cache for Work IDs and artifacts. Uses Python’s
-stdlib `sqlite3` — no database server.
+An **optional**, fully regenerable local query cache at `.sdlc/index.sqlite`
+(gitignored, schema **v5**). Uses Python's stdlib `sqlite3` — no database
+server. It is a pure projection of the committed ledger and contract files:
+one write path, rebuilt on demand, never a source of truth.
+See [Storage v3](storage-v3.md) for the full model.
 
 ## What it is / is not
 
 | Is | Is not |
 |----|--------|
-| Regenerable index under `.sdlc/index.sqlite` (gitignored) | A multi-user live shared database |
-| Fast local `SELECT` / full-text over canvases + registry | A replacement for GUIDE/Neo4j RAG |
-| Optional JSON/SQL export for inspection | Something you commit and merge as a binary |
+| Opt-in cache under `.sdlc/index.sqlite` (gitignored) | A default backend — enable via `CONTEXT_BACKENDS` |
+| Fast local `SELECT` / full-text over ledger, registry, canvases | The working store — that is the [Guide DICE graph](guide-flow.md) |
+| Rebuilt any time from `spdd/memory/lessons.jsonl` + `registry.jsonl` + contracts | Something you commit, merge, or sync between machines |
+| Optional JSON/SQL export for inspection | A replacement for the committed JSONL system of record |
 
-**Multi-user sync stays git:** `work-registry.tsv`, canvases, milestone requirements.
-Each machine rebuilds its own SQLite file after pull/claim.
+**Multi-user sync stays git:** the lessons ledger, registry events, canvases,
+and milestone requirements. Each machine rebuilds its own SQLite file.
 
-This is path **2** of the [triple-path context store](triple-path-context.md):
-the zero-install local cache beside lean git (required) and optional Guide
-(Neo4j). Rebuild after pull/claim. See [ops-console.md](ops-console.md) (SQLite +
-Persistence tabs) and [What's new in v2.0.0a6](whats-new-v2.0.0a6.md).
+## Enabling
+
+Add `sqlite` to the backend set (default is git + guide):
+
+```bash
+export CONTEXT_BACKENDS=git-pointers,guide-dice,sqlite
+# or set "backends" in .sdlc/persistence-config.json
+```
+
+When enabled, `capture` / `accept` keep the cache in sync automatically, and
+`sdlc-engine context parity [--repair]` verifies it against the ledger.
 
 ## Commands
 
@@ -44,47 +55,38 @@ Always routed to the Python engine (even when `SDLC_ENGINE=shell`):
 
 ## Session brief embedding
 
-`start-agent-session.sh` soft-loads a **Local SQLite Index (query cache)** section into
-the session brief when the Python engine is importable and a `--work-id` is set:
+`start-agent-session.sh` soft-loads a **Local SQLite Index (query cache)**
+section into the session brief when the Python engine is importable and a
+`--work-id` is set. If the engine (or the cache) is unavailable, the section is
+omitted and session start still succeeds — the ledger digest and on-demand
+retrieval (`sdlc-engine context retrieve|show|digest`) are the primary path;
+SQLite is an extra Work ID snapshot.
 
-1. Rebuilds `.sdlc/index.sqlite` if missing (`db lookup` → `ensure`/`rebuild`).
-2. Embeds `db lookup --work-id … --markdown` under the brief.
-3. Mentions that section in the **Resume Prompt** so future agents treat it as
-   loaded lookup context.
-
-If the engine is unavailable, the section is omitted and session start still
-succeeds. Markdown indexes (`context-index.md`, etc.) remain the primary
-progressive-disclosure path; SQLite is an additional Work ID snapshot.
-
-## Schema (v4 — full agent-context graph)
+## Schema (v5)
 
 - `work_items` — one row per Work ID (title, statuses, Jira/GitHub, paths, registry)
-- `artifacts` — canvas / requirement / feature / analysis / review / sync paths
+- `lessons` — ledger records (accepted + staged flag), rebuilt from
+  `spdd/memory/lessons.jsonl` and `.sdlc/staged/lessons.jsonl`
+- `claims` — registry state derived from `spdd/memory/registry.jsonl`
+- `artifacts` — canvas / requirement / analysis / review / sync paths
 - `local_sessions` — machine-private `LOCAL-*` sessions under `.sdlc/local-sessions/`
 - `work_search` — FTS5 when available (else LIKE fallback)
 - `meta` — schema version, rebuild time, source git commit
-- Graph nodes: `requirements`, `canvases`, `areas`, `lessons`, `claims`,
-  `context_sessions`, `pointers`, `context_entries`, `domain_keywords`,
-  `phase_refs`, `project_facts` (+ join `work_areas`)
-- `edges` — typed relationships (requirement/canvas/reasons/area/about/for_work/…)
+- Graph nodes + typed `edges` (work / requirement / canvas / area / lesson /
+  keyword; relations like `canvas`, `reasons`, `area`, `about`,
+  `recorded_for`) — aligned with the Guide DICE edge names
 
-Full graph contract + coverage gate:
-[SPIKE-088](agent-context-cleanup/spikes/SPIKE-088-sqlite-v2.md)
-(`LocalIndex.capability_coverage()`).
+## Relationship to Guide
 
-## Relationship to GUIDE
+Both are projections of the same ledger — see the
+[parity diagram](diagrams/08-projection-parity.svg):
 
-```
-markdown + TSV (git, source of truth)
-        │
-        ▼ rebuild
-  .sdlc/index.sqlite   ← you are here (local cache)
-        │
-        ▼ later (SPIKE-001)
-  GUIDE / Neo4j        ← optional RAG / graph retrieval
-```
+- **Guide DICE graph** — the working store; cross-work retrieval, MCP tools,
+  RAG legs. Default backend when reachable.
+- **SQLite** — local, offline, zero-install convenience queries. Opt-in.
 
-Do not treat the SQLite file as authoritative. If it drifts, `db rebuild`.
+Do not treat the SQLite file as authoritative. If it drifts:
+`./scripts/sdlc.sh db rebuild` or `sdlc-engine context parity --repair`.
 
 ## Ops console
 
@@ -94,6 +96,6 @@ Visual status + rebuild live in the ops console:
 ./scripts/sdlc.sh console --target .
 ```
 
-Open the **SQLite** tab for counts, registry breakdown, and rebuild. The **Guide** tab
-stores local Embabel Guide connection settings (gitignored under `.sdlc/guide-config.json`)
-so you can stage SPIKE-001 config next to the SQLite cache.
+Open the **SQLite** tab for counts, registry breakdown, and rebuild. The
+**Guide** tab stores local Guide connection settings (gitignored under
+`.sdlc/guide-config.json`). See [ops-console.md](ops-console.md).

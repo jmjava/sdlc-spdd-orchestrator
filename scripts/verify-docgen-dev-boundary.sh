@@ -105,14 +105,9 @@ shipped_docs=()
 collect_shipped_doc_paths shipped_docs
 shipped_files+=("${shipped_docs[@]}")
 
+# Storage v3 ships only harness + playbooks from agent-context; memory ledgers
+# are seeded empty and never copied from the orchestrator.
 for f in \
-  agent-context/memory/project-memory.md \
-  agent-context/memory/architecture-decisions.md \
-  agent-context/memory/known-pitfalls.md \
-  agent-context/memory/reusable-patterns.md \
-  agent-context/memory/session-history.md \
-  agent-context/memory/phase-index.md \
-  templates/agent-context/memory/domain-index.md \
   agent-context/harness/quality-gates.md \
   agent-context/harness/validation-rules.md; do
   [[ -e "$f" ]] && shipped_files+=("$f")
@@ -129,9 +124,9 @@ for f in "${shipped_files[@]}"; do
   done < <(grep -nE "${DOCGEN_PATTERN}" "$f" 2>/dev/null || true)
 done
 
-# guide-rag doc must never ship
-if ! is_orchestrator_only_doc "docs/guide-rag-research-and-dogfooding.md"; then
-  note_fail "guide-rag-research-and-dogfooding.md is not marked orchestrator-only"
+# dice-projection-runbook must never ship
+if ! is_orchestrator_only_doc "docs/dice-projection-runbook.md"; then
+  note_fail "dice-projection-runbook.md is not marked orchestrator-only"
 fi
 
 # --- 4) Optional smoke install ---------------------------------------------------
@@ -144,8 +139,10 @@ if [[ "${SMOKE_INSTALL}" -eq 1 ]]; then
 
   forbidden=(
     docs/demos
-    docs/sdlc-spdd/guide-rag-research-and-dogfooding.md
+    sdlc-spdd/docs/demos
+    sdlc-spdd/docs/dice-projection-runbook.md
     scripts/setup-docgen-venv.sh
+    sdlc-spdd/scripts/setup-docgen-venv.sh
     scripts/docgen-engine.path
     .venv
   )
@@ -164,17 +161,11 @@ if [[ "${SMOKE_INSTALL}" -eq 1 ]]; then
       note_fail "install created forbidden path: ${path}"
     fi
   done
-  if [[ -d "${tmp}/docs/sdlc-spdd" ]]; then
+  if [[ -d "${tmp}/sdlc-spdd/docs" ]]; then
     while IFS= read -r line; do
       [[ -z "$line" ]] && continue
-      note_fail "installed docs/sdlc-spdd:${line}"
-    done < <(grep -rnE "${DOCGEN_PATTERN}" "${tmp}/docs/sdlc-spdd" 2>/dev/null || true)
-  fi
-  if [[ -d "${tmp}/agent-context/memory" ]]; then
-    while IFS= read -r line; do
-      [[ -z "$line" ]] && continue
-      note_fail "installed agent-context/memory:${line}"
-    done < <(grep -rnE "${DOCGEN_PATTERN}" "${tmp}/agent-context/memory" 2>/dev/null || true)
+      note_fail "installed sdlc-spdd/docs:${line}"
+    done < <(grep -rnE "${DOCGEN_PATTERN}" "${tmp}/sdlc-spdd/docs" 2>/dev/null || true)
   fi
   rm -rf "${tmp}"
   trap - EXIT

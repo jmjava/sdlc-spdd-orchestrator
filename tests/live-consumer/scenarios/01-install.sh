@@ -5,12 +5,13 @@ set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/lib.sh"
 
 ROOT="${1:?target root required}"
+HOME="$(live_home "${ROOT}")"
 echo "== 01 install layout =="
 
-[[ -x "${ROOT}/scripts/sdlc-spdd/sdlc.sh" ]] && ok "sdlc.sh installed" || bad "sdlc.sh missing"
-[[ -x "${ROOT}/agent-context/sdlc-pointer.sh" ]] && ok "pointer script" || bad "pointer script"
-[[ -x "${ROOT}/agent-context/sdlc-workflow.sh" ]] && ok "workflow script" || bad "workflow script"
-[[ -f "${ROOT}/agent-context/work-registry.tsv" ]] && ok "work-registry.tsv" || bad "work-registry.tsv"
+[[ -x "${HOME}/scripts/sdlc.sh" ]] && ok "sdlc.sh installed" || bad "sdlc.sh missing"
+[[ -x "${HOME}/scripts/sdlc-pointer.sh" ]] && ok "pointer script" || bad "pointer script"
+[[ -x "${HOME}/scripts/sdlc-workflow.sh" ]] && ok "workflow script" || bad "workflow script"
+[[ -f "${HOME}/spdd/memory/registry.jsonl" ]] && ok "registry.jsonl" || bad "registry.jsonl"
 [[ -f "${ROOT}/.cursor/rules/sdlc-spdd.mdc" ]] && ok "cursor rule" || bad "cursor rule"
 [[ -d "${ROOT}/.cursor/commands" ]] && ok "cursor commands dir" || bad "cursor commands dir"
 

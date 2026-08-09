@@ -1,43 +1,24 @@
-# DICE hybrid context backend — shareable runbook (SPIKE-001)
+# DICE projection runbook — run the Guide working store
 
 How to run the SDLC-SPDD orchestrator against a Guide instance that persists and
 retrieves **typed domain context** (DICE-style) in Neo4j, alongside normal RAG chunks.
-Written to be reproducible by anyone with the two repositories below — no other setup
-assumed.
+In storage v3 this graph is the **working store** — the default query backend for
+project memory ([Storage v3](storage-v3.md)). Written to be reproducible by anyone
+with the two repositories below — no other setup assumed.
 
 ## What you get
 
 Three retrieval legs over one Neo4j store, joined by **Work ID**:
 
-1. **Lexical** — keyword search over ingested markdown chunks (`docs_textSearch`).
-2. **Embedding RAG** — vector similarity over the same chunks (`docs_vectorSearch`).
+1. **Lexical** — keyword (BM25) search over ingested markdown chunks (`docs_textSearch`).
+2. **Embedding RAG** — vector similarity over the same chunks (`docs_vectorSearch`),
+   using **local ONNX embeddings** — keyless retrieval, no LLM API key.
 3. **Domain graph (DICE)** — typed `__Entity__` nodes (`WorkId`, `Canvas`, `Area`,
-   `Decision`, `Pitfall`, `Pattern`) connected by named edges. Every retrieved item is
-   explainable by the edge that produced it, not a similarity score.
+   `Decision`, `Pitfall`, `Pattern`, `Session`, `Analysis`) connected by named
+   edges, ingested from `spdd/memory/lessons.jsonl` + the canvases. Every retrieved
+   item is explainable by the edge that produced it, not a similarity score.
 
-```mermaid
-flowchart LR
-    subgraph SPDD["SPDD workflow (this repo)"]
-        MD["Markdown artifacts<br/>spdd/canvas/*.md<br/>agent-context/memory/context-index.md"]
-    end
-
-    subgraph Guide["Guide (sdlc-spdd-projection-v2) + Neo4j"]
-        CH["RAG chunks<br/>(legs 1-2)"]
-        EN["Domain entities __Entity__<br/>WorkId, Canvas, Area,<br/>Decision, Pitfall, Pattern<br/>(leg 3)"]
-    end
-
-    subgraph Retrieve["Retrieval for the next run"]
-        T1["docs_textSearch / docs_vectorSearch"]
-        T2["spdd_workSubgraph / spdd_areaLessons<br/>spdd_findByLabel / spdd_projectionStats"]
-    end
-
-    MD -->|"append-ingest (chunks)"| CH
-    MD -->|"projection load (entities + edges)"| EN
-    CH --> T1
-    EN --> T2
-    T1 --> CTX["Assembled prompt context<br/>join key: Work ID"]
-    T2 --> CTX
-```
+![Guide DICE - RAG chunks + entity graph from the same ledger](diagrams/13-guide-rag-legs.svg)
 
 ## Prerequisites
 
@@ -45,28 +26,25 @@ flowchart LR
 |-------------|-------|
 | JDK 21 + Maven | Guide builds with `./mvnw` |
 | Docker | Neo4j runs via Guide's compose setup (or point at your own Neo4j) |
-| OpenAI API key | embeddings + chat models used by Guide |
-| Guide home | `github.com/jmjava/orch-guide`, tag **`sdlc-spdd-projection-v2`** (copied from former `jmjava/guide` tip; supersedes `sdlc-spdd-projection-v1` @ `a6e3246`) |
+| Guide home | `github.com/jmjava/orch-guide`, tag **`spdd-projection-v3`** |
 | This repo | `sdlc-spdd-orchestrator` (any SDLC-SPDD project layout works) |
+
+No LLM API key is needed for retrieval — embeddings run on local ONNX models.
 
 ## 1. Get Guide (pinned tag)
 
 ```bash
 git clone git@github.com:jmjava/orch-guide.git
-cd guide
+cd orch-guide
 git fetch --tags
-git checkout sdlc-spdd-projection-v2
-# or: git checkout main   # floating tip (includes the same merge)
+git checkout spdd-projection-v3
+# or: git checkout main   # floating tip
 ```
 
 `main` tracks upstream `embabel/guide` plus the SPDD projection package
 (`com.embabel.guide.spdd`) — see `docs/spdd-projection-ingest.md` in that repo for the
-change summary aimed at Guide developers. Upstream-vs-fork absorption research is
-**SPIKE-003** (`spdd/analysis/SPIKE-003-embabel-context-graph-absorption-research.md`) —
-**Complete** (hybrid accepted 2026-08-07); follow-on
-`FEAT-013-guide-git-incremental-upstream` upstreams Layer B only.
-Guide-side notes live in that repo’s `docs/spdd-upstream-absorption.md`. The orchestrator
-console defaults `guide_git_ref` to **`sdlc-spdd-projection-v2`**. Prefer
+change summary aimed at Guide developers. The orchestrator console defaults
+`guide_git_ref` to **`spdd-projection-v3`**. Prefer
 `./scripts/sdlc.sh console --target .` ([ops-console.md](ops-console.md)) for day-to-day
 dogfood start/stop instead of babysitting the JVM by hand.
 
@@ -77,7 +55,6 @@ Create a user profile (once):
 ```bash
 cp scripts/user-config/application-user.yml.example scripts/user-config/application-myname.yml
 echo 'GUIDE_PROFILE=myname' >> .env
-echo 'OPENAI_API_KEY=sk-…' >> .env
 ```
 
 In `application-myname.yml`, enable the projection and (recommended) pin the roots it
@@ -100,6 +77,10 @@ guide:
     # Overrides outside default-root-path + this list are rejected with HTTP 400.
     allowed-roots: []
 ```
+
+The loader descends into `<rootPath>/sdlc-spdd/` automatically when that
+single-folder home exists (storage v3 install layout), so pointing at the repo
+root is correct for both layouts.
 
 ## 3. Start Guide + Neo4j and ingest
 
@@ -137,7 +118,7 @@ so it refreshes the tool list — the `spdd_*` tools only appear when
 
 | Method + path | Purpose | Errors |
 |---------------|---------|--------|
-| `POST /api/v1/data/spdd-projection/load` `{"rootPath": "…"}` | Project canvases + context index into `__Entity__` (idempotent merge-by-id) | 400 root outside allowlist / missing; 409 feature disabled |
+| `POST /api/v1/data/spdd-projection/load` `{"rootPath": "…"}` | Project `spdd/memory/lessons.jsonl` + canvases into `__Entity__` (idempotent merge-by-id; effective root descends into `sdlc-spdd/`) | 400 root outside allowlist / missing; 409 feature disabled |
 | `GET /api/v1/data/spdd-projection/stats` | Entity counts by label | — |
 | `GET /api/v1/data/spdd-projection/work/{workId}` | WorkId subgraph via typed edges (canvas, area, decision, pitfall, pattern) | 404 unknown Work ID; 400 blank |
 | `GET /api/v1/data/spdd-projection/area?name={area}` | **Cross-run lessons**: decisions/pitfalls/patterns any prior Work ID recorded against a code area, plus Work IDs that touched it | 404 unknown area; 400 blank |
@@ -151,11 +132,15 @@ never fail the whole load.
 |------|---------|
 | `spdd_workSubgraph` | Auditable context for one Work ID (canvas + areas + lessons) |
 | `spdd_areaLessons` | "I'm about to touch area X — what did previous runs learn?" |
-| `spdd_findByLabel` | Enumerate entities of one schema label (capped at 200) |
+| `spdd_findByLabel` | Enumerate entities of one schema label |
 | `spdd_projectionStats` | Sanity check counts after a load |
+| `spdd_getLesson` | One full, untruncated lesson body by record id |
 
-Tool errors come back as `{"error": "…"}` JSON, so an agent can recover. Labels are
-validated against the SPDD schema; anything else is rejected.
+List responses are capped — 20 items by default, 100 max, descriptions
+truncated to 300 characters — so tool results stay small in the LLM context;
+use `spdd_getLesson` when you need a full body. Tool errors come back as
+`{"error": "…"}` JSON, so an agent can recover. Labels are validated against
+the SPDD schema; anything else is rejected.
 
 The `docs_*` tools (`textSearch`, `vectorSearch`, `broadenChunk`, `zoomOut`) serve
 legs 1–2 over the same store.
@@ -167,12 +152,12 @@ check the backend before using any `spdd_*` tool:
 
 ```bash
 ./scripts/resolve-context-backend.sh --target .        # orchestrator repo
-./scripts/sdlc-spdd/resolve-context-backend.sh --target .   # installed project
+./sdlc-spdd/scripts/resolve-context-backend.sh --target .   # installed project
 ```
 
-`CONTEXT_BACKEND=files` (no `agent-context/harness/guide-dice.md` marker, or
-Guide unreachable) means the run proceeds on the file-based indexes alone.
-When it reports `guide-dice`:
+`CONTEXT_BACKEND=files` (no `guide-dice.md` harness marker, or Guide
+unreachable) means the run proceeds on ledger retrieval alone — the normal
+fallback, never an error. When it reports `guide-dice`:
 
 1. Session starts with a Work ID (or derives target areas from the analysis phase).
 2. `spdd_workSubgraph(workId)` → canvas + areas + this work's recorded lessons.
@@ -180,28 +165,30 @@ When it reports `guide-dice`:
    **all** previous Work IDs that touched the same code.
 4. `docs_vectorSearch` / `docs_textSearch` with the Work ID and area terms → supporting
    prose (session notes, retros, analysis docs).
-5. After the run, capture scripts update `context-index.md`; re-project so the
-   new lessons become graph-queryable:
+5. After the run, captures stage lesson records; `/sdlc-spdd-accept` promotes
+   them into `spdd/memory/lessons.jsonl` and re-projects so the new lessons
+   become graph-queryable:
 
    ```bash
    ./scripts/resolve-context-backend.sh --target . --project --work-id <WORK-ID>
    ```
 
-   (no-op when the backend resolves to `files`).
+   (no-op when the backend resolves to `files`). `sdlc-engine context parity
+   [--repair]` verifies the graph against the ledger at any time.
 
 ## Troubleshooting
 
 | Symptom | Fix |
 |---------|-----|
 | `spdd_*` tools missing in client | Reload the MCP server entry in the client; confirm `guide.spdd-projection.enabled=true` and check Guide log for `Exposing N tools` |
-| 403 on projection endpoints | You are running a Guide build without SPDD projection permits — use tag `sdlc-spdd-projection-v2` (or a build that includes guide PR #2/#7) |
+| 403 on projection endpoints | You are running a Guide build without SPDD projection permits — use tag `spdd-projection-v3` |
 | 400 `not under an allowed root` | Add the target to `guide.spdd-projection.allowed-roots` or use the default root |
 | JVM dies during startup re-ingest | Known native ONNX crash under heavy embedding load; append mode is idempotent — restart and it resumes |
-| Stats all zero after load | Wrong root: the loader needs `spdd/canvas/` and `agent-context/memory/context-index.md` under the root you posted |
+| Stats all zero after load | Wrong root: the loader needs `spdd/memory/lessons.jsonl` and `spdd/canvas/` under the effective root (repo root or `<repo>/sdlc-spdd/`) |
+| Graph out of date after accept | `sdlc-engine context parity --repair` (or re-run the projection load) |
 
 ## Related documents
 
-- Entity/edge contract: `spdd/analysis/SPIKE-001-dice-entity-schema.md`
-- Dual-ingest model (chunks vs entities): `spdd/analysis/SPIKE-001-dual-ingest-model.md`
+- [Storage v3](storage-v3.md) — ledger model and parity by construction
+- [Guide flow](guide-flow.md) — how phases use this backend
 - Guide-side operator doc + developer change summary: `docs/spdd-projection-ingest.md` (Guide repo)
-- Canvas / decision criteria: `spdd/canvas/SPIKE-001-guide-rag-context-backend.md`

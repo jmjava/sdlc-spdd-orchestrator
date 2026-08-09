@@ -5,13 +5,16 @@ _SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=/dev/null
 source "${_SCRIPT_DIR}/lib/common.sh"
 # shellcheck source=/dev/null
+source "${_SCRIPT_DIR}/lib/paths.sh"
+# shellcheck source=/dev/null
 source "${_SCRIPT_DIR}/lib/areas.sh"
+# shellcheck source=/dev/null
+source "${_SCRIPT_DIR}/lib/skills.sh"
 
 # Resolve SDLC Agents-style context for progressive disclosure:
+#   - phase core harness files (phase-index.md) + phase-matching skills
 #   - #SkillName / !SkillName directives in prompt text
-#   - Phase-specific extension folders (_all-agents + *-agent)
-#   - Static playbooks for the active phase (from agent-context/memory/phase-index.md)
-#   - context-index.md rows filtered by --work-id / --areas (dynamic memory)
+#   - Work ID ledger progress excerpt (.sdlc/resolved/progress-<ID>.md)
 #
 # Prints paths relative to --target (one per line with --format paths).
 
@@ -19,17 +22,18 @@ usage() {
   cat <<'EOF'
 Usage: resolve-agent-context.sh [options]
 
-Resolve skills, phase extensions, and indexed context for progressive loading.
-Combines SDLC Agents static resolution with area-keyed context-index rows.
+Resolve skills, phase harness files, and Work ID context for progressive loading.
+Combines SDLC Agents static resolution with a ledger progress excerpt (storage
+v3): matching lesson records are summarized into .sdlc/resolved/progress-<ID>.md.
 
 Options:
   --target <path>     Target project (default: .)
   --phase <phase>     SDLC phase: init, analysis, plan, architect, code,
                       api-test, review, prompt-update, retro, sync
-  --work-id <id>      Load code areas from analysis + Work ID artifacts; filter
-                      context-index.md by those areas
+  --work-id <id>      Load code areas from analysis + Work ID artifacts; scope
+                      the ledger progress excerpt by those areas
   --areas <list>      Comma-separated code areas (overrides/supplements work-id)
-  --index-limit <n>   Max context-index rows to resolve (default: 12)
+  --index-limit <n>   Ignored (legacy; kept for CLI compatibility)
   --text <string>     Prompt text containing #SkillName and !SkillName tokens
   --text-file <path>  Read prompt text from a file
   --format <fmt>      Output: paths (default), markdown, json
@@ -38,10 +42,10 @@ Options:
   -h, --help          Show this help
 
 Examples:
-  ./scripts/sdlc-spdd/resolve-agent-context.sh --target . --phase code --work-id FEAT-001
-  ./scripts/sdlc-spdd/resolve-agent-context.sh --phase code --areas src/billing,com.acme.billing
-  ./scripts/sdlc-spdd/resolve-agent-context.sh --text "Implement auth #TDD #java !Kafka"
-  ./scripts/sdlc-spdd/resolve-agent-context.sh --list-skills
+  ./sdlc-spdd/scripts/resolve-agent-context.sh --target . --phase code --work-id FEAT-001
+  ./sdlc-spdd/scripts/resolve-agent-context.sh --phase code --areas src/billing,com.acme.billing
+  ./sdlc-spdd/scripts/resolve-agent-context.sh --text "Implement auth #TDD #java !Kafka"
+  ./sdlc-spdd/scripts/resolve-agent-context.sh --list-skills
 EOF
 }
 
@@ -96,6 +100,8 @@ if [[ -n "${PHASE}" ]]; then
 fi
 
 TARGET="$(sdlc_resolve_target "${TARGET}")"
+FRAMEWORK_HOME="$(sdlc_home "${TARGET}")"
+export SDLC_ROOT="${TARGET}"
 
 if [[ -n "${TEXT_FILE}" ]]; then
   if [[ ! -f "${TEXT_FILE}" ]]; then
@@ -119,14 +125,10 @@ register_area() {
 
 collect_areas_from_work_id() {
   local wid="$1"
-  local candidate
-  for candidate in \
-    "${TARGET}/spdd/analysis/${wid}-analysis.md" \
-    "${TARGET}/agent-context/features/${wid}/analysis-context.md"; do
-    while IFS= read -r _ar; do
-      register_area "${_ar}"
-    done < <(parse_section_bullets "${candidate}" "Code Areas")
-  done
+  local candidate="${FRAMEWORK_HOME}/spdd/analysis/${wid}-analysis.md"
+  while IFS= read -r _ar; do
+    register_area "${_ar}"
+  done < <(parse_section_bullets "${candidate}" "Code Areas")
 }
 
 if [[ -n "${WORK_ID}" ]]; then
@@ -146,207 +148,77 @@ fi
 area_scoped=0
 ((${#filter_areas[@]} > 0)) && area_scoped=1
 
-declare -a index_rows=()
+_write_progress_excerpt_from_ledger() {
+  local wid="$1"
+  local ledger stage excerpt_dir excerpt
+  ledger="$(sdlc_ledger "${TARGET}")"
+  stage="$(sdlc_stage "${TARGET}")"
+  excerpt_dir="$(sdlc_runtime_dir "${TARGET}")/resolved"
+  excerpt="${excerpt_dir}/progress-${wid}.md"
+  python3 - <<PY
+import json
+from pathlib import Path
 
-resolve_index_entry_path() {
-  local entry="$1"
-  entry="${entry#"${entry%%[![:space:]]*}"}"
-  entry="${entry%"${entry##*[![:space:]]}"}"
-  [[ -z "${entry}" ]] && return 0
-  # File paths load directly; anchor-only entries (### …) stay in the index table —
-  # do not pull in whole memory logs.
-  if [[ "${entry}" == */* ]]; then
-    add_path "${TARGET}/${entry}"
-  fi
-}
+wid = ${wid@Q}
+ledger = Path(${ledger@Q})
+stage = Path(${stage@Q})
+excerpt = Path(${excerpt@Q})
 
-collect_context_index_matches() {
-  local index_file="${TARGET}/agent-context/memory/context-index.md"
-  [[ -f "${index_file}" ]] || return 0
-  ((${#filter_areas[@]} > 0)) || return 0
+def read_jsonl(path):
+    if not path.is_file():
+        return []
+    out = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            out.append(json.loads(line))
+        except json.JSONDecodeError:
+            continue
+    return out
 
-  local areas_csv=""
-  local _a
-  for _a in "${filter_areas[@]}"; do
-    areas_csv+="${_a},"
-  done
-  areas_csv="${areas_csv%,}"
-
-  while IFS= read -r row; do
-    [[ -n "${row}" ]] || continue
-    index_rows+=("${row}")
-    local entry
-    entry="$(printf '%s' "${row}" | awk -F'|' '{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $8); print $8}')"
-    resolve_index_entry_path "${entry}"
-  done < <(
-    awk -F'|' -v areas="${areas_csv}" -v limit="${INDEX_LIMIT}" '
-      BEGIN {
-        n = split(areas, want, ",")
-        for (i = 1; i <= n; i++) area_set[want[i]] = 1
-        count = 0
-      }
-      /^\| / && $0 !~ /^\| Area/ {
-        if (count >= limit) exit
-        a = $2
-        gsub(/^[[:space:]]+|[[:space:]]+$/, "", a)
-        if (a in area_set) {
-          print
-          count++
-        }
-      }
-    ' "${index_file}"
-  )
-}
-
-_progress_section_for_work() {
-  local file="$1"
-  local wid="$2"
-  [[ -f "${file}" && -n "${wid}" ]] || return 0
-  # Keep in sync with Project.ledger_section_for_work / _wf_ledger_section_for_work.
-  awk -v wid="${wid}" '
-    BEGIN { in_h2 = 0; in_h3 = 0 }
-    /^## / {
-      rest = $0
-      sub(/^##[[:space:]]+/, "", rest)
-      in_h2 = (rest == wid || index(rest, wid " ") == 1 || index(rest, wid " -") == 1 || index(rest, wid "—") == 1)
-      in_h3 = 0
-      if (in_h2) print
-      next
-    }
-    /^### / {
-      in_h3 = (index($0, wid) > 0)
-      in_h2 = 0
-      if (in_h3) print
-      next
-    }
-    in_h2 || in_h3 { print }
-  ' "${file}"
+rows = {}
+for rec in read_jsonl(ledger) + read_jsonl(stage):
+    if rec.get("work_id") != wid:
+        continue
+    rows[rec.get("id", "")] = rec
+matches = sorted(rows.values(), key=lambda r: (r.get("ts", ""), r.get("id", "")), reverse=True)
+if not matches:
+    raise SystemExit(0)
+lines = [f"# Progress (ledger): {wid}", ""]
+for rec in matches:
+    lines.append(f"- {rec.get('id','')} | {rec.get('kind','')} | {rec.get('title','')} | {rec.get('ts','')}")
+excerpt.parent.mkdir(parents=True, exist_ok=True)
+excerpt.write_text("\n".join(lines) + "\n", encoding="utf-8")
+print(str(excerpt))
+PY
 }
 
 add_work_id_artifacts() {
   local wid="$1"
-  add_path "${TARGET}/spdd/canvas/${wid}.md"
-  add_path "${TARGET}/spdd/analysis/${wid}-analysis.md"
-  # Lean progress is canonical (#86); inject a work-scoped excerpt only so the
-  # shared ledger does not bleed other Work IDs into the resolved context.
-  local lean="${TARGET}/spdd/memory/entries/progress.md"
-  if [[ -f "${lean}" ]]; then
-    local section excerpt_dir excerpt
-    section="$(_progress_section_for_work "${lean}" "${wid}")"
-    if [[ -n "${section}" ]]; then
-      excerpt_dir="${TARGET}/.sdlc/resolved"
-      excerpt="${excerpt_dir}/progress-${wid}.md"
-      mkdir -p "${excerpt_dir}"
-      printf '# Progress (scoped: %s)\n\n%s\n' "${wid}" "${section}" >"${excerpt}"
-      add_path "${excerpt}"
-    fi
-  else
-    add_path "${TARGET}/agent-context/features/${wid}/progress-log.md"
-  fi
-  add_path "${TARGET}/agent-context/features/${wid}/analysis-context.md"
-}
-
-phase_agent_dir() {
-  case "${1:-}" in
-    init) printf '%s' "initializer-agent" ;;
-    analysis|plan|prompt-update) printf '%s' "planning-agent" ;;
-    architect) printf '%s' "architect-agent" ;;
-    code|api-test) printf '%s' "coding-agent" ;;
-    review) printf '%s' "codereview-agent" ;;
-    retro) printf '%s' "retro-agent" ;;
-    sync) printf '%s' "curator-agent" ;;
-    *) printf '%s' "" ;;
-  esac
-}
-
-extension_manifest_path() {
-  printf '%s' "${TARGET}/agent-context/extensions/manifest.md"
-}
-
-manifest_phase_table_usable() {
-  local manifest="$1"
-  [[ -f "${manifest}" ]] || return 1
-  grep -q '^## Phase extensions' "${manifest}" || return 1
-  grep -q '^| Folder | Phases |' "${manifest}" || return 1
-  return 0
-}
-
-manifest_phase_matches() {
-  local phases_col="$1"
-  local phase="$2"
-  phases_col="${phases_col#"${phases_col%%[![:space:]]*}"}"
-  phases_col="${phases_col%"${phases_col##*[![:space:]]}"}"
-  [[ "${phases_col}" == "*" ]] && return 0
-  local part
-  IFS=',' read -ra parts <<< "${phases_col}"
-  for part in "${parts[@]}"; do
-    part="${part#"${part%%[![:space:]]*}"}"
-    part="${part%"${part##*[![:space:]]}"}"
-    [[ "${part}" == "${phase}" ]] && return 0
+  add_path "${FRAMEWORK_HOME}/spdd/canvas/${wid}.md"
+  add_path "${FRAMEWORK_HOME}/spdd/analysis/${wid}-analysis.md"
+  shopt -s nullglob
+  local task
+  for task in \
+    "${FRAMEWORK_HOME}/spdd/tasks/${wid}"*.md \
+    "${FRAMEWORK_HOME}/spdd/tasks/${wid}-"*.md; do
+    add_path "${task}"
   done
-  return 1
-}
-
-collect_manifest_phase_extensions() {
-  local phase="$1"
-  local manifest
-  manifest="$(extension_manifest_path)"
-  manifest_phase_table_usable "${manifest}" || return 1
-
-  declare -A folders=()
-  local row folder phases_col
-  local collected=0
-  while IFS= read -r row; do
-    [[ -z "${row}" ]] || continue
-    folder="$(printf '%s' "${row}" | awk -F'|' '{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); gsub(/`/, "", $2); print $2}')"
-    phases_col="$(printf '%s' "${row}" | awk -F'|' '{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $3); print $3}')"
-    [[ -z "${folder}" || "${folder}" == "Folder" ]] && continue
-    manifest_phase_matches "${phases_col}" "${phase}" || continue
-    folders["${folder}"]=1
-  done < <(
-    awk '
-      /^## Phase extensions/ { in_section = 1; next }
-      in_section && /^## / { exit }
-      in_section && /^\| / && $0 !~ /^\|[- ]+\|/ && $0 !~ /^\| Folder \|/ { print }
-    ' "${manifest}"
-  )
-
-  if ((${#folders[@]} == 0)); then
-    return 1
-  fi
-
-  local -a ordered=()
-  if [[ -n "${folders[_all-agents]:-}" ]]; then
-    ordered+=("_all-agents")
-  fi
-  local name
-  for name in "${!folders[@]}"; do
-    [[ "${name}" == "_all-agents" ]] && continue
-    ordered+=("${name}")
-  done
-  IFS=$'\n' ordered_sorted=($(printf '%s\n' "${ordered[@]}" | sort))
-  unset IFS
-
-  for name in "${ordered_sorted[@]}"; do
-    collect_extension_md "${ext_base}/${name}"
-    collected=1
-  done
-  (( collected == 1 ))
-}
-
-collect_convention_phase_extensions() {
-  local phase="$1"
-  collect_extension_md "${ext_base}/_all-agents"
-  local agent_dir
-  agent_dir="$(phase_agent_dir "${phase}")"
-  if [[ -n "${agent_dir}" ]]; then
-    collect_extension_md "${ext_base}/${agent_dir}"
+  shopt -u nullglob
+  local excerpt
+  excerpt="$(_write_progress_excerpt_from_ledger "${wid}" 2>/dev/null || true)"
+  if [[ -n "${excerpt}" && -f "${excerpt}" ]]; then
+    add_path "${excerpt}"
   fi
 }
 
 rel_path() {
   local abs="$1"
-  if [[ "${abs}" == "${TARGET}/"* ]]; then
+  if [[ "${abs}" == "${FRAMEWORK_HOME}/"* ]]; then
+    printf '%s' "${abs#${FRAMEWORK_HOME}/}"
+  elif [[ "${abs}" == "${TARGET}/"* ]]; then
     printf '%s' "${abs#${TARGET}/}"
   else
     printf '%s' "${abs}"
@@ -367,37 +239,31 @@ add_path() {
   resolved_paths+=("${rel}")
 }
 
-collect_extension_md() {
-  local dir="$1"
-  [[ -d "${dir}" ]] || return 0
-  shopt -s nullglob
-  local f
-  for f in "${dir}"/*.md; do
-    [[ "$(basename "${f}")" == "README.md" ]] && continue
-    add_path "${f}"
-  done
-  shopt -u nullglob
-}
-
 resolve_skill_file() {
-  local skill="$1"
-  local lower
-  lower="$(printf '%s' "${skill}" | tr '[:upper:]' '[:lower:]')"
-  local base="${TARGET}/agent-context"
-  local candidate
-  for candidate in \
-    "${base}/extensions/skills/${skill}.md" \
-    "${base}/extensions/skills/${lower}.md" \
-    "${base}/playbooks/${lower}-playbook.md" \
-    "${base}/playbooks/${skill}-playbook.md" \
-    "${base}/playbooks/${lower}.md" \
-    "${base}/playbooks/${skill}.md"; do
-    if [[ -f "${candidate}" ]]; then
-      add_path "${candidate}"
+  local token="$1"
+  local skills_dir row name aliases phases path
+  skills_dir="$(sdlc_skills_dir "${TARGET}")"
+  [[ -d "${skills_dir}" ]] || return 1
+  while IFS=$'\x1f' read -r name aliases phases path; do
+    [[ -n "${name}" ]] || continue
+    if skill_name_matches "${name}" "${aliases}" "${token}"; then
+      add_path "${path}"
       return 0
     fi
-  done
+  done < <(_skills_list_meta "${skills_dir}")
   return 1
+}
+
+collect_phase_skills() {
+  local phase="$1"
+  local skills_dir row name aliases phases path
+  skills_dir="$(sdlc_skills_dir "${TARGET}")"
+  [[ -d "${skills_dir}" ]] || return 0
+  while IFS=$'\x1f' read -r name aliases phases path; do
+    [[ -n "${phases}" ]] || continue
+    skill_phases_match "${phases}" "${phase}" || continue
+    add_path "${path}"
+  done < <(_skills_list_meta "${skills_dir}")
 }
 
 declare -a skill_includes=()
@@ -421,19 +287,21 @@ parse_skill_directives() {
 }
 
 list_discoverable_skills() {
+  local skills_dir="$1"
   declare -A names=()
-  shopt -s nullglob
-  local f base name
-  for f in "${TARGET}"/agent-context/extensions/skills/*.md; do
-    base="$(basename "${f}" .md)"
-    names["${base}"]=1
-  done
-  for f in "${TARGET}"/agent-context/playbooks/*-playbook.md; do
-    base="$(basename "${f}")"
-    base="${base%-playbook.md}"
-    names["${base}"]=1
-  done
-  shopt -u nullglob
+  local row name aliases phases path token
+  [[ -d "${skills_dir}" ]] || return 0
+  while IFS=$'\x1f' read -r name aliases phases path; do
+    [[ -n "${name}" ]] || continue
+    names["${name}"]=1
+    [[ -z "${aliases}" ]] && continue
+    IFS=',' read -ra parts <<< "${aliases}"
+    for token in "${parts[@]}"; do
+      token="${token#"${token%%[![:space:]]*}"}"
+      token="${token%"${token##*[![:space:]]}"}"
+      [[ -n "${token}" ]] && names["${token}"]=1
+    done
+  done < <(_skills_list_meta "${skills_dir}")
   local n
   for n in "${!names[@]}"; do
     printf '%s\n' "${n}"
@@ -459,11 +327,11 @@ phase_index_row_matches() {
 }
 
 phase_index_path_area_scoped_skip() {
+  # Lesson bodies live in the ledger and are retrieved on demand — never
+  # bulk-resolved into the context list.
   local rel="$1"
   case "${rel}" in
-    agent-context/memory/known-pitfalls.md|known-pitfalls.md) return 0 ;;
-    agent-context/memory/architecture-decisions.md|architecture-decisions.md) return 0 ;;
-    agent-context/memory/reusable-patterns.md|reusable-patterns.md) return 0 ;;
+    spdd/memory/lessons.jsonl|lessons.jsonl) return 0 ;;
   esac
   return 1
 }
@@ -472,7 +340,7 @@ add_phase_index_glob() {
   local pattern="$1"
   shopt -s nullglob
   local match
-  for match in "${TARGET}/${pattern}"; do
+  for match in "${FRAMEWORK_HOME}/${pattern}"; do
     if [[ -f "${match}" ]]; then
       add_path "${match}"
     fi
@@ -482,7 +350,7 @@ add_phase_index_glob() {
 
 add_phase_index_directory() {
   local rel_dir="$1"
-  local dir="${TARGET}/${rel_dir}"
+  local dir="${FRAMEWORK_HOME}/${rel_dir}"
   [[ -d "${dir}" ]] || return 0
 
   case "${rel_dir}" in
@@ -498,7 +366,7 @@ add_phase_index_directory() {
       ;;
     spdd/analysis|spdd/analysis/)
       if [[ -n "${WORK_ID}" ]]; then
-        add_path "${TARGET}/spdd/analysis/${WORK_ID}-analysis.md"
+        add_path "${FRAMEWORK_HOME}/spdd/analysis/${WORK_ID}-analysis.md"
       fi
       ;;
     requirements/milestones|requirements/milestones/)
@@ -543,18 +411,30 @@ add_phase_index_path() {
     return 0
   fi
 
-  if [[ "${raw}" == */* && -d "${TARGET}/${raw}" ]]; then
+  if [[ "${raw}" == */* && -d "${FRAMEWORK_HOME}/${raw}" ]]; then
     add_phase_index_directory "${raw}"
     return 0
   fi
 
-  add_path "${TARGET}/${raw}"
+  case "${raw}" in
+    agent-context/harness/*)
+      add_path "$(sdlc_harness_dir "${TARGET}")/${raw#agent-context/harness/}"
+      return 0
+      ;;
+    harness/*)
+      add_path "$(sdlc_harness_dir "${TARGET}")/${raw#harness/}"
+      return 0
+      ;;
+  esac
+
+  add_path "${FRAMEWORK_HOME}/${raw}"
 }
 
 load_phase_index_paths() {
   local phase="$1"
   local scoped="${2:-0}"
-  local index_file="${TARGET}/agent-context/memory/phase-index.md"
+  local index_file
+  index_file="$(sdlc_harness_dir "${TARGET}")/phase-index.md"
   [[ -f "${index_file}" ]] || return 0
 
   while IFS= read -r row; do
@@ -568,24 +448,17 @@ load_phase_index_paths() {
 }
 
 if [[ "${LIST_SKILLS}" -eq 1 ]]; then
-  list_discoverable_skills
+  list_discoverable_skills "$(sdlc_skills_dir "${TARGET}")"
   exit 0
 fi
 
-ext_base="${TARGET}/agent-context/extensions"
 if [[ -n "${PHASE}" ]]; then
-  if ! collect_manifest_phase_extensions "${PHASE}"; then
-    collect_convention_phase_extensions "${PHASE}"
-  fi
   load_phase_index_paths "${PHASE}" "${area_scoped}"
+  collect_phase_skills "${PHASE}"
 fi
 
 if [[ -n "${WORK_ID}" ]]; then
   add_work_id_artifacts "${WORK_ID}"
-fi
-
-if (( area_scoped == 1 )); then
-  collect_context_index_matches
 fi
 
 if [[ -n "${TEXT}" ]]; then
@@ -603,51 +476,28 @@ emit_paths() {
 }
 
 emit_markdown() {
-  local p kind row
-  if ((${#resolved_paths[@]} == 0 && ${#index_rows[@]} == 0)); then
+  local p kind
+  if ((${#resolved_paths[@]} == 0)); then
     echo "No resolved context files."
     return 0
   fi
-  if ((${#resolved_paths[@]} > 0)); then
-    echo "### Static and phase files"
-    echo ""
-    echo "| Kind | Path |"
-    echo "|------|------|"
-    for p in "${resolved_paths[@]}"; do
-      kind="file"
-      if [[ "${p}" == agent-context/extensions/* ]]; then
-        kind="extension"
-      elif [[ "${p}" == agent-context/playbooks/* ]]; then
-        kind="playbook"
-      elif [[ "${p}" == agent-context/memory/* ]]; then
-        kind="memory"
-      elif [[ "${p}" == agent-context/harness/* ]]; then
-        kind="harness"
-      elif [[ "${p}" == spdd/* ]]; then
-        kind="spdd"
-      fi
-      echo "| ${kind} | ${p} |"
-    done
-  fi
-  if ((${#index_rows[@]} > 0)); then
-    echo ""
-    echo "### Indexed context (newest first, area-filtered)"
-    echo ""
-    echo "Read the **Entry** column — session/analysis paths load directly; decision/pitfall/pattern rows point at anchors in **Source**."
-    echo ""
-    echo "| Area | Kind | Work ID | Entry | Source |"
-    echo "|------|------|---------|-------|--------|"
-    for row in "${index_rows[@]}"; do
-      printf '%s\n' "${row}" | awk -F'|' '{
-        gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2)
-        gsub(/^[[:space:]]+|[[:space:]]+$/, "", $3)
-        gsub(/^[[:space:]]+|[[:space:]]+$/, "", $4)
-        gsub(/^[[:space:]]+|[[:space:]]+$/, "", $8)
-        gsub(/^[[:space:]]+|[[:space:]]+$/, "", $7)
-        print "| " $2 " | " $3 " | " $4 " | " $8 " | " $7 " |"
-      }'
-    done
-  fi
+  echo "### Static and phase files"
+  echo ""
+  echo "| Kind | Path |"
+  echo "|------|------|"
+  for p in "${resolved_paths[@]}"; do
+    kind="file"
+    if [[ "${p}" == */harness/skills/* || "${p}" == agent-context/harness/skills/* ]]; then
+      kind="skill"
+    elif [[ "${p}" == */harness/* || "${p}" == agent-context/harness/* ]]; then
+      kind="harness"
+    elif [[ "${p}" == spdd/* || "${p}" == */spdd/* ]]; then
+      kind="spdd"
+    elif [[ "${p}" == .sdlc/* ]]; then
+      kind="resolved"
+    fi
+    echo "| ${kind} | ${p} |"
+  done
   if ((${#filter_areas[@]} > 0)); then
     echo ""
     echo "Code areas: ${filter_areas[*]}"
@@ -703,15 +553,7 @@ emit_json() {
     first=0
     printf '"%s"' "$(json_escape "${p}")"
   done
-  printf '],"indexRows":['
-  first=1
-  local row
-  for row in "${index_rows[@]}"; do
-    [[ ${first} -eq 1 ]] || printf ','
-    first=0
-    printf '"%s"' "$(json_escape "${row}")"
-  done
-  printf ']}\n'
+  printf '],"indexRows":[]}\n'
 }
 
 case "${FORMAT}" in

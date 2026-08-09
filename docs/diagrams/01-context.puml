@@ -1,0 +1,20 @@
+@startuml 01-context
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+title System Context - SDLC-SPDD Orchestrator (storage v3)
+
+Person(dev, "Developer", "Plans work, approves canvases, commits accepted lessons")
+Person(agent, "AI Coding Agent", "Cursor / Copilot / Claude Code session driving the lifecycle")
+
+System(orch, "SDLC-SPDD Orchestrator", "Lifecycle framework installed into a project under sdlc-spdd/. REASONS canvases govern work; a JSONL lessons ledger is the single system of record for memory")
+
+System_Ext(guide, "Guide DICE (orch-guide fork)", "Neo4j object graph + RAG. Projects the ledger into a queryable graph; serves spdd_* MCP tools. Keyless retrieval via local ONNX embeddings")
+System_Ext(git, "Git Remote", "Hosts the project repo. Only contracts and the accepted ledger are committed - no runtime noise")
+
+Rel(dev, orch, "runs /sdlc-spdd-* commands, reviews and accepts", "IDE / shell")
+Rel(agent, orch, "executes phases, captures lessons", "command specs + scripts + engine CLI")
+Rel(agent, guide, "queries past work on demand", "spdd_* MCP tools")
+Rel(orch, guide, "projects ledger into graph", "HTTP projection API")
+Rel(orch, git, "commits contracts + accepted ledger in batches", "git")
+
+@enduml

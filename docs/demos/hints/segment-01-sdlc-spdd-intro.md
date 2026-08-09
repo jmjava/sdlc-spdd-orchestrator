@@ -24,8 +24,7 @@ docgen:
       context:
         paths:
           - README.md
-          - docs/ten-thousand-foot-view.md
-          - docs/what-spdd-brings.md
+          - docs/three-part-operating-path.md
           - docs/three-part-operating-path.md
     visual:
       type: manim
@@ -44,5 +43,5 @@ docgen:
 
 # Segment 01 — SDLC-SPDD intro and REASONS loop (editorial notes, not narrated)
 
-Anchor on docs/ten-thousand-foot-view.md and what-spdd-brings.md. Keep under ~90 seconds
+Anchor on docs/three-part-operating-path.md. Keep under ~90 seconds
 spoken. Manim visual: SdlcSpddIntroScene.

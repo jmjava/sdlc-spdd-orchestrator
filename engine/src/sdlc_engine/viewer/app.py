@@ -8,6 +8,8 @@ from pathlib import Path
 from typing import Any, Callable
 from urllib.parse import quote
 
+from sdlc_engine.jira_format import adf_to_markdown, markdown_to_adf
+
 from .adf_html import adf_to_html
 from .html_adf import html_to_adf
 from .pages import EDIT_TEMPLATE, INDEX_TEMPLATE
@@ -19,11 +21,14 @@ def create_app(
     *,
     upload_adf: Callable[..., str] | None = None,
     download_adf: Callable[..., str] | None = None,
+    gh_runner: Callable[..., Any] | None = None,
 ) -> Any:
     """Create the Flask app.
 
     ``root`` is the default browse start (usually cwd). Paths may be absolute
     anywhere on the local filesystem — this tool is intended for local use only.
+    ``gh_runner`` is the injectable gh CLI transport (see ``sdlc_engine.issues``)
+    used by the GitHub Issue pull/push endpoints; tests pass a fake.
     """
     try:
         from flask import Flask, jsonify, redirect, render_template_string, request
@@ -43,7 +48,7 @@ def create_app(
         from sdlc_engine.issues import IssueSyncService
         from sdlc_engine.project import Project
 
-        return IssueSyncService(Project.resolve(root_path))
+        return IssueSyncService(Project.resolve(root_path), gh_runner=gh_runner)
 
     def _uploader() -> Callable[..., str]:
         if upload_adf is not None:
@@ -409,6 +414,136 @@ def create_app(
     @app.post("/api/download")
     def api_download():
         return _download_response(request.get_json(silent=True) or {})
+
+    _GITHUB_NOTE = "GitHub stores markdown; complex ADF formatting may flatten."
+
+    @app.post("/api/github/pull")
+    def api_github_pull():
+        """Fetch a GitHub issue body (markdown → ADF) into the editor.
+
+        Dry-run previews only; ``apply`` also writes the ADF to ``path``.
+        """
+        body = request.get_json(silent=True) or {}
+        issue = str(body.get("issue") or "").strip()
+        if not issue:
+            return jsonify(
+                {"ok": False, "error": "issue required (123, #123, or owner/repo#123)"}
+            ), 400
+        repo = str(body.get("repo") or "").strip() or None
+        path = str(body.get("path") or "").strip()
+        apply = bool(body.get("apply"))
+        if apply and not path:
+            return jsonify({"ok": False, "error": "path required to apply pull"}), 400
+        try:
+            data = _issue_service().fetch_github_issue(issue, repo=repo)
+        except ValueError as exc:
+            return jsonify({"ok": False, "error": str(exc)}), 400
+        except Exception as exc:  # noqa: BLE001 — gh/transport errors are 4xx, not 500
+            return jsonify({"ok": False, "error": str(exc)}), 400
+        markdown = str(data.get("body") or "")
+        adf = markdown_to_adf(markdown)
+        number = data.get("number")
+        message = (
+            f"GitHub #{number}: {data.get('title')} [{data.get('state')}]\n"
+            f"URL: {data.get('url')}\n"
+        )
+        saved: str | None = None
+        if apply:
+            try:
+                saved = str(store.save_path(path, adf).resolve())
+                message += f"Wrote {saved} from issue body (markdown → ADF).\n"
+            except AdfStoreError as exc:
+                return jsonify({"ok": False, "error": str(exc)}), 400
+        else:
+            message += "Dry-run only; pass {\"apply\": true} to overwrite the local file.\n"
+        return jsonify(
+            {
+                "ok": True,
+                "apply": apply,
+                "direction": "github-to-local",
+                "issue": issue,
+                "number": number,
+                "repo": data.get("repo") or "",
+                "url": data.get("url") or "",
+                "title": data.get("title") or "",
+                "state": data.get("state") or "",
+                "markdown": markdown,
+                "adf": adf,
+                "html": adf_to_html(adf),
+                "path": saved,
+                "note": _GITHUB_NOTE,
+                "message": message,
+            }
+        )
+
+    @app.post("/api/github/push")
+    def api_github_push():
+        """Push editor content (ADF → markdown) back to a GitHub issue body.
+
+        Dry-run returns the markdown preview; ``apply`` runs ``gh issue edit``.
+        """
+        body = request.get_json(silent=True) or {}
+        issue = str(body.get("issue") or "").strip()
+        if not issue:
+            return jsonify(
+                {"ok": False, "error": "issue required (123, #123, or owner/repo#123)"}
+            ), 400
+        repo = str(body.get("repo") or "").strip() or None
+        path = str(body.get("path") or "").strip()
+        apply = bool(body.get("apply"))
+        adf_doc = body.get("adf")
+        svc = _issue_service()
+        try:
+            svc.parse_github_issue_ref(issue)
+        except ValueError as exc:
+            return jsonify({"ok": False, "error": str(exc)}), 400
+        try:
+            if isinstance(adf_doc, dict):
+                from sdlc_engine.jira_format import load_adf_document
+
+                doc = load_adf_document(adf_doc)
+            elif path:
+                doc = store.load_path(path)
+            else:
+                return jsonify({"ok": False, "error": "path or adf required"}), 400
+        except (AdfStoreError, ValueError) as exc:
+            return jsonify({"ok": False, "error": str(exc)}), 400
+        markdown = adf_to_markdown(doc)
+        if not apply:
+            return jsonify(
+                {
+                    "ok": True,
+                    "apply": False,
+                    "direction": "local-to-github",
+                    "issue": issue,
+                    "markdown": markdown,
+                    "note": _GITHUB_NOTE,
+                    "message": (
+                        f"[dry-run] would update GitHub issue {issue} body "
+                        f"(ADF → markdown, {len(markdown)} chars).\n"
+                        f"{_GITHUB_NOTE}\n"
+                        "Re-run with {\"apply\": true} to push.\n\n"
+                        "--- markdown preview ---\n" + markdown
+                    ),
+                }
+            )
+        try:
+            message = svc.update_github_issue_body(issue, markdown, repo=repo)
+        except ValueError as exc:
+            return jsonify({"ok": False, "error": str(exc)}), 400
+        except Exception as exc:  # noqa: BLE001 — gh/transport errors are 4xx, not 500
+            return jsonify({"ok": False, "error": str(exc)}), 400
+        return jsonify(
+            {
+                "ok": True,
+                "apply": True,
+                "direction": "local-to-github",
+                "issue": issue,
+                "markdown": markdown,
+                "note": _GITHUB_NOTE,
+                "message": message,
+            }
+        )
 
     return app
 

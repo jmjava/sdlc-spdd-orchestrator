@@ -9,7 +9,7 @@ on:
       - '.github/copilot-instructions.md'
       - '.claude/commands/sdlc-*.md'
       - 'CLAUDE.md'
-      - 'scripts/sdlc-spdd/validate-command-adapters.sh'
+      - 'sdlc-spdd/scripts/validate-command-adapters.sh'
       - '.github/workflows/validate-sdlc-spdd-adapters.yml'
   push:
     branches: [main]
@@ -20,7 +20,7 @@ on:
       - '.github/copilot-instructions.md'
       - '.claude/commands/sdlc-*.md'
       - 'CLAUDE.md'
-      - 'scripts/sdlc-spdd/validate-command-adapters.sh'
+      - 'sdlc-spdd/scripts/validate-command-adapters.sh'
       - '.github/workflows/validate-sdlc-spdd-adapters.yml'
 
 jobs:
@@ -30,7 +30,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Check validator shell syntax
-        run: bash -n ./scripts/sdlc-spdd/validate-command-adapters.sh
+        run: bash -n ./sdlc-spdd/scripts/validate-command-adapters.sh
 
       - name: Validate Cursor + Copilot + Claude command-pack parity
-        run: ./scripts/sdlc-spdd/validate-command-adapters.sh --target .
+        run: ./sdlc-spdd/scripts/validate-command-adapters.sh --target .

@@ -46,6 +46,19 @@ live_resolve_root() {
   mktemp -d /tmp/sdlc-spdd-live.XXXXXX
 }
 
+live_home() {
+  local root="$1"
+  if [[ -d "${root}/sdlc-spdd" ]]; then
+    printf '%s/sdlc-spdd\n' "${root}"
+  else
+    printf '%s\n' "${root}"
+  fi
+}
+
+live_runtime() {
+  printf '%s/.sdlc\n' "$(live_home "$1")"
+}
+
 live_flush() {
   local root="$1"
   if [[ -e "${root}" ]]; then
@@ -81,8 +94,11 @@ live_install_cursor() {
 live_sdlc() {
   local root="$1"
   shift
-  SDLC_USER="${SDLC_USER}" SDLC_ROOT="${root}" \
-    "${root}/scripts/sdlc-spdd/sdlc.sh" "$@"
+  local cli="${root}/sdlc-spdd/scripts/sdlc.sh"
+  if [[ ! -x "${cli}" ]]; then
+    cli="${root}/scripts/sdlc-spdd/sdlc.sh"
+  fi
+  SDLC_USER="${SDLC_USER}" SDLC_ROOT="${root}" "${cli}" "$@"
 }
 
 live_summary() {

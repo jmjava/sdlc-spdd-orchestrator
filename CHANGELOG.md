@@ -50,7 +50,7 @@ Agent-context cleanup program landed on `main` (#109).
   `docs/jira-compatible-requirements-format.md` (FEAT-010)
 - Milestone subdirectory layout: preferred
   `requirements/milestones/milestone-N/MILESTONE-N.md` with root `milestone-*.md`
-  still supported; migration guide `docs/MIGRATION-root-to-subdirectories.md` (FEAT-011)
+  still supported; migration notes in `docs/jira-compatible-requirements-format.md` (FEAT-011)
 - Session-brief archive/rotation in `start-agent-session.sh` (`--session-limit`,
   `--no-session-rotate`) → `agent-context/sessions/archive/` (FEAT-012)
 - Prompt-optimization ledger + capture metrics (`--readiness`, `--review-result`,

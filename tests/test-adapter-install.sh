@@ -19,6 +19,9 @@ UPGRADE="${REPO_ROOT}/scripts/upgrade-project.sh"
 VERIFY="${REPO_ROOT}/scripts/verify-project-install.sh"
 VALIDATE="${REPO_ROOT}/scripts/validate-command-adapters.sh"
 
+# shellcheck source=../scripts/lib/framework-install.sh
+source "${REPO_ROOT}/scripts/lib/framework-install.sh"
+
 CURSOR_TPL="${REPO_ROOT}/templates/cursor"
 COPILOT_TPL="${REPO_ROOT}/templates/copilot"
 CLAUDE_TPL="${REPO_ROOT}/templates/claude"
@@ -75,6 +78,23 @@ assert_same() {
   if cmp -s "$1" "$2"; then ok "byte-identical to template: $(rel "$1")"; else bad "differs from template: $(rel "$1")"; fi
 }
 
+assert_same_installed() {
+  # IDE adapter stubs at the target repo root are rewritten at install time to
+  # reference the single-folder home sdlc-spdd/ (storage v3).
+  local installed="$1"
+  local template="$2"
+  local expected
+  expected="$(mktemp)"
+  cp "${template}" "${expected}"
+  framework_rewrite_adapter_paths "${expected}"
+  if cmp -s "${installed}" "${expected}"; then
+    ok "matches v3-rewritten template: $(rel "${installed}")"
+  else
+    bad "differs from v3-rewritten template: $(rel "${installed}")"
+  fi
+  rm -f "${expected}"
+}
+
 expect_pass() {
   local label="$1"; shift
   if "$@" >/dev/null 2>&1; then ok "passes: ${label}"; else bad "expected pass: ${label}"; fi
@@ -93,31 +113,31 @@ assert_cursor_pack() {
   assert_dir "${t}/.cursor/commands"
   for c in "${commands[@]}"; do
     assert_file "${t}/.cursor/commands/sdlc-spdd-${c}.md"
-    assert_same "${t}/.cursor/commands/sdlc-spdd-${c}.md" "${CURSOR_TPL}/sdlc-spdd-${c}.md"
+    assert_same_installed "${t}/.cursor/commands/sdlc-spdd-${c}.md" "${CURSOR_TPL}/sdlc-spdd-${c}.md"
   done
   for c in "${workflow_commands[@]}"; do
     assert_file "${t}/.cursor/commands/sdlc-${c}.md"
-    assert_same "${t}/.cursor/commands/sdlc-${c}.md" "${CURSOR_TPL}/sdlc-${c}.md"
+    assert_same_installed "${t}/.cursor/commands/sdlc-${c}.md" "${CURSOR_TPL}/sdlc-${c}.md"
   done
-  assert_dir "${t}/scripts/sdlc-spdd/lib"
-  assert_file "${t}/scripts/sdlc-spdd/lib/areas.sh"
-  assert_same "${t}/scripts/sdlc-spdd/lib/areas.sh" "${REPO_ROOT}/scripts/lib/areas.sh"
+  assert_dir "${t}/sdlc-spdd/scripts/lib"
+  assert_file "${t}/sdlc-spdd/scripts/lib/areas.sh"
+  assert_same "${t}/sdlc-spdd/scripts/lib/areas.sh" "${REPO_ROOT}/scripts/lib/areas.sh"
   # Always-on operating-model rule (whole-ecosystem grounding).
   assert_file "${t}/.cursor/rules/sdlc-spdd.mdc"
-  assert_same "${t}/.cursor/rules/sdlc-spdd.mdc" "${CURSOR_TPL}/rules/sdlc-spdd.mdc"
+  assert_same_installed "${t}/.cursor/rules/sdlc-spdd.mdc" "${CURSOR_TPL}/rules/sdlc-spdd.mdc"
 }
 
 assert_copilot_pack() {
   local t="$1"
   assert_file "${t}/.github/copilot-instructions.md"
-  assert_same "${t}/.github/copilot-instructions.md" "${COPILOT_TPL}/copilot-instructions.md"
+  assert_same_installed "${t}/.github/copilot-instructions.md" "${COPILOT_TPL}/copilot-instructions.md"
   for c in "${commands[@]}"; do
     assert_file "${t}/.github/prompts/sdlc-spdd-${c}.prompt.md"
-    assert_same "${t}/.github/prompts/sdlc-spdd-${c}.prompt.md" "${COPILOT_TPL}/prompts/sdlc-spdd-${c}.prompt.md"
+    assert_same_installed "${t}/.github/prompts/sdlc-spdd-${c}.prompt.md" "${COPILOT_TPL}/prompts/sdlc-spdd-${c}.prompt.md"
   done
   for c in "${workflow_commands[@]}"; do
     assert_file "${t}/.github/prompts/sdlc-${c}.prompt.md"
-    assert_same "${t}/.github/prompts/sdlc-${c}.prompt.md" "${COPILOT_TPL}/prompts/sdlc-${c}.prompt.md"
+    assert_same_installed "${t}/.github/prompts/sdlc-${c}.prompt.md" "${COPILOT_TPL}/prompts/sdlc-${c}.prompt.md"
   done
 }
 
@@ -125,14 +145,14 @@ assert_claude_pack() {
   local t="$1"
   assert_dir "${t}/.claude/commands"
   assert_file "${t}/CLAUDE.md"
-  assert_same "${t}/CLAUDE.md" "${CLAUDE_TPL}/CLAUDE.md"
+  assert_same_installed "${t}/CLAUDE.md" "${CLAUDE_TPL}/CLAUDE.md"
   for c in "${commands[@]}"; do
     assert_file "${t}/.claude/commands/sdlc-spdd-${c}.md"
-    assert_same "${t}/.claude/commands/sdlc-spdd-${c}.md" "${CLAUDE_TPL}/commands/sdlc-spdd-${c}.md"
+    assert_same_installed "${t}/.claude/commands/sdlc-spdd-${c}.md" "${CLAUDE_TPL}/commands/sdlc-spdd-${c}.md"
   done
   for c in "${workflow_commands[@]}"; do
     assert_file "${t}/.claude/commands/sdlc-${c}.md"
-    assert_same "${t}/.claude/commands/sdlc-${c}.md" "${CLAUDE_TPL}/commands/sdlc-${c}.md"
+    assert_same_installed "${t}/.claude/commands/sdlc-${c}.md" "${CLAUDE_TPL}/commands/sdlc-${c}.md"
   done
 }
 
@@ -145,26 +165,26 @@ assert_claude_grounded() {
   assert_contains "${t}/CLAUDE.md" "spdd/analysis/" "Claude SPDD analysis grounding"
   assert_contains "${t}/CLAUDE.md" "/sdlc-spdd-analysis" "Claude analysis command"
   assert_contains "${t}/CLAUDE.md" "/sdlc-claim" "Claude workflow claim command"
-  assert_contains "${t}/CLAUDE.md" "agent-context/sessions/" "Claude SDLC session grounding"
-  assert_contains "${t}/CLAUDE.md" "agent-context/memory/" "Claude SDLC memory grounding"
+  assert_contains "${t}/CLAUDE.md" ".sdlc/sessions/current-session.md" "Claude SDLC session grounding"
+  assert_contains "${t}/CLAUDE.md" "spdd/memory/lessons.jsonl" "Claude SDLC memory grounding"
   assert_count "${t}/CLAUDE.md" "BEGIN SDLC-SPDD MANAGED CLAUDE GROUNDING" 1 "Claude managed grounding begin markers"
   assert_count "${t}/CLAUDE.md" "END SDLC-SPDD MANAGED CLAUDE GROUNDING" 1 "Claude managed grounding end markers"
 }
 
-assert_memory_seed_files() {
+assert_v3_seed_files() {
   local t="$1"
-  assert_file "${t}/agent-context/memory/phase-index.md"
-  assert_same "${t}/agent-context/memory/phase-index.md" "${REPO_ROOT}/agent-context/memory/phase-index.md"
-  assert_file "${t}/agent-context/memory/domain-index.md"
-  assert_same "${t}/agent-context/memory/domain-index.md" "${REPO_ROOT}/templates/agent-context/memory/domain-index.md"
-  assert_file "${t}/scripts/sdlc-spdd/index-spdd-analysis.sh"
-  assert_file "${t}/spdd/analysis/.gitkeep"
-  assert_file "${t}/agent-context/extensions/README.md"
-  assert_file "${t}/agent-context/extensions/_all-agents/.gitkeep"
-  assert_file "${t}/agent-context/extensions/coding-agent/.gitkeep"
-  assert_file "${t}/agent-context/extensions/skills/.gitkeep"
-  assert_file "${t}/agent-context/extensions/skills/TDD.md"
-  assert_file "${t}/scripts/sdlc-spdd/resolve-agent-context.sh"
+  assert_file "${t}/sdlc-spdd/harness/phase-index.md"
+  assert_same "${t}/sdlc-spdd/harness/phase-index.md" "${REPO_ROOT}/templates/agent-context/harness/phase-index.md"
+  assert_file "${t}/sdlc-spdd/harness/skills/bugfix.md"
+  assert_file "${t}/sdlc-spdd/harness/quality-gates.md"
+  assert_file "${t}/sdlc-spdd/harness/validation-rules.md"
+  assert_file "${t}/sdlc-spdd/spdd/memory/lessons.jsonl"
+  assert_file "${t}/sdlc-spdd/spdd/memory/registry.jsonl"
+  assert_file "${t}/sdlc-spdd/scripts/index-spdd-analysis.sh"
+  assert_file "${t}/sdlc-spdd/spdd/analysis/.gitkeep"
+  assert_file "${t}/sdlc-spdd/scripts/resolve-agent-context.sh"
+  assert_absent "${t}/agent-context/memory/phase-index.md"
+  assert_absent "${t}/agent-context/extensions"
 }
 
 assert_progressive_disclosure_grounding() {
@@ -190,7 +210,7 @@ assert_target_adapter_workflow() {
   assert_contains "${wf}" ".cursor/rules/sdlc-spdd.mdc" "Cursor grounding trigger"
   assert_contains "${wf}" ".github/copilot-instructions.md" "Copilot grounding trigger"
   assert_contains "${wf}" "CLAUDE.md" "Claude grounding trigger"
-  assert_contains "${wf}" "bash -n ./scripts/sdlc-spdd/validate-command-adapters.sh" "validator syntax check"
+  assert_contains "${wf}" "bash -n ./sdlc-spdd/scripts/validate-command-adapters.sh" "validator syntax check"
 }
 
 # ---------------------------------------------------------------------------
@@ -221,7 +241,7 @@ T="${WORK}/all"; mkdir -p "${T}"
 assert_cursor_pack "${T}"
 assert_copilot_pack "${T}"
 assert_claude_pack "${T}"
-assert_memory_seed_files "${T}"
+assert_v3_seed_files "${T}"
 assert_progressive_disclosure_grounding "${T}"
 assert_target_adapter_workflow "${T}"
 expect_pass "verify all three" "${VERIFY}" --target "${T}" --require-cursor --require-copilot --require-claude
@@ -301,7 +321,7 @@ assert_glob_exists "${T}/.sdlc-spdd-upgrade-backups"/*/CLAUDE.md "CLAUDE.md back
 assert_dir "${T}/.claude/commands"
 for c in "${commands[@]}"; do
   assert_file "${T}/.claude/commands/sdlc-spdd-${c}.md"
-  assert_same "${T}/.claude/commands/sdlc-spdd-${c}.md" "${CLAUDE_TPL}/commands/sdlc-spdd-${c}.md"
+  assert_same_installed "${T}/.claude/commands/sdlc-spdd-${c}.md" "${CLAUDE_TPL}/commands/sdlc-spdd-${c}.md"
 done
 expect_pass "validate after preserving custom CLAUDE.md" "${VALIDATE}" --target "${T}"
 "${UPGRADE}" --target "${T}" --all >/dev/null 2>&1
@@ -388,9 +408,9 @@ grep -Fv 'session-notes/' "${WORK}/claude-md.bak" > "${T}/CLAUDE.md"
 expect_fail "validate after dropping session-notes from CLAUDE.md" "${VALIDATE}" --target "${T}"
 cp "${WORK}/claude-md.bak" "${T}/CLAUDE.md"
 
-# 12b: strip the SDLC session-brief artifact from the Claude grounding file
-grep -Fv 'agent-context/sessions/' "${WORK}/claude-md.bak" > "${T}/CLAUDE.md"
-expect_fail "validate after dropping agent-context/sessions from CLAUDE.md" "${VALIDATE}" --target "${T}"
+# 12b: strip the SDLC staged-captures artifact from the Claude grounding file
+grep -Fv '.sdlc/staged/lessons.jsonl' "${WORK}/claude-md.bak" > "${T}/CLAUDE.md"
+expect_fail "validate after dropping .sdlc/staged from CLAUDE.md" "${VALIDATE}" --target "${T}"
 cp "${WORK}/claude-md.bak" "${T}/CLAUDE.md"
 
 # 12c: strip the SPDD (canvas) artifact from the Copilot grounding file

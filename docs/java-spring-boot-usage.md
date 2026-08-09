@@ -13,7 +13,7 @@ Use `templates/stack-rules/java-spring-boot.md` during planning and architect re
 
 ## Playbook
 
-Follow `agent-context/playbooks/java-feature-playbook.md`.
+Use the `#java-feature` skill (`harness/skills/java-feature.md`) during plan, architect, and code phases.
 
 ## Example
 

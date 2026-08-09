@@ -5,12 +5,28 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 # shellcheck source=/dev/null
 source "${REPO_ROOT}/scripts/lib/framework-install.sh"
+# shellcheck source=/dev/null
+source "${REPO_ROOT}/scripts/lib/skills.sh"
 
 usage() {
   cat <<'EOF'
 Usage: init-project.sh --target <path> [--cursor] [--copilot] [--claude] [--with-guide] [--force] [--dry-run]
 
-Initialize a target project with SDLC-SPDD scaffold files.
+Initialize a target project with the SDLC-SPDD scaffold (storage v3).
+
+Everything the framework owns is installed under a single folder — the home:
+
+  <target>/sdlc-spdd/
+    requirements/      milestones + requirements
+    spdd/              canvas/ analysis/ tasks/ reviews/ sync/ memory/
+    spdd/memory/       lessons.jsonl (committed ledger) + registry.jsonl
+    harness/ skills/
+    scripts/           installed workflow CLI (sdlc.sh + runtime scripts)
+    docs/              target-local SDLC-SPDD docs
+    .sdlc/             gitignored runtime (sessions, staged lessons, sqlite)
+
+IDE adapter stubs (.cursor/, .github/, .claude/, CLAUDE.md) stay at the target
+repo root because the IDEs require that, but reference paths under sdlc-spdd/.
 
 Options:
   --target <path>   Target project path (required)
@@ -18,7 +34,7 @@ Options:
   --copilot         Install GitHub Copilot instructions and prompt files
   --claude          Install Claude Code commands and CLAUDE.md
   --with-guide      Opt this install into the optional Guide DICE context
-                    backend (writes agent-context/harness/guide-dice.md;
+                    backend (writes sdlc-spdd/harness/guide-dice.md;
                     backend availability is still resolved at runtime)
   --force           Overwrite existing generated files
   --dry-run         Show actions without writing files
@@ -83,6 +99,7 @@ if [[ -z "${TARGET}" ]]; then
 fi
 
 TARGET="$(cd "${TARGET}" && pwd)"
+HOME_DIR="${TARGET}/sdlc-spdd"
 
 created=()
 skipped=()
@@ -125,7 +142,24 @@ ensure_gitkeep() {
   created+=("${file}")
 }
 
-# Create folder structure
+# Seed an empty file (memory ledgers) when missing; never truncate existing data.
+ensure_empty_file() {
+  local file="$1"
+  if [[ -f "${file}" ]]; then
+    skipped+=("${file}")
+    return
+  fi
+  if [[ "${DRY_RUN}" -eq 1 ]]; then
+    echo "[dry-run] would create empty ${file}"
+    created+=("${file}")
+    return
+  fi
+  mkdir -p "$(dirname "${file}")"
+  : > "${file}"
+  created+=("${file}")
+}
+
+# Single-folder home structure.
 for dir in \
   requirements \
   requirements/milestones \
@@ -135,115 +169,77 @@ for dir in \
   spdd/reviews \
   spdd/sync \
   session-notes \
-  agent-context/memory \
-  agent-context/playbooks \
-  agent-context/extensions \
-  agent-context/extensions/_all-agents \
-  agent-context/extensions/initializer-agent \
-  agent-context/extensions/planning-agent \
-  agent-context/extensions/architect-agent \
-  agent-context/extensions/coding-agent \
-  agent-context/extensions/codereview-agent \
-  agent-context/extensions/retro-agent \
-  agent-context/extensions/curator-agent \
-  agent-context/extensions/skills \
-  agent-context/features \
-  agent-context/sessions \
-  agent-context/harness \
-  docs/sdlc-spdd \
-  scripts/sdlc-spdd \
-  scripts/sdlc-spdd/lib; do
-  ensure_dir "${TARGET}/${dir}"
-  ensure_gitkeep "${TARGET}/${dir}"
+  harness \
+  harness/skills \
+  docs \
+  scripts \
+  scripts/lib; do
+  ensure_dir "${HOME_DIR}/${dir}"
+  ensure_gitkeep "${HOME_DIR}/${dir}"
 done
+ensure_dir "${HOME_DIR}/spdd/memory"
+
+# Storage v3 memory model: one committed lessons ledger + append-only registry.
+# Captures stage to the gitignored <home>/.sdlc/staged/lessons.jsonl and are
+# promoted by `sdlc.sh accept`. No script ever git-commits or pushes.
+ensure_empty_file "${HOME_DIR}/spdd/memory/lessons.jsonl"
+ensure_empty_file "${HOME_DIR}/spdd/memory/registry.jsonl"
+
+# Gitignore the runtime folder.
+if [[ "${DRY_RUN}" -eq 1 ]]; then
+  framework_ensure_gitignore_runtime "${TARGET}" 1
+else
+  framework_ensure_gitignore_runtime "${TARGET}" 0
+fi
 
 # Create optional project planning artifacts without overwriting existing plans.
 copy_if_missing \
   "${REPO_ROOT}/templates/project-docs/ROADMAP.md" \
-  "${TARGET}/ROADMAP.md"
+  "${HOME_DIR}/ROADMAP.md"
 
-# Prefer subdirectory milestone layout for new projects; keep root milestone-*.md
-# if already present (backward compatible).
+# Prefer subdirectory milestone layout for new projects; keep existing
+# milestone definitions (home or legacy root) if already present.
 shopt -s nullglob
-root_milestones=("${TARGET}"/milestone-*.md)
-subdir_milestones=("${TARGET}"/requirements/milestones/milestone-*/MILESTONE-*.md)
+root_milestones=("${TARGET}"/milestone-*.md "${HOME_DIR}"/milestone-*.md)
+subdir_milestones=("${HOME_DIR}"/requirements/milestones/milestone-*/MILESTONE-*.md)
 shopt -u nullglob
 if ((${#root_milestones[@]} == 0 && ${#subdir_milestones[@]} == 0)); then
-  ensure_dir "${TARGET}/requirements/milestones/milestone-1"
+  ensure_dir "${HOME_DIR}/requirements/milestones/milestone-1"
   copy_if_missing \
     "${REPO_ROOT}/templates/requirements/milestones/milestone-definition.md" \
-    "${TARGET}/requirements/milestones/milestone-1/MILESTONE-1.md"
+    "${HOME_DIR}/requirements/milestones/milestone-1/MILESTONE-1.md"
   copy_if_missing \
     "${REPO_ROOT}/templates/requirements/milestones/milestone-template.yml" \
-    "${TARGET}/requirements/milestones/milestone-1/_milestone.yml"
+    "${HOME_DIR}/requirements/milestones/milestone-1/_milestone.yml"
 else
-  if ((${#root_milestones[@]} > 0)); then
-    skipped+=("${TARGET}/milestone-*.md")
-  fi
-  if ((${#subdir_milestones[@]} > 0)); then
-    skipped+=("${TARGET}/requirements/milestones/milestone-*/")
-  fi
+  skipped+=("existing milestone definitions")
 fi
 
 copy_if_missing \
   "${REPO_ROOT}/templates/requirements/milestones/README.md" \
-  "${TARGET}/requirements/milestones/README.md"
+  "${HOME_DIR}/requirements/milestones/README.md"
 
-# Empty memory scaffolds — do not seed orchestrator dogfood rows into targets.
-copy_if_missing \
-  "${REPO_ROOT}/templates/agent-context/memory/domain-index.md" \
-  "${TARGET}/agent-context/memory/domain-index.md"
-
-copy_if_missing \
-  "${REPO_ROOT}/templates/agent-context/memory/prompt-optimization-log.md" \
-  "${TARGET}/agent-context/memory/prompt-optimization-log.md"
-
-# Copy memory and harness templates
-for file in \
-  project-memory.md \
-  architecture-decisions.md \
-  known-pitfalls.md \
-  reusable-patterns.md \
-  session-history.md \
-  phase-index.md; do
-  copy_if_missing \
-    "${REPO_ROOT}/agent-context/memory/${file}" \
-    "${TARGET}/agent-context/memory/${file}"
-done
-
-# Copy playbooks for SDLC Agents-style handoffs and repeatable workflows
-for file in "${REPO_ROOT}"/agent-context/playbooks/*.md; do
-  copy_if_missing \
-    "${file}" \
-    "${TARGET}/agent-context/playbooks/$(basename "${file}")"
-done
-
-copy_if_missing \
-  "${REPO_ROOT}/templates/agent-context/extensions/README.md" \
-  "${TARGET}/agent-context/extensions/README.md"
-
-copy_if_missing \
-  "${REPO_ROOT}/templates/agent-context/extensions/manifest.md" \
-  "${TARGET}/agent-context/extensions/manifest.md"
-
-copy_if_missing \
-  "${REPO_ROOT}/templates/agent-context/extensions/_all-agents/example-manifest-extension.md" \
-  "${TARGET}/agent-context/extensions/_all-agents/example-manifest-extension.md"
-
-for file in "${REPO_ROOT}"/templates/agent-context/extensions/skills/*.md; do
+# Phase skills and harness index for SDLC Agents-style progressive loading.
+for file in "${REPO_ROOT}"/templates/agent-context/harness/skills/*.md; do
   [[ -f "${file}" ]] || continue
   copy_if_missing \
     "${file}" \
-    "${TARGET}/agent-context/extensions/skills/$(basename "${file}")"
+    "${HOME_DIR}/harness/skills/$(basename "${file}")"
 done
 
 copy_if_missing \
+  "${REPO_ROOT}/templates/agent-context/harness/phase-index.md" \
+  "${HOME_DIR}/harness/phase-index.md"
+
+copy_if_missing \
   "${REPO_ROOT}/agent-context/harness/quality-gates.md" \
-  "${TARGET}/agent-context/harness/quality-gates.md"
+  "${HOME_DIR}/harness/quality-gates.md"
 
 copy_if_missing \
   "${REPO_ROOT}/agent-context/harness/validation-rules.md" \
-  "${TARGET}/agent-context/harness/validation-rules.md"
+  "${HOME_DIR}/harness/validation-rules.md"
+
+migrate_playbooks_extensions_to_skills "${TARGET}" "${DRY_RUN}"
 
 # Optional Guide DICE backend opt-in. The marker only enables runtime probing
 # (resolve-context-backend.sh); commands still fall back to file-based context
@@ -251,43 +247,10 @@ copy_if_missing \
 if [[ "${WITH_GUIDE}" -eq 1 ]]; then
   copy_if_missing \
     "${REPO_ROOT}/templates/agent-context/harness/guide-dice.md" \
-    "${TARGET}/agent-context/harness/guide-dice.md"
+    "${HOME_DIR}/harness/guide-dice.md"
 fi
 
-copy_if_missing \
-  "${REPO_ROOT}/agent-context/sdlc-pointer.sh" \
-  "${TARGET}/agent-context/sdlc-pointer.sh"
-if [[ "${DRY_RUN}" -eq 0 && -f "${TARGET}/agent-context/sdlc-pointer.sh" ]]; then
-  chmod +x "${TARGET}/agent-context/sdlc-pointer.sh"
-fi
-
-copy_if_missing \
-  "${REPO_ROOT}/agent-context/sdlc-workflow.sh" \
-  "${TARGET}/agent-context/sdlc-workflow.sh"
-if [[ "${DRY_RUN}" -eq 0 && -f "${TARGET}/agent-context/sdlc-workflow.sh" ]]; then
-  chmod +x "${TARGET}/agent-context/sdlc-workflow.sh"
-fi
-
-copy_if_missing \
-  "${REPO_ROOT}/agent-context/sdlc-team-registry.sh" \
-  "${TARGET}/agent-context/sdlc-team-registry.sh"
-if [[ "${DRY_RUN}" -eq 0 && -f "${TARGET}/agent-context/sdlc-team-registry.sh" ]]; then
-  chmod +x "${TARGET}/agent-context/sdlc-team-registry.sh"
-fi
-
-copy_if_missing \
-  "${REPO_ROOT}/templates/agent-context/work-registry.tsv" \
-  "${TARGET}/agent-context/work-registry.tsv"
-
-copy_if_missing \
-  "${REPO_ROOT}/templates/agent-context/hooks/notify-team-registry.example.sh" \
-  "${TARGET}/agent-context/hooks/notify-team-registry.example.sh"
-
-copy_if_missing \
-  "${REPO_ROOT}/agent-context/README.md" \
-  "${TARGET}/agent-context/README.md"
-
-# Copy user-facing SDLC-SPDD docs into the target project.
+# Copy user-facing SDLC-SPDD docs into the target project home.
 # Skip orchestrator-internal docs (see scripts/lib/shipped-docs-boundary.sh).
 # shellcheck source=lib/shipped-docs-boundary.sh
 source "${SCRIPT_DIR}/lib/shipped-docs-boundary.sh"
@@ -295,12 +258,12 @@ for file in "${REPO_ROOT}"/docs/*.md; do
   is_orchestrator_only_doc "${file}" && continue
   copy_if_missing \
     "${file}" \
-    "${TARGET}/docs/sdlc-spdd/$(basename "${file}")"
+    "${HOME_DIR}/docs/$(basename "${file}")"
 done
 
 copy_if_missing \
   "${REPO_ROOT}/templates/project-docs/docs-sdlc-spdd-README.md" \
-  "${TARGET}/docs/sdlc-spdd/README.md"
+  "${HOME_DIR}/docs/README.md"
 
 if [[ "${INSTALL_CURSOR}" -eq 1 && "${INSTALL_COPILOT}" -eq 1 ]]; then
   copy_if_missing \
@@ -308,11 +271,30 @@ if [[ "${INSTALL_CURSOR}" -eq 1 && "${INSTALL_COPILOT}" -eq 1 ]]; then
     "${TARGET}/.github/workflows/validate-sdlc-spdd-adapters.yml"
 fi
 
-# Copy runtime session scripts into the target project for cross-session handoffs
+# Workflow CLI: sdlc.sh + pointer/workflow/team-registry managers live together
+# under <home>/scripts/.
+for file in \
+  sdlc-pointer.sh \
+  sdlc-workflow.sh \
+  sdlc-team-registry.sh; do
+  copy_if_missing \
+    "${REPO_ROOT}/agent-context/${file}" \
+    "${HOME_DIR}/scripts/${file}"
+  if [[ "${DRY_RUN}" -eq 0 && -f "${HOME_DIR}/scripts/${file}" ]]; then
+    chmod +x "${HOME_DIR}/scripts/${file}"
+  fi
+done
+
+copy_if_missing \
+  "${REPO_ROOT}/templates/agent-context/hooks/notify-team-registry.example.sh" \
+  "${HOME_DIR}/scripts/hooks/notify-team-registry.example.sh"
+
+# Runtime session scripts for cross-session handoffs.
 for file in \
   start-agent-session.sh \
   resync-agent-session.sh \
   capture-session-memory.sh \
+  accept-lessons.sh \
   index-spdd-analysis.sh \
   resolve-agent-context.sh \
   resolve-context-backend.sh \
@@ -320,6 +302,7 @@ for file in \
   sync-roadmap-from-spdd.sh \
   summarize-session-notes.sh \
   sync-agent-context.sh \
+  detect-stack.sh \
   validate-command-adapters.sh \
   verify-agent-command-effects.sh \
   validate-reasons-canvas.sh \
@@ -328,9 +311,9 @@ for file in \
   sdlc.sh; do
   copy_if_missing \
     "${REPO_ROOT}/scripts/${file}" \
-    "${TARGET}/scripts/sdlc-spdd/${file}"
-  if [[ "${DRY_RUN}" -eq 0 && -f "${TARGET}/scripts/sdlc-spdd/${file}" ]]; then
-    chmod +x "${TARGET}/scripts/sdlc-spdd/${file}"
+    "${HOME_DIR}/scripts/${file}"
+  if [[ "${DRY_RUN}" -eq 0 && -f "${HOME_DIR}/scripts/${file}" ]]; then
+    chmod +x "${HOME_DIR}/scripts/${file}"
   fi
 done
 
@@ -339,7 +322,7 @@ source "${REPO_ROOT}/scripts/lib/paths.sh"
 for lib in "${SDLC_SHIPPED_LIB_FILES[@]}"; do
   copy_if_missing \
     "${REPO_ROOT}/scripts/lib/${lib}" \
-    "${TARGET}/scripts/sdlc-spdd/lib/${lib}"
+    "${HOME_DIR}/scripts/lib/${lib}"
 done
 
 if [[ "${INSTALL_CURSOR}" -eq 1 ]]; then
@@ -376,8 +359,8 @@ printf '  %s\n' "${created[@]:-none}"
 echo "Skipped existing (${#skipped[@]}):"
 printf '  %s\n' "${skipped[@]:-none}"
 echo "Recommended next step: run /sdlc-spdd-init in Cursor, Copilot Chat, or Claude Code, then /sdlc-spdd-plan"
-echo "Local SDLC-SPDD docs installed under: ${TARGET}/docs/sdlc-spdd (start at README.md)"
-echo "Session scripts installed under: ${TARGET}/scripts/sdlc-spdd"
+echo "Framework home: ${HOME_DIR} (docs at sdlc-spdd/docs/, start at README.md)"
+echo "Workflow CLI installed under: ${HOME_DIR}/scripts (daily entry point: ./sdlc-spdd/scripts/sdlc.sh)"
 
 verify_args=(--target "${TARGET}")
 if [[ "${INSTALL_CURSOR}" -eq 1 ]]; then

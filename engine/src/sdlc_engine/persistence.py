@@ -1,14 +1,14 @@
-"""Persistence backend options for the triple-path ContextStore (#79/#90).
+"""Persistence backend options for the ledger-first ContextStore (storage v3).
 
 Config file (gitignored runtime): ``.sdlc/persistence-config.json``
 
 Backends:
-  - git-pointers — lean stay-set files + pointers.jsonl (always required)
-  - sqlite       — local ``.sdlc/index.sqlite`` upsert (soft-fail)
+  - git-pointers — committed ledger + registry JSONL (always required)
+  - sqlite       — opt-in local ``.sdlc/index.sqlite`` cache (soft-fail)
   - guide-dice   — Guide SPDD projection load (soft-fail)
 
 Environment overrides (comma-separated set):
-  ``CONTEXT_BACKENDS=git-pointers,sqlite,guide-dice``
+  ``CONTEXT_BACKENDS=git-pointers,guide-dice`` or add ``sqlite`` opt-in.
 """
 
 from __future__ import annotations
@@ -27,7 +27,7 @@ BACKEND_SQLITE = "sqlite"
 BACKEND_GUIDE = "guide-dice"
 
 ALL_BACKENDS: tuple[str, ...] = (BACKEND_GIT, BACKEND_SQLITE, BACKEND_GUIDE)
-DEFAULT_BACKENDS: tuple[str, ...] = ALL_BACKENDS
+DEFAULT_BACKENDS: tuple[str, ...] = (BACKEND_GIT, BACKEND_GUIDE)
 
 _ALIASES = {
     "git": BACKEND_GIT,
@@ -96,8 +96,9 @@ def default_config() -> dict[str, Any]:
 
 
 def config_path(project: Project | Path | str) -> Path:
-    root = project.root if isinstance(project, Project) else Path(project)
-    return Path(root).expanduser().resolve() / CONFIG_REL
+    if isinstance(project, Project):
+        return project.sdlc_dir / CONFIG_REL.name
+    return Project(Path(project).expanduser().resolve()).sdlc_dir / CONFIG_REL.name
 
 
 def parse_backends_env(raw: str | None) -> list[str] | None:
@@ -144,9 +145,8 @@ def load_config(project: Project | Path | str) -> dict[str, Any]:
 
 def save_config(project: Project | Path | str, cfg: dict[str, Any]) -> dict[str, Any]:
     """Write ``.sdlc/persistence-config.json`` and return operator status shape."""
-    root = project.root if isinstance(project, Project) else Path(project)
-    root = Path(root).expanduser().resolve()
-    path = root / CONFIG_REL
+    project_obj = project if isinstance(project, Project) else Project(Path(project))
+    path = config_path(project_obj)
     path.parent.mkdir(parents=True, exist_ok=True)
     backends, _unknown = normalize_backends(
         cfg.get("backends") or DEFAULT_BACKENDS, strict=True
@@ -157,7 +157,6 @@ def save_config(project: Project | Path | str, cfg: dict[str, Any]) -> dict[str,
         "notes": str(cfg.get("notes") or ""),
     }
     path.write_text(json.dumps(out, indent=2) + "\n", encoding="utf-8")
-    project_obj = project if isinstance(project, Project) else Project(root)
     status = status_dict(project_obj)
     status["path"] = str(path)
     status["saved"] = True
@@ -192,9 +191,9 @@ def status_dict(project: Project) -> dict[str, Any]:
         "git": {
             "ok": True,
             "stay_set": "spdd/memory/",
-            "pointers": "spdd/memory/pointers.jsonl",
-            "entries": "spdd/memory/entries/",
-            "lessons": "spdd/memory/lessons/",
+            "ledger": "spdd/memory/lessons.jsonl",
+            "staged": ".sdlc/staged/lessons.jsonl",
+            "registry": "spdd/memory/registry.jsonl",
         },
         "sqlite": {
             "enabled": BACKEND_SQLITE in backends,

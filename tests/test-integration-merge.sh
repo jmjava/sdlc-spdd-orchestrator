@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# End-to-end merge gate: install + workflow CLI + lib/manifest/spec checks.
-# Automates the critical path from docs/integration-branch.md sections A–G.
+# End-to-end merge gate: install + workflow CLI + lib/skills/spec checks (sections A–F).
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -15,6 +14,7 @@ POSTURE="${REPO_ROOT}/scripts/check-posture-boundary.sh"
 WORK="$(mktemp -d)"
 trap 'rm -rf "${WORK}"' EXIT
 TARGET="${WORK}/target"
+HOME="${TARGET}/sdlc-spdd"
 mkdir -p "${TARGET}"
 
 pass=0
@@ -45,12 +45,13 @@ for cmd in claim shelf advance next team; do
   fi
 done
 
-if [[ -f "${TARGET}/scripts/sdlc-spdd/lib/common.sh" \
-   && -f "${TARGET}/scripts/sdlc-spdd/lib/work-id.sh" \
-   && -f "${TARGET}/agent-context/extensions/manifest.md" ]]; then
-  ok "shared lib + extension manifest installed"
+if [[ -f "${HOME}/scripts/lib/common.sh" \
+   && -f "${HOME}/scripts/lib/work-id.sh" \
+   && -f "${HOME}/scripts/lib/skills.sh" \
+   && -f "${HOME}/harness/skills/bugfix.md" ]]; then
+  ok "shared lib + harness/skills installed"
 else
-  bad "lib/manifest install incomplete"
+  bad "lib/skills install incomplete"
 fi
 
 if "${VALIDATE}" --target "${TARGET}" >/dev/null; then
@@ -60,10 +61,10 @@ else
 fi
 
 echo "== C. Workflow CLI claim/next/team/shelf/archive =="
-mkdir -p "${TARGET}/spdd/canvas"
+mkdir -p "${HOME}/spdd/canvas"
 printf '%s\n' '# DEMO-001-integration-smoke' '' '## Final Status' '' '- Status: In Progress' \
-  > "${TARGET}/spdd/canvas/DEMO-001-integration-smoke.md"
-SDLC="${TARGET}/scripts/sdlc-spdd/sdlc.sh"
+  > "${HOME}/spdd/canvas/DEMO-001-integration-smoke.md"
+SDLC="${HOME}/scripts/sdlc.sh"
 list_out="$(SDLC_USER="merge-bot" SDLC_ROOT="${TARGET}" "${SDLC}" list-work)"
 if grep -Fq 'DEMO-001-integration-smoke' <<< "${list_out}"; then
   ok "list-work discovers demo"
@@ -95,11 +96,9 @@ fi
 
 # Complete + archive path
 printf '%s\n' '# DEMO-002-done' '' '## Final Status' '' '- Status: Complete' \
-  > "${TARGET}/spdd/canvas/DEMO-002-done.md"
-mkdir -p "${TARGET}/agent-context/features/DEMO-002-done"
-printf '# feat\n' > "${TARGET}/agent-context/features/DEMO-002-done/requirement.md"
+  > "${HOME}/spdd/canvas/DEMO-002-done.md"
 if SDLC_ROOT="${TARGET}" "${SDLC}" archive DEMO-002-done >/dev/null \
-  && [[ -f "${TARGET}/spdd/canvas/archive/DEMO-002-done.md" ]]; then
+  && [[ ! -f "${HOME}/spdd/canvas/DEMO-002-done.md" ]]; then
   ok "archive completed demo work"
 else
   bad "archive completed demo work"
@@ -114,18 +113,18 @@ else
   bad "upgrade did not restore workflow command"
 fi
 
-echo "== E. Extension resolve on target =="
+echo "== E. Skills resolve on installed target =="
 paths="$("${RESOLVE}" --target "${TARGET}" --phase code --format paths)"
-if grep -Fq "example-manifest-extension.md" <<< "${paths}"; then
-  ok "resolve finds example manifest extension"
+if grep -Fq "harness/skills/bugfix.md" <<< "${paths}"; then
+  ok "resolve finds code-phase bugfix skill"
 else
-  bad "resolve missing example manifest extension"
+  bad "resolve missing bugfix skill on target"
 fi
 
 echo "== F. Nested harnesses =="
 for t in \
   test-scripts-lib.sh \
-  test-extension-manifest.sh \
+  test-resolve-agent-context.sh \
   test-archive-work.sh \
   test-sdlc-pointer.sh; do
   if "${REPO_ROOT}/tests/${t}" >/dev/null; then

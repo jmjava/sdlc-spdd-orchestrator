@@ -2,7 +2,7 @@
 
 **Branch:** `feat/jira-requirements-jinja-sync`  
 **Date:** 2026-07-30  
-**Status:** Research complete — implementation not started on this commit  
+**Status:** Implemented in `engine/src/sdlc_engine/issues.py` (markdown → ADF push, pull, link). Operator runbook: [Issue sync and branching](../issue-sync-and-branching.md). This file keeps ADF payload research detail.
 **Scope note:** Guide spike stays separate.
 
 ## Verdict (what Jira actually expects)

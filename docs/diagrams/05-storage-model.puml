@@ -1,0 +1,74 @@
+@startuml 05-storage-model
+
+title Storage model - JSONL system of record (storage v3)
+
+class LessonRecord {
+  id : str  '"<kind>:<work_id>:<area>:<source>"
+  kind : str  'decision | pitfall | pattern | session | analysis
+  work_id : str
+  area : str
+  phase : str
+  ts : str  'ISO-8601 UTC
+  title : str
+  body : str  'full text, no external pointer
+  source : str  'capture | script | migration
+  keywords : list[str]
+  commit : str
+  schema : int = 1
+}
+
+class LessonsLedger {
+  ledger_path : spdd/memory/lessons.jsonl
+  staged_path : .sdlc/staged/lessons.jsonl
+  --
+  stage(record)
+  accept(work_id) : staged -> committed
+  append_accepted(record)
+  records(filters) : list[LessonRecord]
+  digest(work_id) : bounded summary
+}
+
+class RegistryEvent {
+  event : str  'claim | release
+  work_id : str
+  owner : str
+  phase : str
+  status : str
+  ts : str
+  note : str
+}
+
+class "registry.jsonl" as Registry <<append-only>> {
+  spdd/memory/registry.jsonl
+}
+
+class "REASONS Canvas" as Canvas <<committed markdown>> {
+  spdd/canvas/<WORK-ID>.md
+  Requirements / Entities / Approach /
+  Structure / Operations / Norms / Safeguards
+}
+
+class "sqlite cache" as Sqlite <<gitignored, opt-in>> {
+  .sdlc/index.sqlite (schema v5)
+  rebuilt from ledger + registry + contracts
+}
+
+class "Guide DICE graph" as Guide <<projection>> {
+  Neo4j: WorkId, Canvas, Area,
+  Decision, Pitfall, Pattern, Session, Analysis
+}
+
+LessonsLedger "1" o-- "*" LessonRecord : validates + dedupes
+Registry "1" o-- "*" RegistryEvent
+LessonRecord --> Canvas : work_id
+Sqlite ..> LessonsLedger : regenerable projection
+Guide ..> LessonsLedger : regenerable projection
+Sqlite ..> Registry : claims table
+note bottom of LessonsLedger
+  Sole write path. Git ledger is the
+  system of record; sqlite and Guide
+  are projections, never written
+  independently ("parity by construction").
+end note
+
+@enduml

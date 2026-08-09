@@ -1,0 +1,34 @@
+@startuml 06-stage-then-accept
+
+title Stage-then-accept - captures without git noise (storage v3)
+
+actor "AI Agent" as agent
+participant "sdlc.sh capture\n(capture-session-memory.sh)" as capture
+database ".sdlc/staged/\nlessons.jsonl\n(gitignored)" as staged
+participant "sdlc.sh accept\n(accept-lessons.sh /\nsdlc-engine context accept)" as accept
+database "spdd/memory/\nlessons.jsonl\n(committed)" as ledger
+database ".sdlc/index.sqlite\n(opt-in cache)" as sqlite
+participant "Guide DICE\n(projection)" as guide
+actor Developer as dev
+
+== During code / api-test (any phase) ==
+agent -> capture : --work-id --phase --summary --areas\n[--decisions --pitfalls --patterns]
+capture -> staged : append LessonRecord JSONL\n(no git commit, no push)
+note right of staged
+  Repeated captures stay local.
+  Git history stays quiet.
+end note
+
+== At retro / sync gate ==
+agent -> accept : accept --work-id <ID>
+accept -> staged : read + validate staged records
+accept -> ledger : append accepted records\n(dedupe by id)
+accept -> staged : drain promoted records
+accept -> sqlite : upsert lesson rows\n(when sqlite backend enabled)
+accept -> guide : re-project ledger\n(when Guide reachable)
+accept --> agent : accepted N, staged_remaining 0
+
+== Once per gate ==
+dev -> ledger : git add + commit\n(one batch: contracts + ledger)
+
+@enduml

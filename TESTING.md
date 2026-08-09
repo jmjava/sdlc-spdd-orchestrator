@@ -14,7 +14,96 @@ what can be proven automatically, then run a short manual smoke for the rest.
 | 2. Post-invocation effects | Prove command side-effects happened | Mostly | `verify-agent-command-effects.sh` |
 | 3. Manual chat smoke | Validate real chat invocation path | No | Short guided run in Cursor/Copilot/Claude Code |
 
-## Always-On CI Gates
+## Engine test suites (3 packages)
+
+| Suite | Path | Command | CI |
+|-------|------|---------|-----|
+| **1 — Unit** | `engine/tests_unit/` | `./scripts/run-test-suites.sh unit` | `test-sdlc-engine.yml` job `suite-1-unit` |
+| **2 — Local integration** | `engine/tests_integration/` | `./scripts/run-test-suites.sh integration` | `test-sdlc-engine.yml` job `suite-2-integration` |
+| **3 — E2E integration** | `engine/tests_e2e/` | `./scripts/run-test-suites.sh e2e [--guide]` | `test-e2e-playwright.yml`, `test-guide-stack-experimental.yml`, GitHub Issues job |
+
+Local mirror: `./scripts/test-ci-local.sh` (suites 1–3), `./scripts/test-ci-local.sh --guide` (suite 3 includes Guide stack).
+
+### Preflight (run before long suites)
+
+Fail in **seconds** instead of after a 600s Guide wait or hung `/sse` curl:
+
+```bash
+./scripts/run-test-suites.sh preflight all          # layout, Python 3.12, stale jobs
+./scripts/run-test-suites.sh preflight e2e --guide  # + Guide stack / append-ingest state
+./scripts/run-test-suites.sh unit --clean-stale     # auto-preflight + kill stale pytest/curl
+```
+
+Probe Guide with `curl -sf --max-time 3 http://127.0.0.1:21337/actuator/health` — **never** bare `curl …/sse` (hangs forever).
+
+If preflight reports missing Python 3.12, install the interpreter first (CI uses **3.12** everywhere):
+
+| OS | Install |
+|----|---------|
+| **Ubuntu 22.04** | `sudo add-apt-repository -y ppa:deadsnakes/ppa && sudo apt update && sudo apt install python3.12 python3.12-venv` |
+| **Ubuntu 24.04+** | `sudo apt install python3.12 python3.12-venv` |
+| **macOS (Homebrew)** | `brew install python@3.12` then `export PATH="$(brew --prefix python@3.12)/bin:$PATH"` |
+
+Then: `./scripts/setup-engine-venv.sh --e2e`
+
+## Local test plan (don’t re-run what already passed)
+
+### Principles
+
+1. **Preflight first** — fail in seconds, not after a 600s Guide wait or hung `/sse` curl.
+2. **One suite at a time** — unit → integration → e2e (never jump to e2e while unit is red).
+3. **Target failures** — use `--lf` or a single `path::test`; don’t re-run 158 unit tests while fixing one.
+4. **Skip green suites** — `all` skips suites already passed at the current commit (stored in `.sdlc/test-suite-state.tsv`).
+
+### Typical session
+
+| Step | Command | ~time |
+|------|---------|-------|
+| Preflight | `./scripts/run-test-suites.sh preflight all` | 1s |
+| Unit (once) | `./scripts/run-test-suites.sh unit` | 2–4 min |
+| Fix loop | `./scripts/run-test-suites.sh unit --lf` | seconds |
+| Single test | `./scripts/run-test-suites.sh unit -- engine/tests_unit/foo.py::test_bar` | seconds |
+| Integration | `./scripts/run-test-suites.sh integration` | 3–6 min |
+| E2E | `./scripts/run-test-suites.sh e2e` | 5–15 min |
+| E2E + Guide | `./scripts/run-test-suites.sh e2e --guide` | 20–90 min (first ingest) |
+
+### Resume without re-running green work
+
+```bash
+# See what is already green at HEAD
+./scripts/run-test-suites.sh --state
+
+# Full CI mirror but skip suite 1 if it passed at this commit
+./scripts/run-test-suites.sh all
+
+# Unit passed; only run integration + e2e
+./scripts/run-test-suites.sh all --from integration
+
+# Force everything (pre-push or after big refactor)
+./scripts/run-test-suites.sh all --force
+
+# Forget green markers after rebasing or switching branches
+./scripts/run-test-suites.sh --clear-state
+```
+
+### When something fails
+
+| Situation | Do this | Don’t do this |
+|-----------|---------|----------------|
+| One unit test red | `unit -- path::test` then `unit --lf` | `unit` (full 158 tests) |
+| Unit green, editing installer | `integration -- path::test` | `all` from scratch |
+| Playwright flake | `e2e -- engine/tests_e2e/test_console_playwright.py::test_foo` | `e2e --guide` |
+| Guide not up | `preflight e2e --guide` first | bare `curl …/sse` |
+| Stale background pytest | `unit --clean-stale` | start another full run |
+
+Shell workflow harness (separate from engine pytest): `./tests/test-sdlc-workflow.sh` — run only when touching `scripts/sdlc.sh` or workflow gates.
+
+**Suite 1** — fast, isolated: mocks, `tmp_path`, no Flask server, no browser, no network.
+
+**Suite 2** — Flask `test_client`: ops console installer API, ADF viewer HTTP, mocked externals.
+
+**Suite 3** — Playwright GUIs, live `gh` Issues sync, optional Guide+Neo4j (`--guide` or `test-guide-stack-live.sh`).
+
 
 In orchestrator repo:
 
@@ -24,15 +113,15 @@ In orchestrator repo:
 - `test-sdlc-workflow` (`.github/workflows/test-sdlc-workflow.yml`)
 - `test-archive-work` (`.github/workflows/test-archive-work.yml`)
 - `test-scripts-lib` (`.github/workflows/test-scripts-lib.yml`)
-- `test-extension-manifest` (`.github/workflows/test-extension-manifest.yml`)
 - `validate-command-spec-generation` (`.github/workflows/validate-command-spec-generation.yml`)
 - `test-integration-merge` (`.github/workflows/test-integration-merge.yml`)
 - `test-sdlc-engine` (`.github/workflows/test-sdlc-engine.yml`) — Python v2 engine
+- `test-e2e-playwright` (`.github/workflows/test-e2e-playwright.yml`) — fast Playwright gate (console + viewer)
+- `test-guide-stack-experimental` (`.github/workflows/test-guide-stack-experimental.yml`) — Guide + Neo4j live stack (tier 3)
 - `test-live-consumer` (`.github/workflows/test-live-consumer.yml`) — seed/flush consumer matrix; Cursor SDK jobs when `CURSOR_API_KEY` is set
-- `test-session-memory` (`.github/workflows/test-session-memory.yml`)
+- `test-canvas-readiness` (`.github/workflows/test-canvas-readiness.yml`) — canvas readiness + capture staging smoke
 - `test-index-spdd-analysis` (`.github/workflows/test-index-spdd-analysis.yml`)
 - `test-resolve-agent-context` (`.github/workflows/test-resolve-agent-context.yml`)
-- `test-retrieval-fixture-resolver` (`.github/workflows/test-retrieval-fixture-resolver.yml`) — SPIKE-001 T07 gold test
 - `validate-canvas` (`.github/workflows/validate-canvas.yml`)
 - `validate-diagrams` (`.github/workflows/validate-diagrams.yml`)
 
@@ -60,7 +149,7 @@ Copilot, Claude Code) into throwaway target directories and asserts:
   missing (negative tests).
 - every assistant's always-on grounding file exists and covers the whole
   ecosystem; validation **fails** if Planning (`session-notes/`), SPDD
-  (`spdd/canvas/`), SDLC session context (`agent-context/sessions/`), or an
+  (`spdd/canvas/`), SDLC session context (`.sdlc/sessions/current-session.md`), or an
   assistant grounding file is dropped (negative tests).
 
 Run it locally before changing any install/upgrade script or command template.
@@ -92,11 +181,11 @@ regression harness.
 `./tests/test-archive-work.sh` exercises `sdlc.sh archive` / `archive --all`:
 
 - Refuses In Progress work unless `--force`
-- Moves Complete/Cancelled canvases, feature workspaces, analysis/review/sync, and matching session briefs into `archive/` folders
+- **Deletes** Complete/Cancelled canvases, analysis/review/sync artifacts, and matching session briefs from the working tree (git history retains them; storage v3 has no `spdd/*/archive/` folders)
 - Leaves `requirements/milestones/<WORK-ID>.md` in place
 - Clears the local pointer when it matches the archived Work ID
-- Marks `work-registry.tsv` status `archived` (and `sync-team` can mark `cancelled` without moving files)
-- `list-work` ignores `archive/` directories
+- Marks `spdd/memory/registry.jsonl` status `archived` (and `sync-team` can mark `cancelled` without removing files)
+- `list-work` ignores removed Work IDs (no committed archive directories)
 
 ### Shared scripts/lib harness
 
@@ -112,48 +201,93 @@ regression harness.
 exist with generate-only (no-commit) language, Python engine delegation
 (`sdlc.sh commit-message`), and that generator `--check` plus adapter validation
 still pass (FEAT-008 / #41). Engine coverage lives in
-`engine/tests/test_commit_message.py`.
+`engine/tests_unit/test_commit_message.py`.
 
-### Extension manifest harness
+### Resolve agent context + skills harness
 
-`./tests/test-extension-manifest.sh` covers manifest-driven resolution and
-convention fallback (FEAT-003).
+`./tests/test-resolve-agent-context.sh` runs `resolve-agent-context.sh` against
+throwaway targets and asserts:
+
+- `--phase code` resolves universal + phase-matching skills from `harness/skills/`
+- `#SkillName` / `!SkillName` include and exclude skill files on demand
+- `--list-skills` discovers skill names
+- `--work-id` loads canvas, analysis, tasks, and ledger progress excerpts (storage v3)
+- `--format json` returns paths
+- `start-agent-session.sh` embeds Resolved Context and avoids redundant resume prompts
+- legacy `playbooks/` + `extensions/` trees migrate idempotently into `harness/skills/`
+
+Run locally after changing `resolve-agent-context.sh`, `scripts/lib/skills.sh`,
+harness templates, or `start-agent-session.sh`.
 
 ### Integration merge gate
 
 `./tests/test-integration-merge.sh` installs a throwaway `--all` target and
-runs the critical path from `docs/integration-branch.md` (workflow commands,
-shared lib, manifest resolve, claim/next/team/shelf/archive, upgrade).
+runs workflow CLI, shared lib, skills resolve, claim/next/team/shelf/archive,
+nested harnesses, and upgrade (see script sections A–F).
 
 ### Python engine harness (v2)
 
+## Run CI locally (`.venv`)
+
+All Python for the engine uses the repo **`.venv`** (Python **3.12** only — same as CI). See `.python-version`.
+
 ```bash
-PYTHONPATH=engine/src python3 -m pytest -q engine/tests
-# or
-python3 -m pip install -e './engine[dev]' && pytest -q engine/tests
+# One-time: install python3.12 (Ubuntu 22.04 needs deadsnakes — see table above)
+./scripts/setup-engine-venv.sh --e2e
+
+# Full local mirror (suites 1–3; add --guide for Neo4j stack)
+./scripts/test-ci-local.sh
+./scripts/test-ci-local.sh --guide
+```
+
+Equivalent manual steps (always via `.venv/bin/`):
+
+```bash
+source .venv/bin/activate
+./scripts/run-test-suites.sh unit
+./scripts/run-test-suites.sh integration
+./scripts/run-test-suites.sh e2e          # Playwright + GitHub (needs gh auth)
+./scripts/run-test-suites.sh e2e --guide  # + Guide + Neo4j stack
+SDLC_ENGINE=python ./scripts/sdlc.sh version
+./tests/test-sdlc-engine-shim.sh
+```
+
+GitHub workflow: `.github/workflows/test-sdlc-engine.yml`. Guide stack:
+`.github/workflows/test-guide-stack-experimental.yml`.
+
+Guide round-trip (ledger → projection → read + parity + MCP parity):
+
+```bash
+SDLC_GUIDE_STACK_LIVE=1 ./tests/test-guide-stack-live.sh
+# Or after stack is up:
+.venv/bin/pytest -q engine/tests_e2e/test_guide_projection_roundtrip.py
+```
+
+Agent Guide queries (Cursor/Copilot): [docs/mcp-guide-for-agents.md](docs/mcp-guide-for-agents.md)
+
+```bash
+./scripts/guide/query-guide.sh --text --work-id <WORK-ID>
+./scripts/guide/mcp-config-snippet.sh --cursor
+```
+
+## Engine pytest (orchestrator repo)
+
+```bash
+./scripts/setup-engine-venv.sh --e2e
+./scripts/run-test-suites.sh unit
 ```
 
 Covers pointer, workflow, registry, archive, canvas parsing, link/issue sync,
-local/offline sessions, CLI, ADF viewer (Flask), and the experimental ops console.
-`scripts/sdlc.sh` with `SDLC_ENGINE=python` delegates to the engine; `local*`
-commands always use the Python engine.
+local/offline sessions, CLI, and mocked Guide client/query helpers.
 
-Installer / ops-console gate (also in `test-sdlc-engine.yml`):
+**Suite 2** (`engine/tests_integration/`) — Flask `test_client` for ADF viewer and ops console installer API, including live ADF start/stop via `/api/adf*`.
 
-```bash
-PYTHONPATH=engine/src pytest -q engine/tests/test_installer*.py \
-  --cov=sdlc_engine.installer --cov-fail-under=90
-```
-
-Includes a **live** ADF Viewer start → HTTP probe → stop via `/api/adf*`
-(`test_installer_adf_live.py`). Guide + Neo4j live stack stays opt-in
-(`SDLC_GUIDE_STACK_LIVE=1` / `test-guide-stack-experimental.yml`).
-
-Playwright (CI with Chromium):
+**Suite 3** (`engine/tests_e2e/`) — Playwright GUIs, live GitHub Issues, optional Guide+Neo4j.
 
 ```bash
-SDLC_VIEWER_E2E=1 pytest -q engine/tests/test_viewer_playwright.py -m viewer_e2e
-SDLC_CONSOLE_E2E=1 pytest -q engine/tests/test_console_playwright.py -m console_e2e
+./scripts/run-test-suites.sh integration
+./scripts/run-test-suites.sh e2e
+./scripts/run-test-suites.sh e2e --guide
 ```
 
 GUI map: [docs/ops-console.md](docs/ops-console.md).
@@ -162,8 +296,8 @@ Issue sync confidence:
 
 | Layer | What | How |
 |-------|------|-----|
-| Unit (always) | Milestone draft → Jira/GitHub push/pull write-back | `test_issues_mocked.py` (fake HTTP + fake `gh`) |
-| Integration | Live `gh issue` pull (+ optional create/close) | `test_issues_github_integration.py` via `SDLC_GITHUB_INTEGRATION=1` |
+| Unit (always) | Milestone draft → Jira/GitHub push/pull write-back | `engine/tests_unit/test_issues_mocked.py` (fake HTTP + fake `gh`) |
+| Integration | Live `gh issue` pull (+ optional create/close) | `engine/tests_e2e/test_issues_github_integration.py` (suite 3) |
 | CI | Same, with `issues: write` for create/close cleanup | `test-github-issue-sync` job in `test-sdlc-engine.yml` |
 
 ```bash
@@ -178,41 +312,17 @@ SDLC_ENGINE=python ./scripts/sdlc.sh issues draft <WORK-ID> --system github
 ./scripts/sdlc.sh db query --columns work_id,registry_status,jira_key
 ./scripts/sdlc.sh db query --search "orchestration"
 
-# Live GitHub pull against the current repo (needs gh auth)
-SDLC_GITHUB_INTEGRATION=1 pytest -q engine/tests/test_issues_github_integration.py --run-github-integration
+# Live GitHub (suite 3; needs gh auth — included in ./scripts/run-test-suites.sh e2e)
+./scripts/run-test-suites.sh e2e
 ```
 
-### Session memory index + rotation harness
+### Canvas readiness + capture staging harness
 
-`./tests/test-session-memory-index.sh` runs `capture-session-memory.sh` and
-`start-agent-session.sh` against throwaway targets and asserts the relevance-based
-retrieval model:
-
-- Per-session entry files are written under `agent-context/memory/sessions/`, and
-  recorded areas appear in the entry.
-- `agent-context/memory/code-areas.md` is the canonical category list: capture parses
-  session documents (summary, `session-notes/`, `current-session.md`, the full latest
-  timestamped session brief, canvas, progress log) for path/package tokens, matches
-  known categories, and appends new ones. Covered sources include daily session notes
-  and the latest timestamped session brief.
-- `session-index.md` is created with an `Areas` column and is ordered newest-first.
-- `context-index.md` is a reverse index (area → sessions, decisions, pitfalls, patterns, analysis); two unrelated
-  Work IDs that touch the same area are both discoverable under that area, and
-  `--areas` values are de-duplicated. Decisions/pitfalls/patterns without resolved
-  areas are written to memory files but not indexed.
-- `agent-context/memory/phase-index.md` maps SDLC phase → static playbooks and harness files.
-- `session-history.md` rotates: with `--history-limit`, the recent window is
-  bounded and older entries move to `agent-context/memory/archive/`;
-  `--no-history-rotate` keeps it append-only with no archive.
-- `--dry-run` writes nothing.
-- The `start-agent-session.sh` brief opens with a Framework Orientation section
-  (framework bootstrap) and does not parse canvas file lists.
-
-Code areas are parsed from session documents at capture (summary, `session-notes/`,
-`current-session.md`, the full latest timestamped session brief, canvas, progress
-log, capture flags): known categories are matched, path/package tokens create new
-categories. Optional `--areas` overrides or supplements parsing. The script never
-narrows to `current-session.md`-only parsing.
+`./tests/test-canvas-readiness.sh` exercises `validate-reasons-canvas.sh` readiness
+normalization and a smoke path for `capture-session-memory.sh` staging records
+into `.sdlc/staged/lessons.jsonl` (storage v3). Workflow capture integration
+is covered by `./tests/test-sdlc-workflow.sh` (Test 7) and the live-consumer
+matrix scenarios 03 and 08.
 
 ### Index SPDD analysis harness
 
@@ -224,39 +334,7 @@ throwaway targets and asserts:
 - new code areas appended to `code-areas.md`
 - `--dry-run` writes nothing; missing analysis file exits non-zero
 
-Run locally after changing `index-spdd-analysis.sh` or `domain-index.md`.
-
-### Resolve agent context harness
-
-`./tests/test-resolve-agent-context.sh` runs `resolve-agent-context.sh` against
-throwaway targets and asserts:
-
-- `--phase code` resolves `_all-agents/`, `coding-agent/`, and playbooks from `phase-index.md`
-- `#SkillName` resolves `extensions/skills/` and `*-playbook.md` files
-- `!SkillName` excludes a skill even when also requested with `#`
-- `--work-id` / `--areas` filter `context-index.md` by code area; anchor-only rows do not load whole memory logs
-- `--list-skills` discovers skills and playbook-derived names
-- `--format json` returns paths, areas, and index rows
-- `start-agent-session.sh` resume prompt skips artifacts already listed in Resolved Context
-
-Run locally after changing `resolve-agent-context.sh`, extension templates, or
-`start-agent-session.sh` Resolved Context integration.
-
-### Retrieval fixture harness (SPIKE-001 T07)
-
-`./tests/test-retrieval-fixture-resolver.sh` runs `resolve-agent-context.sh` against
-the controlled mock project `examples/retrieval-fixture/` and asserts 15 gold paths
-from `tests/fixtures/spike-001-retrieval-gold.tsv` (mode A markdown baseline).
-
-Run locally after changing the fixture indexes, gold file, or resolver.
-
-### Retrieval A/B baseline capture (SPIKE-001 T05)
-
-`./tests/test-retrieval-ab-baseline.sh` runs `capture-mode-a-baseline.sh` and asserts
-three fixture cases are captured to `tests/fixtures/spike-001-mode-a-baseline.tsv`.
-
-`./scripts/guide/run-retrieval-ab-fixture.sh --capture-a` prints path counts and byte
-estimates for mode (a). `--check-mcp <file>` validates mode (b) URI results.
+Run locally after changing `index-spdd-analysis.sh` or staged analysis records.
 
 ### Whole-ecosystem grounding norm (enforced)
 
@@ -271,7 +349,7 @@ every interaction (not only when a `/sdlc-spdd-*` command runs):
 shared operating-model anchors (the lifecycle line, `## Operating Model`,
 `## Work Rules`) and the Planning + SPDD + SDLC artifacts (`ROADMAP.md`,
 `milestone-*.md`, `session-notes/`, `spdd/analysis/`, `spdd/canvas/`,
-`agent-context/sessions/`, `agent-context/memory/`, `/sdlc-spdd-analysis`).
+`.sdlc/sessions/current-session.md`, `spdd/canvas/`, `/sdlc-spdd-analysis`).
 This makes whole-ecosystem awareness the norm for all work across every assistant
 — and runs in CI both here and inside installed target projects when the target
 adapter workflow is installed.
@@ -293,15 +371,15 @@ Use one canonical Work ID and one operation.
 
 2. In terminal, verify effects:
 
-       ./scripts/sdlc-spdd/verify-agent-command-effects.sh --target . --work-id <WORK-ID> --step plan
-       ./scripts/sdlc-spdd/verify-agent-command-effects.sh --target . --work-id <WORK-ID> --step architect
-       ./scripts/sdlc-spdd/verify-agent-command-effects.sh --target . --work-id <WORK-ID> --step code --operation T01
-       ./scripts/sdlc-spdd/verify-agent-command-effects.sh --target . --work-id <WORK-ID> --step review
+       ./sdlc-spdd/scripts/verify-agent-command-effects.sh --target . --work-id <WORK-ID> --step plan
+       ./sdlc-spdd/scripts/verify-agent-command-effects.sh --target . --work-id <WORK-ID> --step architect
+       ./sdlc-spdd/scripts/verify-agent-command-effects.sh --target . --work-id <WORK-ID> --step code --operation T01
+       ./sdlc-spdd/scripts/verify-agent-command-effects.sh --target . --work-id <WORK-ID> --step review
 
 3. Capture memory and planning sync:
 
-       ./scripts/sdlc-spdd/capture-session-memory.sh --target . --work-id <WORK-ID> --phase code --summary "<summary>" --validation "<tests>" --milestone milestone-1.md --roadmap-note "<progress>" --next "<next command>"
-       ./scripts/sdlc-spdd/verify-agent-command-effects.sh --target . --work-id <WORK-ID> --step capture --milestone milestone-1.md --require-roadmap
+       ./sdlc-spdd/scripts/capture-session-memory.sh --target . --work-id <WORK-ID> --phase code --summary "<summary>" --validation "<tests>" --milestone milestone-1.md --roadmap-note "<progress>" --next "<next command>"
+       ./sdlc-spdd/scripts/verify-agent-command-effects.sh --target . --work-id <WORK-ID> --step capture --milestone milestone-1.md --require-roadmap
 
 ### Live consumer matrix (seed / flush)
 

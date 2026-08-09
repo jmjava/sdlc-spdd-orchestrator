@@ -20,20 +20,34 @@ fail=0
 ok()  { echo "  ok   $1"; pass=$((pass + 1)); }
 bad() { echo "  FAIL $1" >&2; fail=$((fail + 1)); }
 
+registry_file() {
+  local t="$1"
+  printf '%s' "${t}/spdd/memory/registry.jsonl"
+}
+
+registry_matches() {
+  local t="$1" work_id="$2" regex="$3"
+  local reg
+  reg="$(registry_file "${t}")"
+  [[ -f "${reg}" ]] && grep -q "\"work_id\": \"${work_id}\"" "${reg}" && grep -Eq "${regex}" "${reg}"
+}
+
 wf() { SDLC_ROOT="${1}" "${WORKFLOW}" "${@:2}"; }
 
 setup_feature() {
   local t="$1"
   local work_id="$2"
-  mkdir -p "${t}/agent-context/sessions" \
-    "${t}/agent-context/features/${work_id}" \
+  mkdir -p "${t}/.sdlc/sessions" \
+    "${t}/agent-context" \
     "${t}/spdd/canvas" \
     "${t}/spdd/analysis" \
     "${t}/scripts/lib"
   cp "${POINTER}" "${t}/agent-context/sdlc-pointer.sh"
   cp "${WORKFLOW}" "${t}/agent-context/sdlc-workflow.sh"
   cp "${REPO_ROOT}/agent-context/sdlc-team-registry.sh" "${t}/agent-context/sdlc-team-registry.sh"
-  cp "${REPO_ROOT}/templates/agent-context/work-registry.tsv" "${t}/agent-context/work-registry.tsv"
+  cp "${REPO_ROOT}/scripts/lib/paths.sh" "${t}/scripts/lib/paths.sh"
+  mkdir -p "${t}/spdd/memory"
+  : > "${t}/spdd/memory/registry.jsonl"
   cp "${REPO_ROOT}/scripts/lib/readiness.sh" "${t}/scripts/lib/readiness.sh"
   chmod +x "${t}/agent-context/sdlc-pointer.sh" "${t}/agent-context/sdlc-workflow.sh" "${t}/agent-context/sdlc-team-registry.sh"
 }
@@ -168,7 +182,7 @@ printf '%s\n' "# ${work_id}" '' '## Final Status' '' '- Status: In Progress' \
 cp "${REPO_ROOT}/scripts/sdlc.sh" "${T}/scripts/sdlc-spdd/sdlc.sh"
 chmod +x "${T}/scripts/sdlc-spdd/sdlc.sh"
 if SDLC_USER="tester" SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" claim "${work_id}" >/dev/null 2>"${T}/claim.err"; then
-  if grep -q $'FEAT-005b-claim\tactive\t' "${T}/agent-context/work-registry.tsv"; then
+  if registry_matches "${T}" "${work_id}" '"status": "active"'; then
     ok "sdlc.sh claim updates registry without CLI re-entry"
   else
     bad "sdlc.sh claim exited 0 but registry missing row"
@@ -581,7 +595,7 @@ T="${WORK}/team"
 work_id="FEAT-009-team"
 setup_feature "${T}" "${work_id}"
 SDLC_USER="alice" SDLC_ROOT="${T}" wf "${T}" claim "${work_id}" >/dev/null
-if grep -q $'FEAT-009-team\tactive\t' "${T}/agent-context/work-registry.tsv"; then
+if registry_matches "${T}" "${work_id}" '"status": "active"'; then
   ok "claim writes team registry"
 else
   bad "team registry missing active row"
@@ -612,7 +626,7 @@ else
   ok "claim without --force refuses foreign owner"
 fi
 if SDLC_USER="bob" SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" claim "${work_id}" --force >"${T}/claim-force.out" 2>"${T}/claim-force.err"; then
-  if grep -q $'FEAT-009b-force\tactive\t.*\tbob\t' "${T}/agent-context/work-registry.tsv"; then
+  if registry_matches "${T}" "${work_id}" '"status": "active".*"owner": "bob"'; then
     ok "claim --force takes over via sdlc.sh wrapper"
   else
     bad "claim --force succeeded but owner not bob"
@@ -631,6 +645,8 @@ fi
 echo "== Test 15: list-work discovers repo Work IDs =="
 T="${WORK}/team"
 work_id="FEAT-009-team"
+printf '# REASONS Canvas: %s\n\n## Metadata\n\n- Work ID: %s\n' "${work_id}" "${work_id}" \
+  > "${T}/spdd/canvas/${work_id}.md"
 # reuse team fixture from Test 14 (bob owns after --force resume)
 out="$(SDLC_ROOT="${T}" wf "${T}" list-work)"
 if grep -q 'FEAT-009-team' <<< "${out}"; then ok "list-work shows work id"; else bad "list-work missing id"; fi
@@ -640,8 +656,9 @@ echo "== Test 16: stale claim flagged in team output =="
 T="${WORK}/stale"
 work_id="FEAT-010-stale"
 setup_feature "${T}" "${work_id}"
-printf 'work_id\tstatus\tphase\toperation\towner\tupdated\tnote\n' > "${T}/agent-context/work-registry.tsv"
-printf 'FEAT-010-stale\tactive\tcode\t\talice\t2020-01-01T00:00:00Z\t\n' >> "${T}/agent-context/work-registry.tsv"
+printf '%s\n' \
+  '{"event":"claim","work_id":"FEAT-010-stale","status":"active","phase":"code","operation":"","owner":"alice","note":"","ts":"2020-01-01T00:00:00Z"}' \
+  > "${T}/spdd/memory/registry.jsonl"
 out="$(SDLC_TEAM_STALE_DAYS=0 SDLC_ROOT="${T}" wf "${T}" team)"
 if grep -q 'STALE' <<< "${out}"; then ok "stale claim flagged"; else bad "stale flag missing"; fi
 
@@ -650,9 +667,15 @@ echo "== Test 17: done status from canvas Final Status =="
 T="${WORK}/done"
 work_id="CHORE-001-done"
 setup_feature "${T}" "${work_id}"
-cp "${REPO_ROOT}/spdd/canvas/CHORE-001-docgen-initial-documentation.md" "${T}/spdd/canvas/${work_id}.md"
+cat > "${T}/spdd/canvas/${work_id}.md" <<'EOF'
+# CHORE-001-done
+
+## Final Status
+
+- Status: Complete
+EOF
 SDLC_ROOT="${T}" wf "${T}" sync-team >/dev/null
-if grep -q $'CHORE-001-done\tdone\t' "${T}/agent-context/work-registry.tsv"; then
+if registry_matches "${T}" "CHORE-001-done" '"status": "done"'; then
   ok "sync-team marks canvas complete as done"
 else
   bad "done status not written"
@@ -664,8 +687,8 @@ T="${WORK}/notes"
 work_id="FEAT-011-notes"
 setup_feature "${T}" "${work_id}"
 SDLC_USER="dev1" SDLC_ROOT="${T}" wf "${T}" claim "${work_id}" --branch "cursor/feat-011" --pr "#99" >/dev/null
-if grep -q 'branch:cursor/feat-011' "${T}/agent-context/work-registry.tsv" \
-  && grep -q 'pr:#99' "${T}/agent-context/work-registry.tsv"; then
+if registry_matches "${T}" "${work_id}" 'branch:cursor/feat-011' \
+  && registry_matches "${T}" "${work_id}" 'pr:#99'; then
   ok "claim stores branch and pr note tokens"
 else
   bad "branch/pr tokens missing from registry"
@@ -706,7 +729,7 @@ cat > "${T}/requirements/milestones/${work_id}.md" <<'EOF'
 - Summary: test issue
 EOF
 SDLC_USER="dev2" SDLC_ROOT="${T}" wf "${T}" claim "${work_id}" >/dev/null
-if grep -q 'jira:ORCH-42' "${T}/agent-context/work-registry.tsv"; then
+if registry_matches "${T}" "${work_id}" 'jira:ORCH-42'; then
   ok "claim auto-reads jira key from milestone"
 else
   bad "milestone jira key not in registry"

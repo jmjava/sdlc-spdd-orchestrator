@@ -1,0 +1,34 @@
+@startuml 14-ops-console
+
+title Ops console and companion services
+
+rectangle "Ops console :5051" {
+  agent "Install / Upgrade /\nSQLite / Rollback /\nParity" as Inst
+  agent "Guide tab" as GTab
+  agent "ADF tab" as ATab
+}
+
+rectangle "ADF Viewer :5050" {
+  agent "WYSIWYG + raw ADF" as Edit
+  agent "Jira upload / download" as Jira
+}
+
+rectangle "Optional Guide + Neo4j" {
+  database "Neo4j" as Neo
+  agent "Guide\nspdd-projection-v3" as Guide
+}
+
+rectangle "Slash commands" {
+  agent "resolve-context-backend.sh" as Resolve
+}
+
+card "Ledger retrieval only\n(CONTEXT_BACKEND=files)" as Files
+
+ATab --> Edit : start / stop / open
+Edit --> Jira
+GTab --> Neo
+GTab --> Guide
+Resolve --> Guide : marker + live probe
+Resolve ..> Files : Guide down -> files
+
+@enduml

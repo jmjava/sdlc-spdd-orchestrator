@@ -14,19 +14,23 @@ scripts; the engine can shell out to them via `sdlc-engine shell …` when neede
 
 ## Quick start
 
-From the orchestrator repo:
+Requires **Python 3.12** (see repo `.python-version`). From the orchestrator repo:
 
 ```bash
-# editable install (optional)
-python3 -m pip install -e './engine[dev]'
+sudo apt install python3.12 python3.12-venv   # once
+./scripts/setup-engine-venv.sh --e2e
+source .venv/bin/activate
 
-# or run without installing
-PYTHONPATH=engine/src python3 -m sdlc_engine next --root .
-
-# CLI entry (after install)
+# CLI entry
 sdlc-engine next
 sdlc-engine claim FEAT-001-demo
 sdlc-engine archive --all --dry-run
+```
+
+Or without activating the venv:
+
+```bash
+.venv/bin/python -m sdlc_engine next --root .
 ```
 
 Prefer the engine from the existing wrapper (shell remains the default):
@@ -53,7 +57,7 @@ SDLC_ENGINE=auto ./scripts/sdlc.sh next   # python if importable, else shell
 | `pointer` | `.sdlc/pointer` get/set/reset + guarded run |
 | `workflow` | Resume/advance/skip/shelf/sync/next/status |
 | `registry` | `work-registry.tsv` claim/release/team/list-work |
-| `archive` | Move Complete/Cancelled work into `archive/` |
+| `archive` | Remove Complete/Cancelled work artifacts (git history retains them) |
 | `canvas` | Final Status + next-operation inference |
 | `links` / `sync_local` | Milestone↔canvas↔registry drift check/repair + ROADMAP sync |
 | `issues` | Draft/push/pull Jira (`JIRA_*`) or GitHub (`gh`) from milestone sections |
@@ -86,30 +90,21 @@ python3 -m pip install -e './engine[dev,viewer]'
 
 ```bash
 python3 -m pip install -e './engine[dev,viewer]'
-pytest -q engine/tests
+pytest -q engine/tests_unit
 ```
 
 Or without install (viewer tests need Flask):
 
 ```bash
-PYTHONPATH=engine/src python3 -m pytest -q engine/tests
+PYTHONPATH=engine/src python3 -m pytest -q engine/tests_unit_unit
 ```
 
-Installer / ops-console coverage (always-on in CI):
+Three suites — see [TESTING.md](../TESTING.md#engine-test-suites-3-packages):
 
 ```bash
-PYTHONPATH=engine/src pytest -q engine/tests/test_installer*.py \
-  --cov=sdlc_engine.installer --cov-fail-under=90
-# includes live ADF start/stop: test_installer_adf_live.py
-```
-
-Playwright GUI (opt-in; CI sets the env flags):
-
-```bash
-python3 -m pip install -e './engine[dev,viewer-e2e]'
-playwright install chromium
-SDLC_VIEWER_E2E=1 pytest -q engine/tests/test_viewer_playwright.py -m viewer_e2e
-SDLC_CONSOLE_E2E=1 pytest -q engine/tests/test_console_playwright.py -m console_e2e
+./scripts/run-test-suites.sh unit          # engine/tests_unit
+./scripts/run-test-suites.sh integration # engine/tests_integration (+ installer cov)
+./scripts/run-test-suites.sh e2e         # engine/tests_e2e (Playwright, gh, optional --guide)
 ```
 
 ## Design notes

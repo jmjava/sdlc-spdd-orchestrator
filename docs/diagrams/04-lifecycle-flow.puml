@@ -1,0 +1,55 @@
+@startuml 04-lifecycle-flow
+
+title Lifecycle - Fowler SPDD + SDLC hybrid with storage v3 gates
+
+|Planning|
+start
+:/sdlc-spdd-init
+seed sdlc-spdd/ layout,
+empty ledger + registry;
+:requirement / milestone
+requirements/milestones/<WORK-ID>.md;
+:claim work
+./scripts/sdlc.sh claim
+-> registry.jsonl event;
+
+|Design|
+:/sdlc-spdd-analysis
+retrieve --kind analysis,
+write spdd/analysis/<WORK-ID>-analysis.md,
+stage one analysis record;
+:/sdlc-spdd-plan
+write REASONS canvas
+spdd/canvas/<WORK-ID>.md;
+:/sdlc-spdd-architect
+retrieve --kind decision,
+harden canvas (no code);
+
+|Build|
+:/sdlc-spdd-code
+retrieve --kind pitfall,
+implement ONE canvas operation,
+capture progress -> staged;
+:/sdlc-spdd-api-test
+verify canvas Requirements/Operations,
+capture note -> staged;
+
+|Verify|
+:/sdlc-spdd-review
+retrieve --kind pattern,
+write spdd/reviews/<WORK-ID>-review.md;
+
+|Learn|
+:/sdlc-spdd-retro
+stage decision / pitfall / pattern,
+./scripts/sdlc.sh accept --work-id
+-> promote staged to lessons.jsonl;
+:/sdlc-spdd-sync
+write spdd/sync/<WORK-ID>-sync.md,
+accept remaining records,
+release claim -> registry.jsonl;
+:one batched git commit
+(contracts + accepted ledger);
+stop
+
+@enduml

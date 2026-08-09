@@ -22,17 +22,17 @@ The workflow is hybrid: SDLC Agents supplies the lifecycle; SPDD supplies the RE
 
 ## Recommended Sequence
 
-Claim the Work ID, then open a session brief. Prefer `./scripts/sdlc-spdd/sdlc.sh claim` → `start`; paste the **Resume Prompt** from `current-session.md` — see [Session prompt standard](session-prompt-standard.md). Orient anytime with `./scripts/sdlc-spdd/sdlc.sh next` or `/sdlc-spdd-whereami`.
+Claim the Work ID, then open a session brief. Prefer `./sdlc-spdd/scripts/sdlc.sh claim` → `start`; paste the **Resume Prompt** from `current-session.md` — see [Session prompt standard](session-prompt-standard.md). Orient anytime with `./sdlc-spdd/scripts/sdlc.sh next` or `/sdlc-spdd-whereami`.
 
-`/sdlc-spdd-*` steps are **assistant commands** (Cursor/Copilot/Claude Code chat). `./scripts/sdlc-spdd/*` steps are **shell commands** (terminal). [How to run assistant commands](initialization-and-invocation.md#how-to-run-assistant-commands).
+`/sdlc-spdd-*` steps are **assistant commands** (Cursor/Copilot/Claude Code chat). `./sdlc-spdd/scripts/*` steps are **shell commands** (terminal). [How to run assistant commands](initialization-and-invocation.md#how-to-run-assistant-commands).
 
 | Step | Part | Action |
 |------|------|--------|
 | 1 | SDLC | **Set up prompts and memory** — from orchestrator repo: `./scripts/setup-agent-prompts.sh --target /path/to/app --all` |
 | 2 | SDLC | **Initialize** — `/sdlc-spdd-init` |
-| 3 | Planning → SPDD | **Map milestone work when needed** — `./scripts/sdlc-spdd/create-work-from-milestone.sh --target . --milestone milestone-1.md --all` |
-| 4 | SDLC | **Claim + start session** — `./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>` then `sdlc.sh start` (or `resume` + `start`) → paste Resume Prompt |
-| 5 | SPDD (+ Planning) | **Analysis** — `/sdlc-spdd-analysis @requirements/my-feature.md @ROADMAP.md @milestone-1.md`, then `./scripts/sdlc-spdd/index-spdd-analysis.sh --target . --work-id <WORK-ID>` |
+| 3 | Planning → SPDD | **Map milestone work when needed** — `./sdlc-spdd/scripts/create-work-from-milestone.sh --target . --milestone milestone-1.md --all` |
+| 4 | SDLC | **Claim + start session** — `./sdlc-spdd/scripts/sdlc.sh claim <WORK-ID>` then `sdlc.sh start` (or `resume` + `start`) → paste Resume Prompt |
+| 5 | SPDD (+ Planning) | **Analysis** — `/sdlc-spdd-analysis @requirements/my-feature.md @ROADMAP.md @milestone-1.md`, then `./sdlc-spdd/scripts/index-spdd-analysis.sh --target . --work-id <WORK-ID>` |
 | 6 | SPDD (+ Planning) | **Plan** — `/sdlc-spdd-plan @spdd/analysis/<WORK-ID>-analysis.md` (requires the analysis artifact from step 5) |
 | 7 | SPDD | **Architect** — `/sdlc-spdd-architect @spdd/canvas/<WORK-ID>.md` |
 | 8 | SDLC + SPDD | **Code** — `/sdlc-spdd-code @spdd/canvas/<WORK-ID>.md operation T01` (one operation at a time) |
@@ -41,8 +41,8 @@ Claim the Work ID, then open a session brief. Prefer `./scripts/sdlc-spdd/sdlc.s
 | 11 | SPDD | **Prompt update when intent changes** — `/sdlc-spdd-prompt-update @spdd/canvas/<WORK-ID>.md` |
 | 12 | SDLC | **Retro** — `/sdlc-spdd-retro @spdd/canvas/<WORK-ID>.md` |
 | 13 | SPDD | **Sync** — `/sdlc-spdd-sync @spdd/canvas/<WORK-ID>.md` |
-| 14 | SDLC + Planning | **Capture memory and session notes** — `./scripts/sdlc-spdd/sdlc.sh capture ...` (milestone auto-detected when Work ID is in `milestone-*.md`) |
-| 15 | Planning ← SPDD | **Refresh roadmap summary** — `./scripts/sdlc-spdd/sync-roadmap-from-spdd.sh --target .` |
+| 14 | SDLC + Planning | **Capture memory and session notes** — `./sdlc-spdd/scripts/sdlc.sh capture ...` (milestone auto-detected when Work ID is in `milestone-*.md`) |
+| 15 | Planning ← SPDD | **Refresh roadmap summary** — `./sdlc-spdd/scripts/sync-roadmap-from-spdd.sh --target .` |
 
 ## Work IDs
 
@@ -56,9 +56,9 @@ See `agent-context/harness/quality-gates.md`.
 
 ## Validation
 
-In your installed project, runtime scripts live under `scripts/sdlc-spdd/`:
+In your installed project, runtime scripts live under `sdlc-spdd/scripts/`:
 
-    ./scripts/sdlc-spdd/validate-reasons-canvas.sh spdd/canvas/
+    ./sdlc-spdd/scripts/validate-reasons-canvas.sh spdd/canvas/
 
 ## Related Guides
 

@@ -4,23 +4,24 @@ Use this guide after SDLC-SPDD is installed in an application repository.
 
 Maintenance means keeping the framework, prompts, memory, canvases, and external links useful over time.
 
-Runtime scripts in a target app live at `scripts/sdlc-spdd/`. When developing the orchestrator itself, the same scripts are at `scripts/` in this repository. See [CONTRIBUTING.md](../CONTRIBUTING.md).
+Runtime scripts in a target app live at `sdlc-spdd/scripts/`. When developing the orchestrator itself, the same scripts are at `scripts/` in this repository. See [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 ## Maintenance Checklist
 
 Run these checks regularly:
 
 - [ ] Framework prompts and scripts are current.
-- [ ] `agent-context/work-registry.tsv` reflects active team claims (committed on shared repos).
+- [ ] `spdd/memory/registry.jsonl` reflects active team claims (committed on shared repos).
 - [ ] Local pointer and workflow state are sane (`.sdlc/pointer`, `.sdlc/workflows/` — gitignored).
 - [ ] `ROADMAP.md` and active `milestone-*.md` files reflect current progress.
 - [ ] daily session notes are captured under `session-notes/`.
-- [ ] `agent-context/sessions/current-session.md` reflects the active work.
-- [ ] feature workspace canvas and canonical canvas are in sync.
-- [ ] memory captures recent decisions, pitfalls, and patterns with **areas in session content** (summary/session-notes, parsed at capture) so `context-index.md` stays useful.
+- [ ] `.sdlc/sessions/current-session.md` reflects the active work.
+- [ ] canvas and phase artifacts are in sync for the active Work ID.
+- [ ] captures include **areas in session content** (summary/session-notes, parsed at capture) so retrieval stays area-scoped.
+- [ ] staged records are accepted at retro/sync gates (`/sdlc-spdd-accept`).
 - [ ] Jira or GitHub issue links are current.
 - [ ] review and sync logs exist for completed work.
-- [ ] old session files are kept or archived according to team policy.
+- [ ] old session briefs are kept or archived according to team policy.
 
 ## Upgrade Framework Files
 
@@ -29,7 +30,9 @@ From the orchestrator repository:
     ./scripts/upgrade-project.sh --target /path/to/app --all --dry-run
     ./scripts/upgrade-project.sh --target /path/to/app --all
 
-The upgrade preserves application work and existing memory content.
+The upgrade preserves application work, requirements, canvases, and the committed
+lessons ledger. Legacy layouts are migrated by `sdlc-engine storage migrate` — see
+[Framework upgrade](framework-upgrade.md).
 
 Review backups under:
 
@@ -41,29 +44,25 @@ Do not rely on chat history alone.
 
 From the target app:
 
-    ./scripts/sdlc-spdd/sdlc.sh next
-    ./scripts/sdlc-spdd/sdlc.sh resume <WORK-ID> [--phase <phase>]
-    ./scripts/sdlc-spdd/sdlc.sh start
+    ./sdlc-spdd/scripts/sdlc.sh next
+    ./sdlc-spdd/scripts/sdlc.sh resume <WORK-ID> [--phase <phase>]
+    ./sdlc-spdd/scripts/sdlc.sh start
 
 Optional canvas sync before resuming stale work:
 
-    ./scripts/sdlc-spdd/resync-agent-session.sh --target . --work-id <WORK-ID> --check-only
+    ./sdlc-spdd/scripts/resync-agent-session.sh --target . --work-id <WORK-ID> --check-only
 
-Then **paste the Resume Prompt** from `agent-context/sessions/current-session.md`. See [Session prompt standard](session-prompt-standard.md).
+Then **paste the Resume Prompt** from `.sdlc/sessions/current-session.md`. See [Session prompt standard](session-prompt-standard.md).
 
 ## Check Canvas Sync
 
 Before resuming work:
 
-    ./scripts/sdlc-spdd/resync-agent-session.sh --target . --work-id <WORK-ID> --check-only
+    ./sdlc-spdd/scripts/resync-agent-session.sh --target . --work-id <WORK-ID> --check-only
 
 If the canonical canvas is correct:
 
-    ./scripts/sdlc-spdd/resync-agent-session.sh --target . --work-id <WORK-ID> --from-canvas --force --phase <phase>
-
-If the feature workspace copy is correct:
-
-    ./scripts/sdlc-spdd/resync-agent-session.sh --target . --work-id <WORK-ID> --from-feature --force --phase <phase>
+    ./sdlc-spdd/scripts/resync-agent-session.sh --target . --work-id <WORK-ID> --from-canvas --force --phase <phase>
 
 Use sync carefully:
 
@@ -74,7 +73,7 @@ Use sync carefully:
 
 At the end of meaningful work, capture — prefer guarded capture via the workflow CLI:
 
-    ./scripts/sdlc-spdd/sdlc.sh capture \
+    ./sdlc-spdd/scripts/sdlc.sh capture \
       --summary "<what changed; include paths like src/billing or com.acme.order>" \
       --validation "<tests or checks>" \
       --decisions "<decisions, if any>" \
@@ -82,24 +81,23 @@ At the end of meaningful work, capture — prefer guarded capture via the workfl
       --patterns "<patterns, if any>" \
       --next "<next command>"
 
-Memory is stored in:
+Captures stage lesson records in `.sdlc/staged/lessons.jsonl` — git stays quiet.
+At retro/sync, `/sdlc-spdd-accept` promotes keepers into the committed ledger:
 
-- `agent-context/memory/sessions/<entry>.md` (per-session detail)
-- `agent-context/memory/session-index.md`, `context-index.md`, `code-areas.md` (retrieval indexes)
-- `session-notes/YYYY-MM-DD.md`
-- `agent-context/memory/session-history.md` (recent window; archive for older entries)
-- `agent-context/memory/project-memory.md`
-- `agent-context/memory/architecture-decisions.md`
-- `agent-context/memory/known-pitfalls.md`
-- `agent-context/memory/reusable-patterns.md`
-- `agent-context/features/<WORK-ID>/progress-log.md`
+    ./sdlc-spdd/scripts/sdlc.sh accept --list
+    ./sdlc-spdd/scripts/sdlc.sh accept --work-id <WORK-ID>
 
-Retrieve by area via `context-index.md` — do not read memory files top-to-bottom.
-See [Bootstrap and index-based loading](context-loading-and-scaling.md#bootstrap-and-index-based-loading).
+Retrieve accepted lessons on demand — never bulk-read the ledger:
+
+    sdlc-engine context retrieve --work-id <WORK-ID> --kind pitfall
+    sdlc-engine context show "<record-id>"
+
+See [Storage v3 — stage-then-accept](storage-v3.md#stage-then-accept) and
+[Bootstrap and retrieval-based loading](context-loading-and-scaling.md#bootstrap-and-index-based-loading).
 
 To tie a session to roadmap and milestone progress:
 
-    ./scripts/sdlc-spdd/sdlc.sh capture \
+    ./sdlc-spdd/scripts/sdlc.sh capture \
       --summary "<what changed>" \
       --validation "<tests or checks>" \
       --milestone milestone-1.md \
@@ -119,36 +117,34 @@ Keep the canvas Metadata current:
 
 For Jira updates:
 
-    For <WORK-ID>, read the canvas, progress log, review report, and sync log. Draft a Jira update for <JIRA-KEY>.
+    SDLC_ENGINE=python ./scripts/sdlc.sh issues push <WORK-ID> --dry-run
 
-For public docs:
-
-    For <WORK-ID>, create a public-safe summary suitable for GitHub Pages. Exclude secrets and internal-only details.
+See [Jira runbook](jira-runbook.md) and [Issue sync and branching](issue-sync-and-branching.md).
 
 ## Keep Roadmap and Milestones Mapped
 
 Create SDLC-SPDD work from milestone checklist items:
 
-    ./scripts/sdlc-spdd/create-work-from-milestone.sh --target . --milestone milestone-1.md --all
+    ./sdlc-spdd/scripts/create-work-from-milestone.sh --target . --milestone milestone-1.md --all
 
 Refresh the managed roadmap summary from canvas metadata:
 
-    ./scripts/sdlc-spdd/sync-roadmap-from-spdd.sh --target .
+    ./sdlc-spdd/scripts/sync-roadmap-from-spdd.sh --target .
 
-Import existing daily session notes into durable memory:
+Summarize session notes into staged lesson records (then accept at the gate):
 
-    ./scripts/sdlc-spdd/summarize-session-notes.sh --target . --all
+    ./sdlc-spdd/scripts/summarize-session-notes.sh --target . --all
 
 Use this flow:
 
     ROADMAP.md / milestone-*.md / requirements/milestones/ / session-notes/
             -> inform and summarize
-    spdd/canvas/ + agent-context/
+    spdd/canvas/ + spdd/memory/
             -> govern and remember
     code / reviews / sync logs
             -> execute and validate
 
-## Keep Prompts and Playbooks Clean
+## Keep Prompts and Skills Clean
 
 Use these boundaries:
 
@@ -160,10 +156,11 @@ Use these boundaries:
 | `.github/copilot-instructions.md` | framework-owned Copilot instructions; update through upgrade script |
 | `.claude/commands/` | framework-owned Claude Code commands; update through upgrade script |
 | `CLAUDE.md` | project-owned Claude Code memory; SDLC-SPDD manages only the marked grounding block |
-| `agent-context/work-registry.tsv` | team Work ID claims; update via `sdlc.sh claim`/`release`, then commit |
-| `scripts/sdlc-spdd/` | framework-owned runtime scripts; update through upgrade script |
-| `agent-context/playbooks/` | team workflow guidance; safe place for team process notes |
-| `agent-context/memory/` | durable project knowledge; preserve and append |
+| `spdd/memory/registry.jsonl` | team Work ID claims; update via `sdlc.sh claim`/`release`, then commit |
+| `spdd/memory/lessons.jsonl` | accepted lessons; written only by `accept` — never hand-edit |
+| `sdlc-spdd/scripts/` | framework-owned runtime scripts; update through upgrade script |
+| `harness/skills/` | team `#SkillName` files; safe place for process and stack guidance |
+| `harness/phase-index.md` | phase-scoped static context index; team may extend |
 | `ROADMAP.md` | project-owned milestone progress; preserve and append intentionally |
 | `milestone-*.md` | project-owned milestone scope and status; preserve and append intentionally |
 | `session-notes/` | project-owned daily session summaries |
@@ -171,45 +168,43 @@ Use these boundaries:
 
 ## Archive Completed / Cancelled Work
 
-When a Work ID's canvas `## Final Status` is `Complete` or `Cancelled`, move its
-artifacts out of the active tree:
+When a Work ID's canvas `## Final Status` is `Complete` or `Cancelled`, remove its
+contract artifacts from the working tree (git history retains them):
 
 ```bash
-./scripts/sdlc-spdd/sdlc.sh archive <WORK-ID>
-./scripts/sdlc-spdd/sdlc.sh archive --all
-./scripts/sdlc-spdd/sdlc.sh archive <WORK-ID> --dry-run
+./sdlc-spdd/scripts/sdlc.sh archive <WORK-ID>
+./sdlc-spdd/scripts/sdlc.sh archive --all
+./sdlc-spdd/scripts/sdlc.sh archive <WORK-ID> --dry-run
 ```
 
-This moves (when present):
+This removes (when present):
 
-- `spdd/canvas/<WORK-ID>.md` → `spdd/canvas/archive/`
-- `agent-context/features/<WORK-ID>/` → `agent-context/features/archive/`
-- matching `spdd/analysis|reviews|sync` artifacts → sibling `archive/` folders
-- matching `agent-context/sessions/*<WORK-ID>*` briefs → `agent-context/sessions/archive/`
+- `spdd/canvas/<WORK-ID>.md`
+- matching `spdd/analysis|reviews|sync` artifacts
+- matching `.sdlc/sessions/*<WORK-ID>*` briefs (not `current-session.md`)
+- `.sdlc/workflows/<WORK-ID>.state`
 
-Left in place: `requirements/milestones/<WORK-ID>.md` (historical requirement source)
-and `agent-context/sessions/current-session.md`. The registry row becomes `archived`.
+Left in place: `requirements/milestones/<WORK-ID>.md` (requirement source).
+The registry row becomes `archived`.
 
 ## Archive Old Sessions
 
-Session files accumulate under:
+Session briefs accumulate under `.sdlc/sessions/` (gitignored).
 
-    agent-context/sessions/
-
-Prefer `sdlc.sh archive` for Work IDs that are Complete/Cancelled (moves matching
+Prefer `sdlc.sh archive` for Work IDs that are Complete/Cancelled (removes matching
 session briefs automatically). Keep:
 
 - `current-session.md`
-- session files for active or recently completed work
+- session briefs for active or recently completed work
 
-Archive or prune remaining old session files according to team policy. Do not delete
-`agent-context/memory/session-history.md` unless intentionally resetting durable history.
+Rotate timestamped briefs with `--session-limit` on `start` (default 20; older
+briefs move to `.sdlc/sessions/archive/`).
 
 ## Validate Before Done
 
 Canvas validation:
 
-    ./scripts/sdlc-spdd/validate-reasons-canvas.sh spdd/canvas/<WORK-ID>.md
+    ./sdlc-spdd/scripts/validate-reasons-canvas.sh spdd/canvas/<WORK-ID>.md
 
 Review:
 
@@ -222,6 +217,10 @@ Sync:
 Retro:
 
     /sdlc-spdd-retro @spdd/canvas/<WORK-ID>.md
+
+Accept staged memory at the gate:
+
+    /sdlc-spdd-accept
 
 ## Read Next
 

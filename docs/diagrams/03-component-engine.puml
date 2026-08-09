@@ -1,0 +1,36 @@
+@startuml 03-component-engine
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Components - sdlc-engine (Python, storage v3)
+
+Container_Boundary(engine, "sdlc-engine") {
+    Component(cli, "cli.py", "argparse CLI", "context retrieve|show|digest|accept|parity|persist-lesson, storage migrate|status, db, registry, workflow")
+    Component(project, "project.py", "Path resolution", "Project.home: SDLC_HOME > <root>/sdlc-spdd/ > root (legacy). All artifact paths derive from home")
+    Component(ledgermod, "lessons_ledger.py", "System of record", "LessonRecord (5 kinds) + LessonsLedger: stage, accept, records, digest. Validates schema, dedupes ids")
+    Component(store, "context_store.py", "Orchestration", "persist_lesson stages by default; accept promotes; fan-out to sqlite + guide; parity check/repair")
+    Component(registry, "registry.py", "Work registry", "Append-only claim/release events in registry.jsonl; legacy TSV read-only fallback")
+    Component(db, "db.py", "Opt-in cache", "sqlite schema v5 at .sdlc/index.sqlite; rebuilt from ledger + registry + canvases + governance docs")
+    Component(migrate, "storage_migrate.py", "One-time migration", "Legacy agent-context trees -> ledger records + .sdlc/legacy-export")
+    Component(workflow, "workflow.py", "Phase gates", "Progress gate: any ledger record for work id. Retro gate: decision/pitfall/pattern present")
+    Component(guideops, "installer/guide_ops.py", "Guide integration", "Projection trigger, RAG ops, ops console actions")
+}
+
+ContainerDb_Ext(ledger, "spdd/memory/*.jsonl", "Committed JSONL")
+ContainerDb_Ext(staged, ".sdlc/staged/lessons.jsonl", "Gitignored stage")
+ContainerDb_Ext(sqlite, ".sdlc/index.sqlite", "Opt-in cache")
+System_Ext(guide, "Guide DICE", "Neo4j projection")
+
+Rel(cli, store, "commands")
+Rel(cli, migrate, "storage migrate")
+Rel(store, ledgermod, "stage / accept / read")
+Rel(store, db, "upsert lesson records (when sqlite backend on)")
+Rel(store, guideops, "re-project after accept")
+Rel(ledgermod, staged, "captures")
+Rel(ledgermod, ledger, "accepted records")
+Rel(registry, ledger, "claim/release events")
+Rel(db, sqlite, "rebuild")
+Rel(guideops, guide, "HTTP")
+Rel(workflow, ledgermod, "gates read ledger")
+Rel(store, project, "paths via Project.home")
+
+@enduml

@@ -13,7 +13,7 @@ elif [[ -f "${_SCRIPT_DIR}/sdlc-spdd/lib/common.sh" ]]; then
   # shellcheck source=/dev/null
   source "${_SCRIPT_DIR}/sdlc-spdd/lib/milestone.sh"
 else
-  echo "Error: cannot locate scripts/lib (run from orchestrator or installed scripts/sdlc-spdd/)." >&2
+  echo "Error: cannot locate scripts/lib (run from orchestrator or installed sdlc-spdd/scripts/)." >&2
   exit 1
 fi
 

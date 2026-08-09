@@ -9,6 +9,8 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
+from sdlc_engine.project import HOME_DIR_NAME
+
 
 def _guide_base(host: str, port: int) -> str:
     return f"http://{host}:{int(port)}"
@@ -171,9 +173,9 @@ def purge_all_content_elements_docker(
 
 def default_operator_directories(orchestrator_root: Path | str) -> list[str]:
     root = Path(orchestrator_root).expanduser().resolve()
+    home = root / HOME_DIR_NAME if (root / HOME_DIR_NAME).is_dir() else root
     return [
-        str(root),
-        str(root / "agent-context" / "memory"),
-        str(root / "spdd" / "canvas"),
-        str(root / "spdd" / "analysis"),
+        str(home / "spdd" / "canvas"),
+        str(home / "spdd" / "analysis"),
+        str(home / "spdd" / "memory"),
     ]

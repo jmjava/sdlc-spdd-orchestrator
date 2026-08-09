@@ -1,9 +1,0 @@
-# SPIKE-001 retrieval fixture — MCP spot-check queries (mode B, local only)
-# Run manually after menke-fixture ingest. Record chunk URIs in mcp-results TSV.
-# Columns: tool	query	must_match_uri_substring	expect	description
-# expect: match | no_match
-tool	query	must_match_uri_substring	expect	description
-docs_vectorSearch	billing retry exponential backoff	src/billing	match	should hit BillingRetryPolicy fixture doc
-docs_vectorSearch	SPIKE-FIX-001 retrieval fixture	spdd/canvas	match	should hit fixture canvas
-docs_textSearch	+idempotency +billing	src/billing	match	should hit known-pitfalls billing row
-docs_vectorSearch	payments unrelated session	src/payments	no_match	negative control — should not rank payments when querying billing task

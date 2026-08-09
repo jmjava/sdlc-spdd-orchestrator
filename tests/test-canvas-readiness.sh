@@ -103,11 +103,14 @@ T="${WORK}/cap"; mkdir -p "${T}"
 "${CAPTURE}" --target "${T}" --work-id FEAT-005-cycles --phase review \
   --summary "cycle metrics" --areas "scripts/validate-reasons-canvas.sh" \
   --validate-cycles 2 --review-cycles 1 >/dev/null
-idx="${T}/agent-context/memory/context-index.md"
-if grep -q 'validate-cycles=2' "${idx}" && grep -q 'review-cycles=1' "${idx}"; then
-  ok "cycle metrics indexed"
+stage="${T}/.sdlc/staged/lessons.jsonl"
+if [[ -f "${stage}" ]] \
+  && grep -q '"work_id": "FEAT-005-cycles"' "${stage}" \
+  && grep -q '"kind": "session"' "${stage}" \
+  && grep -q 'cycle metrics' "${stage}"; then
+  ok "capture stages session record"
 else
-  bad "missing cycles in ${idx}"
+  bad "missing staged session in ${stage}"
 fi
 
 echo "== Test 7: directory validate reports readiness per file =="

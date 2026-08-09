@@ -1,5 +1,6 @@
-# SPDD lean memory stay-set
+# SPDD memory (storage v3)
 
-Committed, reviewable agent memory (path 1). Hot session noise lives under `.sdlc/` and SQLite.
+- **`lessons.jsonl`** — committed lessons ledger (never hand-edit; stage via capture, promote via accept)
+- **`registry.jsonl`** — append-only team registry events (claim/release/archive via `sdlc.sh`)
 
-See `docs/agent-context-cleanup/`.
+See [docs/storage-v3.md](../../docs/storage-v3.md).

@@ -15,7 +15,20 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 fi
 
 SDLC_ROOT="${SDLC_ROOT:-$(git -C "${PWD}" rev-parse --show-toplevel 2>/dev/null || pwd)}"
-SDLC_DIR="${SDLC_DIR:-${SDLC_ROOT}/.sdlc}"
+_paths_lib="${SDLC_ROOT}/scripts/lib/paths.sh"
+if [[ ! -f "${_paths_lib}" ]]; then
+  _paths_lib="${SDLC_ROOT}/sdlc-spdd/scripts/lib/paths.sh"
+fi
+if [[ ! -f "${_paths_lib}" ]]; then
+  _paths_lib="${SDLC_ROOT}/scripts/sdlc-spdd/lib/paths.sh"
+fi
+if [[ -f "${_paths_lib}" ]]; then
+  # shellcheck source=/dev/null
+  source "${_paths_lib}"
+  SDLC_DIR="${SDLC_DIR:-$(sdlc_runtime_dir "${SDLC_ROOT}")}"
+else
+  SDLC_DIR="${SDLC_DIR:-${SDLC_ROOT}/.sdlc}"
+fi
 SDLC_POINTER="${SDLC_DIR}/pointer"
 SDLC_LOCK="${SDLC_DIR}/pointer.lock"
 

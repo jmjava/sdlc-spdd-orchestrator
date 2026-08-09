@@ -52,9 +52,46 @@ def cmd_resume(args: argparse.Namespace) -> int:
 
 
 def cmd_advance(args: argparse.Namespace) -> int:
-    state = WorkflowEngine(_project(args)).advance(to=args.to)
+    try:
+        state = WorkflowEngine(_project(args)).advance(
+            to=args.to, force=getattr(args, "force", False)
+        )
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
     print(f"Advanced to phase: {state.phase}")
     return 0
+
+
+def cmd_gate(args: argparse.Namespace) -> int:
+    eng = WorkflowEngine(_project(args))
+    work_id = args.work_id or eng.pointer.get()
+    if not work_id:
+        print(
+            "gate: no Work ID (pass --work-id or set the pointer via claim/resume)",
+            file=sys.stderr,
+        )
+        return 2
+    try:
+        ok, failures = eng.gate_check(work_id, args.phase)
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    if args.json:
+        print(
+            json.dumps(
+                {"work_id": work_id, "phase": args.phase, "ok": ok, "failures": failures},
+                indent=2,
+            )
+        )
+    else:
+        if ok:
+            print(f"gate {args.phase}: OK for {work_id}")
+        else:
+            print(f"gate {args.phase}: BLOCKED for {work_id}", file=sys.stderr)
+            for failure in failures:
+                print(f"  - {failure}", file=sys.stderr)
+    return 0 if ok else 1
 
 
 def cmd_skip(args: argparse.Namespace) -> int:
@@ -111,7 +148,7 @@ def cmd_claim(args: argparse.Namespace) -> int:
         print(str(exc), file=sys.stderr)
         return 1
     print(f"Claimed {row.work_id} as {row.owner} (phase={row.phase})")
-    print("Team registry updated — commit agent-context/work-registry.tsv to share with teammates.")
+    print("Team registry updated — commit spdd/memory/registry.jsonl to share with teammates.")
     return 0
 
 
@@ -170,36 +207,97 @@ def cmd_pointer(args: argparse.Namespace) -> int:
 
 
 def cmd_context(args: argparse.Namespace) -> int:
+    import sys
+
+    from .lessons_ledger import LEDGER_KINDS
+
     store = ContextStore(_project(args))
     action = args.context_cmd
     if action == "persist-lesson":
+        body = args.body
+        if body == "-":
+            body = sys.stdin.read()
+        keywords = [k.strip() for k in (args.keywords or "").split(",") if k.strip()]
         result = store.persist_lesson(
             kind=args.kind,
             work_id=args.work_id,
-            body=args.body,
+            body=body,
+            title=getattr(args, "title", "") or "",
             area=args.area or "",
             source=args.source or "cli",
-            phase=args.phase or "sync",
+            phase=args.phase or "",
+            keywords=keywords or None,
+            accept=bool(getattr(args, "accept", False)),
             project_guide=not args.no_guide,
         )
         print(json.dumps(result.as_dict(), indent=2))
         return 0 if result.git.get("ok") else 1
     if action == "persist-entry":
-        result = store.persist_context_entry(
-            kind=args.kind,
+        print(
+            "warning: persist-entry is deprecated; use context persist-lesson",
+            file=sys.stderr,
+        )
+        body = args.body
+        if body == "-":
+            body = sys.stdin.read()
+        result = store.persist_lesson(
+            kind=args.kind if args.kind in LEDGER_KINDS else "decision",
             work_id=args.work_id,
-            body=args.body,
+            body=body,
             area=args.area or "",
-            phase=args.phase or "",
             source=args.source or "cli",
+            phase=args.phase or "",
             project_guide=not args.no_guide,
         )
         print(json.dumps(result.as_dict(), indent=2))
         return 0 if result.git.get("ok") else 1
+    if action == "accept":
+        out = store.accept(
+            work_id=getattr(args, "work_id", "") or "",
+            ids=[i.strip() for i in (getattr(args, "ids", "") or "").split(",") if i.strip()]
+            or None,
+            discard_rest=bool(getattr(args, "discard_rest", False)),
+            project_guide=not getattr(args, "no_guide", False),
+        )
+        print(json.dumps(out, indent=2))
+        return 0
+    if action == "show":
+        rec = store.show(args.record_id)
+        if rec is None:
+            print(json.dumps({"error": "not found", "id": args.record_id}, indent=2))
+            return 1
+        print(json.dumps(rec, indent=2))
+        return 0
+    if action == "parity":
+        out = store.parity(repair=bool(getattr(args, "repair", False)))
+        print(json.dumps(out, indent=2))
+        return 0 if out.get("ok") else 1
+    if action == "digest":
+        areas = [a.strip() for a in (getattr(args, "areas", "") or "").split(",") if a.strip()]
+        keywords = [k.strip() for k in (getattr(args, "keywords", "") or "").split(",") if k.strip()]
+        print(
+            json.dumps(
+                store.digest(
+                    work_id=getattr(args, "work_id", "") or "",
+                    areas=areas or None,
+                    keywords=keywords or None,
+                    limit=int(getattr(args, "limit", 8) or 8),
+                ),
+                indent=2,
+            )
+        )
+        return 0
     if action == "retrieve":
         print(
             json.dumps(
-                store.retrieve(work_id=args.work_id or "", area=args.area or ""),
+                store.retrieve(
+                    work_id=args.work_id or "",
+                    area=args.area or "",
+                    kind=getattr(args, "kind", "") or "",
+                    keyword=getattr(args, "keyword", "") or "",
+                    include_staged=not bool(getattr(args, "no_staged", False)),
+                    limit=int(getattr(args, "limit", 50) or 50),
+                ),
                 indent=2,
             )
         )
@@ -232,6 +330,79 @@ def cmd_context(args: argparse.Namespace) -> int:
                 return 2
             return 0
         print(json.dumps(status_dict(project), indent=2))
+        return 0
+    if action == "guide-query":
+        from .guide_client import GuideClient, resolve_guide_base_url
+        from .guide_query import format_guide_answer, run_guide_query
+        from .persistence import load_config as load_persist_cfg
+
+        project = _project(args)
+        cfg = load_persist_cfg(project)
+        base = resolve_guide_base_url(
+            explicit=getattr(args, "guide_url", None) or None,
+            project_url=str(cfg.get("guide_base_url") or ""),
+        )
+        client = GuideClient(base, timeout=float(getattr(args, "timeout", 30) or 30))
+        tool_args = {}
+        if getattr(args, "tool_json", None):
+            tool_args = json.loads(args.tool_json)
+        try:
+            payload = run_guide_query(
+                client,
+                work_id=getattr(args, "work_id", "") or "",
+                area=getattr(args, "area", "") or "",
+                lesson_id=getattr(args, "lesson_id", "") or "",
+                label=getattr(args, "label", "") or "",
+                question=getattr(args, "question", "") or "",
+                stats=bool(getattr(args, "stats", False)),
+                tool=getattr(args, "tool", "") or "",
+                tool_args=tool_args,
+                limit=int(getattr(args, "limit", 20) or 20),
+            )
+        except ValueError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 2
+        if getattr(args, "text", False):
+            print(format_guide_answer(payload))
+        else:
+            print(json.dumps(payload, indent=2))
+        return 0 if payload.get("ok") else 1
+    if action == "mcp-call":
+        from .guide_client import GuideClient, resolve_guide_base_url
+        from .persistence import load_config as load_persist_cfg
+
+        project = _project(args)
+        cfg = load_persist_cfg(project)
+        base = resolve_guide_base_url(
+            explicit=getattr(args, "guide_url", None) or None,
+            project_url=str(cfg.get("guide_base_url") or ""),
+        )
+        client = GuideClient(base, timeout=float(getattr(args, "timeout", 30) or 30))
+        tool = str(getattr(args, "tool", "") or "").strip()
+        if not tool:
+            print("error: --tool required (spdd_workSubgraph, …)", file=sys.stderr)
+            return 2
+        raw = getattr(args, "json", None) or getattr(args, "tool_json", None) or "{}"
+        try:
+            arguments = json.loads(raw)
+        except json.JSONDecodeError as exc:
+            print(f"error: invalid JSON arguments: {exc}", file=sys.stderr)
+            return 2
+        payload = client.call_mcp_tool(tool, arguments)
+        print(json.dumps(payload, indent=2))
+        return 0 if payload.get("ok") else 1
+    return 2
+
+
+def cmd_storage(args: argparse.Namespace) -> int:
+    from .storage_migrate import StorageMigration
+
+    mig = StorageMigration(_project(args))
+    if args.storage_cmd == "status":
+        print(json.dumps(mig.detect(), indent=2))
+        return 0
+    if args.storage_cmd == "migrate":
+        print(json.dumps(mig.run(dry_run=bool(args.dry_run)), indent=2))
         return 0
     return 2
 
@@ -410,6 +581,23 @@ def cmd_issues(args: argparse.Namespace) -> int:
             )
         )
         return 0
+    if action == "link":
+        jira_key = getattr(args, "jira_key", None) or ""
+        if not jira_key:
+            print("issues link requires JIRA-KEY positional argument", file=sys.stderr)
+            return 2
+        result = svc.link_jira_local(
+            args.work_id,
+            jira_key,
+            summary=getattr(args, "summary", None) or None,
+            issue_type=getattr(args, "issue_type", None) or None,
+            apply=args.apply,
+        )
+        for line in result.get("actions") or []:
+            print(line)
+        if not args.apply:
+            print("\nRe-run with --apply to write local links.")
+        return 0
     return 2
 
 
@@ -513,6 +701,21 @@ def cmd_db(args: argparse.Namespace) -> int:
     return 2
 
 
+def cmd_quick(args: argparse.Namespace) -> int:
+    """Zero-ceremony LOCAL-* session start (alias for local start)."""
+    intent = (args.intent or "").strip()
+    if not intent:
+        print("quick requires an intent string", file=sys.stderr)
+        return 2
+    svc = LocalSessionService(_project(args))
+    session = svc.start(intent=intent, title=intent)
+    print(f"Started local session {session.id}")
+    print(f"Pointer set. Artifacts: .sdlc/local-sessions/{session.id}/")
+    print(f"Brief: .sdlc/current-local-session.md")
+    print("This work stays offline until: ./scripts/sdlc.sh local promote --type feature --name \"...\"")
+    return 0
+
+
 def cmd_local(args: argparse.Namespace) -> int:
     svc = LocalSessionService(_project(args))
     action = args.local_cmd
@@ -557,6 +760,7 @@ def cmd_local(args: argparse.Namespace) -> int:
             milestone=args.milestone or "",
             claim=not args.no_claim,
             dry_run=args.dry_run,
+            from_git=args.from_git or "",
         )
         if args.dry_run:
             print(f"[dry-run] would promote {session.id} -> {work_id}")
@@ -565,7 +769,7 @@ def cmd_local(args: argparse.Namespace) -> int:
         print(f"  canvas: spdd/canvas/{work_id}.md")
         print(f"  requirement: requirements/milestones/{work_id}.md")
         if not args.no_claim:
-            print(f"Claimed {work_id} — commit agent-context/work-registry.tsv when sharing.")
+            print(f"Claimed {work_id} — commit spdd/memory/registry.jsonl when sharing.")
         return 0
     return 2
 
@@ -652,6 +856,13 @@ def build_parser() -> argparse.ArgumentParser:
 
     sub.add_parser("next", help="Show what to do now").set_defaults(func=cmd_next)
 
+    qk = sub.add_parser(
+        "quick",
+        help='Start a LOCAL-* offline session from intent (zero ceremony)',
+    )
+    qk.add_argument("intent", help='One-line why this scratch work exists')
+    qk.set_defaults(func=cmd_quick)
+
     st = sub.add_parser("status", help="Show workflow status")
     st.add_argument("--json", action="store_true")
     st.add_argument("--work-id")
@@ -663,9 +874,23 @@ def build_parser() -> argparse.ArgumentParser:
     rs.add_argument("--force", action="store_true")
     rs.set_defaults(func=cmd_resume)
 
-    adv = sub.add_parser("advance", help="Advance workflow phase")
+    adv = sub.add_parser("advance", help="Advance workflow phase (gated; --force bypasses)")
     adv.add_argument("--to")
+    adv.add_argument(
+        "--force",
+        action="store_true",
+        help="Bypass gate checks (a human decision, never the agent's)",
+    )
     adv.set_defaults(func=cmd_advance)
+
+    gt = sub.add_parser(
+        "gate",
+        help="Check prerequisites to enter a phase (exit 0 ok / 1 blocked)",
+    )
+    gt.add_argument("--phase", required=True)
+    gt.add_argument("--work-id", help="Work ID (default: active pointer)")
+    gt.add_argument("--json", action="store_true")
+    gt.set_defaults(func=cmd_gate)
 
     sk = sub.add_parser("skip", help="Skip a phase")
     sk.add_argument("phase")
@@ -714,20 +939,26 @@ def build_parser() -> argparse.ArgumentParser:
     iss = sub.add_parser(
         "issues",
         help=(
-            "Draft/push/pull/upload-adf/download-adf for Jira or GitHub "
+            "Draft/push/pull/link/upload-adf/download-adf for Jira or GitHub "
             "(explicit CLI; never auto-sync)"
         ),
     )
     iss.add_argument(
         "issues_cmd",
-        choices=["draft", "push", "pull", "upload-adf", "download-adf"],
+        choices=["draft", "push", "pull", "link", "upload-adf", "download-adf"],
     )
     iss.add_argument(
         "work_id",
         help=(
-            "Work ID for draft/push/pull, or Jira issue key for "
-            "upload-adf/download-adf"
+            "Work ID for draft/push/pull/link, Jira key for link second arg, "
+            "or Jira issue key for upload-adf/download-adf"
         ),
+    )
+    iss.add_argument(
+        "jira_key",
+        nargs="?",
+        default=None,
+        help="For link: manually created Jira issue key (PROJECT-123)",
     )
     iss.add_argument(
         "--system",
@@ -762,6 +993,17 @@ def build_parser() -> argparse.ArgumentParser:
             "For upload-adf/download-adf: Jira issue key "
             "(defaults to work_id positional)"
         ),
+    )
+    iss.add_argument(
+        "--summary",
+        default=None,
+        help="For link: optional local Summary bullet",
+    )
+    iss.add_argument(
+        "--issue-type",
+        dest="issue_type",
+        default=None,
+        help="For link: optional local Issue type bullet",
     )
     iss.add_argument(
         "--apply",
@@ -823,6 +1065,10 @@ def build_parser() -> argparse.ArgumentParser:
     lp.add_argument("--milestone", help="Optional milestone-*.md to append Linked Work")
     lp.add_argument("--no-claim", action="store_true", help="Create artifacts without claiming")
     lp.add_argument("--dry-run", action="store_true")
+    lp.add_argument(
+        "--from-git",
+        help="Backfill session notes from git log range before promote (e.g. main..HEAD)",
+    )
     lp.set_defaults(func=cmd_local)
 
     work = sub.add_parser(
@@ -928,28 +1174,29 @@ def build_parser() -> argparse.ArgumentParser:
 
     ctx = sub.add_parser(
         "context",
-        help="Triple-path context store (git pointers + SQLite + Guide)",
+        help="Ledger-first context store (git ledger + optional SQLite + Guide)",
     )
     ctx_sub = ctx.add_subparsers(dest="context_cmd", required=True)
+    from .lessons_ledger import LEDGER_KINDS as _LEDGER_KINDS
+
     cpl = ctx_sub.add_parser(
         "persist-lesson",
-        help="Persist a lesson into git stay-set, SQLite, and Guide projection",
+        help="Stage or accept a lesson record in the ledger",
     )
-    cpl.add_argument("--kind", required=True, choices=["decision", "pitfall", "pattern"])
+    cpl.add_argument("--kind", required=True, choices=list(_LEDGER_KINDS))
     cpl.add_argument("--work-id", required=True)
-    cpl.add_argument("--body", required=True)
+    cpl.add_argument("--body", required=True, help="Body text or '-' for stdin")
+    cpl.add_argument("--title", default="")
     cpl.add_argument("--area", default="")
     cpl.add_argument("--source", default="cli")
-    cpl.add_argument("--phase", default="sync")
-    cpl.add_argument(
-        "--no-guide",
-        action="store_true",
-        help="Skip Guide projection fan-out",
-    )
+    cpl.add_argument("--phase", default="")
+    cpl.add_argument("--keywords", default="", help="Comma-separated keywords")
+    cpl.add_argument("--accept", action="store_true", help="Land directly in committed ledger")
+    cpl.add_argument("--no-guide", action="store_true", help="Skip Guide projection fan-out")
     cpl.set_defaults(func=cmd_context)
     cpe = ctx_sub.add_parser(
         "persist-entry",
-        help="Persist a non-lesson context entry (progress/analysis/metric/…)",
+        help="Deprecated alias for persist-lesson",
     )
     cpe.add_argument("--kind", required=True)
     cpe.add_argument("--work-id", required=True)
@@ -959,16 +1206,38 @@ def build_parser() -> argparse.ArgumentParser:
     cpe.add_argument("--source", default="cli")
     cpe.add_argument("--no-guide", action="store_true")
     cpe.set_defaults(func=cmd_context)
-    cre = ctx_sub.add_parser("retrieve", help="Assemble retrieve from git + SQLite + Guide")
+    cacc = ctx_sub.add_parser("accept", help="Promote staged lessons to committed ledger")
+    cacc.add_argument("--work-id", default="")
+    cacc.add_argument("--ids", default="", help="Comma-separated record ids")
+    cacc.add_argument("--discard-rest", action="store_true")
+    cacc.add_argument("--no-guide", action="store_true")
+    cacc.set_defaults(func=cmd_context)
+    cshow = ctx_sub.add_parser("show", help="Show one lesson record by id")
+    cshow.add_argument("record_id")
+    cshow.set_defaults(func=cmd_context)
+    cpar = ctx_sub.add_parser("parity", help="Diff ledger vs SQLite/Guide; optional repair")
+    cpar.add_argument("--repair", action="store_true")
+    cpar.set_defaults(func=cmd_context)
+    cdig = ctx_sub.add_parser("digest", help="Bounded session-start digest")
+    cdig.add_argument("--work-id", default="")
+    cdig.add_argument("--areas", default="", help="Comma-separated areas")
+    cdig.add_argument("--keywords", default="", help="Comma-separated keywords")
+    cdig.add_argument("--limit", type=int, default=8)
+    cdig.set_defaults(func=cmd_context)
+    cre = ctx_sub.add_parser("retrieve", help="Assemble retrieve from ledger + projections")
     cre.add_argument("--work-id", default="")
     cre.add_argument("--area", default="")
+    cre.add_argument("--kind", default="")
+    cre.add_argument("--keyword", default="")
+    cre.add_argument("--limit", type=int, default=50)
+    cre.add_argument("--no-staged", action="store_true")
     cre.set_defaults(func=cmd_context)
     ctx_sub.add_parser(
-        "coverage", help="Report agent-context capability coverage in SQLite"
+        "coverage", help="Report CONTEXT_KINDS capability coverage in SQLite"
     ).set_defaults(func=cmd_context)
     cb = ctx_sub.add_parser(
         "backends",
-        help="Show or set CONTEXT_BACKENDS persistence options (#79/#90)",
+        help="Show or set CONTEXT_BACKENDS persistence options",
     )
     cb.add_argument(
         "--set",
@@ -979,6 +1248,57 @@ def build_parser() -> argparse.ArgumentParser:
     cb.add_argument("--guide-base-url", default=None)
     cb.add_argument("--notes", default=None)
     cb.set_defaults(func=cmd_context)
+    cgq = ctx_sub.add_parser(
+        "guide-query",
+        help="Delegate a retrieval question to Guide spdd_* tools (HTTP parity with MCP)",
+    )
+    cgq.add_argument("--work-id", default="", help="Active Work ID → spdd_workSubgraph")
+    cgq.add_argument("--area", default="", help="Code area → spdd_areaLessons")
+    cgq.add_argument("--lesson-id", default="", help="Lesson entity id → spdd_getLesson")
+    cgq.add_argument("--label", default="", help="Entity label → spdd_findByLabel")
+    cgq.add_argument(
+        "--question",
+        default="",
+        help="Natural-language hint (routes to work/area/stats when flags omitted)",
+    )
+    cgq.add_argument("--stats", action="store_true", help="Projection freshness counts")
+    cgq.add_argument("--tool", default="", help="Explicit spdd_* tool name")
+    cgq.add_argument("--tool-json", default="", help="JSON object of tool arguments")
+    cgq.add_argument("--limit", type=int, default=20)
+    cgq.add_argument("--guide-url", default="", help="Override GUIDE_BASE_URL")
+    cgq.add_argument("--timeout", type=float, default=30.0)
+    cgq.add_argument(
+        "--text",
+        action="store_true",
+        help="Human-readable answer for Cursor/Copilot chat (default: JSON)",
+    )
+    cgq.set_defaults(func=cmd_context)
+    cmc = ctx_sub.add_parser(
+        "mcp-call",
+        help="Call one Guide spdd_* MCP tool by name (REST parity; for agents/scripts)",
+    )
+    cmc.add_argument(
+        "--tool",
+        required=True,
+        help="spdd_workSubgraph | spdd_areaLessons | spdd_findByLabel | spdd_projectionStats | spdd_getLesson",
+    )
+    cmc.add_argument(
+        "--json",
+        default="{}",
+        help='Tool arguments JSON, e.g. {"workId":"FEAT-001-order-status-api"}',
+    )
+    cmc.add_argument("--guide-url", default="")
+    cmc.add_argument("--timeout", type=float, default=30.0)
+    cmc.set_defaults(func=cmd_context)
+
+    st = sub.add_parser("storage", help="Storage v3 migration and status")
+    st_sub = st.add_subparsers(dest="storage_cmd", required=True)
+    st_sub.add_parser("status", help="Detect legacy layout / migration state").set_defaults(
+        func=cmd_storage
+    )
+    stm = st_sub.add_parser("migrate", help="Migrate legacy agent-context to ledger v3")
+    stm.add_argument("--dry-run", action="store_true")
+    stm.set_defaults(func=cmd_storage)
 
     ac = sub.add_parser(
         "agent-context",

@@ -4,28 +4,31 @@ set -euo pipefail
 _SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=/dev/null
 source "${_SCRIPT_DIR}/lib/common.sh"
+# shellcheck source=/dev/null
+source "${_SCRIPT_DIR}/lib/paths.sh"
 
 usage() {
   cat <<'EOF'
-Usage: summarize-session-notes.sh [--target <path>] (--all|--file <path>) [--dry-run]
+Usage: summarize-session-notes.sh [--target <path>] [--work-id <WORK-ID>] [--limit <n>]
 
-Import session-notes/*.md into agent-context/memory/session-history.md and
-agent-context/memory/project-memory.md so existing human session notes become
-available to future agents.
+Summarize past session activity (storage v3). Session records live in the
+committed lessons ledger (spdd/memory/lessons.jsonl, kind=session) plus any
+staged captures (.sdlc/staged/lessons.jsonl). Human-authored notes under the
+optional session-notes/ directory are listed as well.
+
+This command is read-only: it never writes memory files.
 
 Options:
-  --target <path>  Target project path (default: .)
-  --all            Import all session notes
-  --file <path>    Import one session note file
-  --dry-run        Show import output without writing files
-  --help           Print this help message
+  --target <path>    Target project path (default: .)
+  --work-id <ID>     Only show session records for this Work ID
+  --limit <n>        Max session records to show (default: 20)
+  --help             Print this help message
 EOF
 }
 
 TARGET="."
-IMPORT_ALL=0
-NOTE_FILE=""
-DRY_RUN=0
+WORK_ID=""
+LIMIT=20
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -33,17 +36,13 @@ while [[ $# -gt 0 ]]; do
       TARGET="${2:-}"
       shift 2
       ;;
-    --all)
-      IMPORT_ALL=1
-      shift
-      ;;
-    --file)
-      NOTE_FILE="${2:-}"
+    --work-id)
+      WORK_ID="${2:-}"
       shift 2
       ;;
-    --dry-run)
-      DRY_RUN=1
-      shift
+    --limit)
+      LIMIT="${2:-}"
+      shift 2
       ;;
     --help|-h)
       usage
@@ -57,96 +56,90 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ "${IMPORT_ALL}" -eq 1 && -n "${NOTE_FILE}" ]]; then
-  echo "Error: use either --all or --file, not both" >&2
-  exit 1
-fi
-
-if [[ "${IMPORT_ALL}" -eq 0 && -z "${NOTE_FILE}" ]]; then
-  echo "Error: one of --all or --file is required" >&2
-  usage >&2
+if ! [[ "${LIMIT}" =~ ^[0-9]+$ ]]; then
+  echo "Error: --limit must be a non-negative integer" >&2
   exit 1
 fi
 
 TARGET="$(sdlc_resolve_target "${TARGET}")"
-session_notes_dir="${TARGET}/session-notes"
-memory_dir="${TARGET}/agent-context/memory"
-session_history="${memory_dir}/session-history.md"
-project_memory="${memory_dir}/project-memory.md"
+export SDLC_ROOT="${TARGET}"
+HOME_DIR="$(sdlc_home "${TARGET}")"
+LEDGER="$(sdlc_ledger "${TARGET}")"
+STAGE="$(sdlc_stage "${TARGET}")"
+NOTES_DIR="${HOME_DIR}/session-notes"
 
-notes=()
-if [[ "${IMPORT_ALL}" -eq 1 ]]; then
-  shopt -s nullglob
-  notes=("${session_notes_dir}"/*.md)
-  shopt -u nullglob
+echo "Session summary for: ${TARGET}"
+echo "  ledger: ${LEDGER#${TARGET}/}"
+echo
+
+summarize_jsonl() {
+  local file="$1"
+  local label="$2"
+  if [[ ! -s "${file}" ]]; then
+    echo "${label}: no session records."
+    return 0
+  fi
+  FILE="${file}" LABEL="${label}" WORK_ID_FILTER="${WORK_ID}" LIMIT="${LIMIT}" python3 - <<'PY'
+import json, os
+
+path = os.environ["FILE"]
+label = os.environ["LABEL"]
+work_id_filter = os.environ.get("WORK_ID_FILTER", "")
+limit = int(os.environ.get("LIMIT", "20"))
+
+records = []
+with open(path, encoding="utf-8") as fh:
+    for line in fh:
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            rec = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if rec.get("kind") != "session":
+            continue
+        if work_id_filter and rec.get("work_id") != work_id_filter:
+            continue
+        records.append(rec)
+
+records.sort(key=lambda r: r.get("ts", ""), reverse=True)
+shown = records[:limit] if limit else records
+
+print(f"{label}: {len(records)} session record(s)" + (f", showing {len(shown)}" if len(shown) < len(records) else ""))
+for rec in shown:
+    ts = rec.get("ts", "?")
+    wid = rec.get("work_id", "?")
+    phase = rec.get("phase", "?")
+    title = (rec.get("title") or "").strip().splitlines()[0] if rec.get("title") else ""
+    area = rec.get("area") or ""
+    line = f"  {ts}  {wid}  [{phase}]"
+    if area:
+        line += f"  area={area}"
+    if title:
+        line += f"  {title[:100]}"
+    print(line)
+PY
+}
+
+summarize_jsonl "${LEDGER}" "Committed ledger"
+echo
+summarize_jsonl "${STAGE}" "Staged captures (not yet accepted)"
+echo
+
+shopt -s nullglob
+notes=("${NOTES_DIR}"/*.md)
+shopt -u nullglob
+if ((${#notes[@]} > 0)); then
+  echo "Human session notes (${#notes[@]} file(s) under ${NOTES_DIR#${TARGET}/}/):"
+  for note in "${notes[@]}"; do
+    echo "  ${note#${TARGET}/}"
+  done
 else
-  if [[ "${NOTE_FILE}" != /* ]]; then
-    NOTE_FILE="${TARGET}/${NOTE_FILE}"
-  fi
-  notes=("${NOTE_FILE}")
+  echo "No session-notes/ files found (optional)."
 fi
 
-if ((${#notes[@]} == 0)); then
-  echo "No session notes found." >&2
-  exit 1
-fi
-
-if [[ "${DRY_RUN}" -eq 0 ]]; then
-  mkdir -p "${memory_dir}"
-  if [[ ! -f "${session_history}" ]]; then
-    printf '# Session History\n\n## Sessions\n' > "${session_history}"
-  fi
-  if [[ ! -f "${project_memory}" ]]; then
-    printf '# Project Memory\n\n' > "${project_memory}"
-  fi
-fi
-
-imported=0
-skipped=0
-
-for note in "${notes[@]}"; do
-  if [[ ! -f "${note}" ]]; then
-    echo "Session note not found: ${note}" >&2
-    exit 1
-  fi
-
-  rel="${note#${TARGET}/}"
-  marker="Imported session note: ${rel}"
-  timestamp="$(sdlc_timestamp_iso)"
-
-  if [[ "${DRY_RUN}" -eq 0 && -f "${session_history}" ]] && grep -Fq "${marker}" "${session_history}"; then
-    skipped=$((skipped + 1))
-    continue
-  fi
-
-  entry="$(cat <<EOF
-
-### ${timestamp} - ${marker}
-
-Source: ${rel}
-
-$(cat "${note}")
-EOF
-)"
-
-  if [[ "${DRY_RUN}" -eq 1 ]]; then
-    echo "${entry}"
-  else
-    printf '%s\n' "${entry}" >> "${session_history}"
-    {
-      echo
-      echo "### ${timestamp} - ${rel}"
-      echo
-      echo "- Imported session note into durable memory."
-    } >> "${project_memory}"
-  fi
-  imported=$((imported + 1))
-done
-
-echo "Imported session notes: ${imported}"
-echo "Skipped existing imports: ${skipped}"
-if [[ "${imported}" -gt 0 ]]; then
-  echo
-  echo "Planning review prompt (see docs/sdlc-spdd/planning-prompt-standard.md):"
-  echo "  Read @agent-context/memory/session-history.md entries imported from session-notes. Summarize recurring themes, open risks, and Work IDs mentioned."
-fi
+echo
+echo "Planning review prompt:"
+echo "  Read the session records above (full bodies via 'sdlc-engine context show <record-id>')."
+echo "  Summarize recurring themes, open risks, and Work IDs mentioned."

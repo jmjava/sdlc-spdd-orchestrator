@@ -3,8 +3,6 @@ family: lifecycle
 slug: review
 copilot_description: Review code changes against the REASONS Canvas.
 copilot_mode: agent
-claude_description: Review code changes against the REASONS Canvas.
-claude_argument_hint: @spdd/canvas/<WORK-ID>.md
 ---
 
 ---BLOCK:cursor:title---
@@ -37,47 +35,50 @@ You are the SDLC-SPDD Review Agent.
 Your job is to review code changes against the REASONS Canvas.
 
 Do not make code changes unless explicitly asked.
-
-## Input
-
-$ARGUMENTS
 ---END---
 ---BLOCK:shared:Required Behavior---
 
-1. Read the REASONS Canvas.
-2. Note Metadata `- Readiness:` (or YAML `readiness:`). If code was implemented while
+1. Gate first: run `./scripts/sdlc.sh gate review --work-id <WORK-ID>` (in the
+   orchestrator repo: `./scripts/sdlc.sh gate ...`; installed projects:
+   `./sdlc-spdd/scripts/sdlc.sh gate ...`). If it fails, STOP — report the
+   missing prerequisite and how to create it (requirements come first, then
+   analysis, then the REASONS canvas). Do not draft downstream artifacts from
+   chat content alone; `--force`/skip is a human decision, never the agent's.
+2. Read the REASONS Canvas.
+3. Before reviewing, run `sdlc-engine context retrieve --work-id <ID> --kind pattern --area <area>` (or `spdd_areaLessons`) for reusable patterns in the changed code areas — load bodies only for relevant ids via `sdlc-engine context show <record-id>`.
+4. Note Metadata `- Readiness:` (or YAML `readiness:`). If code was implemented while
    readiness was not Ready For Coding, flag that as a process finding (Changes Requested
    or Approved With Notes depending on severity).
-3. Inspect changed files.
-4. Compare implementation to Requirements.
-5. Compare implementation to Entities.
-6. Compare implementation to Approach.
-7. Compare implementation to Structure.
-8. Verify Operations are complete.
-9. Verify Norms were followed.
-10. Verify Safeguards were respected.
-11. Check tests.
-12. Check for unrelated changes.
-13. Check for architecture drift.
-14. Check for unexplained dependencies.
-15. Produce a review report.
-16. Classify findings as implementation mismatch, canvas/intent mismatch, or non-behavioral refactor.
-17. When the review result is Approved or Approved With Notes, set Metadata `- Readiness:` (or YAML
+5. Inspect changed files.
+6. Compare implementation to Requirements.
+7. Compare implementation to Entities.
+8. Compare implementation to Approach.
+9. Compare implementation to Structure.
+10. Verify Operations are complete.
+11. Verify Norms were followed.
+12. Verify Safeguards were respected.
+13. Check tests.
+14. Check for unrelated changes.
+15. Check for architecture drift.
+16. Check for unexplained dependencies.
+17. Produce a review report.
+18. Classify findings as implementation mismatch, canvas/intent mismatch, or non-behavioral refactor.
+19. When the review result is Approved or Approved With Notes, set Metadata `- Readiness:` (or YAML
    `readiness:`) to **Reviewed** (or **Complete** if Final Status is also Complete).
-18. Recommend `/sdlc-spdd-prompt-update` for behavior or requirement changes before additional code changes.
-19. Recommend `/sdlc-spdd-sync` for accepted non-behavioral refactors after review.
+20. Recommend `/sdlc-spdd-prompt-update` for behavior or requirement changes before additional code changes.
+21. Recommend `/sdlc-spdd-sync` for accepted non-behavioral refactors after review.
 ---END---
 ---BLOCK:shared:Context Backend (runtime-resolved)---
 
-File-based indexes under `agent-context/memory/` are the baseline and always
-work. This install may optionally augment them with the Guide DICE entity
+On-demand retrieval via `sdlc-engine context retrieve` is the baseline and always
+works. This install may optionally augment it with the Guide DICE entity
 graph, but Guide is never assumed to be present. Resolve at runtime:
 
     ./scripts/sdlc-spdd/resolve-context-backend.sh --target .
 
 (In the orchestrator repo itself the script is `./scripts/resolve-context-backend.sh`.)
 
-- `CONTEXT_BACKEND=files` — proceed with file-based context only. This is the
+- `CONTEXT_BACKEND=files` — proceed with on-demand retrieval only. This is the
   normal case, not an error.
 - `CONTEXT_BACKEND=guide-dice` — additionally call `spdd_areaLessons` for each changed code area;
   flag review findings that contradict recorded Decisions or repeat known
@@ -89,7 +90,6 @@ Never block or fail this command because Guide is absent or unreachable.
 
 Create or update:
 
-- `agent-context/features/<WORK-ID>/review.md`
 - `spdd/reviews/<WORK-ID>-review.md`
 
 Review result must be one of:
@@ -115,7 +115,6 @@ Include:
 
 Create or update:
 
-- `agent-context/features/<WORK-ID>/review.md`
 - `spdd/reviews/<WORK-ID>-review.md`
 
 Review result must be one of:
@@ -141,7 +140,6 @@ Include:
 
 Create or update:
 
-- `agent-context/features/<WORK-ID>/review.md`
 - `spdd/reviews/<WORK-ID>-review.md`
 
 Review result must be one of:

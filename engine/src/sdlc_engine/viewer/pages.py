@@ -395,6 +395,36 @@ EDIT_TEMPLATE = """<!DOCTYPE html>
     </div>
     <div class="sync-out" id="syncOut" hidden></div>
   </details>
+  <details>
+    <summary>GitHub Issue sync (explicit apply)</summary>
+    <p style="margin:6px 0 0;color:var(--muted);font-size:13px">
+      Prepare is dry-run. Apply uses the <code>gh</code> CLI (<code>gh auth login</code>). Never automatic.
+    </p>
+    <p style="margin:6px 0 0;color:var(--muted);font-size:12px">
+      GitHub stores markdown; complex ADF formatting may flatten.
+    </p>
+    <label for="ghIssue">GitHub Issue #</label>
+    <input id="ghIssue" placeholder="123 or owner/repo#123" autocomplete="off">
+    <label for="ghRepo">Repository (optional — defaults to git remote origin)</label>
+    <input id="ghRepo" placeholder="owner/repo" autocomplete="off">
+    <p style="margin:12px 0 4px;font-size:13px;font-weight:700">GitHub → Local</p>
+    <p style="margin:0 0 6px;color:var(--muted);font-size:12px">
+      Pull the issue body (markdown → ADF) into this file (overwrite; git rollback).
+    </p>
+    <div class="row">
+      <button type="button" id="ghPullPrepare">Prepare pull</button>
+      <button type="button" id="ghPullApply">Apply pull</button>
+    </div>
+    <p style="margin:12px 0 4px;font-size:13px;font-weight:700">Local → GitHub</p>
+    <p style="margin:0 0 6px;color:var(--muted);font-size:12px">
+      Push this document (ADF → markdown) as the issue body.
+    </p>
+    <div class="row">
+      <button type="button" id="ghPushPrepare">Prepare push</button>
+      <button type="button" id="ghPushApply">Apply push</button>
+    </div>
+    <div class="sync-out" id="ghSyncOut" hidden></div>
+  </details>
 </section>
 """ + _BROWSER_MODAL + """
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
@@ -1082,6 +1112,70 @@ EDIT_TEMPLATE = """<!DOCTYPE html>
   document.getElementById("applySync").onclick = () => sync(true);
   document.getElementById("prepareDownload").onclick = () => downloadFromJira(false);
   document.getElementById("applyDownload").onclick = () => downloadFromJira(true);
+
+  const ghSyncOut = document.getElementById("ghSyncOut");
+  function ghParams() {
+    return {
+      issue: document.getElementById("ghIssue").value.trim(),
+      repo: document.getElementById("ghRepo").value.trim(),
+    };
+  }
+  function ghReport(data) {
+    const lines = [];
+    if (data.message) lines.push(data.message);
+    if (data.note) lines.push("Note: " + data.note);
+    if (data.error) lines.push("Error: " + data.error);
+    ghSyncOut.textContent = lines.join("\\n\\n");
+  }
+  async function githubPull(apply) {
+    const { issue, repo } = ghParams();
+    ghSyncOut.hidden = false;
+    if (!issue) { ghSyncOut.textContent = "Enter a GitHub issue number (123 or owner/repo#123)."; return; }
+    if (apply && !confirm("Overwrite local file with GitHub issue " + issue + " body?")) return;
+    ghSyncOut.textContent = apply ? "Applying pull…" : "Preparing pull dry-run…";
+    const resp = await fetch("/api/github/pull", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ issue, repo, path: filename, apply: !!apply }),
+    });
+    const data = await resp.json();
+    ghReport(data);
+    if (data.ok && apply && data.adf) {
+      applyingHistory = true;
+      cm.setValue(JSON.stringify(data.adf, null, 2));
+      if (data.html) editor.innerHTML = data.html;
+      else await refreshWysiwygFromRaw();
+      tagBlocks();
+      dirty = false;
+      undoStack.length = 0;
+      redoStack.length = 0;
+      pushHistory();
+      applyingHistory = false;
+      setStatus("Pulled from GitHub", "ok");
+    } else {
+      setStatus(data.ok ? (apply ? "Pulled from GitHub" : "GitHub pull prepared") : "GitHub pull error", data.ok ? "ok" : "err");
+    }
+  }
+  async function githubPush(apply) {
+    const { issue, repo } = ghParams();
+    ghSyncOut.hidden = false;
+    if (!issue) { ghSyncOut.textContent = "Enter a GitHub issue number (123 or owner/repo#123)."; return; }
+    if (apply && !confirm("Update GitHub issue " + issue + " body with this document (ADF → markdown)?")) return;
+    if (dirty) await saveNow();
+    ghSyncOut.textContent = apply ? "Applying push…" : "Preparing push dry-run…";
+    const resp = await fetch("/api/github/push", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ issue, repo, path: filename, apply: !!apply }),
+    });
+    const data = await resp.json();
+    ghReport(data);
+    setStatus(data.ok ? (apply ? "Pushed to GitHub" : "GitHub push prepared") : "GitHub push error", data.ok ? "ok" : "err");
+  }
+  document.getElementById("ghPullPrepare").onclick = () => githubPull(false);
+  document.getElementById("ghPullApply").onclick = () => githubPull(true);
+  document.getElementById("ghPushPrepare").onclick = () => githubPush(false);
+  document.getElementById("ghPushApply").onclick = () => githubPush(true);
 
   tagBlocks();
   pushHistory();

@@ -79,8 +79,7 @@ narration_from_source:
       context:
         paths:
         - README.md
-        - docs/ten-thousand-foot-view.md
-        - docs/what-spdd-brings.md
+        - docs/three-part-operating-path.md
         - docs/three-part-operating-path.md
     '02':
       hints:
@@ -119,8 +118,8 @@ narration_from_source:
         paths:
         - docs/guide-flow.md
         - docs/ops-console.md
-        - docs/guide-rag-research-and-dogfooding.md
         - docs/dice-projection-runbook.md
+        - docs/mcp-guide-for-agents.md
         - spdd/canvas/SPIKE-001-guide-rag-context-backend.md
         - docs/context-loading-and-scaling.md
         - README.md

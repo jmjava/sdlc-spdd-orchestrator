@@ -245,6 +245,23 @@ def start_neo4j(cfg: dict[str, Any]) -> dict[str, Any]:
             "error": "guide_home missing compose.yaml — ensure/pull jmjava/orch-guide first",
             "log": "",
         }
+    host = "127.0.0.1"
+    bolt = int(cfg.get("neo4j_bolt_port") or 7687)
+    http = int(cfg.get("neo4j_http_port") or 7474)
+    container = "embabel-neo4j"
+    bolt_url = f"bolt://localhost:{bolt}"
+    browser_url = f"http://localhost:{http}"
+
+    if _tcp_open(host, bolt):
+        return {
+            "ok": True,
+            "action": "already_running",
+            "bolt_ready": True,
+            "bolt_url": bolt_url,
+            "browser_url": browser_url,
+            "log": "Neo4j Bolt already open",
+        }
+
     env = guide_env(cfg)
     # Explicit service name enables the neo4j profile service.
     result = _run(
@@ -253,21 +270,37 @@ def start_neo4j(cfg: dict[str, Any]) -> dict[str, Any]:
         env=env,
         timeout=300,
     )
-    if result["ok"]:
-        # Wait briefly for Bolt.
-        host = "127.0.0.1"
-        bolt = int(cfg.get("neo4j_bolt_port") or 7687)
-        ready = False
-        for _ in range(20):
-            if _tcp_open(host, bolt, timeout=0.8):
-                ready = True
-                break
-            time.sleep(1.5)
-        result["bolt_ready"] = ready
-        result["bolt_url"] = f"bolt://localhost:{bolt}"
-        result["browser_url"] = (
-            f"http://localhost:{int(cfg.get('neo4j_http_port') or 7474)}"
+    if not result["ok"]:
+        log = result.get("log") or ""
+        conflict = (
+            container in log
+            or "already in use" in log.lower()
+            or "Conflict" in log
+            or "name is already in use" in log.lower()
         )
+        if conflict:
+            start = _run(["docker", "start", container], timeout=120)
+            if start["ok"] or _tcp_open(host, bolt):
+                result = {
+                    **start,
+                    "ok": True,
+                    "action": "started_existing",
+                    "log": (start.get("log") or log).strip(),
+                }
+            else:
+                return result
+        else:
+            return result
+
+    ready = False
+    for _ in range(20):
+        if _tcp_open(host, bolt, timeout=0.8):
+            ready = True
+            break
+        time.sleep(1.5)
+    result["bolt_ready"] = ready
+    result["bolt_url"] = bolt_url
+    result["browser_url"] = browser_url
     return result
 
 

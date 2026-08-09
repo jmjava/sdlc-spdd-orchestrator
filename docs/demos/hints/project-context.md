@@ -9,7 +9,7 @@ docgen:
           orchestrator repo — not operators of a target application install.
         - >-
           Product: sdlc-spdd-orchestrator — a hybrid Planning + SPDD + SDLC Agents scaffolding
-          system. Prose canon lives under docs/; do not contradict ten-thousand-foot-view.md
+          system. Prose canon lives under docs/; do not contradict three-part-operating-path.md
           or workflow.md.
         - >-
           Demo bundle includes Manim visuals and composed segment recordings (CHORE-002).
@@ -21,12 +21,12 @@ docgen:
       context:
         paths:
           - README.md
-          - docs/ten-thousand-foot-view.md
-          - docs/what-spdd-brings.md
+          - docs/three-part-operating-path.md
           - docs/workflow.md
           - docs/installing-into-your-project.md
           - docs/first-day-with-sdlc-spdd.md
-          - docs/guide-rag-research-and-dogfooding.md
+          - docs/dice-projection-runbook.md
+          - docs/mcp-guide-for-agents.md
 ---
 
 # Project context (SDLC-SPDD orchestrator docgen)

@@ -2,20 +2,36 @@
 
 from __future__ import annotations
 
+import json
+import os
+import subprocess
 import webbrowser
 from pathlib import Path
 from typing import Any
 
 from sdlc_engine.adf_work import AdfWorkService
+from sdlc_engine.context_store import ContextStore
 from sdlc_engine.db import LocalIndex
+from sdlc_engine.integration_config import save_config as save_integrations_config
+from sdlc_engine.integration_config import status_dict as integration_status
+from sdlc_engine.issue_tracker import (
+    load_config as load_tracker_config,
+    save_config as save_tracker_config,
+    status_dict as tracker_status_dict,
+)
+from sdlc_engine.issues import IssueSyncService
+from sdlc_engine.lessons_ledger import LessonsLedger
 from sdlc_engine.persistence import (
     ALL_BACKENDS,
     load_config as load_persistence_config,
     save_config as save_persistence_config,
     status_dict as persistence_status,
 )
+from sdlc_engine.phases import GATE_LABELS, gates_for_phase
 from sdlc_engine.project import Project
+from sdlc_engine.registry import TeamRegistry
 from sdlc_engine.viewer.store import AdfStore, AdfStoreError
+from sdlc_engine.workflow import WorkflowEngine
 
 from .detect import detect_target
 from .guide import checklist, ingest_command, load_config, probe_guide, save_config
@@ -54,7 +70,291 @@ from .viewer_runtime import (
     start_viewer,
     stop_viewer,
     viewer_payload,
+    viewer_process_status,
 )
+
+
+# --- Dashboard (landing tab) helpers ---------------------------------------
+# Module-level so tests can patch _gh_auth_status / probe_guide /
+# viewer_process_status without touching the Flask closures.
+
+
+def _gh_auth_status(timeout: float = 3.0) -> dict[str, Any]:
+    """Report `gh auth status` as booleans only.
+
+    The raw command output can contain (masked) tokens and account names, so
+    it is never echoed into the payload.
+    """
+    try:
+        proc = subprocess.run(
+            ["gh", "auth", "status"],
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            check=False,
+        )
+    except FileNotFoundError:
+        return {"installed": False, "authenticated": False, "detail": "gh not installed"}
+    except subprocess.TimeoutExpired:
+        return {"installed": True, "authenticated": False, "detail": "gh auth status timed out"}
+    except OSError as exc:
+        return {"installed": False, "authenticated": False, "detail": f"gh check failed: {exc}"}
+    if proc.returncode == 0:
+        return {"installed": True, "authenticated": True, "detail": "gh authenticated"}
+    return {
+        "installed": True,
+        "authenticated": False,
+        "detail": "gh not authenticated (run: gh auth login)",
+    }
+
+
+def _dashboard_status(target: Path) -> dict[str, Any]:
+    """Status + config cards for the Dashboard tab (one round-trip)."""
+    project = Project.resolve(target)
+    engine = WorkflowEngine(project)
+    status = json.loads(engine.status_json())
+    open_gates: list[dict[str, str]] = []
+    if status.get("work_id"):
+        gates = status.get("gates") or {}
+        for gate in gates_for_phase(str(status.get("phase") or "")):
+            if gates.get(gate) != "passed":
+                open_gates.append({"gate": gate, "label": GATE_LABELS.get(gate, gate)})
+    work = {
+        "pointer": status.get("pointer") or "",
+        "phase": status.get("phase") or "",
+        "operation": status.get("operation") or "",
+        "recommended_command": status.get("recommended_command") or "",
+        "open_gates": open_gates,
+    }
+
+    ledger = LessonsLedger(project)
+    accepted = ledger.records(include_staged=False)
+    staged_count = len(ledger.staged_ids())
+    events = TeamRegistry(project, workflow=engine).lean_events()
+    last = events[-1] if events else None
+    memory = {
+        "accepted_count": len(accepted),
+        "last_accepted_ts": accepted[0].ts if accepted else "",
+        "staged_count": staged_count,
+        "needs_accept": staged_count > 0,
+        "ledger_path": "spdd/memory/lessons.jsonl",
+        "staged_path": ".sdlc/staged/lessons.jsonl",
+        "registry_last_event": (
+            {
+                "event": last.get("event") or "",
+                "work_id": last.get("work_id") or "",
+                "owner": last.get("owner") or "",
+                "phase": last.get("phase") or "",
+                "ts": last.get("ts") or "",
+                "note": last.get("note") or "",
+            }
+            if last
+            else None
+        ),
+    }
+
+    pstat = persistence_status(project)
+    guide_cfg = load_config(target)
+    host = str(guide_cfg.get("host") or "127.0.0.1")
+    port = int(guide_cfg.get("port") or 21337)
+    probe = probe_guide(host, port, timeout=1.0)
+    backends = {
+        "backends": list(pstat.get("backends") or []),
+        "enabled": pstat.get("enabled") or {},
+        "source": pstat.get("source") or "",
+        "sqlite": pstat.get("sqlite") or {},
+        "guide": {
+            "enabled": bool((pstat.get("enabled") or {}).get("guide-dice")),
+            "host": host,
+            "port": port,
+            "reachable": bool(probe.get("tcp_open")),
+            "detail": str(probe.get("detail") or ""),
+            "effective_base_url": (pstat.get("guide") or {}).get("effective_base_url") or "",
+        },
+        # Parity runs ContextStore.parity() — explicit button only, never on load.
+        "parity_hint": "Run parity from the Persistence tab (Check ledger parity / Parity + repair).",
+    }
+
+    viewer = viewer_process_status(target)
+    project = Project.resolve(target)
+    integ = integration_status(project)
+    gh_cli = _gh_auth_status()
+    integrations = {
+        "jira": {
+            **integ["jira"],
+            "hint": "Set in Issues tab → Integrations (.sdlc/integrations-config.json) or export JIRA_* env",
+        },
+        "github": {
+            **integ["github"],
+            "installed": gh_cli.get("installed", False),
+            "authenticated": bool(integ["github"].get("configured") or gh_cli.get("authenticated")),
+            "detail": gh_cli.get("detail") if not integ["github"].get("configured") else "token configured",
+            "hint": "Set GH token in Issues tab or run `gh auth login`",
+        },
+        "tracker": integ.get("effective_tracker"),
+        "viewer": {
+            "running": bool(viewer.get("alive") or viewer.get("port_open")),
+            "url": viewer.get("url") or "",
+            "host": viewer.get("host") or ADF_DEFAULT_HOST,
+            "port": viewer.get("port") or ADF_DEFAULT_PORT,
+        },
+    }
+    return {"work": work, "memory": memory, "backends": backends, "integrations": integrations}
+
+
+def _dashboard_activity(project: Project, limit: int) -> list[dict[str, Any]]:
+    """Merged feed: registry events + accepted/staged records + workflow history."""
+    items: list[dict[str, Any]] = []
+    for ev in TeamRegistry(project).lean_events():
+        wid = (ev.get("work_id") or "").strip()
+        text = f"{ev.get('event') or 'update'} {wid}".strip()
+        if ev.get("owner"):
+            text += f" by {ev['owner']}"
+        if ev.get("phase"):
+            text += f" ({ev['phase']})"
+        items.append({"ts": ev.get("ts") or "", "source": "registry", "text": text, "work_id": wid})
+    ledger = LessonsLedger(project)
+    staged_ids = ledger.staged_ids()
+    for rec in ledger.records(include_staged=False):
+        items.append(
+            {
+                "ts": rec.ts,
+                "source": "ledger",
+                "text": f"{rec.kind} accepted: {rec.title} [{rec.work_id}]",
+                "work_id": rec.work_id,
+            }
+        )
+    for rec in ledger.records(include_staged=True):
+        if rec.id in staged_ids:
+            items.append(
+                {
+                    "ts": rec.ts,
+                    "source": "staged",
+                    "text": f"staged: {rec.kind} {rec.title}",
+                    "work_id": rec.work_id,
+                }
+            )
+    workflows = project.workflows_dir
+    if workflows.is_dir():
+        for hist in sorted(workflows.glob("*.history")):
+            try:
+                lines = hist.read_text(encoding="utf-8").splitlines()
+            except OSError:
+                continue
+            for line in lines:
+                parts = line.split("\t", 2)
+                if len(parts) < 2 or not parts[0].strip():
+                    continue
+                detail = parts[2].strip() if len(parts) > 2 else ""
+                items.append(
+                    {
+                        "ts": parts[0].strip(),
+                        "source": "workflow",
+                        "text": parts[1].strip() + (f" {detail}" if detail else ""),
+                        "work_id": hist.stem,
+                    }
+                )
+    items.sort(key=lambda it: (it.get("ts") or "", it.get("source") or ""), reverse=True)
+    return items[: max(1, limit)]
+
+
+def _requirements_issue_sections(project: Project, *, max_files: int = 40) -> dict[str, bool]:
+    """Cheap capped scan: do any requirements mention ## Jira / ## GitHub?"""
+    found = {"jira": False, "github": False}
+    req_dir = project.requirements_dir
+    if not req_dir.is_dir():
+        return found
+    scanned = 0
+    for path in sorted(req_dir.rglob("*.md")):
+        if scanned >= max_files or (found["jira"] and found["github"]):
+            break
+        scanned += 1
+        try:
+            text = path.read_text(encoding="utf-8", errors="ignore")[:65536]
+        except OSError:
+            continue
+        if "## Jira" in text:
+            found["jira"] = True
+        if "## GitHub" in text:
+            found["github"] = True
+    return found
+
+
+def _dashboard_suggestions(project: Project, status: dict[str, Any]) -> list[dict[str, Any]]:
+    """Deterministic 'Today' checklist — plain rules over the status payload."""
+    out: list[dict[str, Any]] = []
+    work = status.get("work") or {}
+    memory = status.get("memory") or {}
+    backends = status.get("backends") or {}
+    integrations = status.get("integrations") or {}
+
+    staged = int(memory.get("staged_count") or 0)
+    if staged > 0:
+        wid = work.get("pointer") or "<WORK-ID>"
+        out.append(
+            {
+                "id": "accept-staged",
+                "text": (
+                    f"{staged} staged record(s) await review: run /sdlc-spdd-accept "
+                    f"(or ./scripts/sdlc.sh accept --work-id {wid})"
+                ),
+            }
+        )
+
+    pointer = work.get("pointer") or ""
+    open_gates = work.get("open_gates") or []
+    if pointer and open_gates:
+        top = open_gates[0].get("label") or open_gates[0].get("gate") or ""
+        text = f"{pointer} ({work.get('phase') or '?'}): open gate — {top}."
+        if work.get("recommended_command"):
+            text += f" Do now: {work['recommended_command']}"
+        out.append({"id": "open-gate", "text": text})
+    if not pointer:
+        recent: list[str] = []
+        for ev in reversed(TeamRegistry(project).lean_events()):
+            wid = (ev.get("work_id") or "").strip()
+            if wid and wid not in recent:
+                recent.append(wid)
+            if len(recent) >= 3:
+                break
+        text = "No active work — claim: ./scripts/sdlc.sh claim <WORK-ID>"
+        if recent:
+            text += " (recent: " + ", ".join(recent) + ")"
+        out.append({"id": "claim-work", "text": text})
+
+    guide = backends.get("guide") or {}
+    if guide.get("enabled") and not guide.get("reachable"):
+        out.append(
+            {
+                "id": "guide-down",
+                "text": (
+                    "Guide is configured but unreachable — start it from the Guide tab, "
+                    "or continue files-only (normal)."
+                ),
+            }
+        )
+
+    jira_missing = not (integrations.get("jira") or {}).get("configured")
+    gh_missing = not (integrations.get("github") or {}).get("authenticated")
+    if jira_missing or gh_missing:
+        sections = _requirements_issue_sections(project)
+        wants: list[str] = []
+        if sections.get("jira") and jira_missing:
+            wants.append("configure Jira in Issues tab or set JIRA_* env")
+        if sections.get("github") and gh_missing:
+            wants.append("configure GitHub token in Issues tab or run `gh auth login`")
+        if wants:
+            out.append(
+                {
+                    "id": "issue-sync",
+                    "text": (
+                        "Requirements reference Jira/GitHub — "
+                        + " and ".join(wants)
+                        + " to enable issue sync."
+                    ),
+                }
+            )
+    return out
 
 
 def create_app(default_target: Path | str | None = None) -> Any:
@@ -226,6 +526,74 @@ def create_app(default_target: Path | str | None = None) -> Any:
         saved["target"] = str(target)
         return jsonify(saved)
 
+    @app.post("/api/persistence/parity")
+    def api_persistence_parity() -> Any:
+        """Diff the committed lessons ledger against SQLite/Guide projections.
+
+        Runs ``ContextStore.parity()``; ``repair=true`` re-derives drifted
+        projections (SQLite rebuild + Guide reproject).
+        """
+        body = request.get_json(silent=True) or {}
+        target = _target_from_body(body)
+        if not target.is_dir():
+            return jsonify({"error": f"target not found: {target}"}), 400
+        project = Project.resolve(target)
+        try:
+            result = ContextStore(project).parity(repair=bool(body.get("repair")))
+        except Exception as exc:  # noqa: BLE001
+            return jsonify({"ok": False, "error": str(exc), "target": str(target)}), 500
+        # Drift is a successful check result — report it with 200 and ok=false.
+        return jsonify({"ok": bool(result.get("ok")), "target": str(target), "parity": result})
+
+    @app.post("/api/dashboard/status")
+    def api_dashboard_status() -> Any:
+        """Status + config cards for the Dashboard landing tab."""
+        body = request.get_json(silent=True) or {}
+        target = _target_from_body(body)
+        if not target.is_dir():
+            return jsonify({"error": f"target not found: {target}"}), 400
+        try:
+            payload = _dashboard_status(target)
+        except Exception as exc:  # noqa: BLE001
+            return jsonify({"ok": False, "error": str(exc), "target": str(target)}), 500
+        payload["ok"] = True
+        payload["target"] = str(target)
+        return jsonify(payload)
+
+    @app.post("/api/dashboard/activity")
+    def api_dashboard_activity() -> Any:
+        """Recent activity feed merged from registry/ledger/staged/workflow history."""
+        body = request.get_json(silent=True) or {}
+        target = _target_from_body(body)
+        if not target.is_dir():
+            return jsonify({"error": f"target not found: {target}"}), 400
+        raw_limit = body.get("limit", request.args.get("limit"))
+        try:
+            limit = int(raw_limit) if raw_limit is not None else 20
+        except (TypeError, ValueError):
+            limit = 20
+        limit = max(1, min(100, limit))
+        try:
+            items = _dashboard_activity(Project.resolve(target), limit)
+        except Exception as exc:  # noqa: BLE001
+            return jsonify({"ok": False, "error": str(exc), "target": str(target)}), 500
+        return jsonify({"ok": True, "target": str(target), "limit": limit, "items": items})
+
+    @app.post("/api/dashboard/suggestions")
+    def api_dashboard_suggestions() -> Any:
+        """Deterministic 'Today' checklist (no LLM)."""
+        body = request.get_json(silent=True) or {}
+        target = _target_from_body(body)
+        if not target.is_dir():
+            return jsonify({"error": f"target not found: {target}"}), 400
+        try:
+            project = Project.resolve(target)
+            status = _dashboard_status(target)
+            suggestions = _dashboard_suggestions(project, status)
+        except Exception as exc:  # noqa: BLE001
+            return jsonify({"ok": False, "error": str(exc), "target": str(target)}), 500
+        return jsonify({"ok": True, "target": str(target), "suggestions": suggestions})
+
     @app.post("/api/backups")
     def api_backups() -> Any:
         body = request.get_json(silent=True) or {}
@@ -294,7 +662,7 @@ def create_app(default_target: Path | str | None = None) -> Any:
             "checklist": checklist(cfg, probe, neo4j=neo),
             "embabel_mechanics": mechanics,
             "ingest_command": ingest_command(cfg),
-            "docs": "docs/guide-rag-research-and-dogfooding.md",
+            "docs": "docs/dice-projection-runbook.md",
         }
 
     @app.post("/api/guide")
@@ -661,6 +1029,136 @@ def create_app(default_target: Path | str | None = None) -> Any:
                 ),
             }
         )
+
+    @app.post("/api/integrations/status")
+    def api_integrations_status() -> Any:
+        body = request.get_json(silent=True) or {}
+        target = _target_from_body(body)
+        if not target.is_dir():
+            return jsonify({"ok": False, "error": f"target not found: {target}"}), 400
+        project = Project.resolve(target)
+        payload = integration_status(project)
+        payload["ok"] = True
+        payload["target"] = str(target)
+        return jsonify(payload)
+
+    @app.post("/api/integrations/save")
+    def api_integrations_save() -> Any:
+        body = request.get_json(silent=True) or {}
+        target = _target_from_body(body)
+        if not target.is_dir():
+            return jsonify({"ok": False, "error": f"target not found: {target}"}), 400
+        project = Project.resolve(target)
+        try:
+            saved = save_integrations_config(project, body)
+        except ValueError as exc:
+            return jsonify({"ok": False, "error": str(exc), "target": str(target)}), 400
+        out = integration_status(project)
+        out["ok"] = True
+        out["target"] = str(target)
+        out["saved"] = saved
+        return jsonify(out)
+
+    @app.post("/api/issues/status")
+    def api_issues_status() -> Any:
+        body = request.get_json(silent=True) or {}
+        target = _target_from_body(body)
+        work_id = str(body.get("work_id") or "").strip()
+        if not work_id:
+            return jsonify({"ok": False, "error": "work_id required"}), 400
+        system = str(body.get("system") or "").strip() or None
+        svc = IssueSyncService(Project.resolve(target))
+        try:
+            status = svc.issue_link_status(work_id, system=system)
+        except (FileNotFoundError, ValueError) as exc:
+            return jsonify({"ok": False, "error": str(exc), "target": str(target)}), 400
+        return jsonify({"ok": True, "target": str(target), **status})
+
+    @app.post("/api/issues/link")
+    def api_issues_link() -> Any:
+        body = request.get_json(silent=True) or {}
+        target = _target_from_body(body)
+        work_id = str(body.get("work_id") or "").strip()
+        issue_ref = str(body.get("issue_ref") or body.get("jira_key") or body.get("github_number") or "").strip()
+        if not work_id or not issue_ref:
+            return jsonify({"ok": False, "error": "work_id and issue_ref required"}), 400
+        dry_run = body.get("dry_run") is True or body.get("apply") is not True
+        svc = IssueSyncService(Project.resolve(target))
+        try:
+            result = svc.link_issue_local(
+                work_id,
+                issue_ref,
+                system=str(body.get("system") or "").strip() or None,
+                summary=str(body.get("summary") or "").strip() or None,
+                issue_type=str(body.get("issue_type") or "").strip() or None,
+                title=str(body.get("title") or body.get("summary") or "").strip() or None,
+                url=str(body.get("url") or body.get("github_url") or "").strip() or None,
+                apply=not dry_run,
+            )
+        except (FileNotFoundError, ValueError) as exc:
+            return jsonify({"ok": False, "error": str(exc), "target": str(target)}), 400
+        return jsonify({"ok": True, "target": str(target), **result, "dry_run": dry_run})
+
+    @app.post("/api/issues/sync")
+    def api_issues_sync() -> Any:
+        body = request.get_json(silent=True) or {}
+        target = _target_from_body(body)
+        work_id = str(body.get("work_id") or "").strip()
+        direction = str(body.get("direction") or "pull").strip().lower()
+        system = str(body.get("system") or "").strip() or None
+        if not work_id:
+            return jsonify({"ok": False, "error": "work_id required"}), 400
+        if direction not in {"pull", "push"}:
+            return jsonify({"ok": False, "error": "direction must be pull or push"}), 400
+        apply = body.get("apply") is True
+        svc = IssueSyncService(Project.resolve(target))
+        try:
+            report = svc.sync_issue(
+                work_id,
+                system=system,
+                direction=direction,
+                apply=apply,
+                description_format=str(body.get("description_format") or "").strip() or None,
+            )
+        except (FileNotFoundError, ValueError, RuntimeError) as exc:
+            return jsonify({"ok": False, "error": str(exc), "target": str(target)}), 400
+        tracker = system or integration_status(Project.resolve(target)).get("effective_tracker", "jira")
+        cli = (
+            f"./scripts/sdlc.sh issues {direction} {work_id} --system {tracker}"
+            + (" --apply" if apply else "")
+        )
+        return jsonify(
+            {
+                "ok": True,
+                "target": str(target),
+                "work_id": work_id,
+                "system": tracker,
+                "direction": direction,
+                "apply": apply,
+                "report": report,
+                "cli": cli,
+            }
+        )
+
+    @app.post("/api/jira/status")
+    def api_jira_status() -> Any:
+        body = request.get_json(silent=True) or {}
+        body["system"] = "jira"
+        return api_issues_status()
+
+    @app.post("/api/jira/link")
+    def api_jira_link() -> Any:
+        body = request.get_json(silent=True) or {}
+        if body.get("jira_key") and not body.get("issue_ref"):
+            body["issue_ref"] = body["jira_key"]
+        body["system"] = "jira"
+        return api_issues_link()
+
+    @app.post("/api/jira/sync")
+    def api_jira_sync() -> Any:
+        body = request.get_json(silent=True) or {}
+        body["system"] = "jira"
+        return api_issues_sync()
 
     return app
 

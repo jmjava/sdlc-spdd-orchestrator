@@ -1,4 +1,13 @@
-"""Team Work ID registry — lean JSONL (#84) + legacy TSV during transition."""
+"""Team Work ID registry — JSONL event log (storage v3).
+
+``spdd/memory/registry.jsonl`` is the only write store: append-only events
+``{"event","work_id","status","phase","operation","owner","note","ts"}``.
+``rows()`` derives current state = latest event per ``work_id``.
+
+During transition, if ``registry.jsonl`` is missing and legacy
+``agent-context/work-registry.tsv`` exists, ``rows()`` falls back to a
+read-only TSV parse (no writes to TSV).
+"""
 
 from __future__ import annotations
 
@@ -12,20 +21,9 @@ from . import canvas as canvas_mod
 from .project import Project
 from .workflow import WorkflowEngine
 
-LEAN_REGISTRY_REL = Path("spdd/memory/registry.jsonl")
-
 
 def _utc_now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-
-
-REGISTRY_HEADER = """# Team Work Registry — tab-separated. Commit updates so teammates see who is on which Work ID.
-# Columns: work_id status phase operation owner updated note
-# status: active | shelved | done | cancelled | archived | available
-# note tokens: branch:<name> pr:<url-or-#> jira:<KEY> <free text>
-# Prefer lean spdd/memory/registry.jsonl for new events (#84); TSV remains readable.
-work_id\tstatus\tphase\toperation\towner\tupdated\tnote
-"""
 
 
 @dataclass
@@ -38,18 +36,17 @@ class RegistryRow:
     updated: str = ""
     note: str = ""
 
-    def as_tsv(self) -> str:
-        return "\t".join(
-            [
-                self.work_id,
-                self.status,
-                self.phase,
-                self.operation,
-                self.owner,
-                self.updated,
-                self.note,
-            ]
-        )
+    def as_event(self, *, event: str = "update") -> dict[str, str]:
+        return {
+            "event": event,
+            "work_id": self.work_id,
+            "status": self.status,
+            "phase": self.phase,
+            "operation": self.operation,
+            "owner": self.owner,
+            "note": self.note,
+            "ts": self.updated or _utc_now(),
+        }
 
 
 class TeamRegistry:
@@ -60,11 +57,12 @@ class TeamRegistry:
 
     @property
     def path(self) -> Path:
-        return self.project.registry_path
+        return self.project.registry_jsonl_path
 
     @property
-    def lean_path(self) -> Path:
-        return self.project.root / LEAN_REGISTRY_REL
+    def legacy_tsv_path(self) -> Path:
+        # Read-only transition fallback (see module docstring).
+        return self.project.home / "agent-context" / "work-registry.tsv"
 
     def _owner(self) -> str:
         if os.environ.get("SDLC_USER"):
@@ -84,95 +82,94 @@ class TeamRegistry:
         return os.environ.get("USER") or os.environ.get("USERNAME") or "unknown"
 
     def ensure(self) -> None:
+        self.path.parent.mkdir(parents=True, exist_ok=True)
         if not self.path.is_file():
-            self.path.parent.mkdir(parents=True, exist_ok=True)
-            self.path.write_text(REGISTRY_HEADER, encoding="utf-8")
+            self.path.write_text("", encoding="utf-8")
 
-    def rows(self) -> list[RegistryRow]:
-        self.ensure()
-        out: list[RegistryRow] = []
-        for line in self.path.read_text(encoding="utf-8").splitlines():
+    def _read_events(self) -> list[dict[str, str]]:
+        if self.path.is_file():
+            out: list[dict[str, str]] = []
+            for line in self.path.read_text(encoding="utf-8").splitlines():
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    row = json.loads(line)
+                    if isinstance(row, dict) and row.get("work_id"):
+                        out.append({k: str(v or "") for k, v in row.items()})
+                except json.JSONDecodeError:
+                    continue
+            return out
+        # Transition read-only fallback: legacy TSV when JSONL absent.
+        tsv = self.legacy_tsv_path
+        if not tsv.is_file():
+            return []
+        out = []
+        for line in tsv.read_text(encoding="utf-8").splitlines():
             if not line or line.startswith("#") or line.startswith("work_id"):
                 continue
             parts = line.split("\t")
             while len(parts) < 7:
                 parts.append("")
             out.append(
-                RegistryRow(
-                    work_id=parts[0],
-                    status=parts[1],
-                    phase=parts[2],
-                    operation=parts[3],
-                    owner=parts[4],
-                    updated=parts[5],
-                    note=parts[6],
-                )
+                {
+                    "event": "legacy-tsv",
+                    "work_id": parts[0],
+                    "status": parts[1],
+                    "phase": parts[2],
+                    "operation": parts[3],
+                    "owner": parts[4],
+                    "ts": parts[5],
+                    "note": parts[6],
+                }
             )
         return out
 
-    def upsert(self, row: RegistryRow) -> None:
-        self.ensure()
-        rows = self.rows()
-        found = False
-        for i, existing in enumerate(rows):
-            if existing.work_id == row.work_id:
-                if not row.note:
-                    row.note = existing.note
-                rows[i] = row
-                found = True
-                break
-        if not found:
-            rows.append(row)
-        comments = [ln for ln in self.path.read_text(encoding="utf-8").splitlines() if ln.startswith("#")]
-        body = comments + ["work_id\tstatus\tphase\toperation\towner\tupdated\tnote"] + [r.as_tsv() for r in rows]
-        tmp = self.path.with_suffix(".tsv.tmp")
-        tmp.write_text("\n".join(body) + "\n", encoding="utf-8")
-        tmp.replace(self.path)
+    def rows(self) -> list[RegistryRow]:
+        """Current registry state = latest event per work_id."""
+        by_id: dict[str, RegistryRow] = {}
+        for ev in self._read_events():
+            wid = (ev.get("work_id") or "").strip()
+            if not wid:
+                continue
+            by_id[wid] = RegistryRow(
+                work_id=wid,
+                status=ev.get("status") or "available",
+                phase=ev.get("phase") or "",
+                operation=ev.get("operation") or "",
+                owner=ev.get("owner") or "",
+                updated=ev.get("ts") or "",
+                note=ev.get("note") or "",
+            )
+        return list(by_id.values())
 
-    def append_lean_event(
-        self,
-        *,
-        event: str,
-        work_id: str,
-        status: str = "",
-        phase: str = "",
-        owner: str = "",
-        note: str = "",
-        ts: str = "",
-    ) -> dict:
-        """Append claim/release/shelf event to lean git registry.jsonl (#84)."""
-        payload = {
-            "event": event,
-            "work_id": work_id,
-            "status": status,
-            "phase": phase,
-            "owner": owner or self._owner(),
-            "note": note,
-            "ts": ts or _utc_now(),
-        }
-        self.lean_path.parent.mkdir(parents=True, exist_ok=True)
-        with self.lean_path.open("a", encoding="utf-8") as fh:
+    def _append_event(self, payload: dict[str, str]) -> None:
+        self.ensure()
+        with self.path.open("a", encoding="utf-8") as fh:
             fh.write(json.dumps(payload, ensure_ascii=False) + "\n")
-        return payload
+
+    def upsert(self, row: RegistryRow, *, event: str = "update") -> None:
+        """Append a registry event (never rewrite history)."""
+        if not row.updated:
+            row.updated = _utc_now()
+        existing = next((r for r in self.rows() if r.work_id == row.work_id), None)
+        if existing and not row.note:
+            row.note = existing.note
+        self._append_event(row.as_event(event=event))
 
     def lean_events(self, *, work_id: str = "") -> list[dict]:
-        if not self.lean_path.is_file():
-            return []
-        out: list[dict] = []
-        for line in self.lean_path.read_text(encoding="utf-8").splitlines():
-            if not line.strip():
-                continue
-            try:
-                row = json.loads(line)
-            except json.JSONDecodeError:
-                continue
-            if work_id and row.get("work_id") != work_id:
-                continue
-            out.append(row)
-        return out
+        """Alias for ``_read_events`` filtered by work_id."""
+        events = self._read_events()
+        if work_id:
+            return [e for e in events if e.get("work_id") == work_id]
+        return events
 
-    def _fanout_claim_sqlite(self, row: "RegistryRow") -> None:
+    def _fanout_claim_sqlite(self, row: RegistryRow) -> None:
         try:
+            from .persistence import BACKEND_SQLITE, enabled
+
+            if not enabled(self.project, BACKEND_SQLITE):
+                return
             from .db import LocalIndex
 
             LocalIndex(self.project).upsert_claim(
@@ -184,22 +181,16 @@ class TeamRegistry:
                 ts=row.updated,
             )
         except Exception:
-            # Soft-fail: git registry remains source of truth for multi-user.
             pass
 
     def discover_work_ids(self) -> list[str]:
         seen: set[str] = set()
-        features = self.project.root / "agent-context" / "features"
-        if features.is_dir():
-            for child in features.iterdir():
-                if child.is_dir() and child.name not in {"archive"} and not child.name.startswith("."):
-                    seen.add(child.name)
-        canvas_dir = self.project.root / "spdd" / "canvas"
+        canvas_dir = self.project.spdd_dir / "canvas"
         if canvas_dir.is_dir():
             for child in canvas_dir.glob("*.md"):
                 if child.name != "README.md":
                     seen.add(child.stem)
-        milestones = self.project.root / "requirements" / "milestones"
+        milestones = self.project.requirements_dir / "milestones"
         if milestones.is_dir():
             for child in milestones.glob("*.md"):
                 if child.name != "README.md":
@@ -229,7 +220,8 @@ class TeamRegistry:
                     owner=self._owner(),
                     updated=_utc_now(),
                     note=note,
-                )
+                ),
+                event="refresh",
             )
 
     def claim(
@@ -260,7 +252,6 @@ class TeamRegistry:
                 f"claim refused: {work_id} is active under {existing.owner}. Use --force after coordinating."
             )
         state = self.workflow.resume(work_id, phase=phase, force=force)
-        # Auto-read links from requirements/milestones/<WORK-ID>.md (shell parity).
         from .links import collect_links, upsert_note_token
 
         auto_jira = jira
@@ -273,7 +264,6 @@ class TeamRegistry:
                 auto_jira = links.jira_key
             if os.environ.get("SDLC_TEAM_AUTO_GITHUB", "1") != "0" and links.has_github:
                 auto_github = links.github_number
-        tokens: list[str] = []
         composed = note or (existing.note if existing else "")
         if branch:
             composed = upsert_note_token(composed, "branch", branch)
@@ -283,7 +273,6 @@ class TeamRegistry:
             composed = upsert_note_token(composed, "jira", auto_jira)
         if auto_github:
             composed = upsert_note_token(composed, "github", f"#{auto_github}")
-        # Preserve leftover free-text tokens not managed above.
         for tok in (note or "").split():
             if ":" not in tok and tok not in composed.split():
                 composed = f"{composed} {tok}".strip()
@@ -296,16 +285,7 @@ class TeamRegistry:
             updated=_utc_now(),
             note=composed,
         )
-        self.upsert(row)
-        self.append_lean_event(
-            event="claim",
-            work_id=work_id,
-            status=row.status,
-            phase=row.phase,
-            owner=row.owner,
-            note=row.note,
-            ts=row.updated,
-        )
+        self.upsert(row, event="claim")
         self._fanout_claim_sqlite(row)
         return row
 
@@ -316,7 +296,6 @@ class TeamRegistry:
         from .local_sessions import LocalSessionService, is_local_id
 
         if is_local_id(wid):
-            # Keep LOCAL sessions out of the committed team registry.
             LocalSessionService(self.project, self).shelf(reason, session_id=wid)
             return
         self.workflow.shelf(reason)
@@ -328,16 +307,7 @@ class TeamRegistry:
             updated=_utc_now(),
             note=reason,
         )
-        self.upsert(row)
-        self.append_lean_event(
-            event="release",
-            work_id=wid,
-            status=row.status,
-            phase=row.phase,
-            owner=row.owner,
-            note=row.note,
-            ts=row.updated,
-        )
+        self.upsert(row, event="release")
         self._fanout_claim_sqlite(row)
 
     def list_work_text(self) -> str:
@@ -356,8 +326,6 @@ class TeamRegistry:
             arts = []
             if self.project.canvas_path(wid).is_file():
                 arts.append("canvas")
-            if self.project.feature_dir(wid).is_dir():
-                arts.append("feature")
             if self.project.milestone_path(wid).is_file():
                 arts.append("milestone")
             lines.append(
@@ -387,13 +355,19 @@ class TeamRegistry:
         self.refresh_done_status()
         me = self._owner()
         pointer = self.workflow.pointer.get()
+        reg_path = self.path
+        try:
+            rel = reg_path.resolve().relative_to(self.project.root.resolve())
+            reg_label = str(rel)
+        except ValueError:
+            reg_label = str(reg_path)
         lines = [
             "SDLC Team View",
             "==============",
             f"You: {me}",
             f"Your local pointer: {pointer or '(none)'}",
             "",
-            "Team registry (commit agent-context/work-registry.tsv to share):",
+            f"Team registry (commit {reg_label} to share):",
         ]
         rows = self.rows()
         if not rows:
