@@ -230,6 +230,8 @@ run_integration() {
   pytest_suite integration -q \
     engine/tests_integration \
     engine/tests_unit/test_installer_runtime_units.py \
+    engine/tests_unit/test_installer_templates_api.py \
+    engine/tests_unit/test_vue3_console_serve.py \
     --cov=sdlc_engine.installer \
     --cov-report=term-missing:skip-covered \
     --cov-fail-under=90
@@ -269,6 +271,7 @@ run_e2e() {
     pytest_suite e2e -q \
       engine/tests_e2e/test_console_playwright.py \
       engine/tests_e2e/test_viewer_playwright.py \
+      engine/tests_e2e/test_vue3_console_playwright.py \
       engine/tests_e2e/test_issues_github_integration.py \
       --screenshot=only-on-failure
   fi

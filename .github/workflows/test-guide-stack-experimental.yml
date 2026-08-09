@@ -10,10 +10,15 @@ on:
       - 'engine/src/sdlc_engine/installer/**'
       - 'engine/tests_integration/**'
       - 'engine/tests_e2e/**'
+      - 'console-ui/**'
+      - 'tests/test-guide-stack-live.sh'
+      - '.github/workflows/test-guide-stack-experimental.yml'
   push:
     branches: [main]
     paths:
       - 'engine/src/sdlc_engine/installer/**'
+      - 'engine/tests_e2e/test_vue3_console_live_playwright.py'
+      - 'console-ui/**'
       - 'tests/test-guide-stack-live.sh'
       - '.github/workflows/test-guide-stack-experimental.yml'
 
@@ -38,6 +43,8 @@ jobs:
           PYTHONPATH=engine/src python3 -m pytest -q
           engine/tests_integration
           engine/tests_unit/test_installer_runtime_units.py
+          engine/tests_unit/test_installer_templates_api.py
+          engine/tests_unit/test_vue3_console_serve.py
           --cov=sdlc_engine.installer
           --cov-report=term-missing:skip-covered
           --cov-fail-under=90
@@ -82,7 +89,7 @@ jobs:
         working-directory: guide
         run: ./mvnw -q -DskipTests dependency:go-offline || ./mvnw -q -DskipTests -DskipITs validate
 
-      - name: Live Guide + Neo4j stack test
+      - name: Live Guide + Neo4j stack test (API)
         working-directory: sdlc-spdd-orchestrator
         env:
           CI: 'true'
@@ -115,6 +122,45 @@ jobs:
           print("stop neo4j", c.post("/api/guide/neo4j/stop", json={"target": str(root.resolve())}).get_json())
           PY
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: sdlc-spdd-orchestrator/console-ui/package-lock.json
+
+      - name: Build Vue3 console + install Playwright
+        working-directory: sdlc-spdd-orchestrator
+        run: |
+          python3 -m pip install -e './engine[dev,viewer-e2e]'
+          python3 -m playwright install --with-deps chromium
+          cd console-ui && npm ci && npm run build
+
+      - name: Vue3 Playwright live Guide stack
+        working-directory: sdlc-spdd-orchestrator
+        env:
+          CI: 'true'
+          SDLC_GUIDE_STACK_LIVE: '1'
+          GUIDE_HOME: ${{ github.workspace }}/guide
+          GUIDE_GIT_REF: sdlc-spdd-projection-v2
+          GUIDE_PORT: '21337'
+          NEO4J_BOLT_PORT: '7687'
+          NEO4J_HTTP_PORT: '7474'
+          GUIDE_START_TIMEOUT_SEC: '900'
+          ANTHROPIC_API_KEY: dummy-key
+        run: >
+          PYTHONPATH=engine/src pytest -q engine/tests_e2e/test_vue3_console_live_playwright.py
+          -m guide_live --run-guide-live
+
+      - name: Vue3 Playwright live ADF viewer
+        working-directory: sdlc-spdd-orchestrator
+        env:
+          CI: 'true'
+          SDLC_ADF_VIEWER_LIVE: '1'
+          ADF_VIEWER_PORT: '5050'
+        run: >
+          PYTHONPATH=engine/src pytest -q engine/tests_e2e/test_vue3_console_live_playwright.py
+          -m adf_viewer_live --run-adf-viewer-live
+
       - name: Upload Guide log on failure
         if: failure()
         uses: actions/upload-artifact@v4
@@ -122,4 +168,5 @@ jobs:
           name: guide-stack-logs
           path: |
             /tmp/sdlc-guide-*.log
+            /tmp/sdlc-adf-viewer-*.log
           if-no-files-found: ignore

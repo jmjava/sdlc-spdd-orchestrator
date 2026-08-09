@@ -5,6 +5,8 @@ on:
     paths:
       - 'engine/**'
       - 'adf/**'
+      - 'console-ui/**'
+      - 'templates/adf/**'
       - 'scripts/sdlc.sh'
       - 'scripts/run-test-suites.sh'
       - '.github/workflows/test-sdlc-engine.yml'
@@ -13,6 +15,8 @@ on:
     paths:
       - 'engine/**'
       - 'adf/**'
+      - 'console-ui/**'
+      - 'templates/adf/**'
       - 'scripts/sdlc.sh'
       - 'scripts/run-test-suites.sh'
       - '.github/workflows/test-sdlc-engine.yml'
@@ -46,6 +50,8 @@ jobs:
           PYTHONPATH=engine/src pytest -q
           engine/tests_integration
           engine/tests_unit/test_installer_runtime_units.py
+          engine/tests_unit/test_installer_templates_api.py
+          engine/tests_unit/test_vue3_console_serve.py
           --cov=sdlc_engine.installer
           --cov-report=term-missing:skip-covered
           --cov-fail-under=90

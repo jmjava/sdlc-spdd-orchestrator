@@ -1,0 +1,7 @@
+{
+  "id": "spike",
+  "title": "Spike / research",
+  "description": "Timeboxed investigation ADF emphasizing question and outputs",
+  "work_types": ["spike"],
+  "parts": ["header_work", "body_spike", "footer_traceability"]
+}

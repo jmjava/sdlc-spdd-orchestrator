@@ -1,0 +1,7 @@
+{
+  "id": "feature",
+  "title": "Feature work",
+  "description": "Standard feature / story ADF from planning artifacts",
+  "work_types": ["feature", "feat"],
+  "parts": ["header_work", "body_feature", "footer_traceability"]
+}

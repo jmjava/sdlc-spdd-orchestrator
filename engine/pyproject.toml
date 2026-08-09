@@ -28,4 +28,7 @@ testpaths = ["tests_unit"]
 pythonpath = ["src"]
 markers = [
   "viewer_integration: reserved — live Jira sync belongs in tests_e2e when added",
+  "console_e2e: Playwright GUI tests for the ops console (needs chromium)",
+  "guide_live: Vue3 console against live Guide+Neo4j dual-repo stack",
+  "adf_viewer_live: Vue3 ADF tab against a real viewer process (not stubbed)",
 ]

@@ -149,6 +149,46 @@ class Project:
     def milestone_path(self, work_id: str) -> Path:
         return self.requirements_dir / "milestones" / f"{work_id}.md"
 
+    def progress_log_path(self, work_id: str) -> Path:
+        """Lean progress ledger (not feature mirror).
+
+        ``work_id`` is accepted for call-site symmetry; the ledger is shared.
+        Use :meth:`ledger_section_for_work` when reading evidence for one work item.
+        """
+        return self.home / "spdd" / "memory" / "entries" / "progress.md"
+
+    @staticmethod
+    def ledger_section_for_work(text: str, work_id: str) -> str:
+        """Extract shared-ledger slices that belong to one Work ID.
+
+        Supports ``## <WORK-ID>`` sections and capture-style
+        ``### <ts> - <WORK-ID> - <phase>`` blocks.
+        """
+        import re
+
+        wid = (work_id or "").strip()
+        if not text or not wid:
+            return ""
+        parts: list[str] = []
+        for block in re.split(r"(?m)^##\s+", text):
+            if not block.strip():
+                continue
+            first = block.splitlines()[0].strip()
+            if (
+                first == wid
+                or first.startswith(f"{wid} ")
+                or first.startswith(f"{wid}—")
+                or first.startswith(f"{wid} -")
+            ):
+                parts.append(block)
+        pattern = re.compile(
+            rf"(?m)^###[^\n]*\b{re.escape(wid)}\b[^\n]*\n(?:.*?)(?=^###\s+|^##\s+|\Z)",
+            re.DOTALL,
+        )
+        for match in pattern.finditer(text):
+            parts.append(match.group(0))
+        return "\n".join(parts)
+
     # --- runtime (never committed) ---
 
     def hot_session_dir(self) -> Path:
@@ -162,3 +202,4 @@ class Project:
         self.workflows_dir.mkdir(parents=True, exist_ok=True)
         self.hot_session_dir().mkdir(parents=True, exist_ok=True)
         self.staged_ledger_path.parent.mkdir(parents=True, exist_ok=True)
+        (self.home / "spdd" / "memory" / "entries").mkdir(parents=True, exist_ok=True)

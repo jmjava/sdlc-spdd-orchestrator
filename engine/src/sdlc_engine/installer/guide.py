@@ -56,6 +56,51 @@ def config_path(target: Path | str) -> Path:
     return Path(target).expanduser().resolve() / CONFIG_REL
 
 
+def _looks_like_guide_home(path: Path) -> bool:
+    """True when ``path`` is a usable jmjava/guide (or embabel/guide) checkout."""
+    return path.is_dir() and (path / "scripts" / "append-ingest.sh").is_file()
+
+
+def resolve_guide_home() -> Path:
+    """Resolve Guide checkout for dual-repo Cloud Agent / local layouts.
+
+    Order:
+    1. ``GUIDE_HOME`` when it points at a real guide tree
+    2. Sibling ``../guide`` next to the orchestrator (Cursor dual-repo env)
+    3. ``~/github/jmjava/orch-guide`` or legacy ``~/github/jmjava/guide`` when present
+    4. Otherwise ``~/github/jmjava/orch-guide`` (may not exist yet)
+    """
+    env = os.environ.get("GUIDE_HOME", "").strip()
+    if env:
+        env_path = Path(env).expanduser().resolve()
+        if _looks_like_guide_home(env_path):
+            return env_path
+
+    try:
+        from .runner import orchestrator_root
+
+        sibling = (orchestrator_root().parent / "guide").resolve()
+        if _looks_like_guide_home(sibling):
+            return sibling
+    except FileNotFoundError:
+        pass
+
+    # Also accept Cursor's multi-repo workspace layout even if orchestrator_root
+    # resolution is unavailable in an unusual install.
+    for candidate in (
+        Path("/agent/repos/guide"),
+        Path.home() / "github" / "jmjava" / "orch-guide",
+        Path.home() / "github" / "jmjava" / "guide",
+    ):
+        resolved = candidate.expanduser().resolve()
+        if _looks_like_guide_home(resolved):
+            return resolved
+
+    # Invalid GUIDE_HOME is ignored (do not prefer a bare directory over the
+    # conventional checkout path used by local / Cloud Agent layouts).
+    return Path.home() / "github" / "jmjava" / "orch-guide"
+
+
 def default_config() -> dict[str, Any]:
     home = os.environ.get("GUIDE_HOME", "").strip()
     if not home:
