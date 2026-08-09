@@ -6,7 +6,7 @@ const props = defineProps({
   target: { type: String, default: "" },
 });
 
-const sqliteOn = ref(true);
+const sqliteOn = ref(false);
 const guideOn = ref(true);
 const guideUrl = ref("");
 const notes = ref("");

@@ -228,6 +228,7 @@ def test_vue3_persistence_load_and_save(page, live_vue_console) -> None:  # type
     )
     assert page.get_by_test_id("ps-git").inner_text().strip() == "ON"
 
+    page.get_by_test_id("pb-sqlite").check()
     page.get_by_test_id("pb-guide").uncheck()
     page.get_by_test_id("persist-guide-url").fill("http://127.0.0.1:21337")
     page.get_by_test_id("persist-notes").fill("vue3-playwright-persist")
