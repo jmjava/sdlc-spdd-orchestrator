@@ -43,6 +43,11 @@ GUIDE_GIT_REF="${GUIDE_GIT_REF:-sdlc-spdd-projection-v2}"
 GUIDE_START_TIMEOUT_SEC="${GUIDE_START_TIMEOUT_SEC:-600}"
 SPRING_PROFILES_ACTIVE="${SPRING_PROFILES_ACTIVE:-neo4j,local,${GUIDE_PROFILE}}"
 
+guide_log_path() {
+  printf '/tmp/sdlc-guide-%s-%s.log\n' "${GUIDE_PROFILE}" "${GUIDE_PORT}"
+}
+GUIDE_LOG="$(guide_log_path)"
+
 resolve_guide_home() {
   if [[ -n "${GUIDE_HOME:-}" ]]; then
     echo "${GUIDE_HOME}"
@@ -83,7 +88,7 @@ if test_preflight_guide_health "${GUIDE_PORT}"; then
 fi
 if pgrep -f "append-ingest\.sh" >/dev/null 2>&1 && ! test_preflight_guide_health "${GUIDE_PORT}"; then
   echo "FAIL: append-ingest still running but Guide not healthy — wait or: pkill -f append-ingest.sh" >&2
-  echo "  tail -20 /tmp/sdlc-guide-${GUIDE_PORT}.log" >&2
+  echo "  tail -20 ${GUIDE_LOG}" >&2
   exit 1
 fi
 
@@ -149,12 +154,13 @@ def must_ok(label, res):
         raise SystemExit(f"{label} failed")
     return body
 
+no_pull = os.environ.get("CI") == "true"
 must_ok("ensure", c.post("/api/guide/ensure", json={
     "target": str(root),
     "guide_home": str(guide),
     "guide_git_ref": ${GUIDE_GIT_REF@Q},
     "save_first": True,
-    "no_pull": False,
+    "no_pull": no_pull,
 }))
 must_ok("profile", c.post("/api/guide/ensure-profile", json={
     "target": str(root),
@@ -174,6 +180,7 @@ print("no_ingest", no_ingest)
 PY
 
 echo "== waiting for Guide health on :${GUIDE_PORT} (timeout ${GUIDE_START_TIMEOUT_SEC}s) =="
+echo "  log: ${GUIDE_LOG}"
 elapsed=0
 while (( elapsed < GUIDE_START_TIMEOUT_SEC )); do
   if test_preflight_guide_health "${GUIDE_PORT}"; then
@@ -184,7 +191,7 @@ while (( elapsed < GUIDE_START_TIMEOUT_SEC )); do
   elapsed=$((elapsed + 5))
   if pgrep -f "append-ingest\.sh" >/dev/null 2>&1 && (( elapsed % 60 == 0 )); then
     echo "  … append-ingest still running (${elapsed}s) — first boot can take 30–90+ min"
-    tail -3 "/tmp/sdlc-guide-${GUIDE_PORT}.log" 2>/dev/null || true
+    tail -3 "${GUIDE_LOG}" 2>/dev/null || true
   elif (( elapsed % 30 == 0 )); then
     echo "  … ${elapsed}s (probe: curl -sf --max-time 3 http://127.0.0.1:${GUIDE_PORT}/actuator/health)"
   fi
@@ -192,7 +199,7 @@ done
 if (( elapsed >= GUIDE_START_TIMEOUT_SEC )); then
   echo "FAIL: Guide did not become healthy on :${GUIDE_PORT}" >&2
   echo "  Do NOT curl /sse — it hangs. Use /actuator/health with --max-time 3." >&2
-  tail -20 "/tmp/sdlc-guide-${GUIDE_PORT}.log" 2>/dev/null || true
+  tail -20 "${GUIDE_LOG}" 2>/dev/null || true
   "${PYTHON_BIN}" <<PY
 from pathlib import Path
 from sdlc_engine.installer.app import create_app
