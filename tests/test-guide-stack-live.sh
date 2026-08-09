@@ -220,7 +220,15 @@ for key in ("profiles", "neo4j", "named_entity", "mcp_sse"):
     if key in mech and not mech[key]:
         raise SystemExit(f"Embabel mechanics failed: {key}")
 
-proj = c.post("/api/guide/projection/load", json={"target": str(root)}).get_json() or {}
+# Storage v3: orchestrator dogfood spdd/canvas/ is often empty; use example fixture.
+proj_root = root / "examples" / "spring-boot-order-api"
+if not proj_root.is_dir():
+    raise SystemExit(f"missing Guide projection fixture: {proj_root}")
+print("projection root", proj_root)
+proj = c.post(
+    "/api/guide/projection/load",
+    json={"target": str(root), "root_path": str(proj_root)},
+).get_json() or {}
 print("projection", proj.get("ok"), (proj.get("result") or {}).get("status"))
 if not proj.get("ok"):
     # Projection may 409 if flag off — treat as hard fail for this experimental gate.
@@ -231,7 +239,9 @@ stats = (proj.get("projection") or {}).get("data") or (proj.get("result") or {})
 print("projection stats", stats)
 work = int(stats.get("workIdCount") or stats.get("workIds") or 0)
 if work < 1:
-    raise SystemExit(f"expected workIdCount >= 1 after projection, got {work}")
+    raise SystemExit(
+        f"expected workIdCount >= 1 after projection from {proj_root}, got {work}"
+    )
 
 print("PASS: experimental Guide+Neo4j stack (Neo4j up, Guide up, NamedEntity projection loaded)")
 PY
