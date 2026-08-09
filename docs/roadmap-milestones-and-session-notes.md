@@ -16,7 +16,7 @@ Use this mental model:
 
     ROADMAP.md / milestone definitions / requirements/milestones/ / session-notes/
             -> inform and summarize
-    spdd/canvas/ + agent-context/
+    spdd/canvas/ + spdd/memory/
             -> govern and remember
     code / reviews / sync logs
             -> execute and validate
@@ -41,9 +41,8 @@ Recommended target-project layout (subdirectory milestones):
     spdd/canvas/
     spdd/memory/          (lessons.jsonl + registry.jsonl)
 
-Legacy root `milestone-1.md` remains supported. See
-[MIGRATION-root-to-subdirectories.md](MIGRATION-root-to-subdirectories.md) and
-[jira-compatible-requirements-format.md](jira-compatible-requirements-format.md).
+Root `milestone-1.md` at the repo root remains supported alongside the
+subdirectory layout above. See [jira-compatible-requirements-format.md](jira-compatible-requirements-format.md).
 
 ## How These Files Fit SDLC-SPDD
 
@@ -110,11 +109,11 @@ For a milestone checklist like:
 
 Create draft SDLC-SPDD work artifacts:
 
-    ./scripts/sdlc-spdd/create-work-from-milestone.sh --target . --milestone milestone-1.md --all
+    ./sdlc-spdd/scripts/create-work-from-milestone.sh --target . --milestone milestone-1.md --all
 
 Create one item:
 
-    ./scripts/sdlc-spdd/create-work-from-milestone.sh --target . --milestone milestone-1.md --item "Add order status API" --type feature
+    ./sdlc-spdd/scripts/create-work-from-milestone.sh --target . --milestone milestone-1.md --item "Add order status API" --type feature
 
 This creates:
 
@@ -126,7 +125,7 @@ This creates:
 
 Claim work and commit the team registry on shared repos:
 
-    ./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>
+    ./sdlc-spdd/scripts/sdlc.sh claim <WORK-ID>
 
 The generated canvas is a draft. Continue with:
 
@@ -137,16 +136,16 @@ The generated canvas is a draft. Continue with:
 
 The session-start script includes roadmap, milestone, and today's session-note status in the generated handoff:
 
-    ./scripts/sdlc-spdd/sdlc.sh resume FEAT-001-order-status-api --phase code
-    ./scripts/sdlc-spdd/sdlc.sh start
+    ./sdlc-spdd/scripts/sdlc.sh resume FEAT-001-order-status-api --phase code
+    ./sdlc-spdd/scripts/sdlc.sh start
 
 Low-level equivalent:
 
-    ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id FEAT-001-order-status-api --phase code
+    ./sdlc-spdd/scripts/start-agent-session.sh --target . --work-id FEAT-001-order-status-api --phase code
 
 With an explicit milestone:
 
-    ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id FEAT-001-order-status-api --phase code --milestone milestone-1.md
+    ./sdlc-spdd/scripts/start-agent-session.sh --target . --work-id FEAT-001-order-status-api --phase code --milestone milestone-1.md
 
 When `--milestone` is omitted, the script searches `milestone-*.md` files for the Work ID.
 
@@ -162,7 +161,7 @@ By default, session capture appends to:
 
 Example (prefer guarded capture):
 
-    ./scripts/sdlc-spdd/sdlc.sh capture \
+    ./sdlc-spdd/scripts/sdlc.sh capture \
       --summary "Implemented T01 for order status lookup." \
       --validation "mvn test" \
       --milestone milestone-1.md \
@@ -178,7 +177,7 @@ committed ledger at the accept gate) and updates:
 
 The daily session note is opt-in:
 
-    ./scripts/sdlc-spdd/capture-session-memory.sh --target . --work-id <WORK-ID> --summary "<summary>" --session-note
+    ./sdlc-spdd/scripts/capture-session-memory.sh --target . --work-id <WORK-ID> --summary "<summary>" --session-note
 
 ## Suggested Roadmap Update Pattern
 
@@ -200,7 +199,7 @@ Use session notes for details and the roadmap for progress summaries.
 
 To refresh the roadmap from canvas metadata:
 
-    ./scripts/sdlc-spdd/sync-roadmap-from-spdd.sh --target .
+    ./sdlc-spdd/scripts/sync-roadmap-from-spdd.sh --target .
 
 This updates only the managed section between:
 
@@ -230,22 +229,20 @@ Then link each Work ID to:
 
 If your project already has `session-notes/` from earlier work, import them into durable memory:
 
-    ./scripts/sdlc-spdd/summarize-session-notes.sh --target . --all
+    ./sdlc-spdd/scripts/summarize-session-notes.sh --target . --all
 
 Import one file:
 
-    ./scripts/sdlc-spdd/summarize-session-notes.sh --target . --file session-notes/2026-06-06.md
+    ./sdlc-spdd/scripts/summarize-session-notes.sh --target . --file session-notes/2026-06-06.md
 
 This preserves the original note and stages an import record in
 `.sdlc/staged/lessons.jsonl`; promote it into the committed ledger with
-`./scripts/sdlc-spdd/sdlc.sh accept`.
+`./sdlc-spdd/scripts/sdlc.sh accept`.
 
 ## Read Next
 
-- [What planning brings](what-planning-brings.md)
 - [Planning prompt standard](planning-prompt-standard.md)
-- [What SDLC brings](what-sdlc-brings.md)
-- [What SPDD brings](what-spdd-brings.md)
+- [Three-part operating path](three-part-operating-path.md)
 - [Session prompt standard](session-prompt-standard.md)
 - [First day with SDLC-SPDD](first-day-with-sdlc-spdd.md)
 - [Maintaining your project](maintaining-your-project.md)

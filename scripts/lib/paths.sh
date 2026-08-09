@@ -10,6 +10,7 @@ SDLC_SHIPPED_LIB_FILES=(
   milestone.sh
   readiness.sh
   skills.sh
+  python.sh
 )
 
 # Orchestrator-only libs (never installed into targets).

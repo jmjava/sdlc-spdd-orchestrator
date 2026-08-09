@@ -41,7 +41,7 @@ Open the **target project** in Cursor. Open **Chat** or **Agent**. Type `/` and 
 
 ### Workflow (`/sdlc-*`)
 
-Chat wrappers for `./scripts/sdlc-spdd/sdlc.sh` — manage Work ID and phase without leaving chat:
+Chat wrappers for `./sdlc-spdd/scripts/sdlc.sh` — manage Work ID and phase without leaving chat:
 
 | Command | Purpose |
 |---------|---------|
@@ -53,7 +53,7 @@ Chat wrappers for `./scripts/sdlc-spdd/sdlc.sh` — manage Work ID and phase wit
 
 ## Tips
 
-- Run `/sdlc-next`, `/sdlc-spdd-whereami`, or `./scripts/sdlc-spdd/sdlc.sh next` at session start for orientation.
+- Run `/sdlc-next`, `/sdlc-spdd-whereami`, or `./sdlc-spdd/scripts/sdlc.sh next` at session start for orientation.
 - Claim with `/sdlc-claim <WORK-ID>` (or shell `sdlc.sh claim`); commit `spdd/memory/registry.jsonl` on shared repos.
 - Reference files with `@` paths in Cursor prompts.
 - Keep planning and architect phases free of application code changes.

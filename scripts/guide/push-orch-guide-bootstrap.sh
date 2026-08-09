@@ -75,4 +75,4 @@ done
 
 echo "OK: orch-guide bootstrap push complete"
 echo "Next: retarget orchestrator GUIDE_GIT_URL → ${ORCH_URL}"
-echo "Then (later): hard-reset jmjava/guide to embabel/guide — see docs/orch-guide-cutover.md"
+echo "Then verify Guide stack: docs/dice-projection-runbook.md"

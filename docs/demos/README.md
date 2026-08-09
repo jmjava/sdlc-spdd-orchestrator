@@ -6,8 +6,8 @@ recordings for narrated documentation about SDLC-SPDD Orchestrator. The CLI is t
 
 This bundle is **orchestrator dev tooling only** — it does not install into target
 projects via `setup-agent-prompts.sh`. See
-[Guide RAG research and dogfooding](../guide-rag-research-and-dogfooding.md) for why we
-dogfood docgen here.
+[DICE projection runbook](../dice-projection-runbook.md) and
+[MCP Guide for agents](../mcp-guide-for-agents.md) for the optional Guide stack.
 
 **Current scope:** three segments with **declarative Manim scene specs**
 (`animations/specs/*.scene.yaml` → compiled `scenes.py`), composed MP4s under
@@ -26,7 +26,7 @@ Default regen: **`./generate-all.sh --retry-manim`** (auto scene-spec on first r
 | 03 | `narration/03-guide-rag-dogfood.md` | `GuideRagDogfoodScene` | Guide RAG research and dogfooding | `recordings/03-guide-rag-dogfood.mp4` |
 
 Recordings are **not committed on `main`** — regenerate locally, then publish with
-**`./scripts/deploy-docs-pages-local.sh`** (see **`TOOLING.md`**).
+**`./scripts/deploy-docs-pages-local.sh`** (see **System deps and render sequence** below).
 
 ## Bootstrap (repository root)
 
@@ -34,7 +34,7 @@ Recordings are **not committed on `main`** — regenerate locally, then publish 
 |------|---------|
 | Install `docgen` into **`.venv`** | `./scripts/setup-docgen-venv.sh` |
 | Optional: local editable engine | `DOCGEN_SRC` or **`scripts/docgen-engine.path`** (see **`scripts/docgen-engine.path.example`**) |
-| Manim extra (video pipeline) | `.venv/bin/pip install -r docs/demos/dependencies.txt` — see **`TOOLING.md`** |
+| Manim extra (video pipeline) | `.venv/bin/pip install -r docs/demos/dependencies.txt` — see **System deps** below |
 | OpenAI key (TTS / timestamps) | **`../../.env`** at repo root (gitignored) |
 
 Then:
@@ -64,7 +64,7 @@ Prose canon for narration content lives in **`docs/`** (not duplicated here). Se
 
 ## Video pipeline
 
-Full render sequence (segment 01 example) — see **`TOOLING.md`** for system deps and details:
+Full render sequence (segment 01 example):
 
 ```bash
 cd docs/demos
@@ -77,19 +77,27 @@ docgen --config docgen.yaml compose 01
 docgen --config docgen.yaml validate
 ```
 
-Wrapper scripts: **`generate-all.sh`**, **`compose.sh`**, **`validate.sh`**, **`rebuild-after-audio.sh`**.
+Or `./generate-all.sh --retry-manim` for all segments.
 
-**Git policy:** all regenerable outputs gitignored (`audio/`, `animations/media/`, `timing.json`, **`recordings/*.mp4`**). Only source (narration, hints, scenes) commits on `main`.
+## System deps and render sequence
 
-**CI:** `.github/workflows/docgen-lint.yml` — narration lint only. **No CI video render.**
+Install **`docgen`** from repo root: `./scripts/setup-docgen-venv.sh` (optional local engine via `scripts/docgen-engine.path`).
 
-**Pages:** `./scripts/deploy-docs-pages-local.sh` pushes `docs/` + local MP4s to **`gh-pages`**. Boundary enforced by **`scripts/verify-docgen-dev-boundary.sh`**.
+Manim extra: `.venv/bin/pip install -r docs/demos/dependencies.txt`
+
+Ubuntu/Debian system packages: `ffmpeg`, `libcairo2-dev`, `libpango1.0-dev`, `pkg-config`, `python3-dev`, `fonts-liberation`, optional `tesseract-ocr`.
+
+OpenAI key for TTS: `../../.env` at repo root (gitignored).
+
+Default regen: `./generate-all.sh --retry-manim` (declarative specs under `animations/specs/*.scene.yaml`).
+
+Manual Pages publish: `./scripts/deploy-docs-pages-local.sh` from repo root after local MP4 regen (recordings gitignored on `main`).
 
 ## Related docs
 
 | Doc | Role |
 |-----|------|
-| [TOOLING.md](TOOLING.md) | System deps, render sequence, Manim install |
 | [documentation-generator](https://github.com/jmjava/documentation-generator) | CLI reference |
-| [Guide RAG research and dogfooding](../guide-rag-research-and-dogfooding.md) | Research backend + dogfood loop |
+| [DICE projection runbook](../dice-projection-runbook.md) | Run Guide + Neo4j locally |
+| [MCP Guide for agents](../mcp-guide-for-agents.md) | CLI and MCP retrieval for agents |
 | [docs/README.md](../README.md) | Full documentation hub |

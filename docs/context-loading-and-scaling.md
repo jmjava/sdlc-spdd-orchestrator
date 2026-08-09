@@ -52,7 +52,7 @@ Everything below enters context **only when needed**:
   small.
 - **Hot brief**: `.sdlc/sessions/current-session.md` — the single session
   entry point, with a bounded Related Past Work digest.
-- **Install-time harness/playbooks/extensions**: resolved per phase by
+- **Install-time harness and skills**: resolved per phase by
   `resolve-agent-context.sh`, never listed wholesale.
 
 An artifact enters context only through one of three paths:
@@ -109,17 +109,17 @@ few records that matter for the current Work ID, phase, or code area.
 
 | Layer | When | What loads |
 |-------|------|------------|
-| **1 — Install** | Once (`setup-agent-prompts.sh` / `init-project.sh`) | Tier 1 grounding files, harness/playbooks, runtime scripts, framework docs |
+| **1 — Install** | Once (`setup-agent-prompts.sh` / `init-project.sh`) | Tier 1 grounding files, harness/skills, runtime scripts, framework docs |
 | **2 — Every request** | Automatic (no script) | Tier 1 grounding injects operating model, retrieval commands, and loading rules on **every** chat request |
 | **3 — Every session** | `sdlc.sh start` (or `start-agent-session.sh`) before work | `.sdlc/sessions/current-session.md` — Framework Orientation, **Related Past Work digest**, **Resolved Context**, artifact status, **Resume Prompt** (paste verbatim into chat) |
-| **4 — Cold start** | Chat opened without a fresh brief | Run `./scripts/sdlc-spdd/sdlc.sh next` or `/sdlc-spdd-whereami`, then read existing `current-session.md` or re-run `sdlc.sh start` — do not guess Work ID or scan directories |
+| **4 — Cold start** | Chat opened without a fresh brief | Run `./sdlc-spdd/scripts/sdlc.sh next` or `/sdlc-spdd-whereami`, then read existing `current-session.md` or re-run `sdlc.sh start` — do not guess Work ID or scan directories |
 | **Close the loop** | `sdlc.sh capture` during/after work; `/sdlc-spdd-accept` at gates | Captures stage lesson records; accept promotes them to the ledger and re-projects Guide, so the next session's digest and queries find them |
 
 **Layer 3 detail** — before meaningful work in a new chat:
 
-    ./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>
-    ./scripts/sdlc-spdd/sdlc.sh resume <WORK-ID> --phase <phase>
-    ./scripts/sdlc-spdd/sdlc.sh start
+    ./sdlc-spdd/scripts/sdlc.sh claim <WORK-ID>
+    ./sdlc-spdd/scripts/sdlc.sh resume <WORK-ID> --phase <phase>
+    ./sdlc-spdd/scripts/sdlc.sh start
 
 The brief opens with **Framework Orientation**, then a **Related Past Work**
 digest (counts per kind/area plus top lesson titles with ids — never full
@@ -155,7 +155,7 @@ A **code area** is the unit of relevance for retrieval — the `area` field on
 every ledger record and the `Area` entity in the Guide graph:
 
 - **Java:** package name (for example `com.acme.billing`)
-- **Everything else:** directory bucket (for example `src/billing`, `scripts/sdlc-spdd`)
+- **Everything else:** directory bucket (for example `src/billing`, `sdlc-spdd/scripts`)
 
 Areas are **categories**, not file paths. `capture-session-memory.sh` parses
 session content for path/package tokens and normalizes them; `--areas`
@@ -181,7 +181,7 @@ primary key.
 
 During or after a session, stage what was learned — no git noise:
 
-    ./scripts/sdlc-spdd/capture-session-memory.sh --target . --work-id <WORK-ID> \
+    ./sdlc-spdd/scripts/capture-session-memory.sh --target . --work-id <WORK-ID> \
       --phase code \
       --summary "Implemented billing retry in src/billing" \
       --decisions "Retry uses exponential backoff" \
@@ -252,19 +252,19 @@ This orchestrator implements that through:
 
 Command mapping and assistant install paths: [SPDD compliance — Fowler mapping](spdd-compliance.md#fowler--openspdd-command-mapping). Works from **Cursor** (`.cursor/commands/`), **Copilot** (`.github/prompts/`), and **Claude Code** (`.claude/commands/`) with CI parity validation.
 
-Why narrow, retrieved context is necessary: [Chelsea Troy and the framework](chelsea-troy-and-the-framework.md) (Lost in the Middle, scoped investigation, human judgment gates). SDLC Agents progressive disclosure alignment: [SDLC Agents and the framework](sdlc-agents-and-the-framework.md).
+Why narrow, retrieved context is necessary: load only what the phase and Work ID need — see [SDLC Agents and the framework](sdlc-agents-and-the-framework.md) and the per-phase budgets in this doc.
 
 ### Unified resolve (static + Work ID)
 
 `resolve-agent-context.sh` combines SDLC Agents phase/skill resolution with the
 active Work ID's artifacts:
 
-    ./scripts/sdlc-spdd/resolve-agent-context.sh --target . --phase code --work-id <WORK-ID>
-    ./scripts/sdlc-spdd/resolve-agent-context.sh --target . --text "Implement retry #TDD #java !Kafka"
+    ./sdlc-spdd/scripts/resolve-agent-context.sh --target . --phase code --work-id <WORK-ID>
+    ./sdlc-spdd/scripts/resolve-agent-context.sh --target . --text "Implement retry #TDD #java !Kafka"
 
 - **`--work-id`** — adds the Work ID canvas/analysis paths and area hints for
   retrieval queries.
-- **Phase static files** — harness, playbooks, and extensions for the phase.
+- **Phase static files** — harness phase-index entries and phase-matching skills.
 - **`start-agent-session.sh`** embeds the markdown output under **Resolved Context**
   in `current-session.md`.
 
@@ -273,5 +273,4 @@ active Work ID's artifacts:
 - [Storage v3](storage-v3.md) — the canonical storage architecture.
 - [Runtime and ledger](runtime-and-ledger.md) — day-to-day view of `.sdlc/` + the ledger.
 - [Guide flow](guide-flow.md) — the working store and per-phase MCP retrieval.
-- [Architecture](architecture.md) — five delivery concerns and progressive loading.
 - [Maintaining your project](maintaining-your-project.md) — memory hygiene and session maintenance.

@@ -78,7 +78,7 @@ without either Work ID knowing about the other.
 
 | Piece | Location |
 |---|---|
-| Runtime probe | `scripts/resolve-context-backend.sh` (installed as `scripts/sdlc-spdd/resolve-context-backend.sh`) |
+| Runtime probe | `scripts/resolve-context-backend.sh` (installed as `sdlc-spdd/scripts/resolve-context-backend.sh`) |
 | Opt-in marker | `guide-dice.md` in the install's harness folder |
 | Storage model (ledger + projections) | [docs/storage-v3.md](storage-v3.md) |
 | Full setup runbook (Guide tag, Neo4j, ingest, MCP wiring) | [docs/dice-projection-runbook.md](dice-projection-runbook.md) |

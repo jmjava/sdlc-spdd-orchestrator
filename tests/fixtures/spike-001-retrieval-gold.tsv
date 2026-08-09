@@ -1,8 +1,0 @@
-# SPIKE-001 retrieval fixture — resolver gold set (mode A baseline)
-# Columns: work_id	phase	areas	must_include	must_exclude	description
-# Use - for empty work_id, phase, or areas (bash read collapses adjacent tabs).
-# Paths relative to examples/retrieval-fixture. Multiple paths use | separator.
-work_id	phase	areas	must_include	must_exclude	description
-SPIKE-FIX-001-retrieval-fixture	code	-	spdd/canvas/SPIKE-FIX-001-retrieval-fixture.md|spdd/analysis/SPIKE-FIX-001-retrieval-fixture-analysis.md|agent-context/memory/sessions/20260705-code-SPIKE-FIX-001.md|agent-context/playbooks/bugfix-playbook.md	agent-context/memory/sessions/20260701-code-FEAT-999.md|agent-context/memory/known-pitfalls.md	code phase scopes to src/billing index rows only
-SPIKE-FIX-001-retrieval-fixture	analysis	-	spdd/canvas/SPIKE-FIX-001-retrieval-fixture.md|agent-context/memory/domain-index.md|agent-context/memory/context-index.md|agent-context/memory/code-areas.md	agent-context/memory/sessions/20260701-code-FEAT-999.md	analysis phase loads Fowler index trio
--	code	src/billing	agent-context/memory/sessions/20260705-code-SPIKE-FIX-001.md|agent-context/playbooks/bugfix-playbook.md	agent-context/memory/sessions/20260701-code-FEAT-999.md|spdd/canvas/SPIKE-FIX-001-retrieval-fixture.md	areas-only code resolve without work-id artifacts

@@ -3,8 +3,7 @@
 Embed Jira metadata and dependency links in Markdown requirements so Planning
 artifacts stay the local source of truth while remaining board-friendly.
 
-Related: [Jira runbook](jira-runbook.md), [Analysis phase scope validation](analysis-phase-scope-validation.md),
-[Migration: root milestones to subdirectories](MIGRATION-root-to-subdirectories.md).
+Related: [Jira runbook](jira-runbook.md), [Analysis phase scope validation](analysis-phase-scope-validation.md).
 
 ## Goals
 
@@ -74,9 +73,11 @@ related:
 | `milestone` | Recommended | `milestone-N` or path |
 | `blocks` / `depends_on` / `related` | Optional | Work ID lists |
 
-Keep the existing `## Jira` Markdown section for **copy-paste create** flows.
-Claim auto-link still reads `- Key: ABC-123` under `## Jira`. Prefer setting both
-`jira_key` in frontmatter and `- Key:` after issue creation.
+The `## Jira` Markdown section is the **primary input** for Jira create/update:
+the engine reads Summary, Description, Acceptance criteria, and related
+subsections, composes markdown (`build_jira_markdown`), and converts to ADF on
+`issues push`. Claim auto-link still reads `- Key: ABC-123` under `## Jira`.
+Prefer setting both `jira_key` in frontmatter and `- Key:` after issue creation.
 
 ## Markdown body template
 
@@ -149,7 +150,7 @@ notes: "Schema + Liquibase + CRUD validation"
 ```bash
 ./scripts/validate-requirements-format.sh --target .
 # Installed projects:
-./scripts/sdlc-spdd/validate-requirements-format.sh --target .
+./sdlc-spdd/scripts/validate-requirements-format.sh --target .
 ```
 
 Checks (format-only; does not call Jira):
@@ -162,10 +163,13 @@ Checks (format-only; does not call Jira):
 
 ## Workflow integration
 
-1. Create or link Jira issue (see [jira-runbook.md](jira-runbook.md)).
-2. Author or update the requirement with frontmatter + Scope.
+1. Author the requirement with frontmatter, Scope, and `## Jira` markdown
+   (Description, Acceptance criteria).
+2. `issues draft` / `issues push --apply` — engine sends markdown → ADF to Jira
+   (see [jira-runbook.md](jira-runbook.md)).
 3. `/sdlc-spdd-analysis` — read metadata, **lock scope**, do not rewrite Jira keys.
 4. Continue architect → code → review as usual.
+5. (Optional) Rich Jira formatting via ADF Viewer + `upload-adf` after the key exists.
 
 ## Migration guide
 
@@ -178,7 +182,9 @@ Checks (format-only; does not call Jira):
 
 ### Existing root milestones
 
-See [MIGRATION-root-to-subdirectories.md](MIGRATION-root-to-subdirectories.md).
+Move root `milestone-N.md` under `requirements/milestones/milestone-N/MILESTONE-N.md`
+when adopting the subdirectory layout. Add `_milestone.yml` if your team uses YAML
+milestone metadata. Root-level milestone files remain valid — no forced move.
 
 ### Linking to existing Jira stories
 

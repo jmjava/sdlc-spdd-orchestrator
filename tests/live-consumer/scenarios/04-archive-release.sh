@@ -5,11 +5,12 @@ set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/lib.sh"
 
 ROOT="${1:?target root required}"
+HOME="$(live_home "${ROOT}")"
 echo "== 04 archive + release =="
 
 # Second work item already Complete for archive path.
-mkdir -p "${ROOT}/spdd/canvas" "${ROOT}/agent-context/features/${DONE_WORK_ID}"
-cat >"${ROOT}/spdd/canvas/${DONE_WORK_ID}.md" <<EOF
+mkdir -p "${HOME}/spdd/canvas" "${HOME}/requirements/milestones"
+cat >"${HOME}/spdd/canvas/${DONE_WORK_ID}.md" <<EOF
 # REASONS Canvas: ${DONE_WORK_ID}
 
 ## Metadata
@@ -23,11 +24,10 @@ cat >"${ROOT}/spdd/canvas/${DONE_WORK_ID}.md" <<EOF
 - Status: Complete
 - Completed Date: 2026-07-31
 EOF
-printf '# requirement\n' >"${ROOT}/agent-context/features/${DONE_WORK_ID}/requirement.md"
-printf '# progress\n' >"${ROOT}/agent-context/features/${DONE_WORK_ID}/progress-log.md"
+printf '# requirement\n' >"${HOME}/requirements/milestones/${DONE_WORK_ID}.md"
 
 if live_sdlc "${ROOT}" archive "${DONE_WORK_ID}" >/dev/null \
-  && [[ -f "${ROOT}/spdd/canvas/archive/${DONE_WORK_ID}.md" ]]; then
+  && [[ ! -f "${HOME}/spdd/canvas/${DONE_WORK_ID}.md" ]]; then
   ok "archive ${DONE_WORK_ID}"
 else
   bad "archive ${DONE_WORK_ID}"

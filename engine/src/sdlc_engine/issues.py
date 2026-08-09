@@ -18,17 +18,30 @@ from typing import Callable
 from .jira_format import (
     adf_to_markdown,
     adf_to_wiki,
+    build_github_markdown,
     build_jira_markdown,
     load_adf_document,
     load_adf_file,
     markdown_to_adf,
     markdown_to_wiki,
 )
+from .integration_config import integration_env, resolve_integrations
+from .issue_tracker import (
+    TRACKER_GITHUB,
+    TRACKER_JIRA,
+    TRACKER_NONE,
+    effective_tracker,
+    load_config as load_tracker_config,
+)
 from .links import (
     _JIRA_KEY_RE,
+    _normalize_github,
     collect_links,
+    ensure_github_section,
+    ensure_jira_section,
     parse_milestone_requirement,
     set_milestone_bullet,
+    set_milestone_frontmatter_field,
     set_milestone_subsection,
 )
 from .project import Project
@@ -141,19 +154,46 @@ class IssueSyncService:
                 )
             )
         if "github" in systems:
+            req_rel = f"requirements/milestones/{work_id}.md"
+            summary = parsed.get("jira_summary") or parsed.get("summary") or work_id
+            summary = " ".join(summary.split())
             title = parsed.get("github_title") or summary or work_id
-            body = parsed.get("github_body") or parsed.get("summary") or ""
-            body = (
-                body.strip()
-                + f"\n\n---\nWork ID: `{work_id}`\nRequirement: `requirements/milestones/{work_id}.md`\n"
+            legacy_body = (parsed.get("github_body") or "").strip()
+            structured = any(
+                (parsed.get(k) or "").strip()
+                for k in (
+                    "github_description",
+                    "github_acceptance",
+                    "github_business_value",
+                    "github_scope_in",
+                    "github_scope_out",
+                )
             )
+            if structured or not legacy_body:
+                body_md = build_github_markdown(
+                    work_id=work_id,
+                    summary=title,
+                    description=parsed.get("github_description")
+                    or parsed.get("summary")
+                    or "",
+                    acceptance=parsed.get("github_acceptance") or "",
+                    business_value=parsed.get("github_business_value") or "",
+                    scope_in=parsed.get("github_scope_in") or "",
+                    scope_out=parsed.get("github_scope_out") or "",
+                    requirement_rel=req_rel,
+                )
+            else:
+                body_md = (
+                    legacy_body
+                    + f"\n\n---\nWork ID: `{work_id}`\nRequirement: `{req_rel}`\n"
+                )
             labels = [x.strip() for x in (parsed.get("github_labels") or "").split(",") if x.strip()]
             drafts.append(
                 IssueDraft(
                     system="github",
                     work_id=work_id,
                     title=title[:256],
-                    body=body.strip(),
+                    body=body_md.strip(),
                     labels=labels,
                     extra={"number": parsed.get("github_number") or ""},
                 )
@@ -161,6 +201,17 @@ class IssueSyncService:
         return drafts
 
     def push(
+        self,
+        work_id: str,
+        system: str,
+        *,
+        apply: bool = False,
+        description_format: str | None = None,
+    ) -> str:
+        with integration_env(self.project):
+            return self._push_impl(work_id, system, apply=apply, description_format=description_format)
+
+    def _push_impl(
         self,
         work_id: str,
         system: str,
@@ -180,20 +231,26 @@ class IssueSyncService:
             if fmt == "wiki":
                 adf = draft.extra.get("description_adf") or markdown_to_adf(draft.body)
                 draft.extra["description_wiki"] = adf_to_wiki(adf)
-        if system == "github" and draft.extra.get("number"):
-            msg = (
-                f"GitHub issue already linked as #{draft.extra['number']}; skip create."
-            )
-            return f"[dry-run] {msg}" if not apply else msg
         if not apply:
             return self._format_dry_run(draft)
         if system == "github":
             return self._push_github(draft)
         return self._push_jira(draft)
 
+    def _resolve_tracker(self, explicit: str | None = None) -> str:
+        if explicit and explicit.strip().lower() not in {"", "both"}:
+            name = explicit.strip().lower()
+            if name not in {"jira", "github", "none"}:
+                raise ValueError("system must be jira, github, or none")
+            return name
+        return effective_tracker(self.project, load_tracker_config(self.project))
+
     def _format_dry_run(self, draft: IssueDraft) -> str:
         key = draft.extra.get("key") or ""
-        updating = bool(draft.system == "jira" and key and _JIRA_KEY_RE.match(str(key)))
+        gh_num = draft.extra.get("number") or ""
+        updating = bool(
+            draft.system == "jira" and key and _JIRA_KEY_RE.match(str(key))
+        ) or bool(draft.system == "github" and gh_num)
         action = "update" if updating else "create"
         lines = [
             f"[dry-run] would {action} {draft.system} issue for {draft.work_id}",
@@ -217,10 +274,12 @@ class IssueSyncService:
                 lines.append("body (wiki markup via ADF→wiki shim):")
                 lines.append(str(draft.extra.get("description_wiki") or ""))
         else:
+            if updating:
+                lines.append(f"existing_number: #{gh_num}")
             lines.append(
                 f"extra: {json.dumps({k: v for k, v in draft.extra.items() if k != 'description_adf'})}"
             )
-            lines.append("body:")
+            lines.append("body (markdown — sent to GitHub as-is):")
             lines.append(draft.body)
         lines.extend(
             [
@@ -315,8 +374,28 @@ class IssueSyncService:
         return headers
 
     def _push_github(self, draft: IssueDraft) -> str:
-        if draft.extra.get("number"):
-            return f"GitHub issue already linked as #{draft.extra['number']}; skip create."
+        num = str(draft.extra.get("number") or "").strip()
+        if num:
+            if self._gh_runner is _default_gh_runner and not shutil.which("gh"):
+                raise RuntimeError("gh CLI not found; install GitHub CLI or use --dry-run")
+            cmd = self._gh_cmd(
+                "issue",
+                "edit",
+                num,
+                "--title",
+                draft.title,
+                "--body",
+                draft.body,
+            )
+            proc = self._gh_runner(cmd, self.project.root)
+            if proc.returncode != 0:
+                raise RuntimeError(
+                    proc.stderr.strip() or proc.stdout.strip() or "gh issue edit failed"
+                )
+            req = self.project.milestone_path(draft.work_id)
+            set_milestone_bullet(req, "GitHub", "Title", draft.title)
+            self.local.repair_links(draft.work_id)
+            return f"Updated GitHub issue #{num}"
         if self._gh_runner is _default_gh_runner and not shutil.which("gh"):
             raise RuntimeError("gh CLI not found; install GitHub CLI or use --dry-run")
         cmd = self._gh_cmd("issue", "create", "--title", draft.title, "--body", draft.body)
@@ -449,6 +528,19 @@ class IssueSyncService:
         )
 
     def upload_adf(
+        self,
+        issue_key: str,
+        adf_path: Path,
+        *,
+        apply: bool = False,
+        description_format: str | None = None,
+    ) -> str:
+        with integration_env(self.project):
+            return self._upload_adf_impl(
+                issue_key, adf_path, apply=apply, description_format=description_format
+            )
+
+    def _upload_adf_impl(
         self,
         issue_key: str,
         adf_path: Path,
@@ -600,6 +692,16 @@ class IssueSyncService:
         adf_path: Path | None = None,
         apply: bool = False,
     ) -> str:
+        with integration_env(self.project):
+            return self._download_adf_impl(issue_key, adf_path=adf_path, apply=apply)
+
+    def _download_adf_impl(
+        self,
+        issue_key: str,
+        *,
+        adf_path: Path | None = None,
+        apply: bool = False,
+    ) -> str:
         """Pull remote Jira description ADF into a local adf/<KEY>.adf.json file.
 
         Dry-run by default (diff only). Pass ``apply=True`` to overwrite the
@@ -632,6 +734,10 @@ class IssueSyncService:
         )
 
     def pull(self, work_id: str, system: str, *, apply: bool = False) -> str:
+        with integration_env(self.project):
+            return self._pull_impl(work_id, system, apply=apply)
+
+    def _pull_impl(self, work_id: str, system: str, *, apply: bool = False) -> str:
         links = collect_links(self.project, work_id)
         if system == "github":
             num = links.github_number
@@ -671,6 +777,9 @@ class IssueSyncService:
                             names.append(lab)
                     if names:
                         set_milestone_bullet(req, "GitHub", "Labels", ", ".join(names))
+                body_md = str(data.get("body") or "").strip()
+                if body_md:
+                    set_milestone_subsection(req, "GitHub", "Description", body_md)
                 self.local.repair_links(work_id)
                 report += "Applied into requirements/milestones + local links.\n"
             else:
@@ -791,6 +900,303 @@ class IssueSyncService:
         label = f"{resolved}#{num}" if resolved else f"#{num}"
         url = proc.stdout.strip().splitlines()[-1].strip() if proc.stdout.strip() else ""
         return f"Updated GitHub issue {label} body" + (f" ({url})" if url else "")
+
+    def jira_link_status(self, work_id: str) -> dict[str, object]:
+        """Report local Jira linkage for a Work ID (no network)."""
+        req = self.project.milestone_path(work_id)
+        if not req.is_file():
+            raise FileNotFoundError(f"missing requirements/milestones/{work_id}.md")
+        links = collect_links(self.project, work_id)
+        resolved = resolve_integrations(self.project)
+        base = resolved.jira_base_url or self._jira_base_url()
+        return {
+            "work_id": work_id,
+            "requirement_path": str(req.relative_to(self.project.root)),
+            "jira_key": links.jira_key or "",
+            "linked": links.has_real_jira,
+            "jira_draft": links.jira_draft,
+            "canvas_source_issue": links.canvas_source_issue or "",
+            "registry_jira": links.registry_jira or "",
+            "jira_env_configured": resolved.jira_configured,
+            "jira_url": f"{base}/browse/{links.jira_key}" if base and links.has_real_jira else "",
+        }
+
+    def link_jira_local(
+        self,
+        work_id: str,
+        jira_key: str,
+        *,
+        summary: str | None = None,
+        issue_type: str | None = None,
+        apply: bool = False,
+    ) -> dict[str, object]:
+        """Record a manually created Jira key in local requirement/canvas/registry.
+
+        Does not call Jira create APIs — the issue must already exist in Jira.
+        """
+        key = jira_key.strip().upper()
+        if not _JIRA_KEY_RE.match(key):
+            raise ValueError(
+                f"invalid Jira key: {jira_key!r} (expected PROJECT-123)"
+            )
+        req = self.project.milestone_path(work_id)
+        if not req.is_file():
+            raise FileNotFoundError(f"missing requirements/milestones/{work_id}.md")
+        actions: list[str] = []
+        if apply:
+            if ensure_jira_section(req):
+                actions.append("added ## Jira section")
+            if set_milestone_bullet(req, "Jira", "Key", key):
+                actions.append(f"requirement Key={key}")
+            if summary and set_milestone_bullet(req, "Jira", "Summary", summary.strip()):
+                actions.append("requirement Summary updated")
+            if issue_type and set_milestone_bullet(
+                req, "Jira", "Issue type", issue_type.strip()
+            ):
+                actions.append("requirement Issue type updated")
+            if set_milestone_frontmatter_field(req, "jira_key", key):
+                actions.append("frontmatter jira_key updated")
+            actions.extend(self.local.repair_links(work_id))
+        else:
+            actions.append(f"would set ## Jira Key={key}")
+            if summary:
+                actions.append(f"would set Summary={summary.strip()}")
+            if issue_type:
+                actions.append(f"would set Issue type={issue_type.strip()}")
+            if req.read_text(encoding="utf-8").startswith("---"):
+                actions.append(f"would set frontmatter jira_key={key}")
+            actions.extend(self.local.repair_links(work_id, dry_run=True))
+        status = self.jira_link_status(work_id)
+        return {
+            "work_id": work_id,
+            "jira_key": key,
+            "apply": apply,
+            "actions": actions,
+            "linked": status["linked"],
+            "jira_url": status.get("jira_url", ""),
+            "cli": (
+                f"./scripts/sdlc.sh issues link {work_id} {key} --system jira"
+                + (" --apply" if not apply else "")
+            ),
+        }
+
+    def sync_jira(
+        self,
+        work_id: str,
+        *,
+        direction: str = "pull",
+        apply: bool = False,
+        description_format: str | None = None,
+    ) -> str:
+        """Pull Jira fields into the requirement doc, or push local markdown → Jira (update only)."""
+        links = collect_links(self.project, work_id)
+        if not links.has_real_jira:
+            raise ValueError(
+                "no Jira Key linked — create the issue in Jira UI, then link the key locally"
+            )
+        if direction == "pull":
+            return self.pull(work_id, "jira", apply=apply)
+        if direction == "push":
+            if not apply:
+                drafts = self.draft(work_id, system="jira")
+                draft = drafts[0]
+                key = draft.extra.get("key") or ""
+                if not key or not _JIRA_KEY_RE.match(str(key)):
+                    raise ValueError("linked Jira key missing on requirement doc")
+                return self._format_dry_run(draft)
+            return self.push(
+                work_id,
+                "jira",
+                apply=True,
+                description_format=description_format,
+            )
+        raise ValueError("direction must be pull or push")
+
+    def github_link_status(self, work_id: str) -> dict[str, object]:
+        """Report local GitHub linkage for a Work ID (no network)."""
+        req = self.project.milestone_path(work_id)
+        if not req.is_file():
+            raise FileNotFoundError(f"missing requirements/milestones/{work_id}.md")
+        links = collect_links(self.project, work_id)
+        resolved = resolve_integrations(self.project)
+        gh_ok = resolved.github_configured
+        if not gh_ok and shutil.which("gh"):
+            with integration_env(self.project):
+                proc = subprocess.run(
+                    ["gh", "auth", "status"],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                gh_ok = proc.returncode == 0
+        return {
+            "work_id": work_id,
+            "requirement_path": str(req.relative_to(self.project.root)),
+            "github_number": links.github_number or "",
+            "github_url": links.github_url or "",
+            "github_title": links.github_title or "",
+            "linked": links.has_github,
+            "canvas_source_issue": links.canvas_source_issue or "",
+            "registry_github": links.registry_github or "",
+            "github_env_configured": gh_ok,
+        }
+
+    def link_github_local(
+        self,
+        work_id: str,
+        issue_ref: str,
+        *,
+        title: str | None = None,
+        url: str | None = None,
+        apply: bool = False,
+    ) -> dict[str, object]:
+        """Record a manually created GitHub issue number in local files (no gh create)."""
+        ref = (issue_ref or "").strip()
+        num = _normalize_github(ref)
+        if not num:
+            try:
+                _, num = self.parse_github_issue_ref(ref)
+            except ValueError as exc:
+                raise ValueError(
+                    f"invalid GitHub issue reference: {issue_ref!r} (expected 42, #42, or URL)"
+                ) from exc
+        req = self.project.milestone_path(work_id)
+        if not req.is_file():
+            raise FileNotFoundError(f"missing requirements/milestones/{work_id}.md")
+        actions: list[str] = []
+        resolved_url = (url or "").strip()
+        resolved_title = (title or "").strip()
+        if apply:
+            if ensure_github_section(req):
+                actions.append("added ## GitHub section")
+            if set_milestone_bullet(req, "GitHub", "Number", num):
+                actions.append(f"requirement Number=#{num}")
+            if resolved_title and set_milestone_bullet(req, "GitHub", "Title", resolved_title):
+                actions.append("requirement Title updated")
+            if resolved_url and set_milestone_bullet(req, "GitHub", "URL", resolved_url):
+                actions.append("requirement URL updated")
+            if set_milestone_frontmatter_field(req, "github_number", num):
+                actions.append("frontmatter github_number updated")
+            actions.extend(self.local.repair_links(work_id))
+        else:
+            actions.append(f"would set ## GitHub Number={num}")
+            if resolved_title:
+                actions.append(f"would set Title={resolved_title}")
+            if resolved_url:
+                actions.append(f"would set URL={resolved_url}")
+            if req.read_text(encoding="utf-8").startswith("---"):
+                actions.append(f"would set frontmatter github_number={num}")
+            actions.extend(self.local.repair_links(work_id, dry_run=True))
+        status = self.github_link_status(work_id)
+        return {
+            "work_id": work_id,
+            "github_number": num,
+            "apply": apply,
+            "actions": actions,
+            "linked": status["linked"],
+            "github_url": status.get("github_url") or resolved_url,
+            "cli": (
+                f"./scripts/sdlc.sh issues link {work_id} {num} --system github"
+                + (" --apply" if not apply else "")
+            ),
+        }
+
+    def sync_github(
+        self,
+        work_id: str,
+        *,
+        direction: str = "pull",
+        apply: bool = False,
+    ) -> str:
+        """Pull GitHub fields into the requirement doc, or push local markdown (update only)."""
+        links = collect_links(self.project, work_id)
+        if not links.has_github:
+            raise ValueError(
+                "no GitHub Number linked — create the issue in GitHub UI, then link locally"
+            )
+        if direction == "pull":
+            return self.pull(work_id, "github", apply=apply)
+        if direction == "push":
+            if not apply:
+                drafts = self.draft(work_id, system="github")
+                draft = drafts[0]
+                if not draft.extra.get("number"):
+                    raise ValueError("linked GitHub number missing on requirement doc")
+                return self._format_dry_run(draft)
+            return self.push(work_id, "github", apply=True)
+        raise ValueError("direction must be pull or push")
+
+    def issue_link_status(
+        self, work_id: str, system: str | None = None
+    ) -> dict[str, object]:
+        tracker = self._resolve_tracker(system)
+        if tracker == TRACKER_NONE:
+            raise ValueError("issue tracker disabled (SDLC_ISSUE_TRACKER=none)")
+        if tracker == TRACKER_JIRA:
+            data = self.jira_link_status(work_id)
+            data["system"] = TRACKER_JIRA
+            data["tracker"] = tracker
+            return data
+        data = self.github_link_status(work_id)
+        data["system"] = TRACKER_GITHUB
+        data["tracker"] = tracker
+        return data
+
+    def link_issue_local(
+        self,
+        work_id: str,
+        issue_ref: str,
+        *,
+        system: str | None = None,
+        summary: str | None = None,
+        issue_type: str | None = None,
+        title: str | None = None,
+        url: str | None = None,
+        apply: bool = False,
+    ) -> dict[str, object]:
+        tracker = self._resolve_tracker(system)
+        if tracker == TRACKER_JIRA:
+            result = self.link_jira_local(
+                work_id,
+                issue_ref,
+                summary=summary,
+                issue_type=issue_type,
+                apply=apply,
+            )
+            result["system"] = TRACKER_JIRA
+            return result
+        if tracker == TRACKER_GITHUB:
+            result = self.link_github_local(
+                work_id,
+                issue_ref,
+                title=title or summary,
+                url=url,
+                apply=apply,
+            )
+            result["system"] = TRACKER_GITHUB
+            return result
+        raise ValueError("issue tracker disabled (SDLC_ISSUE_TRACKER=none)")
+
+    def sync_issue(
+        self,
+        work_id: str,
+        *,
+        system: str | None = None,
+        direction: str = "pull",
+        apply: bool = False,
+        description_format: str | None = None,
+    ) -> str:
+        tracker = self._resolve_tracker(system)
+        if tracker == TRACKER_JIRA:
+            return self.sync_jira(
+                work_id,
+                direction=direction,
+                apply=apply,
+                description_format=description_format,
+            )
+        if tracker == TRACKER_GITHUB:
+            return self.sync_github(work_id, direction=direction, apply=apply)
+        raise ValueError("issue tracker disabled (SDLC_ISSUE_TRACKER=none)")
 
     def close_github(self, number: str) -> str:
         """Best-effort close for integration-test cleanup."""

@@ -1,12 +1,12 @@
 # SPDD Compliance
 
-> Deep theory. For onboarding, read [Three-part operating path](three-part-operating-path.md) and [What SPDD brings](what-spdd-brings.md) first. This page is for compliance verification and Fowler/SPDD contract detail.
+> Compliance reference. Start with [Three-part operating path](three-part-operating-path.md) and [Storage v3](storage-v3.md) for how the repo works day to day.
 
 This project follows Structured Prompt-Driven Development (SPDD) as described in Martin Fowler's article, [Structured-Prompt-Driven Development](https://martinfowler.com/articles/structured-prompt-driven/), inside a hybrid lifecycle influenced by [SDLC Agents](https://github.com/dsilahcilar/sdlc-agents).
 
 SPDD treats prompts as first-class delivery artifacts that are version controlled, reviewed, reused, and improved over time. This scaffold implements that contract with REASONS Canvas files, lifecycle prompt templates, assistant command prompts, progress logs, review reports, sync logs, and reusable project memory.
 
-For the SDLC Agents side of the hybrid, see [hybrid-model.md](hybrid-model.md). For copy-paste SPDD prompts, see [SPDD prompt standard](spdd-prompt-standard.md). For planning-layer prompts, see [Planning prompt standard](planning-prompt-standard.md).
+For the SDLC Agents command mapping, see [SDLC Agents and the framework](sdlc-agents-and-the-framework.md). For copy-paste SPDD prompts, see [SPDD prompt standard](spdd-prompt-standard.md). For planning-layer prompts, see [Planning prompt standard](planning-prompt-standard.md).
 
 Project-level planning documents are also supported:
 
@@ -46,9 +46,9 @@ Every compliant canvas must contain these sections:
 | N - Norms | Reusable engineering standards and conventions |
 | S - Safeguards | Non-negotiable constraints, invariants, security rules, and performance limits |
 
-Validate canvas structure with (runtime scripts live under `scripts/sdlc-spdd/` in your project):
+Validate canvas structure with (runtime scripts live under `sdlc-spdd/scripts/` in your project):
 
-    ./scripts/sdlc-spdd/validate-reasons-canvas.sh spdd/canvas/
+    ./sdlc-spdd/scripts/validate-reasons-canvas.sh spdd/canvas/
 
 ## Workflow Contract
 
@@ -93,7 +93,7 @@ This scaffold implements Martin Fowler's [SPDD article](https://martinfowler.com
 
 After `/sdlc-spdd-analysis`, run:
 
-    ./scripts/sdlc-spdd/index-spdd-analysis.sh --target . --work-id <WORK-ID>
+    ./sdlc-spdd/scripts/index-spdd-analysis.sh --target . --work-id <WORK-ID>
 
 Required commands (run `/sdlc-spdd-*` in **AI chat** — Cursor, Copilot, or Claude Code, not a terminal — see [How to run assistant commands](initialization-and-invocation.md#how-to-run-assistant-commands)):
 
@@ -112,7 +112,7 @@ Required commands (run `/sdlc-spdd-*` in **AI chat** — Cursor, Copilot, or Cla
 
 This scaffold does not require the upstream `openspdd` CLI. All three assistant adapters share the same lifecycle and grounding anchors, validated by `scripts/validate-command-adapters.sh`.
 
-For the **context and judgment** rationale (Lost in the Middle, scoped investigation, human evaluation gates), see [Chelsea Troy and the framework](chelsea-troy-and-the-framework.md).
+For scoped context loading and phase budgets, see [Context loading and scaling](context-loading-and-scaling.md).
 
 ## Three Core Skills
 

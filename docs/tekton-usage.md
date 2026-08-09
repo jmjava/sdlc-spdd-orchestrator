@@ -8,4 +8,5 @@ Use SDLC-SPDD for pipeline and task changes the same way as application features
 4. Implement one pipeline change at a time
 5. Review, retro, and sync
 
-See `examples/tekton-pipeline-demo/` for a lightweight demo layout.
+Apply `templates/stack-rules/tekton.md` during architect review. Contract paths
+match storage v3: `requirements/`, `spdd/canvas/`, `spdd/memory/`.

@@ -169,13 +169,12 @@ else
 fi
 
 echo "== work-id.sh: next_work_number edges =="
-mkdir -p "${WORK}/agent-context/features" "${WORK}/spdd/canvas"
-touch "${WORK}/agent-context/features/FEAT-003-alpha"
+mkdir -p "${WORK}/spdd/canvas"
+touch "${WORK}/spdd/canvas/FEAT-003-alpha.md"
 touch "${WORK}/spdd/canvas/FEAT-005-beta.md"
 touch "${WORK}/spdd/canvas/FEAT-009-z.md"
 touch "${WORK}/spdd/canvas/FEAT-notanumber.md"
 n="$(next_work_number FEAT "${WORK}" \
-  "${WORK}/agent-context/features/FEAT-"* \
   "${WORK}/spdd/canvas/FEAT-"*.md)"
 assert_eq "${n}" "10" "next_work_number max+1 across sources"
 n="$(next_work_number BUG "${WORK}")"
@@ -452,14 +451,14 @@ assert_contains "$(printf '%s\n' "${READINESS_CANONICAL[@]}")" "ready-for-coding
 # ---------------------------------------------------------------------------
 echo "== shipped-docs-boundary.sh =="
 assert_true "README.md is orchestrator-only" is_orchestrator_only_doc "docs/README.md"
-assert_true "integration-branch.md is orchestrator-only" is_orchestrator_only_doc "docs/integration-branch.md"
-assert_true "catch-up.md is orchestrator-only" is_orchestrator_only_doc "docs/catch-up.md"
 assert_true "contributing-command-specs.md is orchestrator-only" \
   is_orchestrator_only_doc "docs/contributing-command-specs.md"
-assert_true "contributing-extensions.md is orchestrator-only" \
-  is_orchestrator_only_doc "docs/contributing-extensions.md"
-assert_true "guide-rag doc is orchestrator-only" \
-  is_orchestrator_only_doc "docs/guide-rag-research-and-dogfooding.md"
+assert_true "contributing-skills.md is orchestrator-only" \
+  is_orchestrator_only_doc "docs/contributing-skills.md"
+assert_true "mcp-guide-for-agents.md is orchestrator-only" \
+  is_orchestrator_only_doc "docs/mcp-guide-for-agents.md"
+assert_true "dice-projection-runbook.md is orchestrator-only" \
+  is_orchestrator_only_doc "docs/dice-projection-runbook.md"
 assert_false "session-prompt-standard ships" is_orchestrator_only_doc "docs/session-prompt-standard.md"
 assert_false "daily-runbook ships" is_orchestrator_only_doc "docs/daily-runbook.md"
 

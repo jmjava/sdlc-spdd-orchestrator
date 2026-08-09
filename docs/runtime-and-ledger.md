@@ -15,9 +15,9 @@ gets committed. Canonical model: [Storage v3](storage-v3.md).
 | **SQLite cache** | `.sdlc/index.sqlite` | **No** | Opt-in regenerable query cache |
 | **Guide DICE graph** | Neo4j (via Guide) | **No** (projection) | Working store — large context queried on demand |
 
-`harness/`, `playbooks/`, and `extensions/` under the `sdlc-spdd/` home hold
-**install-time** material. They are not a session bus and hold no per-work
-memory.
+`harness/` and `harness/skills/` under the `sdlc-spdd/` home hold
+**install-time** instruction material. They are not a session bus and hold no
+per-work memory.
 
 ## Hot sessions
 

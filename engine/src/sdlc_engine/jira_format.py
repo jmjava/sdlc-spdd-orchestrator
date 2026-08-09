@@ -56,6 +56,35 @@ def build_jira_markdown(
     return "\n".join(parts).strip() + "\n"
 
 
+def build_github_markdown(
+    *,
+    work_id: str,
+    summary: str = "",
+    description: str = "",
+    acceptance: str = "",
+    business_value: str = "",
+    scope_in: str = "",
+    scope_out: str = "",
+    requirement_rel: str = "",
+) -> str:
+    """Compose a GFM issue body from structured requirement fields.
+
+    GitHub Issues render markdown natively — no ADF conversion. Uses the same
+    section layout as :func:`build_jira_markdown` so requirement docs can mirror
+    ``## Jira`` and ``## GitHub`` subsections.
+    """
+    return build_jira_markdown(
+        work_id=work_id,
+        summary=summary,
+        description=description,
+        acceptance=acceptance,
+        business_value=business_value,
+        scope_in=scope_in,
+        scope_out=scope_out,
+        requirement_rel=requirement_rel,
+    )
+
+
 # ---------------------------------------------------------------------------
 # Markdown → ADF
 # ---------------------------------------------------------------------------

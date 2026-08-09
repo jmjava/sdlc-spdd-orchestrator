@@ -58,6 +58,11 @@ PAGE = """<!DOCTYPE html>
     }
     .panel h3 { font-size: 0.95rem; margin-top: 1rem; }
     label.field { display: block; font-size: 0.85rem; font-weight: 600; color: var(--muted); margin-bottom: 0.35rem; }
+    .grid-2 {
+      display: grid; grid-template-columns: minmax(8rem, 11rem) 1fr;
+      gap: 0.45rem 0.75rem; align-items: center; margin-bottom: 0.75rem;
+    }
+    .grid-2 input { flex: none; width: 100%; min-width: 0; }
     .row { display: flex; gap: 0.6rem; align-items: stretch; flex-wrap: wrap; }
     input[type="text"], input[type="number"], select, textarea {
       flex: 1 1 14rem; min-width: 10rem; border: 1px solid var(--line);
@@ -204,6 +209,7 @@ PAGE = """<!DOCTYPE html>
       <button type="button" class="tab" data-tab="sqlite">SQLite</button>
       <button type="button" class="tab" data-tab="rollback">Rollback</button>
       <button type="button" class="tab" data-tab="guide">Guide</button>
+      <button type="button" class="tab" data-tab="issues">Issues</button>
       <button type="button" class="tab" data-tab="adf">ADF</button>
     </nav>
 
@@ -253,6 +259,7 @@ PAGE = """<!DOCTYPE html>
         <h2>Integrations</h2>
         <ul class="check-list" id="dash-integrations"><li>—</li></ul>
         <div class="actions">
+          <button type="button" class="btn-ghost dash-configure" data-goto-tab="issues">Configure → Issues &amp; integrations</button>
           <button type="button" class="btn-ghost dash-configure" data-goto-tab="adf">Configure → ADF / Viewer</button>
           <button type="button" class="btn-ghost dash-configure" data-goto-tab="guide">Configure → Guide</button>
         </div>
@@ -509,6 +516,114 @@ PAGE = """<!DOCTYPE html>
         <pre class="cmd" id="guide-cmd">—</pre>
         <h3>Known profiles</h3>
         <div id="guide-profiles" class="meta">—</div>
+      </div>
+    </section>
+
+    <section class="tab-pane" id="pane-issues">
+      <div class="panel">
+        <h2>Integrations config</h2>
+        <p class="meta">
+          Saved to gitignored <code class="inline">.sdlc/integrations-config.json</code>.
+          Shell <code class="inline">JIRA_*</code> / <code class="inline">GH_TOKEN</code> env vars override file values.
+          Tokens are never echoed back — leave blank to keep an existing saved token.
+        </p>
+        <div class="grid-2">
+          <label class="field" for="int-tracker">Active tracker</label>
+          <select id="int-tracker">
+            <option value="github">GitHub Issues</option>
+            <option value="jira">Jira</option>
+            <option value="none">None (link only)</option>
+          </select>
+          <label class="field" for="int-jira-url">Jira base URL</label>
+          <input id="int-jira-url" type="text" spellcheck="false" placeholder="https://yourorg.atlassian.net" />
+          <label class="field" for="int-jira-email">Jira email</label>
+          <input id="int-jira-email" type="email" spellcheck="false" placeholder="you@yourorg.com" />
+          <label class="field" for="int-jira-token">Jira API token</label>
+          <input id="int-jira-token" type="password" autocomplete="off" placeholder="Leave blank to keep saved token" />
+          <label class="field" for="int-jira-project">Jira project key</label>
+          <input id="int-jira-project" type="text" spellcheck="false" placeholder="PROJ" />
+          <label class="field" for="int-gh-token">GitHub token</label>
+          <input id="int-gh-token" type="password" autocomplete="off" placeholder="ghp_… or leave blank to keep saved" />
+          <label class="field" for="int-gh-repo">GitHub repo</label>
+          <input id="int-gh-repo" type="text" spellcheck="false" placeholder="owner/repo" />
+        </div>
+        <div class="actions">
+          <button type="button" class="btn-secondary" id="btn-int-refresh">Refresh</button>
+          <button type="button" class="btn-primary" id="btn-int-save">Save config</button>
+        </div>
+        <div class="status-line" id="int-status">Ready.</div>
+        <div class="meta" id="int-meta">—</div>
+      </div>
+
+      <div class="panel" id="issues-link-jira">
+        <h2>Link existing Jira issue</h2>
+        <p class="meta">
+          Create the Jira issue <strong>manually in Jira</strong>, copy the key
+          (e.g. <code class="inline">PROJ-123</code>), then record it here. This
+          updates the requirement doc, canvas Metadata, and registry — it does
+          <strong>not</strong> create issues in Jira.
+        </p>
+        <div class="grid-2">
+          <label class="field" for="jira-work-id">Work ID</label>
+          <input id="jira-work-id" type="text" spellcheck="false" placeholder="FEAT-001-order-status-api" />
+          <label class="field" for="jira-key">Jira key (from Jira UI)</label>
+          <input id="jira-key" type="text" spellcheck="false" placeholder="PROJ-123" />
+          <label class="field" for="jira-summary">Summary (optional, local doc)</label>
+          <input id="jira-summary" type="text" spellcheck="false" placeholder="Matches Jira summary if known" />
+          <label class="field" for="jira-issue-type">Issue type (optional)</label>
+          <input id="jira-issue-type" type="text" spellcheck="false" placeholder="Story" />
+        </div>
+        <div class="actions">
+          <button type="button" class="btn-secondary" id="btn-jira-refresh">Refresh status</button>
+          <button type="button" class="btn-secondary" id="btn-jira-link-dry">Preview link</button>
+          <button type="button" class="btn-primary" id="btn-jira-link">Apply link</button>
+        </div>
+        <div class="status-line" id="jira-link-status">Ready.</div>
+        <div class="meta" id="jira-link-meta">—</div>
+        <pre class="log" id="jira-link-log">No link action yet.</pre>
+      </div>
+
+      <div class="panel" id="issues-link-github" style="display:none;">
+        <h2>Link existing GitHub issue</h2>
+        <p class="meta">
+          Create the issue <strong>manually in GitHub</strong>, copy the number
+          (e.g. <code class="inline">42</code>), then record it here. Updates the
+          requirement doc, canvas, and registry — does not create issues via API.
+        </p>
+        <div class="grid-2">
+          <label class="field" for="gh-work-id">Work ID</label>
+          <input id="gh-work-id" type="text" spellcheck="false" placeholder="FEAT-001-order-status-api" />
+          <label class="field" for="gh-number">Issue number</label>
+          <input id="gh-number" type="text" spellcheck="false" placeholder="42" />
+          <label class="field" for="gh-title">Title (optional, local doc)</label>
+          <input id="gh-title" type="text" spellcheck="false" placeholder="Matches GitHub title if known" />
+          <label class="field" for="gh-url">URL (optional)</label>
+          <input id="gh-url" type="text" spellcheck="false" placeholder="https://github.com/org/repo/issues/42" />
+        </div>
+        <div class="actions">
+          <button type="button" class="btn-secondary" id="btn-gh-refresh">Refresh status</button>
+          <button type="button" class="btn-secondary" id="btn-gh-link-dry">Preview link</button>
+          <button type="button" class="btn-primary" id="btn-gh-link">Apply link</button>
+        </div>
+        <div class="status-line" id="gh-link-status">Ready.</div>
+        <div class="meta" id="gh-link-meta">—</div>
+        <pre class="log" id="gh-link-log">No link action yet.</pre>
+      </div>
+
+      <div class="panel">
+        <h2 id="issues-sync-title">Sync with server</h2>
+        <p class="meta" id="issues-sync-meta">
+          Configure credentials above. Link an issue first, then pull or push requirement markdown.
+        </p>
+        <div class="actions">
+          <button type="button" class="btn-secondary" id="btn-jira-pull-dry">Prepare pull</button>
+          <button type="button" class="btn-primary" id="btn-jira-pull">Pull from server</button>
+          <button type="button" class="btn-secondary" id="btn-jira-push-dry">Prepare push</button>
+          <button type="button" class="btn-primary" id="btn-jira-push">Push to server</button>
+        </div>
+        <div class="status-line" id="jira-sync-status">Ready.</div>
+        <pre class="cmd" id="jira-sync-cli">—</pre>
+        <pre class="log" id="jira-sync-log">No sync yet.</pre>
       </div>
     </section>
 
@@ -1385,9 +1500,290 @@ PAGE = """<!DOCTYPE html>
       }
     }
 
+    function activeTracker() {
+      return $("int-tracker").value || "github";
+    }
+
+    function activeWorkId() {
+      return activeTracker() === "jira"
+        ? $("jira-work-id").value.trim()
+        : $("gh-work-id").value.trim() || $("jira-work-id").value.trim();
+    }
+
+    function applyIssuesPanels() {
+      const t = activeTracker();
+      $("issues-link-jira").style.display = t === "jira" ? "" : "none";
+      $("issues-link-github").style.display = t === "github" ? "" : "none";
+      $("issues-sync-title").textContent = t === "jira"
+        ? "Sync with Jira server"
+        : (t === "github" ? "Sync with GitHub" : "Sync disabled (tracker=none)");
+      $("issues-sync-meta").textContent = t === "jira"
+        ? "Pull refreshes ## Jira from the server; push sends local markdown → ADF (update only)."
+        : (t === "github"
+          ? "Pull refreshes ## GitHub from the server; push sends composed GFM markdown (update only)."
+          : "Set tracker to Jira or GitHub to enable server sync.");
+    }
+
+    async function loadIntegrations() {
+      const res = await fetch("/api/integrations/status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ target: target() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        $("int-meta").textContent = data.error || "Load failed";
+        return;
+      }
+      $("int-tracker").value = data.effective_tracker || data.tracker || "github";
+      const j = data.jira || {};
+      const g = data.github || {};
+      $("int-jira-url").value = j.base_url || "";
+      $("int-jira-email").value = j.email || "";
+      $("int-jira-project").value = j.project || "";
+      $("int-gh-repo").value = g.repo || "";
+      $("int-jira-token").value = "";
+      $("int-gh-token").value = "";
+      $("int-meta").textContent =
+        "tracker=" + (data.effective_tracker || "—")
+        + " · jira " + (j.configured ? "ready" : "incomplete")
+        + " · github " + (g.configured ? "ready" : "incomplete")
+        + " · " + (data.config_path || ".sdlc/integrations-config.json");
+      applyIssuesPanels();
+    }
+
+    async function saveIntegrations() {
+      $("int-status").textContent = "Saving…";
+      $("int-status").className = "status-line";
+      setBusy(["btn-int-save", "btn-int-refresh"], true);
+      try {
+        const payload = {
+          target: target(),
+          tracker: $("int-tracker").value,
+          jira: {
+            base_url: $("int-jira-url").value.trim(),
+            email: $("int-jira-email").value.trim(),
+            project: $("int-jira-project").value.trim(),
+            api_token: $("int-jira-token").value.trim(),
+          },
+          github: {
+            repo: $("int-gh-repo").value.trim(),
+            token: $("int-gh-token").value.trim(),
+          },
+        };
+        const res = await fetch("/api/integrations/save", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          $("int-status").textContent = data.error || "Save failed";
+          $("int-status").className = "status-line bad";
+          return;
+        }
+        $("int-status").textContent = "Saved.";
+        $("int-status").className = "status-line ok";
+        applyIssuesPanels();
+        await loadIntegrations();
+        await loadDashboard();
+      } catch (err) {
+        $("int-status").textContent = String(err);
+        $("int-status").className = "status-line bad";
+      } finally {
+        setBusy(["btn-int-save", "btn-int-refresh"], false);
+      }
+    }
+
+    function jiraBody(extra) {
+      return Object.assign({
+        target: target(),
+        system: "jira",
+        work_id: $("jira-work-id").value.trim(),
+        issue_ref: $("jira-key").value.trim(),
+        summary: $("jira-summary").value.trim(),
+        issue_type: $("jira-issue-type").value.trim(),
+      }, extra || {});
+    }
+
+    function ghBody(extra) {
+      return Object.assign({
+        target: target(),
+        system: "github",
+        work_id: $("gh-work-id").value.trim(),
+        issue_ref: $("gh-number").value.trim(),
+        title: $("gh-title").value.trim(),
+        url: $("gh-url").value.trim(),
+      }, extra || {});
+    }
+
+    function fillJiraStatus(data) {
+      const bits = [];
+      if (data.linked) bits.push("linked " + data.jira_key);
+      else if (data.jira_draft) bits.push("Key not set (TBD)");
+      else bits.push("not linked");
+      if (data.canvas_source_issue) bits.push("canvas " + data.canvas_source_issue);
+      if (data.registry_jira) bits.push("registry " + data.registry_jira);
+      if (data.jira_url) bits.push(data.jira_url);
+      $("jira-link-meta").textContent = bits.join(" · ") || "—";
+      if (data.jira_key && !$("jira-key").value.trim()) {
+        $("jira-key").value = data.jira_key;
+      }
+    }
+
+    async function loadJiraStatus() {
+      const workId = $("jira-work-id").value.trim();
+      if (!workId) {
+        $("jira-link-meta").textContent = "Enter a Work ID.";
+        return;
+      }
+      const res = await fetch("/api/issues/status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ target: target(), work_id: workId, system: "jira" }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        $("jira-link-meta").textContent = data.error || "Status failed";
+        return;
+      }
+      fillJiraStatus(data);
+    }
+
+    async function linkJira(dryRun) {
+      const workId = $("jira-work-id").value.trim();
+      const jiraKey = $("jira-key").value.trim();
+      if (!workId || !jiraKey) {
+        $("jira-link-status").textContent = "Work ID and Jira key required.";
+        $("jira-link-status").className = "status-line bad";
+        return;
+      }
+      const label = dryRun ? "Preview link" : "Apply link";
+      $("jira-link-status").textContent = label + "…";
+      $("jira-link-status").className = "status-line";
+      setBusy(["btn-jira-link", "btn-jira-link-dry", "btn-jira-refresh"], true);
+      try {
+        const res = await fetch("/api/issues/link", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(jiraBody({ dry_run: dryRun, apply: !dryRun })),
+        });
+        const data = await res.json();
+        $("jira-link-log").textContent = JSON.stringify(data, null, 2);
+        if (!res.ok) {
+          $("jira-link-status").textContent = data.error || (label + " failed");
+          $("jira-link-status").className = "status-line bad";
+          return;
+        }
+        $("jira-link-status").textContent = dryRun
+          ? "Preview OK — apply when ready."
+          : "Linked " + jiraKey + " to " + workId;
+        $("jira-link-status").className = "status-line ok";
+        fillJiraStatus(data);
+        if (!dryRun) await loadDashboard();
+      } catch (err) {
+        $("jira-link-status").textContent = String(err);
+        $("jira-link-status").className = "status-line bad";
+        $("jira-link-log").textContent = String(err);
+      } finally {
+        setBusy(["btn-jira-link", "btn-jira-link-dry", "btn-jira-refresh"], false);
+      }
+    }
+
+    async function linkGithub(dryRun) {
+      const workId = $("gh-work-id").value.trim();
+      const num = $("gh-number").value.trim();
+      if (!workId || !num) {
+        $("gh-link-status").textContent = "Work ID and issue number required.";
+        $("gh-link-status").className = "status-line bad";
+        return;
+      }
+      const label = dryRun ? "Preview link" : "Apply link";
+      $("gh-link-status").textContent = label + "…";
+      setBusy(["btn-gh-link", "btn-gh-link-dry", "btn-gh-refresh"], true);
+      try {
+        const res = await fetch("/api/issues/link", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(ghBody({ dry_run: dryRun, apply: !dryRun })),
+        });
+        const data = await res.json();
+        $("gh-link-log").textContent = JSON.stringify(data, null, 2);
+        if (!res.ok) {
+          $("gh-link-status").textContent = data.error || (label + " failed");
+          $("gh-link-status").className = "status-line bad";
+          return;
+        }
+        $("gh-link-status").textContent = dryRun ? "Preview OK" : ("Linked #" + num);
+        $("gh-link-status").className = "status-line ok";
+        if (!dryRun) await loadDashboard();
+      } catch (err) {
+        $("gh-link-status").textContent = String(err);
+        $("gh-link-status").className = "status-line bad";
+      } finally {
+        setBusy(["btn-gh-link", "btn-gh-link-dry", "btn-gh-refresh"], false);
+      }
+    }
+
+    async function syncIssues(direction, apply) {
+      const system = activeTracker();
+      const workId = activeWorkId();
+      if (system === "none") {
+        $("jira-sync-status").textContent = "Tracker is none — enable Jira or GitHub above.";
+        $("jira-sync-status").className = "status-line bad";
+        return;
+      }
+      if (!workId) {
+        $("jira-sync-status").textContent = "Work ID required.";
+        $("jira-sync-status").className = "status-line bad";
+        return;
+      }
+      const verb = direction === "pull" ? "Pull" : "Push";
+      const label = apply ? verb + " to server" : "Prepare " + direction;
+      if (apply && !confirm("Sync " + direction + " for " + workId + " (" + system + ")?")) return;
+      $("jira-sync-status").textContent = label + "…";
+      setBusy(["btn-jira-pull", "btn-jira-pull-dry", "btn-jira-push", "btn-jira-push-dry"], true);
+      try {
+        const res = await fetch("/api/issues/sync", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ target: target(), work_id: workId, system, direction, apply }),
+        });
+        const data = await res.json();
+        $("jira-sync-log").textContent = data.report || JSON.stringify(data, null, 2);
+        $("jira-sync-cli").textContent = data.cli || "—";
+        if (!res.ok) {
+          $("jira-sync-status").textContent = data.error || (label + " failed");
+          $("jira-sync-status").className = "status-line bad";
+          return;
+        }
+        $("jira-sync-status").textContent = apply ? (verb + " OK") : (verb + " preview OK");
+        $("jira-sync-status").className = "status-line ok";
+      } catch (err) {
+        $("jira-sync-status").textContent = String(err);
+        $("jira-sync-log").textContent = String(err);
+      } finally {
+        setBusy(["btn-jira-pull", "btn-jira-pull-dry", "btn-jira-push", "btn-jira-push-dry"], false);
+      }
+    }
+
+    async function syncJira(direction, apply) {
+      syncIssues(direction, apply);
+    }
+
+    async function loadJira() {
+      await loadIntegrations();
+      const active = $("dw-id").textContent;
+      if (active && active !== "(none)" && active !== "—") {
+        if (!$("jira-work-id").value.trim()) $("jira-work-id").value = active;
+        if (!$("gh-work-id").value.trim()) $("gh-work-id").value = active;
+      }
+      await loadJiraStatus();
+    }
+
     async function refreshAll() {
       await detect();
-      await Promise.all([loadDashboard(), loadPersist(), loadSqlite(), loadBackups(), loadGuide(), loadAdf()]);
+      await Promise.all([loadDashboard(), loadPersist(), loadSqlite(), loadBackups(), loadGuide(), loadJira(), loadAdf()]);
       await loadAdfBrowse($("adf-browse-path").value.trim() || adfBrowsePath || "");
     }
 
@@ -1469,6 +1865,22 @@ PAGE = """<!DOCTYPE html>
     $("btn-adf-init").addEventListener("click", () => initFromAdf(false));
     $("adf-browse-path").addEventListener("keydown", (e) => {
       if (e.key === "Enter") loadAdfBrowse($("adf-browse-path").value.trim());
+    });
+    $("btn-int-refresh").addEventListener("click", loadIntegrations);
+    $("btn-int-save").addEventListener("click", saveIntegrations);
+    $("int-tracker").addEventListener("change", applyIssuesPanels);
+    $("btn-jira-refresh").addEventListener("click", loadJiraStatus);
+    $("btn-jira-link-dry").addEventListener("click", () => linkJira(true));
+    $("btn-jira-link").addEventListener("click", () => linkJira(false));
+    $("btn-gh-link-dry").addEventListener("click", () => linkGithub(true));
+    $("btn-gh-link").addEventListener("click", () => linkGithub(false));
+    $("btn-jira-pull-dry").addEventListener("click", () => syncIssues("pull", false));
+    $("btn-jira-pull").addEventListener("click", () => syncIssues("pull", true));
+    $("btn-jira-push-dry").addEventListener("click", () => syncIssues("push", false));
+    $("btn-jira-push").addEventListener("click", () => syncIssues("push", true));
+    $("jira-work-id").addEventListener("change", loadJiraStatus);
+    $("jira-work-id").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") loadJiraStatus();
     });
     $("as-all").addEventListener("change", () => {
       if ($("as-all").checked) {

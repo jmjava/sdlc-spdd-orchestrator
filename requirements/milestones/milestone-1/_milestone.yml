@@ -1,7 +1,7 @@
 name: "Milestone 1 — Make it right"
 number: 1
 start_date: "2026-06-01"
-end_date: ""
-status: "in_progress"
+end_date: "2026-08-09"
+status: "complete"
 related_epics: []
-notes: "Make-it-right FEAT-001–003/006–009 complete. Make-it-fast measurement FEAT-004/005 complete. SPIKE-001/002 shelved pending Guide MCP."
+notes: "Milestone 1 complete. Requirement stubs and canvases removed from working tree; see git history. Active work is storage v3."

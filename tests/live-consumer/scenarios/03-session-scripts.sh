@@ -5,9 +5,10 @@ set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/lib.sh"
 
 ROOT="${1:?target root required}"
+HOME="$(live_home "${ROOT}")"
 echo "== 03 session + support scripts =="
 
-SCRIPTS="${ROOT}/scripts/sdlc-spdd"
+SCRIPTS="${HOME}/scripts"
 
 # Ensure claim/pointer for guarded capture paths.
 live_sdlc "${ROOT}" claim "${WORK_ID}" --force >/dev/null 2>&1 || live_sdlc "${ROOT}" resume "${WORK_ID}" >/dev/null
@@ -72,7 +73,7 @@ else
 fi
 
 if "${SCRIPTS}/validate-reasons-canvas.sh" --target "${ROOT}" >/dev/null 2>&1 \
-  || "${SCRIPTS}/validate-reasons-canvas.sh" "${ROOT}/spdd/canvas/${WORK_ID}.md" >/dev/null 2>&1; then
+  || "${SCRIPTS}/validate-reasons-canvas.sh" "${HOME}/spdd/canvas/${WORK_ID}.md" >/dev/null 2>&1; then
   ok "validate-reasons-canvas"
 else
   skipped "validate-reasons-canvas (strict seed mismatch)"

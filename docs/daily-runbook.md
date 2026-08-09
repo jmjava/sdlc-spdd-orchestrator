@@ -28,36 +28,36 @@ Goal: recover context before asking the assistant to act.
 
 **Fast path** — orientation without opening files:
 
-    ./scripts/sdlc-spdd/sdlc.sh next
+    ./sdlc-spdd/scripts/sdlc.sh next
 
 In chat: `/sdlc-next` or `/sdlc-spdd-whereami` (same orientation family; `whereami` adds more registry context).
 
 **Team coordination** — before claiming work on a shared repo:
 
-    ./scripts/sdlc-spdd/sdlc.sh team
-    ./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>    # appends to spdd/memory/registry.jsonl; commit it after
+    ./sdlc-spdd/scripts/sdlc.sh team
+    ./sdlc-spdd/scripts/sdlc.sh claim <WORK-ID>    # appends to spdd/memory/registry.jsonl; commit it after
 
 In chat: `/sdlc-team`, `/sdlc-claim <WORK-ID>`.
 
 If you already have an active pointer, resume or switch:
 
-    ./scripts/sdlc-spdd/sdlc.sh resume <WORK-ID> [--phase <phase>]
+    ./sdlc-spdd/scripts/sdlc.sh resume <WORK-ID> [--phase <phase>]
 
 **Full session loop** (recommended daily rhythm):
 
-1. Orient: `./scripts/sdlc-spdd/sdlc.sh next` (or `/sdlc-next` / `/sdlc-spdd-whereami` in chat).
+1. Orient: `./sdlc-spdd/scripts/sdlc.sh next` (or `/sdlc-next` / `/sdlc-spdd-whereami` in chat).
 2. Check canvas sync when resuming stale work:
 
-       ./scripts/sdlc-spdd/resync-agent-session.sh --target . --work-id <WORK-ID> --check-only
+       ./sdlc-spdd/scripts/resync-agent-session.sh --target . --work-id <WORK-ID> --check-only
 
 3. Open the session brief (sets pointer + workflow phase):
 
-       ./scripts/sdlc-spdd/sdlc.sh start
-       # or: ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase>
+       ./sdlc-spdd/scripts/sdlc.sh start
+       # or: ./sdlc-spdd/scripts/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase>
 
 4. **Paste the Resume Prompt** from `.sdlc/sessions/current-session.md` (hot path; gitignored). That generated prompt is the source of truth — it directs the agent to load only the files listed under **Resolved Context** in the same brief (phase extensions, Work ID artifacts) and to fetch lesson bodies on demand from the **Related Past Work** digest. See [Runtime and ledger](runtime-and-ledger.md).
 
-5. After completing a phase step: `./scripts/sdlc-spdd/sdlc.sh advance` (or `/sdlc-advance` in chat). Advance into `code` refuses when canvas readiness is not Ready For Coding (`advance --force` to override). To pause: `/sdlc-shelf` or `sdlc.sh shelf --reason "..."`.
+5. After completing a phase step: `./sdlc-spdd/scripts/sdlc.sh advance` (or `/sdlc-advance` in chat). Advance into `code` refuses when canvas readiness is not Ready For Coding (`advance --force` to override). To pause: `/sdlc-shelf` or `sdlc.sh shelf --reason "..."`.
 
 Optional — ask for a status summary after pasting the resume prompt:
 
@@ -70,7 +70,7 @@ If no Work ID exists yet:
 Then invoke analysis first (Fowler Step 3), index it, and plan from the artifact:
 
     /sdlc-spdd-analysis <requirement, Jira issue, GitHub issue, or @requirements/file.md>
-    ./scripts/sdlc-spdd/index-spdd-analysis.sh --target . --work-id <WORK-ID>
+    ./sdlc-spdd/scripts/index-spdd-analysis.sh --target . --work-id <WORK-ID>
     /sdlc-spdd-plan @spdd/analysis/<WORK-ID>-analysis.md
 
 ## Triage New Work
@@ -165,7 +165,7 @@ Create new Jira issue draft in the milestone requirement file first:
 
     requirements/milestones/<WORK-ID>.md   →   ## Jira section (Key, Summary, Type, …)
 
-See [requirements/milestones/README.md](../requirements/milestones/README.md) and [jira-runbook.md](jira-runbook.md). On claim, `./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>` auto-links the Key into the registry event note (`spdd/memory/registry.jsonl`).
+See [requirements/milestones/README.md](../requirements/milestones/README.md) and [jira-runbook.md](jira-runbook.md). On claim, `./sdlc-spdd/scripts/sdlc.sh claim <WORK-ID>` auto-links the Key into the registry event note (`spdd/memory/registry.jsonl`).
 
 Then draft for Jira UI or automation:
 
@@ -196,23 +196,23 @@ Prompts and script: [End of session](session-prompt-standard.md#end-of-session) 
 
 **Preferred capture** — guarded against pointer mismatch (refuses wrong Work ID). Captures stage quietly in `.sdlc/staged/lessons.jsonl`; no git noise:
 
-    ./scripts/sdlc-spdd/sdlc.sh capture --summary "<what changed>" --validation "<tests>" --next "<next command>"
+    ./sdlc-spdd/scripts/sdlc.sh capture --summary "<what changed>" --validation "<tests>" --next "<next command>"
 
 With milestone progress:
 
-    ./scripts/sdlc-spdd/sdlc.sh capture --summary "..." --validation "..." \
+    ./sdlc-spdd/scripts/sdlc.sh capture --summary "..." --validation "..." \
       --milestone milestone-1.md --roadmap-note "..." --next "/sdlc-spdd-review @spdd/canvas/<WORK-ID>.md"
 
 At the retro/sync gate, promote the staged records into the committed ledger
 (one batched commit per gate):
 
     /sdlc-spdd-accept
-    # or: ./scripts/sdlc-spdd/sdlc.sh accept --work-id <WORK-ID>
+    # or: ./sdlc-spdd/scripts/sdlc.sh accept --work-id <WORK-ID>
 
 Park work for later:
 
-    ./scripts/sdlc-spdd/sdlc.sh shelf --reason "blocked on review"
-    ./scripts/sdlc-spdd/sdlc.sh list-shelved
+    ./sdlc-spdd/scripts/sdlc.sh shelf --reason "blocked on review"
+    ./sdlc-spdd/scripts/sdlc.sh list-shelved
 
 The handoff should include:
 
@@ -233,7 +233,7 @@ Quick command sequences. Full prompt wording: [Session prompt standard](session-
 ### New feature
 
     /sdlc-spdd-analysis @requirements/<feature>.md
-    ./scripts/sdlc-spdd/index-spdd-analysis.sh --target . --work-id <WORK-ID>
+    ./sdlc-spdd/scripts/index-spdd-analysis.sh --target . --work-id <WORK-ID>
     /sdlc-spdd-plan @spdd/analysis/<WORK-ID>-analysis.md
     /sdlc-spdd-architect @spdd/canvas/<WORK-ID>.md
     /sdlc-spdd-code @spdd/canvas/<WORK-ID>.md operation T01
@@ -244,7 +244,7 @@ Quick command sequences. Full prompt wording: [Session prompt standard](session-
 ### Bugfix
 
     /sdlc-spdd-analysis BUG: <bug summary and reproduction>
-    ./scripts/sdlc-spdd/index-spdd-analysis.sh --target . --work-id <WORK-ID>
+    ./sdlc-spdd/scripts/index-spdd-analysis.sh --target . --work-id <WORK-ID>
     /sdlc-spdd-plan @spdd/analysis/<WORK-ID>-analysis.md
     /sdlc-spdd-architect @spdd/canvas/<WORK-ID>.md
     /sdlc-spdd-code @spdd/canvas/<WORK-ID>.md operation T01
@@ -258,8 +258,8 @@ Quick command sequences. Full prompt wording: [Session prompt standard](session-
 
 ### Continue interrupted work
 
-    ./scripts/sdlc-spdd/sdlc.sh resume <WORK-ID>
-    ./scripts/sdlc-spdd/sdlc.sh next
+    ./sdlc-spdd/scripts/sdlc.sh resume <WORK-ID>
+    ./sdlc-spdd/scripts/sdlc.sh next
 
 Script sequence: [Morning or Start-of-Session Check](#morning-or-start-of-session-check) above. Resume prompt and follow-up: [Continue interrupted work](session-prompt-standard.md#continue-interrupted-work) in Session prompt standard.
 
@@ -267,19 +267,19 @@ Script sequence: [Morning or Start-of-Session Check](#morning-or-start-of-sessio
 
 | Goal | Shell | Chat |
 |------|-------|------|
-| What now? | `./scripts/sdlc-spdd/sdlc.sh next` | `/sdlc-next` or `/sdlc-spdd-whereami` |
-| Claim Work ID | `./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>` | `/sdlc-claim <WORK-ID>` |
-| Open session brief | `./scripts/sdlc-spdd/sdlc.sh start` | — |
-| Move to next phase | `./scripts/sdlc-spdd/sdlc.sh advance` | `/sdlc-advance` |
-| Pause current work | `./scripts/sdlc-spdd/sdlc.sh shelf --reason "..."` | `/sdlc-shelf` |
-| Skip a phase | `./scripts/sdlc-spdd/sdlc.sh skip <phase> --reason "..."` | — |
-| Re-read artifacts | `./scripts/sdlc-spdd/sdlc.sh sync` | — |
-| See all Work IDs | `./scripts/sdlc-spdd/sdlc.sh list-work` | — |
-| Team who-is-on-what | `./scripts/sdlc-spdd/sdlc.sh team` | `/sdlc-team` |
-| Claim for team | `./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>` → commit `spdd/memory/registry.jsonl` | `/sdlc-claim <WORK-ID>` |
-| Take over claim | `./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID> --force` | `/sdlc-claim <WORK-ID> --force` |
-| Stage a lesson | `./scripts/sdlc-spdd/sdlc.sh capture --summary "..."` | — |
-| Promote staged lessons | `./scripts/sdlc-spdd/sdlc.sh accept --work-id <WORK-ID>` | `/sdlc-spdd-accept` |
+| What now? | `./sdlc-spdd/scripts/sdlc.sh next` | `/sdlc-next` or `/sdlc-spdd-whereami` |
+| Claim Work ID | `./sdlc-spdd/scripts/sdlc.sh claim <WORK-ID>` | `/sdlc-claim <WORK-ID>` |
+| Open session brief | `./sdlc-spdd/scripts/sdlc.sh start` | — |
+| Move to next phase | `./sdlc-spdd/scripts/sdlc.sh advance` | `/sdlc-advance` |
+| Pause current work | `./sdlc-spdd/scripts/sdlc.sh shelf --reason "..."` | `/sdlc-shelf` |
+| Skip a phase | `./sdlc-spdd/scripts/sdlc.sh skip <phase> --reason "..."` | — |
+| Re-read artifacts | `./sdlc-spdd/scripts/sdlc.sh sync` | — |
+| See all Work IDs | `./sdlc-spdd/scripts/sdlc.sh list-work` | — |
+| Team who-is-on-what | `./sdlc-spdd/scripts/sdlc.sh team` | `/sdlc-team` |
+| Claim for team | `./sdlc-spdd/scripts/sdlc.sh claim <WORK-ID>` → commit `spdd/memory/registry.jsonl` | `/sdlc-claim <WORK-ID>` |
+| Take over claim | `./sdlc-spdd/scripts/sdlc.sh claim <WORK-ID> --force` | `/sdlc-claim <WORK-ID> --force` |
+| Stage a lesson | `./sdlc-spdd/scripts/sdlc.sh capture --summary "..."` | — |
+| Promote staged lessons | `./sdlc-spdd/scripts/sdlc.sh accept --work-id <WORK-ID>` | `/sdlc-spdd-accept` |
 
 Local state (gitignored): `.sdlc/pointer`, `.sdlc/workflows/`, `.sdlc/staged/`. Shared via git: `spdd/memory/registry.jsonl` + `spdd/memory/lessons.jsonl` (see [Storage v3](storage-v3.md)).
 Non-stale foreign claims block until you coordinate and re-run with `--force`.

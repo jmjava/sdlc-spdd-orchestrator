@@ -5,21 +5,30 @@ on:
     paths:
       - 'scripts/resolve-agent-context.sh'
       - 'scripts/start-agent-session.sh'
+      - 'scripts/lib/skills.sh'
+      - 'scripts/lib/paths.sh'
+      - 'templates/agent-context/harness/**'
       - 'tests/test-resolve-agent-context.sh'
-      - 'templates/agent-context/extensions/**'
+      - '.github/workflows/test-resolve-agent-context.yml'
   push:
     branches: [main]
     paths:
       - 'scripts/resolve-agent-context.sh'
       - 'scripts/start-agent-session.sh'
+      - 'scripts/lib/skills.sh'
+      - 'scripts/lib/paths.sh'
+      - 'templates/agent-context/harness/**'
       - 'tests/test-resolve-agent-context.sh'
-      - 'templates/agent-context/extensions/**'
+      - '.github/workflows/test-resolve-agent-context.yml'
 
 jobs:
   test-resolve-agent-context:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Check shell syntax
+        run: bash -n scripts/resolve-agent-context.sh scripts/start-agent-session.sh scripts/lib/skills.sh tests/test-resolve-agent-context.sh
 
       - name: Run resolve-agent-context regression harness
         run: ./tests/test-resolve-agent-context.sh

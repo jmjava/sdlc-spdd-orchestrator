@@ -4,6 +4,8 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 RESOLVE="${REPO_ROOT}/scripts/resolve-agent-context.sh"
+# shellcheck source=/dev/null
+source "${REPO_ROOT}/scripts/lib/skills.sh"
 WORK="$(mktemp -d)"
 trap 'rm -rf "${WORK}"' EXIT
 
@@ -168,6 +170,43 @@ if [[ -f "${excerpt}" ]]; then
   assert_contains "$(cat "${excerpt}")" "T01 complete" "excerpt includes this work"
 else
   bad "scoped excerpt file missing"
+fi
+
+echo "== Test 13: legacy playbooks/extensions migrate idempotently =="
+mkdir -p "${WORK}/agent-context/playbooks" "${WORK}/agent-context/extensions/_all-agents" \
+  "${WORK}/agent-context/extensions/coding-agent" "${WORK}/agent-context/extensions/skills"
+echo "# Legacy bug playbook" > "${WORK}/agent-context/playbooks/legacy-widget-playbook.md"
+echo "# Legacy norm" > "${WORK}/agent-context/extensions/_all-agents/legacy-norm.md"
+echo "# Legacy style" > "${WORK}/agent-context/extensions/coding-agent/legacy-style.md"
+echo "# Legacy TDD" > "${WORK}/agent-context/extensions/skills/legacy-tdd.md"
+rm -f "${WORK}/harness/skills/legacy-widget.md" \
+  "${WORK}/harness/skills/legacy-norm.md" \
+  "${WORK}/harness/skills/legacy-style.md" \
+  "${WORK}/harness/skills/legacy-tdd.md"
+migrate_playbooks_extensions_to_skills "${WORK}" 0
+if [[ -f "${WORK}/harness/skills/legacy-widget.md" ]] && \
+   [[ -f "${WORK}/harness/skills/legacy-norm.md" ]] && \
+   [[ ! -d "${WORK}/agent-context/playbooks" ]] && \
+   [[ ! -d "${WORK}/agent-context/extensions" ]]; then
+  ok "legacy trees migrated and removed"
+else
+  bad "legacy migration failed"
+fi
+migrate_playbooks_extensions_to_skills "${WORK}" 0
+if [[ -f "${WORK}/harness/skills/legacy-widget.md" ]]; then
+  ok "second migrate is idempotent"
+else
+  bad "idempotent migrate broke skills"
+fi
+
+echo "== Test 14: session-handoff playbook is not migrated =="
+mkdir -p "${WORK}/agent-context/playbooks"
+echo "# Session handoff" > "${WORK}/agent-context/playbooks/session-handoff-playbook.md"
+migrate_playbooks_extensions_to_skills "${WORK}" 0
+if [[ ! -f "${WORK}/harness/skills/session-handoff.md" ]]; then
+  ok "session-handoff skipped"
+else
+  bad "session-handoff should not migrate"
 fi
 
 echo

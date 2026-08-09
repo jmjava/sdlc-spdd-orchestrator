@@ -7,7 +7,7 @@
 Export options:
 
 - Open this Markdown file in VS Code preview and print to PDF.
-- Publish `docs/` through GitHub Pages and print the page to PDF from a browser.
+- Print this cheat sheet from a browser (File → Print → Save as PDF).
 - Use any Markdown-to-PDF converter approved by your team.
 
 Start here (everything else is reference):
@@ -25,7 +25,7 @@ From the **orchestrator repo** clone (not your app folder):
 
 After install, from your **target app** folder:
 
-    ./scripts/sdlc-spdd/verify-project-install.sh --target .
+    ./sdlc-spdd/scripts/verify-project-install.sh --target .
 
 One assistant only (advanced):
 
@@ -60,43 +60,43 @@ Upgrade older install:
 
 Orient first:
 
-    ./scripts/sdlc-spdd/sdlc.sh next
+    ./sdlc-spdd/scripts/sdlc.sh next
     /sdlc-next
     /sdlc-spdd-whereami
 
 Claim and resume:
 
-    ./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>
+    ./sdlc-spdd/scripts/sdlc.sh claim <WORK-ID>
     /sdlc-claim <WORK-ID>
-    ./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID> --force   # take over after coordinating
-    ./scripts/sdlc-spdd/sdlc.sh resume <WORK-ID> [--phase <phase>] [--force]
-    ./scripts/sdlc-spdd/sdlc.sh start
+    ./sdlc-spdd/scripts/sdlc.sh claim <WORK-ID> --force   # take over after coordinating
+    ./sdlc-spdd/scripts/sdlc.sh resume <WORK-ID> [--phase <phase>] [--force]
+    ./sdlc-spdd/scripts/sdlc.sh start
 
 Phase transitions:
 
-    ./scripts/sdlc-spdd/sdlc.sh advance
-    ./scripts/sdlc-spdd/sdlc.sh advance --force   # override Ready For Coding gate into code
+    ./sdlc-spdd/scripts/sdlc.sh advance
+    ./sdlc-spdd/scripts/sdlc.sh advance --force   # override Ready For Coding gate into code
     /sdlc-advance
-    ./scripts/sdlc-spdd/sdlc.sh skip <phase> --reason "..."
-    ./scripts/sdlc-spdd/sdlc.sh shelf --reason "..."
+    ./sdlc-spdd/scripts/sdlc.sh skip <phase> --reason "..."
+    ./sdlc-spdd/scripts/sdlc.sh shelf --reason "..."
     /sdlc-shelf [reason]
-    ./scripts/sdlc-spdd/sdlc.sh list-shelved
-    ./scripts/sdlc-spdd/sdlc.sh sync
+    ./sdlc-spdd/scripts/sdlc.sh list-shelved
+    ./sdlc-spdd/scripts/sdlc.sh sync
 
 Team coordination (commit `spdd/memory/registry.jsonl` after claim/release):
 
-    ./scripts/sdlc-spdd/sdlc.sh team
+    ./sdlc-spdd/scripts/sdlc.sh team
     /sdlc-team
-    ./scripts/sdlc-spdd/sdlc.sh list-work
-    ./scripts/sdlc-spdd/sdlc.sh release --reason "..."
+    ./sdlc-spdd/scripts/sdlc.sh list-work
+    ./sdlc-spdd/scripts/sdlc.sh release --reason "..."
 
 Guarded capture (pointer must match Work ID):
 
-    ./scripts/sdlc-spdd/sdlc.sh capture --summary "..." --validation "..." --next "..."
+    ./sdlc-spdd/scripts/sdlc.sh capture --summary "..." --validation "..." --next "..."
 
 Local state (gitignored): `.sdlc/pointer`, `.sdlc/workflows/`.
 
-In the orchestrator repo, use `./scripts/sdlc.sh` instead of `./scripts/sdlc-spdd/sdlc.sh`.
+In the orchestrator repo, use `./scripts/sdlc.sh` instead of `./sdlc-spdd/scripts/sdlc.sh`.
 
 Assistant workflow commands (`/sdlc-claim`, `/sdlc-shelf`, `/sdlc-advance`, `/sdlc-next`, `/sdlc-team`) wrap the same `sdlc.sh` actions from chat. Lifecycle skills remain `/sdlc-spdd-*`.
 
@@ -104,43 +104,43 @@ Assistant workflow commands (`/sdlc-claim`, `/sdlc-shelf`, `/sdlc-advance`, `/sd
 
 Start or resume (prefer workflow CLI):
 
-    ./scripts/sdlc-spdd/sdlc.sh resume <WORK-ID> --phase <phase>
-    ./scripts/sdlc-spdd/sdlc.sh start
+    ./sdlc-spdd/scripts/sdlc.sh resume <WORK-ID> --phase <phase>
+    ./sdlc-spdd/scripts/sdlc.sh start
 
 Low-level equivalent:
 
-    ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase> [--milestone milestone-1.md]
+    ./sdlc-spdd/scripts/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase> [--milestone milestone-1.md]
 
 Paste the Resume Prompt from `.sdlc/sessions/current-session.md`. Load only files listed under **Resolved Context** in that brief; fetch lesson bodies on demand.
 
 Refresh context after adding extensions or `#SkillName` skills:
 
-    ./scripts/sdlc-spdd/resolve-agent-context.sh --target . --phase <phase> --work-id <WORK-ID>
-    ./scripts/sdlc-spdd/resolve-agent-context.sh --target . --text "#TDD #java"
+    ./sdlc-spdd/scripts/resolve-agent-context.sh --target . --phase <phase> --work-id <WORK-ID>
+    ./sdlc-spdd/scripts/resolve-agent-context.sh --target . --text "#TDD #java"
 
 Check previous work:
 
-    ./scripts/sdlc-spdd/resync-agent-session.sh --target . --work-id <WORK-ID> --check-only
+    ./sdlc-spdd/scripts/resync-agent-session.sh --target . --work-id <WORK-ID> --check-only
 
 Capture memory (prefer guarded capture):
 
-    ./scripts/sdlc-spdd/sdlc.sh capture --summary "<summary>" --validation "<tests>" --next "<next command>"
+    ./sdlc-spdd/scripts/sdlc.sh capture --summary "<summary>" --validation "<tests>" --next "<next command>"
 
 Low-level equivalent:
 
-    ./scripts/sdlc-spdd/capture-session-memory.sh --target . --work-id <WORK-ID> --phase <phase> --summary "<summary>" --validation "<tests>" --next "<next command>"
+    ./sdlc-spdd/scripts/capture-session-memory.sh --target . --work-id <WORK-ID> --phase <phase> --summary "<summary>" --validation "<tests>" --next "<next command>"
 
 Capture milestone progress:
 
-    ./scripts/sdlc-spdd/capture-session-memory.sh --target . --work-id <WORK-ID> --phase <phase> --summary "<summary>" --milestone milestone-1.md --roadmap-note "<progress>" --next "<next command>"
+    ./sdlc-spdd/scripts/capture-session-memory.sh --target . --work-id <WORK-ID> --phase <phase> --summary "<summary>" --milestone milestone-1.md --roadmap-note "<progress>" --next "<next command>"
 
 Map milestone items:
 
-    ./scripts/sdlc-spdd/create-work-from-milestone.sh --target . --milestone milestone-1.md --all
+    ./sdlc-spdd/scripts/create-work-from-milestone.sh --target . --milestone milestone-1.md --all
 
 Refresh roadmap:
 
-    ./scripts/sdlc-spdd/sync-roadmap-from-spdd.sh --target .
+    ./sdlc-spdd/scripts/sync-roadmap-from-spdd.sh --target .
 
 ## Lifecycle
 
@@ -175,14 +175,14 @@ Bug:
 Then index the analysis so domain keywords and code areas feed decision memory,
 and continue to planning:
 
-    ./scripts/sdlc-spdd/index-spdd-analysis.sh --target . --work-id <WORK-ID>
+    ./sdlc-spdd/scripts/index-spdd-analysis.sh --target . --work-id <WORK-ID>
     /sdlc-spdd-plan @spdd/analysis/<WORK-ID>-analysis.md
 
 ## Invoke Skills
 
 | Need | Command |
 |------|---------|
-| What now? (orientation) | `/sdlc-next`, `/sdlc-spdd-whereami`, or `./scripts/sdlc-spdd/sdlc.sh next` |
+| What now? (orientation) | `/sdlc-next`, `/sdlc-spdd-whereami`, or `./sdlc-spdd/scripts/sdlc.sh next` |
 | Claim / shelf / advance / team | `/sdlc-claim`, `/sdlc-shelf`, `/sdlc-advance`, `/sdlc-team` |
 | Take over a teammate claim | `/sdlc-claim <WORK-ID> --force` or `sdlc.sh claim <WORK-ID> --force` |
 | Initialize repo context | `/sdlc-spdd-init` |
@@ -220,13 +220,13 @@ Canvas Metadata should include:
     - Docs URL: https://org.github.io/repo/spdd/FEAT-001-order-status-api.html
     - Pull request: TBD
 
-Use Jira for status and ownership. Use GitHub Pages for published docs and runbooks.
+Use Jira for delivery status; use requirement docs + canvas for design truth. See [Issue sync and branching](issue-sync-and-branching.md).
 
 Create Jira draft in the milestone requirement file:
 
     requirements/milestones/<WORK-ID>.md   →   ## Jira (Key, Summary, Type, Acceptance, …)
 
-See [requirements/milestones/README.md](../requirements/milestones/README.md). On claim, `./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>` auto-links the Key into the registry event note.
+See [requirements/milestones/README.md](../requirements/milestones/README.md). On claim, `./sdlc-spdd/scripts/sdlc.sh claim <WORK-ID>` auto-links the Key into the registry event note.
 
 Draft for Jira UI:
 

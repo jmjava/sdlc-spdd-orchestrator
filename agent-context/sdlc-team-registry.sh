@@ -611,26 +611,21 @@ sdlc_team_discover_work_ids() {
   printf '%s\n' "${!seen[@]}" | sort
 }
 
-_team_move_path() {
-  local src="$1"
-  local dest="$2"
-  local dry="${3:-0}"
-  [[ -e "${src}" ]] || return 0
+_team_remove_path() {
+  local path="$1"
+  local dry="${2:-0}"
+  [[ -e "${path}" ]] || return 0
   if [[ "${dry}" -eq 1 ]]; then
-    echo "[dry-run] would move ${src#${SDLC_ROOT}/} -> ${dest#${SDLC_ROOT}/}"
+    echo "[dry-run] would remove ${path#${SDLC_ROOT}/}"
     return 0
   fi
-  mkdir -p "$(dirname "${dest}")"
-  if [[ -e "${dest}" ]]; then
-    echo "archive: destination already exists, skipping ${dest#${SDLC_ROOT}/}" >&2
-    return 1
-  fi
-  mv "${src}" "${dest}"
-  echo "Moved ${src#${SDLC_ROOT}/} -> ${dest#${SDLC_ROOT}/}"
+  rm -rf "${path}"
+  echo "Removed ${path#${SDLC_ROOT}/}"
 }
 
-# Move completed/cancelled Work ID artifacts into archive/ folders.
+# Remove completed/cancelled Work ID contract artifacts from the working tree.
 # Keeps requirements/milestones/<WORK-ID>.md in place as historical requirement source.
+# Git history retains removed files; no spdd/*/archive/ folders in storage v3.
 sdlc_team_archive_work() {
   local work_id="${1:-}"
   local dry="${2:-0}"
@@ -672,10 +667,10 @@ sdlc_team_archive_work() {
   analysis_src="${home}/spdd/analysis/${work_id}-analysis.md"
   review_src="${home}/spdd/reviews/${work_id}-review.md"
   sync_src="${home}/spdd/sync/${work_id}-sync.md"
-  [[ -f "${canvas_src}" ]] && _team_move_path "${canvas_src}" "${home}/spdd/canvas/archive/${work_id}.md" "${dry}" && moved=1
-  [[ -f "${analysis_src}" ]] && _team_move_path "${analysis_src}" "${home}/spdd/analysis/archive/${work_id}-analysis.md" "${dry}" && moved=1
-  [[ -f "${review_src}" ]] && _team_move_path "${review_src}" "${home}/spdd/reviews/archive/${work_id}-review.md" "${dry}" && moved=1
-  [[ -f "${sync_src}" ]] && _team_move_path "${sync_src}" "${home}/spdd/sync/archive/${work_id}-sync.md" "${dry}" && moved=1
+  [[ -f "${canvas_src}" ]] && _team_remove_path "${canvas_src}" "${dry}" && moved=1
+  [[ -f "${analysis_src}" ]] && _team_remove_path "${analysis_src}" "${dry}" && moved=1
+  [[ -f "${review_src}" ]] && _team_remove_path "${review_src}" "${dry}" && moved=1
+  [[ -f "${sync_src}" ]] && _team_remove_path "${sync_src}" "${dry}" && moved=1
 
   local session_dir
   if declare -F sdlc_sessions_dir >/dev/null 2>&1; then
@@ -689,14 +684,14 @@ sdlc_team_archive_work() {
     for sess in "${session_dir}"/*"${work_id}"*; do
       [[ -f "${sess}" ]] || continue
       [[ "$(basename "${sess}")" == "current-session.md" ]] && continue
-      _team_move_path "${sess}" "${session_dir}/archive/$(basename "${sess}")" "${dry}" && moved=1
+      _team_remove_path "${sess}" "${dry}" && moved=1
     done
     shopt -u nullglob
   fi
 
   local state_src="${root}/.sdlc/workflows/${work_id}.state"
   if [[ -f "${state_src}" ]]; then
-    _team_move_path "${state_src}" "${root}/.sdlc/workflows/archive/${work_id}.state" "${dry}" && moved=1
+    _team_remove_path "${state_src}" "${dry}" && moved=1
   fi
 
   if [[ "${dry}" -eq 1 ]]; then
@@ -710,7 +705,7 @@ sdlc_team_archive_work() {
   if [[ "${moved}" -eq 0 ]]; then
     echo "archive: ${work_id} marked archived (no movable artifacts found; milestone left in place)"
   else
-    echo "Archived ${work_id} (${kind}). Commit moved paths + spdd/memory/registry.jsonl."
+    echo "Archived ${work_id} (${kind}). Commit deletions + spdd/memory/registry.jsonl."
   fi
   echo "Left in place: requirements/milestones/${work_id}.md (if present)."
 }

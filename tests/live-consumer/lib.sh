@@ -46,6 +46,19 @@ live_resolve_root() {
   mktemp -d /tmp/sdlc-spdd-live.XXXXXX
 }
 
+live_home() {
+  local root="$1"
+  if [[ -d "${root}/sdlc-spdd" ]]; then
+    printf '%s/sdlc-spdd\n' "${root}"
+  else
+    printf '%s\n' "${root}"
+  fi
+}
+
+live_runtime() {
+  printf '%s/.sdlc\n' "$(live_home "$1")"
+}
+
 live_flush() {
   local root="$1"
   if [[ -e "${root}" ]]; then

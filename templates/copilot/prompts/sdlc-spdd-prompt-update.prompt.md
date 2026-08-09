@@ -38,6 +38,7 @@ Update:
 Include:
 
 - Source of change
+- Outcome: `improved` / `neutral` / `worse` / `unknown`
 - Sections updated
 - Operations added, removed, or changed
 - Safeguards changed

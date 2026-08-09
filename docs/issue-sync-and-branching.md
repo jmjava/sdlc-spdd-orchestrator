@@ -70,9 +70,10 @@ Customers need to check order status without contacting support.
 - URL: https://github.com/acme/storefront/issues/42
 ```
 
-Before the issue exists, leave `Key: TBD` / `Number: TBD`. The engine fills the
-real values on push (below) — never invent them by hand unless you created the
-issue manually in the tracker UI.
+Before the issue exists, leave `Key: TBD` / `Number: TBD`. For **Jira**, create the
+issue manually in the Jira UI, then link the key locally (ops console **Jira** tab or
+`issues link … --apply`). For **GitHub**, `issues push --apply` can create the issue
+and writes the number back into the doc.
 
 ## 2. Creating and syncing issues
 
@@ -111,10 +112,24 @@ sdlc-engine issues draft FEAT-001-order-status-api --system github
 ```
 
 Reads the requirement doc (`## Jira` / `## GitHub` sections) and prints the
-title, labels, and body that *would* be sent. For Jira, `--format adf|md|wiki`
-previews the exact description payload. No file or network writes.
+title, labels, and body that *would* be sent. For Jira, the engine composes a
+markdown description from `## Jira` subsections (`build_jira_markdown`), then
+converts it to ADF for Cloud v3. Use `--format adf|md|wiki` to preview the exact
+payload. No file or network writes. **`issues push` does not read `adf/*.json`
+files** — those are only for `upload-adf` / `download-adf`.
 
-### `issues push` — create/update the tracker issue
+### `issues link` — record a manually created Jira key (local only)
+
+```bash
+sdlc-engine issues link FEAT-001-order-status-api PROJ-123 --apply
+sdlc-engine sync-links --repair
+```
+
+Updates `## Jira Key`, frontmatter `jira_key`, canvas **Source Issue**, and registry
+note. Does **not** call Jira create APIs. Preferred path for Jira; see
+[Jira runbook](jira-runbook.md).
+
+### `issues push` — update tracker from requirement doc
 
 ```bash
 # Dry-run first (prints the payload and the action):
@@ -126,11 +141,9 @@ sdlc-engine issues push FEAT-001-order-status-api --system github --apply
 
 What it does per system:
 
-- **Jira** — POSTs to `/rest/api/3/issue` (or PUTs to update when `Key:` already
-  holds a real key). Markdown from the requirement doc is converted to ADF for
-  Jira Cloud. On create, the engine **writes the new key back** into the doc
-  (`- Key: PROJ-123`, `- Summary: …`) and repairs local links (canvas
-  `Source Issue`, registry note).
+- **Jira** — PUTs to update when `Key:` holds a real key (markdown → ADF). Can POST
+  to create via CLI when `Key:` is still `TBD`, but the ops console and recommended
+  flow use manual Jira create + `issues link` first. Repairs local links on apply.
 - **GitHub** — runs `gh issue create --title … --body …` in the project root.
   The issue number and URL from gh's output are **written back** into the
   `## GitHub` section (`- Number: 42`, `- URL: …`). If `Number:` is already
@@ -213,12 +226,17 @@ body with the Work ID included (e.g. `FEAT-001: …` or a `Work-ID:` trailer).
 It never runs `git commit` — you review, then commit with the branch/prefix
 conventions above.
 
-## 5. The ADF Viewer editor
+## 5. The ADF Viewer editor (optional)
+
+**Primary Jira path:** create the issue in Jira UI → link key locally (ops console
+**Jira** tab or `issues link`) → edit `requirements/milestones/<WORK-ID>.md`
+(`## Jira` markdown) → `issues pull` / `issues push --apply` (update only in console).
 
 The ADF Viewer (`http://127.0.0.1:5050`, started from the ops console or
-`python3 -m sdlc_engine.viewer --root . --port 5050`) is a WYSIWYG + raw-ADF
-editor for `adf/<KEY>.adf.json` documents. Its sync boxes talk to both trackers.
-Everything is prepare-first (dry-run); apply is always an explicit second click.
+`python3 -m sdlc_engine.viewer --root . --port 5050`) is for **optional**
+rich-description work after an issue exists: WYSIWYG + raw-ADF editing of
+`adf/<KEY>.adf.json`. Its sync boxes talk to both trackers. Everything is
+prepare-first (dry-run); apply is always an explicit second click.
 
 **Jira sync** (issue key field, e.g. `PROJ-123`):
 
@@ -251,10 +269,13 @@ in the optional repository field or `SDLC_GITHUB_REPO`):
 gh auth login                       # GitHub
 export JIRA_BASE_URL=… JIRA_EMAIL=… JIRA_API_TOKEN=… JIRA_PROJECT=…   # Jira
 
-# 1. Draft + create the tracker issue from the requirement doc
+# 1. Create Jira issue in UI; link key locally
+sdlc-engine issues link FEAT-001-order-status-api PROJ-123 --apply
+#    (or ops console → Jira tab → Apply link)
+
+# 2. Optional: draft/push/pull to sync requirement ↔ Jira
 sdlc-engine issues draft FEAT-001-order-status-api --system jira
-sdlc-engine issues push  FEAT-001-order-status-api --system jira --apply
-#    → writes `- Key: PROJ-123` back into requirements/milestones/FEAT-001-….md
+sdlc-engine issues push  FEAT-001-order-status-api --system jira --apply   # update only when Key set
 
 # 2. Branch with tracker key + Work ID
 git switch -c feature/PROJ-123-FEAT-001-order-status-api

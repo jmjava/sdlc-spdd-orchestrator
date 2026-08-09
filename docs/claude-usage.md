@@ -62,7 +62,7 @@ Project-scoped commands installed under `.claude/commands/` are available in any
 
 ### Workflow (`/sdlc-*`)
 
-Chat wrappers for `./scripts/sdlc-spdd/sdlc.sh`:
+Chat wrappers for `./sdlc-spdd/scripts/sdlc.sh`:
 
 | Command | Purpose |
 |---------|---------|

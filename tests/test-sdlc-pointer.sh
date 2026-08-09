@@ -67,11 +67,11 @@ if [[ "${current}" == "SPIKE-001" ]]; then ok "sdlc_init sets override"; else ba
 # ---------------------------------------------------------------------------
 echo "== Test 4: start-agent-session.sh sets pointer from --work-id =="
 T="${WORK}/session"
-mkdir -p "${T}/agent-context/sessions"
-cp "${POINTER}" "${T}/agent-context/sdlc-pointer.sh"
-chmod +x "${T}/agent-context/sdlc-pointer.sh"
+mkdir -p "${T}"
+"${REPO_ROOT}/scripts/init-project.sh" --target "${T}" >/dev/null
 "${START}" --target "${T}" --work-id FEAT-002-session --phase plan >/dev/null
-current="$(SDLC_ROOT="${T}" "${T}/agent-context/sdlc-pointer.sh" get)"
+HOME="${T}/sdlc-spdd"
+current="$(SDLC_ROOT="${T}" "${HOME}/scripts/sdlc-pointer.sh" get)"
 if [[ "${current}" == "FEAT-002-session" ]]; then
   ok "start-agent-session sets pointer"
 else
@@ -83,10 +83,10 @@ echo "== Test 5: init-project installs pointer script =="
 T="${WORK}/install"
 mkdir -p "${T}"
 "${REPO_ROOT}/scripts/init-project.sh" --target "${T}" >/dev/null
-if [[ -x "${T}/agent-context/sdlc-pointer.sh" ]]; then
+if [[ -x "${T}/sdlc-spdd/scripts/sdlc-pointer.sh" ]]; then
   ok "init-project installs executable pointer script"
 else
-  bad "init-project missing agent-context/sdlc-pointer.sh"
+  bad "init-project missing sdlc-spdd/scripts/sdlc-pointer.sh"
 fi
 
 # ---------------------------------------------------------------------------

@@ -2,7 +2,7 @@
 
 This is the canonical guide for **how to use all three parts together**: Planning, SPDD, and SDLC. Read this when you want one path—not three separate doc piles.
 
-For *which prompt standard to open*, see [Which prompt standard?](session-prompt-standard.md#which-prompt-standard). For *what each part contributes*, see the value guides in the table below.
+For *which prompt standard to open*, see [Which prompt standard?](session-prompt-standard.md#which-prompt-standard). For *how each part maps to artifacts*, see the table below and [Workflow](workflow.md).
 
 ## The Three Parts
 
@@ -11,6 +11,20 @@ For *which prompt standard to open*, see [Which prompt standard?](session-prompt
 | **Planning** | *Why* are we doing this? *What* is the delivery story? | Roadmap, milestones, requirement stubs, session notes |
 | **SPDD** | *What* exactly should be built—and what is out of scope? | REASONS Canvas, reviews, sync logs |
 | **SDLC** | *Who acts when*, and how do sessions hand off? | Phase commands, session briefs, memory, playbooks |
+
+## Repository layout
+
+| Path | Purpose |
+|------|---------|
+| `ROADMAP.md`, `milestone-*.md`, `session-notes/` | Planning narrative |
+| `requirements/milestones/<WORK-ID>.md` | Requirement + tracker link (source of truth for Jira/GitHub fields) |
+| `spdd/canvas/<WORK-ID>.md` | REASONS Canvas — governs execution |
+| `spdd/memory/lessons.jsonl` | Committed lesson ledger ([Storage v3](storage-v3.md)) |
+| `spdd/memory/registry.jsonl` | Team claim/release event log |
+| `.sdlc/sessions/` | Hot session briefs (gitignored) |
+| `sdlc-spdd/scripts/sdlc.sh` | Daily workflow CLI in target projects |
+
+Primary assistant commands (run in chat, not the terminal): `/sdlc-spdd-plan`, `/sdlc-spdd-architect`, `/sdlc-spdd-code`, `/sdlc-spdd-review`, `/sdlc-spdd-sync`. Full list: [Initialization and invocation](initialization-and-invocation.md).
 
 ## Three-Part Design Mandate
 
@@ -34,7 +48,7 @@ Install and upgrade scripts **create missing Planning scaffolding** and **never 
 
 Verify after install (from your **installed target project**):
 
-    ./scripts/sdlc-spdd/verify-project-install.sh --target .
+    ./sdlc-spdd/scripts/verify-project-install.sh --target .
 
 From the **orchestrator repo** during install: `./scripts/verify-project-install.sh --target /path/to/app`.
 
@@ -75,14 +89,14 @@ Use when work is already on `milestone-*.md` or `ROADMAP.md`.
 | Step | Part | Action |
 |------|------|--------|
 | A1 | **Planning** | Define goal and checklist in `milestone-1.md`; set Current Focus in `ROADMAP.md` |
-| A2 | **Planning → SPDD** | `./scripts/sdlc-spdd/create-work-from-milestone.sh --target . --milestone milestone-1.md --all` |
-| A3 | **SPDD** | `/sdlc-spdd-analysis @requirements/milestones/<WORK-ID>.md @ROADMAP.md @milestone-1.md`, then `./scripts/sdlc-spdd/index-spdd-analysis.sh --target . --work-id <WORK-ID>` |
+| A2 | **Planning → SPDD** | `./sdlc-spdd/scripts/create-work-from-milestone.sh --target . --milestone milestone-1.md --all` |
+| A3 | **SPDD** | `/sdlc-spdd-analysis @requirements/milestones/<WORK-ID>.md @ROADMAP.md @milestone-1.md`, then `./sdlc-spdd/scripts/index-spdd-analysis.sh --target . --work-id <WORK-ID>` |
 | A4 | **SPDD** | `/sdlc-spdd-plan @spdd/analysis/<WORK-ID>-analysis.md` (requires the analysis artifact from A3) |
 | A5 | **SPDD** | `/sdlc-spdd-architect @spdd/canvas/<WORK-ID>.md` — wait for Ready For Coding |
-| A6 | **SDLC** | `./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>` then `sdlc.sh resume <WORK-ID> --phase code` and `sdlc.sh start` — session brief at **code** phase because analysis/plan/architect may span earlier chats; re-run with the matching phase whenever it changes |
+| A6 | **SDLC** | `./sdlc-spdd/scripts/sdlc.sh claim <WORK-ID>` then `sdlc.sh resume <WORK-ID> --phase code` and `sdlc.sh start` — session brief at **code** phase because analysis/plan/architect may span earlier chats; re-run with the matching phase whenever it changes |
 | A7 | **SDLC + SPDD** | `/sdlc-spdd-code @spdd/canvas/<WORK-ID>.md operation T01` → api-test → review → sync |
-| A8 | **SDLC + Planning** | `./scripts/sdlc-spdd/sdlc.sh capture ...` with `--milestone` and `--roadmap-note` |
-| A9 | **Planning ← SPDD** | `./scripts/sdlc-spdd/sync-roadmap-from-spdd.sh --target .` |
+| A8 | **SDLC + Planning** | `./sdlc-spdd/scripts/sdlc.sh capture ...` with `--milestone` and `--roadmap-note` |
+| A9 | **Planning ← SPDD** | `./sdlc-spdd/scripts/sync-roadmap-from-spdd.sh --target .` |
 
 ### Entry B — Start from an ad-hoc requirement
 
@@ -91,8 +105,8 @@ Use when a bug, feature request, or spike arrives without a milestone item yet.
 | Step | Part | Action |
 |------|------|--------|
 | B1 | **SDLC** | Triage: propose Work ID and whether `/sdlc-spdd-analysis` is safe |
-| B2 | **SDLC** | `./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>` then `sdlc.sh resume <WORK-ID> --phase analysis` and `sdlc.sh start` |
-| B3 | **SPDD** (+ Planning if applicable) | `/sdlc-spdd-analysis @requirements/<file>.md` or with `@ROADMAP.md @milestone-1.md`, then `./scripts/sdlc-spdd/index-spdd-analysis.sh --target . --work-id <WORK-ID>` |
+| B2 | **SDLC** | `./sdlc-spdd/scripts/sdlc.sh claim <WORK-ID>` then `sdlc.sh resume <WORK-ID> --phase analysis` and `sdlc.sh start` |
+| B3 | **SPDD** (+ Planning if applicable) | `/sdlc-spdd-analysis @requirements/<file>.md` or with `@ROADMAP.md @milestone-1.md`, then `./sdlc-spdd/scripts/index-spdd-analysis.sh --target . --work-id <WORK-ID>` |
 | B4 | **SPDD** | `/sdlc-spdd-plan @spdd/analysis/<WORK-ID>-analysis.md` (requires the analysis artifact from B3) |
 | B5 | **SPDD** | `/sdlc-spdd-architect @spdd/canvas/<WORK-ID>.md` |
 | B6–B8 | **SDLC + SPDD** | Same as A6–A7 (code one operation → api-test → review → sync) |
@@ -123,7 +137,7 @@ Once initialized, repeat this loop every agent session:
 
 | Part | Do this |
 |------|---------|
-| SDLC | `./scripts/sdlc-spdd/sdlc.sh next` or `/sdlc-spdd-whereami`, then `claim`/`resume` + `start` |
+| SDLC | `./sdlc-spdd/scripts/sdlc.sh next` or `/sdlc-spdd-whereami`, then `claim`/`resume` + `start` |
 | SDLC | Paste **Resume Prompt** from `current-session.md` |
 | Planning | Resume prompt includes `@ROADMAP.md`, `@milestone-*.md`, `@session-notes/` when present |
 
@@ -139,7 +153,7 @@ Once initialized, repeat this loop every agent session:
 
 | Part | Do this |
 |------|---------|
-| SDLC | `./scripts/sdlc-spdd/sdlc.sh capture` — writes durable memory + progress log |
+| SDLC | `./sdlc-spdd/scripts/sdlc.sh capture` — writes durable memory + progress log |
 | Planning | Same script writes `session-notes/`, optional `--milestone`, `--roadmap-note` |
 | SPDD | Set `--next` to the next phase command (review, sync, next operation) |
 
@@ -181,17 +195,17 @@ Maps the [15-step workflow](workflow.md) to the three parts:
 
 ## Prompt Standards for Each Part
 
-| Part | Prompt standard | Value guide |
-|------|-----------------|-------------|
-| **Default (sessions)** | [Session prompt standard](session-prompt-standard.md) | [What SDLC brings](what-sdlc-brings.md) |
-| **SPDD drill-down** | [SPDD prompt standard](spdd-prompt-standard.md) | [What SPDD brings](what-spdd-brings.md) |
-| **Planning drill-down** | [Planning prompt standard](planning-prompt-standard.md) | [What planning brings](what-planning-brings.md) |
+| Part | Prompt standard | How-to reference |
+|------|-----------------|------------------|
+| **Default (sessions)** | [Session prompt standard](session-prompt-standard.md) | [Workflow](workflow.md) |
+| **SPDD drill-down** | [SPDD prompt standard](spdd-prompt-standard.md) | [Storage v3](storage-v3.md) |
+| **Planning drill-down** | [Planning prompt standard](planning-prompt-standard.md) | [Roadmap, milestones, and session notes](roadmap-milestones-and-session-notes.md) |
 
 Open **Session** first. Open **SPDD** or **Planning** when your question narrows to that layer. See [Which prompt standard?](session-prompt-standard.md#which-prompt-standard).
 
 ## Session Brief Timing
 
-Run `./scripts/sdlc-spdd/sdlc.sh claim` / `resume` + `start` with the phase you are **about to run**, then paste the generated Resume Prompt. Re-run `sdlc.sh advance` when you complete a phase step.
+Run `./sdlc-spdd/scripts/sdlc.sh claim` / `resume` + `start` with the phase you are **about to run**, then paste the generated Resume Prompt. Re-run `sdlc.sh advance` when you complete a phase step.
 
 | Entry | When to create the first brief |
 |-------|-------------------------------|
@@ -203,7 +217,7 @@ Re-run `sdlc.sh start` (or `start-agent-session.sh`) whenever the phase changes 
 
 ## Conflict Resolution (single rule)
 
-This is the **only** full conflict-resolution table. The value guides ([What SDLC brings](what-sdlc-brings.md), [What SPDD brings](what-spdd-brings.md), [What planning brings](what-planning-brings.md)) list part-specific bullets and link here.
+This is the **only** full conflict-resolution table. Part-specific runbooks link here from [Workflow](workflow.md), [Storage v3](storage-v3.md), and [Roadmap, milestones, and session notes](roadmap-milestones-and-session-notes.md).
 
 When layers disagree, use this order:
 

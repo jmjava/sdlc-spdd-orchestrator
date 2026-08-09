@@ -1,65 +1,56 @@
 # Milestone-Derived Requirements
 
-This folder holds requirement stubs created from milestone checklist items.
+Requirement stubs for Work IDs created from milestone checklists.
 
 ## Layout
-
-**Preferred (new projects):**
 
 ```text
 requirements/milestones/
   README.md
   milestone-1/
     _milestone.yml
-    MILESTONE-1.md
-    FEAT-001-….md
+    MILESTONE-1.md            # milestone complete — see git history for FEAT-001…013
+  milestone-2/                # next planning tranche
+    _milestone.yml
+    MILESTONE-2.md
+    <WORK-ID>.md
 ```
 
-**Legacy (still supported):** root `milestone-N.md` and flat
-`requirements/milestones/<WORK-ID>.md`.
+Flat stubs (`requirements/milestones/<WORK-ID>.md`) remain supported for legacy
+installs; prefer `milestone-N/<WORK-ID>.md` for new work.
 
-See [docs/MIGRATION-root-to-subdirectories.md](../../docs/MIGRATION-root-to-subdirectories.md)
-and [docs/jira-compatible-requirements-format.md](../../docs/jira-compatible-requirements-format.md).
+Completed Milestone 1 stubs and canvases were removed from the working tree;
+use git history if you need FEAT-001…013 requirement text.
 
-## Purpose
+## Creating new requirements
 
-When you run `create-work-from-milestone.sh`, each unchecked milestone item becomes:
+1. Add or extend a milestone definition (`milestone-N/MILESTONE-N.md`).
+2. Run `./scripts/create-work-from-milestone.sh` or copy
+   `templates/requirements/requirement-feature-template.md`.
+3. Validate: `./scripts/validate-requirements-format.sh --target .`
 
-- a Work ID
-- a requirement file here (flat or under `milestone-N/`)
-- a draft REASONS Canvas under `spdd/canvas/<WORK-ID>.md`
-- a **Linked Work** row in the source milestone definition
+Use in analysis/plan prompts:
 
-Use these files in analysis/plan prompts:
+```text
+/sdlc-spdd-analysis @requirements/milestones/milestone-2/<WORK-ID>.md
+/sdlc-spdd-plan @requirements/milestones/milestone-2/<WORK-ID>.md @ROADMAP.md
+```
 
-    /sdlc-spdd-analysis @requirements/milestones/milestone-1/<WORK-ID>.md
-    /sdlc-spdd-plan @requirements/milestones/milestone-1/<WORK-ID>.md @ROADMAP.md @requirements/milestones/milestone-1/MILESTONE-1.md
+## Jira drafts
 
-## Jira issue drafts
-
-Each milestone requirement file stores Jira syntax:
-
-- Optional YAML frontmatter (`jira_key`, epic, status, blocks/depends_on)
-- `## Jira` section for copy-paste create flows
-- **After create** — set `- Key: ABC-123` (and matching `jira_key`) and commit
-- **On claim** — `./scripts/sdlc.sh claim <WORK-ID>` auto-reads the Key into the team registry
-
-Validate:
-
-    ./scripts/validate-requirements-format.sh --target .
-    # or after install:
-    ./scripts/sdlc-spdd/validate-requirements-format.sh --target .
-
-See [jira-runbook.md](../../docs/jira-runbook.md).
+Optional YAML frontmatter + `## Jira` section per
+[docs/jira-compatible-requirements-format.md](../../docs/jira-compatible-requirements-format.md).
+On claim, `./scripts/sdlc.sh claim <WORK-ID>` reads `- Key:` into the team registry.
 
 ## Relationship to other planning artifacts
 
 | Artifact | Role |
 |----------|------|
-| `milestone-*.md` or `…/milestone-N/MILESTONE-N.md` | Goal, scope checklist, linked Work IDs |
-| `requirements/milestones/` | Per-item requirement stubs + Jira draft syntax |
-| `session-notes/` | Daily agent-session narrative |
-| `ROADMAP.md` | Milestone progress and current focus |
+| `ROADMAP.md` | Current focus and milestone progress |
+| `requirements/milestones/milestone-N/` | Scoped checklist + linked Work IDs |
+| `requirements/` (root) | Ad-hoc requirements not tied to a milestone |
+| `session-notes/` | Daily narrative |
+| `spdd/canvas/` | REASONS design contracts — removed on `archive` when complete |
 
-Ad-hoc requirements (not from a milestone) live directly under `requirements/` instead.
-Use the same frontmatter + `## Jira` section there when the work will be tracked in Jira.
+See [docs/storage-v3.md](../../docs/storage-v3.md) for the committed ledger model
+(`spdd/memory/lessons.jsonl`, `registry.jsonl`).

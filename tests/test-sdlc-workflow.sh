@@ -37,8 +37,8 @@ wf() { SDLC_ROOT="${1}" "${WORKFLOW}" "${@:2}"; }
 setup_feature() {
   local t="$1"
   local work_id="$2"
-  mkdir -p "${t}/agent-context/sessions" \
-    "${t}/agent-context/features/${work_id}" \
+  mkdir -p "${t}/.sdlc/sessions" \
+    "${t}/agent-context" \
     "${t}/spdd/canvas" \
     "${t}/spdd/analysis" \
     "${t}/scripts/lib"
@@ -667,7 +667,13 @@ echo "== Test 17: done status from canvas Final Status =="
 T="${WORK}/done"
 work_id="CHORE-001-done"
 setup_feature "${T}" "${work_id}"
-cp "${REPO_ROOT}/spdd/canvas/CHORE-001-docgen-initial-documentation.md" "${T}/spdd/canvas/${work_id}.md"
+cat > "${T}/spdd/canvas/${work_id}.md" <<'EOF'
+# CHORE-001-done
+
+## Final Status
+
+- Status: Complete
+EOF
 SDLC_ROOT="${T}" wf "${T}" sync-team >/dev/null
 if registry_matches "${T}" "CHORE-001-done" '"status": "done"'; then
   ok "sync-team marks canvas complete as done"

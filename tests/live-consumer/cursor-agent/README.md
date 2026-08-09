@@ -63,7 +63,7 @@ Inspect agent-created artifacts under `/tmp/sdlc-spdd-live`:
 
 - `spdd/canvas/FEAT-001-hello-live.md`
 - `spdd/analysis/`, `spdd/reviews/`, `spdd/sync/`
-- `agent-context/features/FEAT-001-hello-live/`
+- `.sdlc/sessions/current-session.md`, `spdd/memory/lessons.jsonl`
 
 ## Full persistence test (SDK + SQLite)
 

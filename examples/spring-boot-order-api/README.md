@@ -1,22 +1,28 @@
 # Spring Boot Order API Example
 
-This example demonstrates SDLC-SPDD from requirement through review for a small Spring Boot feature.
+Storage v3 sample: requirement → canvas → review using committed contract paths
+only.
 
 ## Contents
 
 - `requirements/add-order-status-api.md` — raw requirement
 - `spdd/canvas/FEAT-001-order-status-api.md` — REASONS Canvas
-- `agent-context/features/FEAT-001-order-status-api/` — feature workspace artifacts
+- `spdd/reviews/FEAT-001-order-status-api-review.md` — sample review artifact
 
-## Command Flow
+Memory and session runtime live under `.sdlc/` and `spdd/memory/` in real
+projects — not duplicated here.
+
+## Command flow
 
 1. `/sdlc-spdd-plan @requirements/add-order-status-api.md`
 2. `/sdlc-spdd-architect @spdd/canvas/FEAT-001-order-status-api.md`
-3. `/sdlc-spdd-code` for T01, then T02, then T03
+3. `/sdlc-spdd-code` for each canvas operation
 4. `/sdlc-spdd-review @spdd/canvas/FEAT-001-order-status-api.md`
-5. `/sdlc-spdd-retro @spdd/canvas/FEAT-001-order-status-api.md`
-6. `/sdlc-spdd-sync @spdd/canvas/FEAT-001-order-status-api.md`
+5. `/sdlc-spdd-retro` then `/sdlc-spdd-sync`
+6. `./scripts/sdlc.sh accept --work-id FEAT-001-order-status-api` at the gate
 
-## Validate Canvas
+## Validate canvas
 
-    ../../scripts/validate-reasons-canvas.sh spdd/canvas/FEAT-001-order-status-api.md
+```bash
+./scripts/validate-reasons-canvas.sh examples/spring-boot-order-api/spdd/canvas/FEAT-001-order-status-api.md
+```

@@ -42,7 +42,7 @@ but the commit surface is lean, and the same facts can live in three stores at o
 
 | Concern | Old default | Now (`v2.0.0a6`) |
 | ------- | ----------- | ---------------- |
-| Session briefs | Committed under `agent-context/sessions/` | Hot path: **`.sdlc/sessions/`** (gitignored) |
+| Session briefs | Legacy installs may have committed briefs | Hot path: **`.sdlc/sessions/`** (gitignored) |
 | Progress / lessons | Feature mirrors + sprawling memory trees | One committed ledger: **`spdd/memory/lessons.jsonl`** (+ `registry.jsonl`), staged via `.sdlc/staged/` |
 | Local query | Grep the tree | Opt-in **SQLite** cache (`.sdlc/index.sqlite`), rebuilt from the ledger |
 | Optional graph | Manual / spike-shaped Guide wiring | Ledger-first persist: git ledger + optional SQLite cache + Guide |
@@ -84,7 +84,7 @@ sdlc-engine context backends --set git-pointers,sqlite
 # or: CONTEXT_BACKENDS=git-pointers,sqlite,guide-dice
 ```
 
-Program detail: [docs/agent-context-cleanup/](docs/agent-context-cleanup/)
+Program detail: [Storage v3](docs/storage-v3.md)
 
 ---
 
@@ -109,7 +109,7 @@ One Work ID. One operation at a time. Capture before you leave.
 ![Daily loop](docs/diagrams/11-daily-loop.svg)
 
 ```bash
-# Terminal (installed target: scripts/sdlc-spdd/ … · this repo: scripts/sdlc.sh …)
+# Terminal (installed target: sdlc-spdd/scripts/ … · this repo: scripts/ …)
 ./scripts/sdlc.sh claim FEAT-001-order-status
 ./scripts/sdlc.sh start
 ./scripts/sdlc.sh next
@@ -170,7 +170,7 @@ More: [Installing into your project](docs/installing-into-your-project.md) ·
 | ---- | ------- | ------------- |
 | **Assistant** | `/sdlc-spdd-plan @requirements/…` | Cursor / Copilot / Claude **chat** in the target |
 | **Install / upgrade** | `./scripts/setup-agent-prompts.sh --target …` | Terminal in the **orchestrator** clone |
-| **Daily workflow** | `./scripts/sdlc-spdd/sdlc.sh next` | Terminal in an **installed target** |
+| **Daily workflow** | `./sdlc-spdd/scripts/sdlc.sh next` | Terminal in an **installed target** |
 | **Dogfood this repo** | `./scripts/sdlc.sh next` | Terminal here |
 
 `/sdlc-spdd-*` is **never** a shell command. Details:
@@ -301,7 +301,7 @@ trees, `work-registry.tsv`) keep working read-only and are consolidated by
 | `templates/` | Canvas + assistant command templates |
 | `spdd/` | Dogfood canvases + lean memory |
 | `requirements/` | Dogfood requirements |
-| `examples/` | Sample workflows |
+| `examples/` | v3 sample workflow (`spring-boot-order-api/`) |
 
 ---
 
@@ -317,8 +317,8 @@ trees, `work-registry.tsv`) keep working read-only and are consolidated by
 
 **Shipped platform (`v2.0.0a6`)**
 
-- [What's new in v2.0.0a6](docs/whats-new-v2.0.0a6.md) — feature tour  
-- [Hot sessions and lean memory](docs/hot-sessions-and-lean-memory.md)  
+- [Storage v3](docs/storage-v3.md) — ledger, staged captures, Guide DICE working store  
+- [Context loading and scaling](docs/context-loading-and-scaling.md) — progressive disclosure for agents  
 - [Triple-path context](docs/triple-path-context.md) — git / SQLite / Guide backends  
 - [Quiet mode](docs/quiet-mode.md)  
 - [Local SQLite index](docs/local-sqlite-index.md)  

@@ -1,6 +1,14 @@
 ```md
 # SDLC-SPDD Orchestrator Project Spec
 
+> **Storage v3 (current):** Canonical model is in [docs/storage-v3.md](docs/storage-v3.md).
+> Committed memory: `spdd/memory/lessons.jsonl` + `registry.jsonl`. Runtime: `.sdlc/`.
+> Harness: `harness/skills/` + `harness/phase-index.md`. No `agent-context/features/` or
+> `agent-context/memory/` trees. Completed work is removed from the tree on `archive`
+> (git history is the audit trail). Sections below retain the original MVP scaffold spec
+> with paths updated to v3 where noted.
+
+
 ## Purpose
 
 Create a new GitHub repository that combines the strongest ideas from two existing frameworks:
@@ -168,7 +176,7 @@ Each unit of work should have exactly one primary REASONS Canvas.
 
 The canvas should live in both:
 
-    agent-context/features/<WORK-ID>/reasons-canvas.md
+    spdd/canvas/<WORK-ID>.md
     spdd/canvas/<WORK-ID>.md
 
 The `agent-context` copy is the feature workspace copy.
@@ -187,14 +195,15 @@ Create the repo with this structure:
     ├── CHANGELOG.md
     ├── CONTRIBUTING.md
     ├── docs/
-    │   ├── architecture.md
     │   ├── workflow.md
+    │   ├── three-part-operating-path.md
+    │   ├── storage-v3.md
+    │   ├── issue-sync-and-branching.md
     │   ├── cursor-usage.md
     │   ├── java-spring-boot-usage.md
     │   ├── tekton-usage.md
-    │   ├── github-project-setup.md
     │   ├── design-decisions.md
-    │   └── roadmap.md
+    │   └── README.md
     ├── templates/
     │   ├── reasons-canvas/
     │   │   ├── feature-template.md
@@ -246,26 +255,25 @@ Create the repo with this structure:
     │   │   ├── agent-context/
     │   │   ├── spdd/
     │   │   └── README.md
-    │   └── tekton-pipeline-demo/
-    │       ├── requirements/
-    │       ├── agent-context/
-    │       ├── spdd/
-    │       └── README.md
-    ├── agent-context/
-    │   ├── README.md
-    │   ├── memory/
-    │   │   ├── project-memory.md
-    │   │   ├── architecture-decisions.md
-    │   │   ├── known-pitfalls.md
-    │   │   └── reusable-patterns.md
-    │   ├── playbooks/
-    │   │   ├── java-feature-playbook.md
-    │   │   ├── bugfix-playbook.md
-    │   │   ├── refactor-playbook.md
-    │   │   └── pr-review-playbook.md
-    │   ├── features/
-    │   │   └── .gitkeep
-    │   └── harness/
+    │   └── (see templates/stack-rules/tekton.md)
+    │       └── (Tekton: use stack-rules/tekton.md)
+    ├── harness/                  # or agent-context/harness/ in dogfood repo
+    │   ├── phase-index.md
+    │   ├── quality-gates.md
+    │   ├── validation-rules.md
+    │   └── skills/
+    ├── spdd/
+    │   ├── canvas/
+    │   ├── analysis/
+    │   ├── reviews/
+    │   ├── sync/
+    │   └── memory/               # lessons.jsonl + registry.jsonl
+    ├── .sdlc/                    # gitignored runtime (sessions, staged, sqlite)
+    ├── agent-context/            # workflow scripts in dogfood repo only
+    │   ├── sdlc-pointer.sh
+    │   ├── sdlc-workflow.sh
+    │   └── sdlc-team-registry.sh
+    │   └── harness/              # dogfood mirror of harness/
     │       ├── validation-rules.md
     │       └── quality-gates.md
     └── .github/
@@ -323,7 +331,7 @@ Each feature, bugfix, refactor, or spike should get a dedicated folder.
 
 Format:
 
-    agent-context/features/FEAT-001-short-name/
+    requirements/milestones/<WORK-ID>.md + spdd/canvas/<WORK-ID>.md
     ├── requirement.md
     ├── reasons-canvas.md
     ├── tasks/
@@ -397,8 +405,8 @@ Expected output files:
     .cursor/commands/sdlc-spdd-review.md
     .cursor/commands/sdlc-spdd-retro.md
     .cursor/commands/sdlc-spdd-sync.md
-    agent-context/memory/project-memory.md
-    agent-context/memory/architecture-decisions.md
+    spdd/memory/lessons.jsonl
+    spdd/memory/lessons.jsonl (kind=decision)
     agent-context/harness/quality-gates.md
     spdd/canvas/.gitkeep
     requirements/.gitkeep
@@ -419,7 +427,7 @@ Responsibilities:
 - Read the requirement.
 - Inspect relevant project files.
 - Detect the stack.
-- Create a feature folder under `agent-context/features/`.
+- Create requirement + canvas under `requirements/milestones/` and `spdd/canvas/`.
 - Create a REASONS Canvas under `spdd/canvas/`.
 - Define Requirements.
 - Define Entities.
@@ -435,11 +443,11 @@ Responsibilities:
 
 Expected output:
 
-    agent-context/features/<WORK-ID>/requirement.md
-    agent-context/features/<WORK-ID>/reasons-canvas.md
+    requirements/milestones/<WORK-ID>.md
     spdd/canvas/<WORK-ID>.md
-    agent-context/features/<WORK-ID>/tasks/T01-<task>.md
-    agent-context/features/<WORK-ID>/progress-log.md
+    spdd/canvas/<WORK-ID>.md
+    spdd/tasks/<WORK-ID>-T01-<task>.md
+    .sdlc/staged/lessons.jsonl (via capture)
 
 ## Command: /sdlc-spdd-architect
 
@@ -555,7 +563,7 @@ Review result values:
 
 Expected output:
 
-    agent-context/features/<WORK-ID>/review.md
+    spdd/reviews/<WORK-ID>-review.md
     spdd/reviews/<WORK-ID>-review.md
 
 ## Command: /sdlc-spdd-retro
@@ -583,10 +591,10 @@ Responsibilities:
 
 Expected output:
 
-    agent-context/features/<WORK-ID>/retro.md
-    agent-context/memory/project-memory.md
-    agent-context/memory/known-pitfalls.md
-    agent-context/memory/reusable-patterns.md
+    spdd/memory/lessons.jsonl (via accept)
+    spdd/memory/lessons.jsonl
+    spdd/memory/lessons.jsonl (kind=pitfall)
+    spdd/memory/lessons.jsonl (kind=pattern)
 
 ## Command: /sdlc-spdd-sync
 
@@ -613,8 +621,8 @@ Responsibilities:
 
 Expected output:
 
-    agent-context/features/<WORK-ID>/reasons-canvas.md
-    agent-context/features/<WORK-ID>/sync-log.md
+    spdd/canvas/<WORK-ID>.md
+    spdd/sync/<WORK-ID>-sync.md
     spdd/sync/<WORK-ID>-sync.md
     Updated spdd/canvas/<WORK-ID>.md
 
@@ -959,10 +967,10 @@ Content:
     - `spdd/tasks/.gitkeep`
     - `spdd/reviews/.gitkeep`
     - `spdd/sync/.gitkeep`
-    - `agent-context/memory/project-memory.md`
-    - `agent-context/memory/architecture-decisions.md`
-    - `agent-context/memory/known-pitfalls.md`
-    - `agent-context/memory/reusable-patterns.md`
+    - `spdd/memory/lessons.jsonl`
+    - `spdd/memory/lessons.jsonl (kind=decision)`
+    - `spdd/memory/lessons.jsonl (kind=pitfall)`
+    - `spdd/memory/lessons.jsonl (kind=pattern)`
     - `agent-context/harness/quality-gates.md`
 
     Print a short summary of:
@@ -1004,7 +1012,7 @@ Content:
     1. Inspect the repository structure.
     2. Detect the stack.
     3. Identify relevant files and modules.
-    4. Create or update a feature folder under `agent-context/features/`.
+    4. Create or update requirement + canvas under `requirements/milestones/` and `spdd/canvas/`.
     5. Create a REASONS Canvas under `spdd/canvas/`.
     6. Use the sections:
        - Requirements
@@ -1024,10 +1032,10 @@ Content:
 
     Create:
 
-    - `agent-context/features/<WORK-ID>/requirement.md`
-    - `agent-context/features/<WORK-ID>/reasons-canvas.md`
+    - `requirements/milestones/<WORK-ID>.md`
     - `spdd/canvas/<WORK-ID>.md`
-    - `agent-context/features/<WORK-ID>/progress-log.md`
+    - `spdd/canvas/<WORK-ID>.md`
+    - `.sdlc/staged/lessons.jsonl (via capture)`
 
     Also print a short summary of:
 
@@ -1119,7 +1127,7 @@ Content:
 
     Update:
 
-    - `agent-context/features/<WORK-ID>/progress-log.md`
+    - `.sdlc/staged/lessons.jsonl (via capture)`
     - The task status inside the feature canvas or task file
 
     After implementation, summarize:
@@ -1166,7 +1174,7 @@ Content:
 
     Create or update:
 
-    - `agent-context/features/<WORK-ID>/review.md`
+    - `spdd/reviews/<WORK-ID>-review.md`
     - `spdd/reviews/<WORK-ID>-review.md`
 
     Review result must be one of:
@@ -1217,10 +1225,10 @@ Content:
 
     Create or update:
 
-    - `agent-context/features/<WORK-ID>/retro.md`
-    - `agent-context/memory/project-memory.md`
-    - `agent-context/memory/known-pitfalls.md`
-    - `agent-context/memory/reusable-patterns.md`
+    - `spdd/memory/lessons.jsonl (via accept)`
+    - `spdd/memory/lessons.jsonl`
+    - `spdd/memory/lessons.jsonl (kind=pitfall)`
+    - `spdd/memory/lessons.jsonl (kind=pattern)`
 
     Include:
 
@@ -1262,8 +1270,8 @@ Content:
 
     Update:
 
-    - `agent-context/features/<WORK-ID>/reasons-canvas.md`
-    - `agent-context/features/<WORK-ID>/sync-log.md`
+    - `spdd/canvas/<WORK-ID>.md`
+    - `spdd/sync/<WORK-ID>-sync.md`
     - `spdd/sync/<WORK-ID>-sync.md`
 
     Include:
@@ -1343,7 +1351,7 @@ Behavior:
 
 Example output:
 
-    agent-context/features/FEAT-001-order-status-api/
+    examples/spring-boot-order-api/ (spdd/ + requirements/)
     spdd/canvas/FEAT-001-order-status-api.md
 
 ### scripts/validate-reasons-canvas.sh
@@ -1409,7 +1417,7 @@ Detection rules:
 
 Output should be written to:
 
-    agent-context/memory/project-memory.md
+    spdd/memory/lessons.jsonl
 
 ### scripts/sync-agent-context.sh
 

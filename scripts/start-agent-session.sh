@@ -503,7 +503,7 @@ ${workflow_brief_md}
 New agents: load these first so you know how to operate within the SDLC-SPDD framework before doing any work.
 
 - Operating model + work rules: the always-on grounding file (.cursor/rules/sdlc-spdd.mdc, .github/copilot-instructions.md, or CLAUDE.md) is loaded on every request.
-- How the framework works: ${docs_hint}/three-part-operating-path.md, ${docs_hint}/ten-thousand-foot-view.md.
+- How the framework works: ${docs_hint}/three-part-operating-path.md, ${docs_hint}/workflow.md.
 - Session + context-loading rules: ${docs_hint}/context-loading-and-scaling.md#bootstrap-and-index-based-loading (bootstrap layers, index catalog, retrieval, capture).
 - Resolve phase skills/extensions: ${scripts_hint}/resolve-agent-context.sh --target . --phase ${PHASE}
 

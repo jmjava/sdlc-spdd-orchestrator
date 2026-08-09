@@ -7,11 +7,11 @@ is_orchestrator_only_doc() {
   local base
   base="$(basename "$1")"
   case "${base}" in
-    README.md | guide-rag-research-and-dogfooding.md | \
+    README.md | \
     engine-v2.md | local-sqlite-index.md | jira-runbook.md | \
-    integration-branch.md | catch-up.md | \
-    contributing-command-specs.md | contributing-extensions.md | \
-    spike-guide-ingest-agent-context.md | guide-flow.md | dice-projection-runbook.md)
+    contributing-command-specs.md | contributing-skills.md | \
+    mcp-guide-for-agents.md | ops-console.md | \
+    guide-flow.md | dice-projection-runbook.md)
       return 0
       ;;
     *)

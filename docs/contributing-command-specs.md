@@ -121,5 +121,5 @@ If templates were edited by hand (avoid — prefer spec edits), refresh specs:
 ## See also
 
 - [spec/commands/README.md](../spec/commands/README.md) — format reference
-- [integration-branch.md](integration-branch.md) — manual test section F
+- [TESTING.md](../TESTING.md) — command and adapter test stack
 - Canvas: [spdd/canvas/FEAT-002-command-spec-generation.md](../spdd/canvas/FEAT-002-command-spec-generation.md)

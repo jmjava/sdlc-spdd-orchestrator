@@ -34,22 +34,32 @@ fi
 export SDLC_ROOT="${ROOT}"
 ENGINE_MODE="${SDLC_ENGINE:-shell}"
 
+if [[ -f "${SCRIPT_DIR}/lib/python.sh" ]]; then
+  # shellcheck source=scripts/lib/python.sh
+  source "${SCRIPT_DIR}/lib/python.sh"
+elif [[ -f "${ROOT}/scripts/lib/python.sh" ]]; then
+  # shellcheck source=scripts/lib/python.sh
+  source "${ROOT}/scripts/lib/python.sh"
+fi
+
 _python_engine_available() {
+  resolve_engine_python || return 1
   if [[ -d "${ROOT}/engine/src/sdlc_engine" ]]; then
     PYTHONPATH="${ROOT}/engine/src${PYTHONPATH:+:${PYTHONPATH}}" \
-      python3 -c 'import sdlc_engine' 2>/dev/null
+      "${SDLC_PY}" -c 'import sdlc_engine' 2>/dev/null
     return $?
   fi
-  python3 -c 'import sdlc_engine' 2>/dev/null
+  "${SDLC_PY}" -c 'import sdlc_engine' 2>/dev/null
 }
 
 _run_python_engine() {
   local args=("$@")
+  resolve_engine_python || exit 1
   if [[ -d "${ROOT}/engine/src/sdlc_engine" ]]; then
     PYTHONPATH="${ROOT}/engine/src${PYTHONPATH:+:${PYTHONPATH}}" \
-      exec python3 -m sdlc_engine --root "${ROOT}" "${args[@]}"
+      exec "${SDLC_PY}" -m sdlc_engine --root "${ROOT}" "${args[@]}"
   fi
-  exec python3 -m sdlc_engine --root "${ROOT}" "${args[@]}"
+  exec "${SDLC_PY}" -m sdlc_engine --root "${ROOT}" "${args[@]}"
 }
 
 cmd="${1:-next}"
@@ -96,6 +106,12 @@ case "${cmd}" in
   work-init-from-adf|init-from-adf)
     _py_only_args=("work" "init-from-adf" "$@")
     ;;
+  context)
+    _py_only_args=("context" "$@")
+    ;;
+  guide-query)
+    _py_only_args=("context" "guide-query" "$@")
+    ;;
   installer|console|dashboard)
     _py_only_args=("${cmd}" "$@")
     ;;
@@ -103,7 +119,7 @@ esac
 if ((${#_py_only_args[@]} > 0)); then
   if ! _python_engine_available; then
     echo "sdlc: '${_py_only_args[0]}' requires the Python engine (engine/sdlc_engine)" >&2
-    echo "Install with: python3 -m pip install -e '${ROOT}/engine'" >&2
+    echo "Install with: ./scripts/setup-engine-venv.sh  # Python 3.12" >&2
     exit 1
   fi
   _run_python_engine "${_py_only_args[@]}"
@@ -113,7 +129,7 @@ case "${ENGINE_MODE}" in
   python)
     if ! _python_engine_available; then
       echo "sdlc: SDLC_ENGINE=python but sdlc_engine is not importable" >&2
-      echo "Install with: python3 -m pip install -e '${ROOT}/engine'" >&2
+      echo "Install with: ./scripts/setup-engine-venv.sh  # Python 3.12" >&2
       exit 1
     fi
     _run_python_engine "${cmd}" "$@"

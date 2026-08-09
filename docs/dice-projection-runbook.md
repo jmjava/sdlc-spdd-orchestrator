@@ -152,7 +152,7 @@ check the backend before using any `spdd_*` tool:
 
 ```bash
 ./scripts/resolve-context-backend.sh --target .        # orchestrator repo
-./scripts/sdlc-spdd/resolve-context-backend.sh --target .   # installed project
+./sdlc-spdd/scripts/resolve-context-backend.sh --target .   # installed project
 ```
 
 `CONTEXT_BACKEND=files` (no `guide-dice.md` harness marker, or Guide

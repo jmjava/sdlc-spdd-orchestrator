@@ -25,8 +25,8 @@ requirements/milestones/
 - Flat stubs: `requirements/milestones/<WORK-ID>.md`
 
 Scripts prefer subdirectory definitions when both root and subdirectory exist
-(with a warning). See [MIGRATION-root-to-subdirectories.md](../../docs/MIGRATION-root-to-subdirectories.md)
-and [jira-compatible-requirements-format.md](../../docs/jira-compatible-requirements-format.md).
+(with a warning). See [jira-compatible-requirements-format.md](../../../docs/jira-compatible-requirements-format.md#existing-root-milestones)
+and [jira-compatible-requirements-format.md](../../../docs/jira-compatible-requirements-format.md).
 
 ## Purpose
 
@@ -62,9 +62,9 @@ SDLC_ENGINE=python ./scripts/sdlc.sh sync-links --repair
 ```
 
 Jira Cloud needs ADF for descriptions — the engine converts this markdown
-automatically on push (see [jira-runbook.md](../../docs/jira-runbook.md)).
+automatically on push (see [jira-runbook.md](../../../docs/jira-runbook.md)).
 
-See [jira-runbook.md](../../docs/jira-runbook.md) and [engine-v2.md](../../docs/engine-v2.md).
+See [jira-runbook.md](../../../docs/jira-runbook.md) and [engine/README.md](../../../engine/README.md).
 
 ## GitHub issue drafts
 
@@ -95,7 +95,7 @@ Validate:
 
     ./sdlc-spdd/scripts/validate-requirements-format.sh --target .
 
-See [jira-runbook.md](../../docs/jira-runbook.md).
+See [jira-runbook.md](../../../docs/jira-runbook.md).
 
 ## Relationship to other planning artifacts
 

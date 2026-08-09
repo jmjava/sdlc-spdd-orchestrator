@@ -1,281 +1,407 @@
 # Jira Runbook
 
-Use this runbook to create Jira issues from SDLC-SPDD work and keep Jira synchronized with the REASONS Canvas, implementation progress, reviews, and sync logs.
+Create and sync Jira issues from SDLC-SPDD work. **You start in a requirement
+markdown file** (`requirements/milestones/<WORK-ID>.md`); the engine builds a
+structured description from `## Jira` subsections and **translates markdown → ADF**
+on `issues push`. Jira Cloud REST v3 requires ADF — you do not author ADF by
+hand to create an issue.
 
-## Source of Truth
+For rich formatting beyond markdown (panels, GWT blocks, complex tables), use the
+optional **ADF Viewer** path (`adf/<KEY>.adf.json`) after the issue exists. For
+the full tracker-to-branch workflow (GitHub Issues too), see
+[Issue sync and branching](issue-sync-and-branching.md).
+
+## Source of truth
 
 | Artifact | Source of truth for |
 |----------|---------------------|
-| Jira issue | Delivery status, ownership, sprint/board workflow, business acceptance criteria |
-| REASONS Canvas | Design contract, scope boundaries, operations, norms, safeguards |
-| Progress log | Implementation history by operation |
-| Review report | Fit between implementation and canvas |
-| Sync log | Drift, reconciled assumptions, and follow-up tasks |
+| Requirement doc (`## Jira` markdown) | Summary, description outline, acceptance criteria, labels — **primary input to Jira** |
+| Engine (`build_jira_markdown` → `markdown_to_adf`) | ADF payload sent on `issues push` |
+| `adf/<JIRA-KEY>.adf.json` | Optional checked-in copy for **rich** descriptions edited in the viewer |
+| Jira issue | Delivery status, ownership, sprint/board workflow |
+| REASONS Canvas | Design contract, scope, operations, norms, safeguards |
+| Lessons ledger | Implementation history (`session`, `decision`, `pitfall`, `pattern` records) |
+| Review / sync artifacts | Fit vs canvas; reconciled drift |
 
-Jira should not replace the canvas. The canvas should not replace Jira workflow state.
+Edit the requirement doc first. Jira receives **explicit pushes** — never
+automatic sync. The `adf/` file is not read by `issues push`; it is only used
+by `upload-adf` / `download-adf` and the viewer.
 
-## Create a New Jira Issue
+## The Jira process (overview)
 
-Use this flow when a request starts outside Jira.
+```text
+1. Create issue manually in Jira UI  →  copy key (PROJ-123)
 
-### 0. Draft in the milestone requirement (recommended)
+requirements/milestones/<WORK-ID>.md
+  ## Jira  (markdown: Summary, Description, Acceptance criteria)
+         │
+         ├─ ops console Jira tab / issues link ─→ record Key locally
+         │     (requirement + canvas + registry)
+         │
+         ├─ issues draft ─────────────────────→ preview markdown + ADF
+         │
+         ├─ issues pull --apply ──────────────→ Jira → requirement doc
+         │
+         └─ issues push --apply ──────────────→ requirement md → Jira
+                (update only when Key linked)     (markdown → ADF)
 
-For Work IDs created from milestones, store Jira field syntax in:
+Optional — rich description refinement (after Key exists):
 
-    requirements/milestones/<WORK-ID>.md
-    # or
-    requirements/milestones/milestone-N/<WORK-ID>.md
-
-under YAML frontmatter (`jira_key`, …) and/or `## Jira` (scaffolded by
-`create-work-from-milestone.sh`). Fill Summary, Description, and Given/When/Then
-acceptance criteria there first — it is the copy-paste source for Jira UI, MCP, or
-API creation. After Jira returns a key, set `- Key: ABC-123` (and matching
-`jira_key`) and commit. `./scripts/sdlc.sh claim <WORK-ID>` then auto-links
-`jira:ABC-123` in the registry event note (`spdd/memory/registry.jsonl`).
-
-Format specification: [jira-compatible-requirements-format.md](jira-compatible-requirements-format.md).
-Validate locally (no Jira API):
-
-    ./scripts/sdlc-spdd/validate-requirements-format.sh --target .
-
-### 1. Triage the request
-
-Prompt:
-
-    Triage this request before creating Jira. Identify type, proposed Jira summary, business value, acceptance criteria, risks, and whether it should be FEAT, BUG, REF, SPIKE, DOC, TEST, or CHORE:
-
-    <paste request>
-
-### 2. Draft the Jira issue
-
-Prompt:
-
-    Draft a Jira issue for this SDLC-SPDD work. Include:
-    - Issue type
-    - Summary
-    - Description
-    - Business value
-    - Scope in
-    - Scope out
-    - Acceptance criteria in Given/When/Then form
-    - Suggested labels
-    - Suggested components
-    - Links to any existing GitHub issue, PR, or docs page
-
-    Request:
-    <paste request>
-
-### 3. Create the issue in Jira
-
-Create the issue using your team's Jira UI, Jira automation, MCP tool, or approved API workflow.
-
-**Engine v2 (optional):** draft or create from the milestone requirement:
-
-```bash
-SDLC_ENGINE=python ./scripts/sdlc.sh issues draft <WORK-ID> --system jira
-# Preview the ADF JSON Jira Cloud will receive:
-SDLC_ENGINE=python ./scripts/sdlc.sh issues draft <WORK-ID> --system jira --format adf
-# Requires JIRA_BASE_URL, JIRA_EMAIL, JIRA_API_TOKEN, JIRA_PROJECT:
-SDLC_ENGINE=python ./scripts/sdlc.sh issues push <WORK-ID> --system jira --apply
-SDLC_ENGINE=python ./scripts/sdlc.sh sync-links --repair
+adf/<JIRA-KEY>.adf.json  + ADF Viewer  →  upload-adf / download-adf
 ```
 
-**Checked-in ADF library (`adf/`):** for tickets edited as raw ADF (viewer or hand-tuned JSON), push/pull the description explicitly:
+### Standard path (manual Jira → link → sync)
+
+1. **Scaffold the requirement** — `## Jira` with Summary, Description,
+   Acceptance criteria. See
+   [Jira-compatible requirements format](jira-compatible-requirements-format.md).
+2. **Create the issue in Jira UI** — copy the key (`PROJ-123`). The engine does
+   not create Jira issues from the ops console (too many org-specific flows).
+3. **Link the key locally** — ops console **Jira** tab (*Preview link* → *Apply link*)
+   or CLI `issues link <WORK-ID> PROJ-123 --apply`. Updates `## Jira Key`, frontmatter
+   `jira_key`, canvas **Source Issue**, and registry note.
+4. **Preview payload** — `issues draft` shows markdown composed from `## Jira` and
+   the ADF JSON that would be sent on push.
+5. **Sync with server** — *Pull* refreshes the requirement doc from Jira; *Push*
+   updates the existing issue from local markdown (never creates).
+
+### Optional path (rich ADF in the viewer)
+
+Use when markdown is not enough (panels, status lozenges, GWT scenarios, tables
+the markdown converter flattens):
+
+1. After push, `issues download-adf <KEY> --apply` to materialize
+   `adf/<KEY>.adf.json` from Jira (or seed from the draft ADF preview).
+2. Edit in the [ADF Viewer](adf-viewer.md); commit the JSON file.
+3. `issues upload-adf <KEY> --apply` pushes **only** the description body.
+
+To refresh the requirement doc from Jira (description as markdown), use
+`issues pull --apply` — not `download-adf`.
+
+## One-time setup
 
 ```bash
-# Local file → Jira description
-SDLC_ENGINE=python ./scripts/sdlc.sh issues upload-adf ORCH-1 \
-  --file adf/ORCH-1.adf.json --apply
+export JIRA_BASE_URL="https://yourorg.atlassian.net"
+export JIRA_EMAIL="you@yourorg.com"
+export JIRA_API_TOKEN="…"
+export JIRA_PROJECT="PROJ"
 
-# Jira hand-edits → local file (dry-run shows diff; --apply overwrites)
-SDLC_ENGINE=python ./scripts/sdlc.sh issues download-adf ORCH-1
-SDLC_ENGINE=python ./scripts/sdlc.sh issues download-adf ORCH-1 --apply
+python3 -m pip install -e './engine[dev,viewer]'   # viewer optional
 ```
 
-Or use the ADF viewer sync panel (Local → Jira / Jira → Local). Never automatic. Project-specific ticket ADF bodies belong in the consuming project, not this orchestrator repo.
-
-### Description formatting (ADF)
-
-Jira Cloud REST **v3** rejects plain markdown strings for `description` — it needs
-[Atlassian Document Format (ADF)](https://developer.atlassian.com/cloud/jira/platform/apis/document/structure/).
-The engine converts the milestone `## Jira` markdown into structured ADF on push:
-
-| Source section | Jira description |
-|----------------|------------------|
-| Summary / Description / Business value / Scope / Acceptance criteria | Headings + paragraphs / lists |
-| Work ID + requirement path | Traceability section |
-| `**bold**`, `` `code` ``, `[text](url)`, `-` lists, fenced code | ADF marks/nodes |
-
-Env knobs:
+Optional overrides:
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `JIRA_API_VERSION` | `3` on `*.atlassian.net`, else `3` | REST API version |
-| `JIRA_DESCRIPTION_FORMAT` | `adf` for v3, `wiki` for v2 | Payload shape |
-| `JIRA_DESCRIPTION_FALLBACK` | `1` | On 400, retry wiki/v2 ↔ ADF/v3 once |
+| `JIRA_API_VERSION` | `3` on `*.atlassian.net` | REST API version |
+| `JIRA_DESCRIPTION_FORMAT` | `adf` on v3 | Payload shape for push/upload |
+| `JIRA_DESCRIPTION_FALLBACK` | `1` | Retry wiki/v2 ↔ ADF/v3 once on 400 |
 
-For Jira Server/DC that still wants wiki markup:
+For Jira Server/DC with wiki markup:
 
 ```bash
 export JIRA_API_VERSION=2
 export JIRA_DESCRIPTION_FORMAT=wiki
 ```
 
-Minimum required fields:
+Validate requirement docs locally (no API):
 
-    Project: <PROJECT>
-    Issue type: Story, Bug, Task, Spike, or Chore
-    Summary: <short user/business outcome>
-    Description: <drafted description>
-    Acceptance criteria: <Given/When/Then criteria>
-    Labels: sdlc-spdd, <work type>, <system/component>
-    Components: <component>
-    Links: <GitHub issue, PR, or GitHub Pages URL if known>
+```bash
+./scripts/validate-requirements-format.sh --target .
+```
 
-Do not ask the coding assistant to create Jira directly unless the environment has an approved Jira integration and credentials. If direct Jira tools are available, pass the same field set explicitly and ask the assistant to report the created key.
+## Create a new Jira issue
 
-### 4. Create the SDLC-SPDD Work ID
+### 0. Draft in the requirement doc
 
-After Jira returns a key, create a Work ID that keeps the local lifecycle stable.
+Path:
 
-Examples:
+```text
+requirements/milestones/<WORK-ID>.md
+# or
+requirements/milestones/milestone-N/<WORK-ID>.md
+```
 
-    Jira: ABC-123
-    Work ID: FEAT-123-order-status-api
+Use YAML frontmatter (`jira_key`, …) and a `## Jira` section. Scaffolded by
+`create-work-from-milestone.sh`. Leave `- Key: TBD` until push returns a real key.
 
-    Jira: PAY-456
-    Work ID: BUG-456-null-discount-checkout
+The engine reads these subsections under `## Jira` (see
+`links.py` / `build_jira_markdown`):
 
-The Work ID does not have to equal the Jira key, but the canvas Metadata must link them.
+| Subsection | Maps to Jira description |
+|------------|--------------------------|
+| `- Summary:` (bullet) | Issue title (not body) |
+| `### Description` | Description body |
+| `### Acceptance criteria` | Acceptance criteria |
+| `### Business value` | Business value (if present) |
+| Scope from `## Scope` | Can feed scope-in/out when mirrored under Jira |
 
-### 5. Plan from the new Jira issue
+Example:
 
-Prompt:
+```markdown
+## Jira
 
-    /sdlc-spdd-plan Jira ABC-123: <summary>. Link the canvas to https://jira.example.com/browse/ABC-123 and use this Jira description and acceptance criteria as the requirement:
+- Key: TBD
+- Issue type: Story
+- Summary: Order status API
+- Labels: sdlc-spdd, feature
 
-    <paste Jira description and acceptance criteria>
+### Description
 
-Expected result:
+Customers need to check order status without contacting support.
 
-- Jira key is captured in canvas Metadata.
-- Acceptance criteria are captured in Requirements.
-- Operations are decomposed into small implementation tasks.
-- Risks, norms, and safeguards are recorded before code changes.
+### Acceptance criteria
 
-## Create Jira Children from a Canvas
+- [ ] GET /orders/{id}/status returns current status
+- [ ] Unknown order returns 404
+```
 
-Use this when one Jira issue is too large for the board.
+After `./scripts/sdlc.sh claim <WORK-ID>`, registry events can carry
+`jira:ABC-123` in the note when the key is set.
 
-Prompt:
+### 1. Triage (optional agent prompt)
 
-    For FEAT-123, read @spdd/canvas/FEAT-123-order-status-api.md. Draft Jira child issues from the Operations section. Each child should include summary, description, acceptance criteria, parent key ABC-123, and the operation ID it implements.
+```text
+Triage this request before creating Jira. Identify type, proposed summary,
+business value, acceptance criteria, risks, and Work ID prefix (FEAT, BUG, …):
 
-Recommended mapping:
+<paste request>
+```
+
+### 2. Create in Jira UI and link locally
+
+Create the issue in Jira (any workflow your team uses). Copy the key.
+
+**Ops console** (`./scripts/sdlc.sh console` → **Jira** tab):
+
+1. Enter Work ID and Jira key.
+2. *Preview link* → *Apply link* (writes local files only).
+
+**CLI:**
+
+```bash
+sdlc-engine issues link FEAT-001-order-status-api PROJ-123 --apply
+sdlc-engine sync-links --repair
+```
+
+### 3. Preview and sync with server
+
+```bash
+# Preview markdown + ADF (no network write)
+sdlc-engine issues draft FEAT-001-order-status-api --system jira
+sdlc-engine issues draft FEAT-001-order-status-api --system jira --format adf
+
+# Pull Jira fields into the requirement doc
+sdlc-engine issues pull FEAT-001-order-status-api --system jira --apply
+
+# Push local ## Jira markdown → Jira (update existing issue only)
+sdlc-engine issues push FEAT-001-order-status-api --system jira --apply
+```
+
+Wrapper: `./scripts/sdlc.sh issues …` in installed projects.
+
+### 3. Optional — refine description in ADF
+
+Skip this step if the pushed markdown description is sufficient.
+
+**Materialize a local ADF file** (after the issue exists):
+
+```bash
+sdlc-engine issues download-adf PROJ-123 --apply
+# writes adf/PROJ-123.adf.json from Jira
+```
+
+**Edit in the viewer** (ops console ADF tab, or):
+
+```bash
+./scripts/sdlc.sh viewer --port 5050
+# http://127.0.0.1:5050/
+```
+
+1. Open `adf/PROJ-123.adf.json`.
+2. Edit in WYSIWYG or raw JSON; autosave → commit like source code.
+3. *Prepare upload* → review dry-run → *Apply upload* pushes description to Jira.
+
+CLI equivalent:
+
+```bash
+sdlc-engine issues upload-adf PROJ-123 \
+  --file adf/PROJ-123.adf.json --apply
+```
+
+Keep project-specific ticket ADF in the **consuming repo**, not the orchestrator
+framework repo (seed files like `ORCH-demo.adf.json` are examples only).
+
+### 4. Create the Work ID and canvas
+
+If work started from Jira, map keys explicitly:
+
+```text
+Jira: PROJ-123
+Work ID: FEAT-123-order-status-api
+```
+
+The Work ID need not mirror the Jira key, but canvas **Metadata** must link both.
+
+Then:
+
+```text
+/sdlc-spdd-plan Jira PROJ-123: <summary>. Link the canvas to the Jira URL and
+use the requirement doc ## Jira acceptance criteria as Requirements input.
+```
+
+Gate first: `./scripts/sdlc.sh gate plan --work-id <WORK-ID>`.
+
+### 5. Branch naming
+
+```bash
+git switch -c feature/PROJ-123-FEAT-123-order-status-api
+```
+
+See [Issue sync and branching §3](issue-sync-and-branching.md#3-branch-naming-convention).
+
+## Create Jira children from a canvas
+
+When one issue is too large for the board:
+
+```text
+For FEAT-123, read @spdd/canvas/FEAT-123-order-status-api.md. Draft Jira child
+issues from Operations. Each child: summary, description outline in the parent's
+requirement template style, acceptance criteria, parent PROJ-123, operation ID.
+```
 
 | Canvas operation | Jira issue type |
 |------------------|-----------------|
-| User-visible feature slice | Story or Task |
-| Defect correction | Bug |
+| User-visible slice | Story or Task |
+| Defect | Bug |
 | Investigation | Spike |
-| Test-only work | Test or Task |
+| Test-only | Test or Task |
 | Documentation | Task |
 
-Keep child issues small enough that each maps to one canvas operation or one cohesive operation group.
+Add a requirement stub (or `## Jira` block) per child and push with `issues push`.
+Use the optional ADF path only when a child needs rich formatting.
 
-## Keep Jira in Sync
+## Keep Jira in sync
 
-Synchronize Jira at lifecycle checkpoints. Use comments or fields according to your team's Jira workflow.
+Synchronize at lifecycle checkpoints. Prefer **structured pulls** over pasted
+comments when fields changed on the tracker.
 
 | SDLC-SPDD checkpoint | Jira update |
 |----------------------|-------------|
-| Canvas created | Add canvas path and design summary |
-| Architect ready | Move to In Progress or Ready for Dev; add readiness decision |
-| Operation started | Comment with operation ID and intent |
-| Operation reviewed | Comment with review result and test evidence |
-| Behavior requirement changed | Update Jira acceptance criteria, then update canvas before coding |
-| Refactor changed structure only | Comment with refactor summary, then sync canvas from code |
-| Blocked | Move to Blocked and add the missing decision/dependency |
-| Retro and sync complete | Add final validation and move toward Done |
+| Canvas created | Comment or traceability in requirement Description; link canvas path |
+| Architect ready | Transition; readiness decision in comment |
+| Operation done | Comment with operation ID; ledger capture staged |
+| Review complete | Comment with review outcome |
+| Requirement changed | Update requirement doc `## Jira`, then `issues push --apply` |
+| Blocked | Blocked status + missing decision |
+| Retro / sync | Final validation; move toward Done |
 
-### Daily Jira sync prompt
+**Refresh requirement doc from Jira** (summary, status, labels, description as markdown):
 
-Use this to generate a Jira comment:
+```bash
+sdlc-engine issues pull FEAT-123-order-status-api --system jira --apply
+```
 
-    For <WORK-ID>, read @spdd/canvas/<WORK-ID>.md, @spdd/reviews/<WORK-ID>-review.md if it exists, and @spdd/sync/<WORK-ID>-sync.md if it exists; run `sdlc-engine context retrieve --work-id <WORK-ID> --kind session` for recent progress. Draft a Jira update for <JIRA-KEY> with:
-    - current SDLC-SPDD state
-    - completed operations
-    - validation performed
-    - review result
-    - risks or blockers
-    - next operation or command
+**Refresh optional ADF file** (after someone edited description in Jira UI and
+you maintain `adf/<KEY>.adf.json`):
+
+```bash
+sdlc-engine issues download-adf PROJ-123 --apply
+```
+
+**Push requirement changes** (markdown → ADF, full issue fields):
+
+```bash
+sdlc-engine issues push FEAT-123-order-status-api --system jira --apply
+```
+
+**Push viewer-only description changes** (ADF file → Jira description only):
+
+```bash
+sdlc-engine issues upload-adf PROJ-123 --apply
+```
+
+### Daily sync prompt
+
+```text
+For <WORK-ID>, read the canvas, review/sync artifacts if present, and run
+`sdlc-engine context retrieve --work-id <WORK-ID> --kind session` for recent
+progress. Draft a Jira comment for PROJ-123 with: current phase, completed
+operations, validation, review result, blockers, next step.
+```
 
 ### Status mapping
 
 | SDLC-SPDD state | Typical Jira status |
 |-----------------|---------------------|
 | Request triaged | Backlog |
-| Canvas created | To Do or Selected for Development |
+| Canvas created | To Do |
 | Ready For Coding | In Progress |
 | Operation implemented | In Progress |
-| Review Approved | In Review or Ready for QA |
-| Review Changes Requested | In Progress |
-| Blocked readiness or review | Blocked |
-| Retro and sync complete | Done |
+| Review approved | In Review / Ready for QA |
+| Review changes requested | In Progress |
+| Blocked | Blocked |
+| Retro / sync complete | Done |
 
-Adapt these names to your team's workflow.
+Adapt names to your team's workflow.
 
-## Requirement Changes vs Refactoring
-
-SPDD requires different sync directions depending on the type of change.
+## Requirement changes vs refactoring
 
 ### Behavior or requirement change
 
-Update Jira first, then update the canvas, then update code.
+Update the requirement doc **`## Jira` markdown first**, push to Jira, then update
+the canvas, then code. If you also maintain an ADF file, download or edit it
+after the doc change — or rely on push alone for plain descriptions.
 
-Prompt:
+```text
+Jira PROJ-123 changed acceptance criteria: <new rule>. Update
+requirements/milestones/<WORK-ID>.md ## Jira, run issues push --apply, then
+@sdlc/canvas/<WORK-ID>.md. Do not change source code yet.
+```
 
-    Jira ABC-123 changed acceptance criteria: <new rule>. For FEAT-123, update @spdd/canvas/FEAT-123-order-status-api.md first. Do not change source code. Identify which Requirements, Approach, Operations, Norms, and Safeguards changed.
+After canvas review:
 
-After the canvas is reviewed:
+```text
+/sdlc-spdd-code @spdd/canvas/<WORK-ID>.md operation <operation-id>
+```
 
-    /sdlc-spdd-code @spdd/canvas/FEAT-123-order-status-api.md operation <operation>
+### Refactoring (no behavior change)
 
-### Refactoring or non-behavioral cleanup
+Refactor, review, sync canvas; Jira comment only:
 
-Refactor in a small step, review, then sync the prompt artifacts back to reality.
+```text
+Refactor completed with no intended behavior change. Canvas synchronized after
+review. Validation: <tests>.
+```
 
-Prompt:
-
-    For FEAT-123, refactor only <specific target> without changing observable behavior. Stay inside the current canvas safeguards.
-
-Then:
-
-    /sdlc-spdd-review @spdd/canvas/FEAT-123-order-status-api.md
-    /sdlc-spdd-sync @spdd/canvas/FEAT-123-order-status-api.md
-
-Jira comment:
-
-    Refactor completed with no intended behavior change. Canvas synchronized after review. Validation: <tests>.
-
-## Jira Sync Checklist
+## Jira sync checklist
 
 Before coding:
 
-- Jira key exists or the decision not to use Jira is recorded.
-- Canvas Metadata includes Jira key and URL.
-- Jira acceptance criteria and canvas Requirements match.
-- Operations are small and traceable.
+- [ ] Requirement doc exists with `## Jira` Description and Acceptance criteria
+- [ ] `gate analysis` / `gate plan` pass
+- [ ] Jira key in requirement doc and canvas Metadata (or explicit decision not to use Jira)
+- [ ] `issues push --apply` run at least once (description sent as ADF from markdown)
+- [ ] Acceptance criteria match between requirement and canvas Requirements
+- [ ] Branch name includes tracker key + Work ID
+- [ ] (Optional) `adf/<KEY>.adf.json` committed and uploaded if using viewer workflow
 
 During coding:
 
-- Each update references the Work ID and operation ID.
-- Jira comments are generated from canvas/progress/review artifacts, not from memory alone.
-- Requirement changes update Jira and canvas before code.
+- [ ] Progress captured via `./scripts/sdlc.sh capture` (staged; accept at retro)
+- [ ] Jira comments generated from canvas/ledger/review — not from chat memory alone
+- [ ] Requirement changes: update `## Jira` markdown, `issues push --apply`, then canvas
 
 Before done:
 
-- Jira status matches review outcome.
-- Final comment includes validation, review result, and remaining follow-ups.
-- Canvas sync log records implementation drift.
-- Retro updates reusable memory.
+- [ ] Jira status matches review outcome
+- [ ] Final comment includes validation and follow-ups
+- [ ] Sync log records drift; retro lessons accepted to ledger
+
+## Related
+
+- [Ops console](ops-console.md) — **Jira** tab: link key + pull/push sync
+- [Issue sync and branching](issue-sync-and-branching.md) — push/pull, branches, GitHub Issues, viewer sync panels
+- [ADF Viewer](adf-viewer.md) — optional rich ADF editing after markdown push
+- [Jira-compatible requirements format](jira-compatible-requirements-format.md) — `## Jira` schema
+- [Research: Jira ADF + requirements sync](research/jira-adf-and-requirements-sync.md) — Cloud ADF payloads

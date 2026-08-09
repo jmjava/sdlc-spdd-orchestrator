@@ -1,6 +1,7 @@
 ---
 work_id: "CHORE-000-example-chore"
 jira_key: "PROJ-0000"
+github_number: ""
 jira_epic: "PROJ-000"
 jira_type: "Story"
 jira_status: "To Do"
@@ -46,8 +47,7 @@ related: []
 
 ## Jira
 
-Draft for issue creation — paste into Jira UI, MCP, or API. After create, set
-**Key** (and matching `jira_key` frontmatter) and commit.
+Create the issue manually in Jira UI, then set **Key** (and matching `jira_key` frontmatter) and commit.
 
 - Key: PROJ-0000
 - Issue type: Story
@@ -62,6 +62,24 @@ Business outcome and constraints.
 ### Acceptance criteria (Given/When/Then)
 
 - Given ... When ... Then ...
+
+## GitHub
+
+Create the issue manually in GitHub UI, then set **Number** and commit.
+
+- Number: TBD
+- Title: Example chore title
+- Labels: sdlc-spdd, chore
+- URL:
+
+### Description
+
+Business outcome and constraints.
+
+### Acceptance criteria
+
+- [ ] Criterion 1
+- [ ] Criterion 2
 
 ## Next Step
 

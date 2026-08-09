@@ -8,7 +8,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/lib.sh"
 ROOT="${1:?target root required}"
 echo "== 08 full populate (no empty capture fields) =="
 
-HOME="${ROOT}/sdlc-spdd"
+HOME="$(live_home "${ROOT}")"
 SCRIPTS="${HOME}/scripts"
 CANVAS="${HOME}/spdd/canvas/${WORK_ID}.md"
 STAGE="${HOME}/.sdlc/staged/lessons.jsonl"
@@ -21,7 +21,6 @@ mkdir -p "${HOME}/spdd/analysis" "${HOME}/spdd/reviews" "${HOME}/spdd/sync" \
   "${HOME}/session-notes" "${HOME}/requirements/milestones"
 
 [[ -f "${HOME}/requirements/milestones/${WORK_ID}.md" ]] \
-  || cp "${ROOT}/requirements/milestones/${WORK_ID}.md" "${HOME}/requirements/milestones/${WORK_ID}.md" 2>/dev/null \
   || printf '# Requirement: %s\n' "${WORK_ID}" >"${HOME}/requirements/milestones/${WORK_ID}.md"
 
 # --- Populate lifecycle artifacts as a real session would ---
@@ -75,7 +74,7 @@ if "${SCRIPTS}/capture-session-memory.sh" \
   --decisions "${DECISIONS}" \
   --pitfalls "${PITFALLS}" \
   --patterns "${PATTERNS}" \
-  --areas "src/hello.py, tests/live-consumer, scripts/sdlc-spdd" \
+  --areas "src/hello.py, tests/live-consumer, sdlc-spdd/scripts" \
   --milestone "${MILESTONE_REL}" \
   --roadmap-note "${ROADMAP_NOTE}" \
   --next "${NEXT_STEP}" \

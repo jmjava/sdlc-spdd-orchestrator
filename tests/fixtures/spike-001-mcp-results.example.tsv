@@ -1,6 +1,0 @@
-# Example MCP results file for --check-mcp (paste URIs from Cursor MCP tool output)
-# Columns: tool	query	uri	score
-tool	query	uri	score
-docs_vectorSearch	billing retry exponential backoff	file:///home/user/github/jmjava/sdlc-spdd-orchestrator/examples/retrieval-fixture/src/billing/BillingRetryPolicy.md	0.82
-docs_vectorSearch	SPIKE-FIX-001 retrieval fixture	file:///home/user/github/jmjava/sdlc-spdd-orchestrator/examples/retrieval-fixture/spdd/canvas/SPIKE-FIX-001-retrieval-fixture.md	0.79
-docs_textSearch	+idempotency +billing	file:///home/user/github/jmjava/sdlc-spdd-orchestrator/examples/retrieval-fixture/agent-context/memory/known-pitfalls.md	1.0

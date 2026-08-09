@@ -1,7 +1,5 @@
 # Quiet / product-test mode
 
-**Shipped in `v2.0.0a6`** ([#91](https://github.com/jmjava/sdlc-spdd-orchestrator/issues/91)).
-
 Quiet mode is for **product work and field testing** inside a repo that also
 dogfoods SDLC-SPDD. It keeps context retrieve, sessions, and gates available —
 but stops recommending the next `/sdlc-spdd-*` T## dogfood command.
@@ -22,7 +20,7 @@ Any one of:
 | Mechanism | Example |
 | --------- | ------- |
 | Environment | `export SDLC_QUIET=1` (also `true` / `yes` / `on`, case-insensitive) |
-| Harness marker | create `agent-context/harness/quiet-mode.md` (any content) |
+| Harness marker | create `harness/quiet-mode.md` (any content) |
 | Session flag | `./scripts/start-agent-session.sh … --quiet` |
 | CLI inspect | `sdlc-engine agent-context quiet-status` |
 
@@ -54,11 +52,9 @@ Default quiet blurb (keep shell + Python in sync):
 ## What does **not** change
 
 - Work ID pointer, phase state, and gates still work
-- `claim` / `start` / `capture` / `db` still work
+- `claim` / `start` / `capture` / `accept` / `db` still work
 - You can still run `/sdlc-spdd-*` manually if you want
 
 ## Related
 
-- [What's new in v2.0.0a6](whats-new-v2.0.0a6.md)
-- Spike note: [SPIKE-091](agent-context-cleanup/spikes/SPIKE-091-quiet-mode.md)
-- Code: `engine/src/sdlc_engine/quiet.py`, `agent-context/sdlc-workflow.sh`
+- Code: `engine/src/sdlc_engine/quiet.py`, workflow scripts under `scripts/`

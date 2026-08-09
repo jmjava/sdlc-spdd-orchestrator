@@ -6,6 +6,7 @@ on:
       - 'engine/**'
       - 'adf/**'
       - 'scripts/sdlc.sh'
+      - 'scripts/run-test-suites.sh'
       - '.github/workflows/test-sdlc-engine.yml'
   push:
     branches: [main]
@@ -13,56 +14,49 @@ on:
       - 'engine/**'
       - 'adf/**'
       - 'scripts/sdlc.sh'
+      - 'scripts/run-test-suites.sh'
       - '.github/workflows/test-sdlc-engine.yml'
 
 jobs:
-  test-sdlc-engine:
+  suite-1-unit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-
-      - name: Install engine + pytest + viewer
+      - name: Install engine
         run: python3 -m pip install -e './engine[dev,viewer]'
+      - name: Suite 1 — unit
+        run: PYTHONPATH=engine/src pytest -q engine/tests_unit
 
-      - name: Run pytest (unit + mocked issue sync + viewer)
-        run: pytest -q engine/tests
-
-      - name: Installer package coverage (≥90%)
+  suite-2-integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install engine + viewer
+        run: python3 -m pip install -e './engine[dev,viewer]'
+      - name: Suite 2 — local integration
+        run: PYTHONPATH=engine/src pytest -q engine/tests_integration
+      - name: Installer coverage (≥90%)
         run: >
-          PYTHONPATH=engine/src pytest -q engine/tests/test_installer*.py
+          PYTHONPATH=engine/src pytest -q
+          engine/tests_integration
+          engine/tests_unit/test_installer_runtime_units.py
           --cov=sdlc_engine.installer
           --cov-report=term-missing:skip-covered
           --cov-fail-under=90
-
-      - name: Install Playwright e2e extras + Chromium
-        run: |
-          python3 -m pip install -e './engine[dev,viewer-e2e]'
-          python3 -m playwright install --with-deps chromium
-
-      - name: Run ADF viewer Playwright GUI tests
-        env:
-          SDLC_VIEWER_E2E: "1"
-        run: pytest -q engine/tests/test_viewer_playwright.py -m viewer_e2e
-
-      - name: Run ops console Playwright GUI tests
-        env:
-          SDLC_CONSOLE_E2E: "1"
-        run: pytest -q engine/tests/test_console_playwright.py -m console_e2e
-
-      - name: CLI smoke via sdlc.sh python engine
+      - name: CLI smoke via sdlc.sh
         run: |
           SDLC_ENGINE=python ./scripts/sdlc.sh version
           SDLC_ENGINE=python ./scripts/sdlc.sh next
           SDLC_ENGINE=python ./scripts/sdlc.sh viewer --help
-
       - name: Shim regression harness
         run: ./tests/test-sdlc-engine-shim.sh
 
-  # Live GitHub Issues sync: pull always; create+close when permissions allow.
   test-github-issue-sync:
     runs-on: ubuntu-latest
     permissions:
@@ -70,20 +64,15 @@ jobs:
       issues: write
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-
-      - name: Install engine + pytest
+      - name: Install engine
         run: python3 -m pip install -e './engine[dev]'
-
-      - name: GitHub Issues integration (pull + create round-trip)
+      - name: GitHub Issues (suite 3 subset)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SDLC_GITHUB_INTEGRATION: "1"
           SDLC_GITHUB_ISSUE_CREATE: "1"
           SDLC_GITHUB_REPO: ${{ github.repository }}
-        run: |
-          pytest -q engine/tests/test_issues_github_integration.py \
-            --run-github-integration -m github_integration
+        run: PYTHONPATH=engine/src pytest -q engine/tests_e2e/test_issues_github_integration.py

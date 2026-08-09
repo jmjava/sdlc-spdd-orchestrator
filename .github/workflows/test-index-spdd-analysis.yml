@@ -4,14 +4,12 @@ on:
   pull_request:
     paths:
       - 'scripts/index-spdd-analysis.sh'
-      - 'agent-context/memory/domain-index.md'
       - 'tests/test-index-spdd-analysis.sh'
       - '.github/workflows/test-index-spdd-analysis.yml'
   push:
     branches: [main]
     paths:
       - 'scripts/index-spdd-analysis.sh'
-      - 'agent-context/memory/domain-index.md'
       - 'tests/test-index-spdd-analysis.sh'
       - '.github/workflows/test-index-spdd-analysis.yml'
 

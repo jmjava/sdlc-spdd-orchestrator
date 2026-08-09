@@ -91,7 +91,7 @@ If you are not sure which ID to use, ask:
 |------|--------|
 | Planning → SPDD | If work already exists as milestone checklist items, map it **before** the session brief: |
 
-    ./scripts/sdlc-spdd/create-work-from-milestone.sh --target . --milestone milestone-1.md --all
+    ./sdlc-spdd/scripts/create-work-from-milestone.sh --target . --milestone milestone-1.md --all
 
 This creates draft Work IDs, canvases, **Linked Work** rows in the milestone file, and a scaffolded `## Jira` section in each `requirements/milestones/<WORK-ID>.md` stub. Follow the **Next SPDD prompts** the script prints.
 
@@ -103,24 +103,24 @@ Skip this step for ad-hoc requirements — go to step 5.
 |------|--------|
 | SDLC | Claim the Work ID (sets local pointer + appends a registry event). **Commit** `spdd/memory/registry.jsonl` when working on a shared repo: |
 
-    ./scripts/sdlc-spdd/sdlc.sh claim FEAT-001-order-status-api
+    ./sdlc-spdd/scripts/sdlc.sh claim FEAT-001-order-status-api
 
 Or in AI chat: `/sdlc-claim FEAT-001-order-status-api`.
 
 Quick orientation (shell or chat):
 
-    ./scripts/sdlc-spdd/sdlc.sh next
+    ./sdlc-spdd/scripts/sdlc.sh next
     /sdlc-next
     /sdlc-spdd-whereami
 
 Open the session brief for the phase you are about to run. On day one that is usually `analysis`:
 
-    ./scripts/sdlc-spdd/sdlc.sh resume FEAT-001-order-status-api --phase analysis
-    ./scripts/sdlc-spdd/sdlc.sh start
+    ./sdlc-spdd/scripts/sdlc.sh resume FEAT-001-order-status-api --phase analysis
+    ./sdlc-spdd/scripts/sdlc.sh start
 
 Equivalent low-level path:
 
-    ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id FEAT-001-order-status-api --phase analysis
+    ./sdlc-spdd/scripts/start-agent-session.sh --target . --work-id FEAT-001-order-status-api --phase analysis
 
 Then **paste the Resume Prompt** from `.sdlc/sessions/current-session.md` — do not paraphrase it. The brief embeds **Resolved Context** (phase files, extensions, Work ID artifacts, area-filtered index rows, work-scoped progress excerpt) and the Resume Prompt directs the agent to load only those files.
 
@@ -150,7 +150,7 @@ From Jira:
 
 Then index the analysis so its keywords and code areas feed decision memory:
 
-    ./scripts/sdlc-spdd/index-spdd-analysis.sh --target . --work-id FEAT-001-order-status-api
+    ./sdlc-spdd/scripts/index-spdd-analysis.sh --target . --work-id FEAT-001-order-status-api
 
 ## 7. Plan the Work
 
@@ -182,7 +182,7 @@ Do not code until readiness is:
     Ready For Coding
 
 If readiness is blocked or unclear, update the canvas first.
-`./scripts/sdlc-spdd/sdlc.sh advance` into `code` also refuses when readiness is
+`./sdlc-spdd/scripts/sdlc.sh advance` into `code` also refuses when readiness is
 not Ready For Coding (override only with explicit `advance --force`).
 
 ## 9. Code One Operation
@@ -191,8 +191,8 @@ not Ready For Coding (override only with explicit `advance --force`).
 |------|--------|
 | SDLC + SPDD | Refresh the session brief for the code phase, then run one operation: |
 
-    ./scripts/sdlc-spdd/sdlc.sh advance --to code
-    ./scripts/sdlc-spdd/sdlc.sh start
+    ./sdlc-spdd/scripts/sdlc.sh advance --to code
+    ./sdlc-spdd/scripts/sdlc.sh start
     /sdlc-spdd-code @spdd/canvas/FEAT-001-order-status-api.md operation T01
 
 The coding agent should:
@@ -236,7 +236,7 @@ Review checks whether the implementation matches:
 |------|--------|
 | SDLC + Planning | At the end of the session (guarded capture — pointer must match Work ID): |
 
-    ./scripts/sdlc-spdd/sdlc.sh capture \
+    ./sdlc-spdd/scripts/sdlc.sh capture \
       --summary "Implemented T01 for order status lookup." \
       --validation "Tests run: <command/result>" \
       --milestone milestone-1.md \
@@ -264,7 +264,7 @@ Review checks whether the implementation matches:
 ## Where to Go Next
 
 - [Three-part operating path](three-part-operating-path.md)
-- [10,000-foot view](ten-thousand-foot-view.md)
+- [Three-part operating path](three-part-operating-path.md)
 - [Installing into your project](installing-into-your-project.md)
 - [Maintaining your project](maintaining-your-project.md)
 - [Top useful concepts and commands](useful-concepts-and-commands.md)

@@ -5,7 +5,7 @@ Cursor-only consumer project.
 
 ## Why
 
-- Dogfooding the orchestrator repo misses installed paths (`scripts/sdlc-spdd/`).
+- Dogfooding the orchestrator repo misses installed paths (`sdlc-spdd/scripts/`).
 - A long-lived sibling repo drifts and stops being a clean test.
 - This harness wipes a fake git repo every run.
 
@@ -39,7 +39,7 @@ After a kept run, inspect:
 
 ```bash
 LIVE_CONSUMER_KEEP=1 ./tests/live-consumer/run-matrix.sh
-less /tmp/sdlc-spdd-live/agent-context/memory/session-history.md
+less /tmp/sdlc-spdd-live/.sdlc/sessions/current-session.md
 less /tmp/sdlc-spdd-live/ROADMAP.md
 less /tmp/sdlc-spdd-live/requirements/milestones/milestone-1/MILESTONE-1.md
 ```

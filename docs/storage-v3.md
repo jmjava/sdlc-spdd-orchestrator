@@ -8,26 +8,26 @@ the lessons ledger is the committed record; the Guide DICE graph is the working
 store queried on demand; SQLite is an optional local cache; captures are staged
 quietly and accepted at gates.**
 
-## Why storage v3
+## Design principles
 
-The previous design grew three problems as projects scaled:
+- **One home.** Framework-owned paths live under `<repo>/sdlc-spdd/` (or repo
+  root in the dogfood orchestrator). Contracts, harness, scripts, and ledgers
+  share one install layout.
+- **Ledger-first.** One committed JSONL lessons file is the system of record;
+  the work registry is a separate append-only event log. Neither is hand-edited.
+- **Stage-then-accept.** Captures land in gitignored `.sdlc/staged/`; accept at
+  retro/sync promotes keepers and re-derives projections — one batched commit
+  per gate instead of capture noise.
+- **Query, don't bulk-read.** Agents retrieve bounded id + title lists and fetch
+  one body at a time. Canvases and requirements are read directly.
+- **Guide as working store.** Large cross-work context lives in the Guide DICE
+  graph (projection tag `spdd-projection-v3`), queried on demand over MCP.
+  Guide is the default backend but never required.
+- **Projections are regenerable.** SQLite cache and Guide are pure projections
+  of the ledger — one write path, parity by construction.
 
-- **Sprawl.** Memory was scattered across `agent-context/memory/`,
-  `agent-context/features/<WORK-ID>/` mirrors, `agent-context/sessions/`,
-  markdown index files, a TSV registry, and per-kind lesson logs. Keeping them
-  consistent required scripts, dual writes, and discipline.
-- **Git noise.** Every capture touched committed files, so routine session
-  hygiene produced commits (or dirty trees) that drowned out real changes.
-- **Context bloat.** Agents were tempted to bulk-read index files and history
-  logs "to be safe", defeating progressive disclosure and filling the LLM
-  context window with stale prose.
-
-Storage v3 replaces all of that with one committed JSONL ledger, a gitignored
-runtime, and regenerable projections. The legacy trees — `agent-context/memory/`,
-`agent-context/features/`, `agent-context/sessions/`, `context-index.md`,
-`session-history.md`, `work-registry.tsv`, progress logs, and "lean indexes" —
-are gone. `sdlc-engine storage migrate` converts old installs
-([migration](#migrating-a-legacy-install)).
+Older installs with scattered memory trees are converted by
+`sdlc-engine storage migrate` ([migration](#migrating-a-legacy-install)).
 
 ## The model at a glance
 
@@ -81,7 +81,7 @@ no LLM API key required. See the
 git + guide (`CONTEXT_BACKENDS` adds `sqlite` as opt-in). Availability is probed
 at runtime:
 
-    ./scripts/sdlc-spdd/resolve-context-backend.sh --target .
+    ./sdlc-spdd/scripts/resolve-context-backend.sh --target .
 
 `CONTEXT_BACKEND=files` is the normal fallback when Guide is absent or
 unreachable — never an error. Every command works on the ledger alone. See the
@@ -196,12 +196,14 @@ they cannot drift by design. Verify or repair at any time:
 
 ## Migrating a legacy install
 
-`sdlc-engine storage status` detects legacy layouts (old `agent-context`
-memory/sessions/features trees, TSV registry, markdown lesson files);
-`sdlc-engine storage migrate` converts them one-shot into the ledger + registry
-and exports the originals aside. Consolidating a root-level layout into the
-single `sdlc-spdd/` home is part of `upgrade --consolidate`. See
-[framework upgrade](framework-upgrade.md).
+```bash
+sdlc-engine storage status          # detect non-v3 layouts
+sdlc-engine storage migrate         # one-shot → ledger + registry
+./scripts/upgrade-project.sh --target . --all --consolidate   # single sdlc-spdd/ home
+sdlc-engine context parity --repair # rebuild projections
+```
+
+See [framework upgrade](framework-upgrade.md).
 
 ## Related
 

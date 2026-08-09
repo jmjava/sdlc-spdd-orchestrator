@@ -116,14 +116,14 @@ Current session (hot path, gitignored):
 
 Create one:
 
-    ./scripts/sdlc-spdd/sdlc.sh start
-    # or: ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase>
+    ./sdlc-spdd/scripts/sdlc.sh start
+    # or: ./sdlc-spdd/scripts/start-agent-session.sh --target . --work-id <WORK-ID> --phase <phase>
 
 ### SDLC Pointer
 
 The active Work ID on **this machine**. Stored in `.sdlc/pointer` (gitignored). Guarded commands (for example `sdlc.sh capture`) refuse to run when the pointer does not match the requested Work ID.
 
-    ./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>    # sets pointer + team registry
+    ./sdlc-spdd/scripts/sdlc.sh claim <WORK-ID>    # sets pointer + team registry
     ./agent-context/sdlc-pointer.sh get
 
 See [agent-context/README.md](../agent-context/README.md#sdlc-pointer-current-choretask).
@@ -132,10 +132,10 @@ See [agent-context/README.md](../agent-context/README.md#sdlc-pointer-current-ch
 
 Phase and gate tracking for the active Work ID. State lives in `.sdlc/workflows/` (gitignored). Committed artifacts (canvas, ledger, reviews) remain the audit trail.
 
-    ./scripts/sdlc-spdd/sdlc.sh next       # what to do now
-    ./scripts/sdlc-spdd/sdlc.sh advance    # move to next phase
-    ./scripts/sdlc-spdd/sdlc.sh advance --force  # override Ready For Coding gate into code
-    ./scripts/sdlc-spdd/sdlc.sh shelf --reason "..."
+    ./sdlc-spdd/scripts/sdlc.sh next       # what to do now
+    ./sdlc-spdd/scripts/sdlc.sh advance    # move to next phase
+    ./sdlc-spdd/scripts/sdlc.sh advance --force  # override Ready For Coding gate into code
+    ./sdlc-spdd/scripts/sdlc.sh shelf --reason "..."
 
 In chat (wrappers for the same actions):
 
@@ -150,8 +150,8 @@ In chat (wrappers for the same actions):
 
 Shared coordination via git. Who owns which Work ID, phase, branch, PR, and Jira key.
 
-    ./scripts/sdlc-spdd/sdlc.sh team
-    ./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>    # appends a claim event; commit registry.jsonl
+    ./sdlc-spdd/scripts/sdlc.sh team
+    ./sdlc-spdd/scripts/sdlc.sh claim <WORK-ID>    # appends a claim event; commit registry.jsonl
     /sdlc-team
     /sdlc-claim <WORK-ID>
     /sdlc-claim <WORK-ID> --force    # take over after coordinating with the current owner
@@ -183,7 +183,7 @@ Common files:
 - `milestone-2.md`
 - `session-notes/YYYY-MM-DD.md`
 
-Milestone requirements may include a `## Jira` draft section (`requirements/milestones/<WORK-ID>.md`). On claim, `./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>` auto-links the Jira Key into the team registry. See [requirements/milestones/README.md](../requirements/milestones/README.md).
+Milestone requirements may include a `## Jira` draft section (`requirements/milestones/<WORK-ID>.md`). On claim, `./sdlc-spdd/scripts/sdlc.sh claim <WORK-ID>` auto-links the Jira Key into the team registry. See [requirements/milestones/README.md](../requirements/milestones/README.md).
 
 Use roadmap and milestone docs to give planning agents delivery context. Use REASONS Canvas files to govern each Work ID.
 
@@ -212,7 +212,7 @@ Copy-paste prompts: [Session prompt standard](session-prompt-standard.md) — se
 
 ## Read Next
 
-- [What SDLC brings](what-sdlc-brings.md)
+- [Workflow](workflow.md)
 - [Session prompt standard](session-prompt-standard.md)
 - [First day with SDLC-SPDD](first-day-with-sdlc-spdd.md)
 - [Daily runbook](daily-runbook.md)

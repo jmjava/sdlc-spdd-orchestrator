@@ -56,9 +56,10 @@ installs into a target project.
   and the `agent-context/` memory/playbook/harness files that install copies.
 - **Internal-only surfaces (posture allowed):** `ROADMAP.md` (repo root — targets get
   `templates/project-docs/ROADMAP.md` instead), this `CONTRIBUTING.md`, the repo-root
-  `README.md`, and orchestrator-only docs such as `docs/integration-branch.md`,
-  `docs/catch-up.md`, `docs/contributing-command-specs.md`,
-  `docs/contributing-extensions.md`, and `docs/guide-rag-research-and-dogfooding.md`.
+  `README.md`, and orchestrator-only docs such as
+  `docs/contributing-command-specs.md`, `docs/contributing-skills.md`,
+  `docs/engine-v2.md`, `docs/dice-projection-runbook.md`, and
+  `docs/mcp-guide-for-agents.md`.
 - **Never** put `make it work/right/fast`, `Kent Beck`, or `Delivery posture/stage`
   language into a shipped surface. The posture lives only in the internal files above.
 - **Framework capabilities may ship, but described neutrally.** The
@@ -79,11 +80,11 @@ This repository and installed target applications use different script paths:
 | Context | Where you `cd` | Script path | Examples |
 |---------|----------------|-------------|----------|
 | **Orchestrator repo** | `sdlc-spdd-orchestrator/` | `./scripts/<name>.sh` | `setup-agent-prompts.sh`, `init-project.sh`, `upgrade-project.sh`, `verify-project-install.sh`, `render-diagrams.sh` |
-| **Installed target app** | your application root | `./scripts/sdlc-spdd/<name>.sh` | `start-agent-session.sh`, `capture-session-memory.sh`, `verify-project-install.sh` |
+| **Installed target app** | your application root | `./sdlc-spdd/scripts/<name>.sh` | `start-agent-session.sh`, `capture-session-memory.sh`, `verify-project-install.sh` |
 
 **Rule:** setup/install/upgrade always run from the **orchestrator clone** with `--target /path/to/app`. Daily session scripts run from the **target project** with `--target .` (or omit when already in the app root).
 
-`init-project.sh` copies runtime scripts (including `verify-project-install.sh`) into the target at `scripts/sdlc-spdd/`. Docs must label which context applies — do not use `./scripts/sdlc-spdd/...` in examples meant for the orchestrator repo.
+`init-project.sh` copies runtime scripts (including `verify-project-install.sh`) into the target at `sdlc-spdd/scripts/`. Docs must label which context applies — do not use `./sdlc-spdd/scripts/...` in examples meant for the orchestrator repo.
 
 Doc paths follow the same pattern:
 
@@ -101,9 +102,8 @@ When changing assistant commands or the extension mechanism:
 | Task | Guide |
 |------|-------|
 | Edit Cursor/Copilot/Claude command text | [docs/contributing-command-specs.md](docs/contributing-command-specs.md) — edit `spec/commands/`, then `./scripts/generate-command-adapters.sh` |
-| Add phase extensions or skills | [docs/contributing-extensions.md](docs/contributing-extensions.md) |
-| Test / land the integration branch | [docs/integration-branch.md](docs/integration-branch.md) |
-| Reconcile remote branches after time away | [docs/catch-up.md](docs/catch-up.md) |
+| Add harness skills | [docs/contributing-skills.md](docs/contributing-skills.md) |
+| Run the integration merge gate | [TESTING.md](TESTING.md#integration-merge-gate) — `./tests/test-integration-merge.sh` |
 
 ## Three-Part Design Mandate
 
@@ -132,7 +132,7 @@ not just `/sdlc-spdd-*` command runs — is grounded in the full ecosystem
 When you add a new assistant or edit these files, keep the shared operating-model
 anchors (lifecycle line, `## Operating Model`, `## Work Rules`) and the Planning
 (`ROADMAP.md`, `milestone-*.md`, `session-notes/`), SPDD (`spdd/canvas/`), and
-SDLC (`agent-context/sessions/`, `agent-context/memory/`) artifacts.
+SDLC (`.sdlc/sessions/`, `spdd/memory/lessons.jsonl`) runtime.
 `validate-command-adapters.sh` enforces this in CI; run
 `./tests/test-adapter-install.sh` before pushing.
 
@@ -157,24 +157,22 @@ Before merging doc or script changes that touch the three-part model (Planning, 
 - [ ] **Resync semantics** — `--check-only` does not create a session brief; `--from-canvas`/`--from-feature` reconciles and creates one
 - [ ] **Prompt standards** — Session is default; SPDD and Planning are drill-downs; link [Which prompt standard?](docs/session-prompt-standard.md#which-prompt-standard)
 - [ ] **Script output** — if a script prints “next step” prompts, they align with the matching prompt standard doc
-- [ ] **Diagrams** — if you changed a Mermaid diagram, `./scripts/render-diagrams.sh --check` passes; regenerate committed exports with `./scripts/render-diagrams.sh`
+- [ ] **Diagrams** — if you changed PlantUML under `docs/diagrams/*.puml`, `./scripts/render-diagrams.sh --check` passes; regenerate committed SVG exports with `./scripts/render-diagrams.sh`
 - [ ] **Daily doc roles** — prompts stay in `session-prompt-standard.md`; step table in `workflow.md`; rules/checklists in `daily-runbook.md`; Cursor/Copilot/Claude Code syntax in `initialization-and-invocation.md`; concepts in `useful-concepts-and-commands.md`; commands in `sdlc-spdd-cheat-sheet.md` (link, do not duplicate)
 - [ ] **Target docs hub** — `docs/README.md` is orchestrator-only; installed projects use `templates/project-docs/docs-sdlc-spdd-README.md` → `docs/sdlc-spdd/README.md` (do not copy orchestrator `docs/README.md` to targets)
 - [ ] **Assistant vs shell** — `/sdlc-spdd-*` is chat (link [How to run assistant commands](docs/initialization-and-invocation.md#how-to-run-assistant-commands)); `./scripts/` is terminal
-- [ ] **Script paths** — install/setup from orchestrator `./scripts/`; daily/runtime in target `./scripts/sdlc-spdd/`; label which context in examples
+- [ ] **Script paths** — install/setup from orchestrator `./scripts/`; daily/runtime in target `./sdlc-spdd/scripts/`; label which context in examples
 
 ## Diagrams
 
-Diagrams are authored as Mermaid blocks inside the Markdown docs (the top-level `README.md` adoption-path diagram is the main one). Rendered exports live in `docs/diagrams/` as SVG and PNG for environments that do not render Mermaid (PDF exports, some viewers).
+System architecture diagrams are **PlantUML** sources in `docs/diagrams/*.puml`. Rendered SVG exports live in `docs/diagrams/` for viewers that do not render PlantUML inline.
 
-Rendering is reproducible and uses a system-installed Chrome/Chromium — no browser download:
+    ./scripts/render-diagrams.sh            # render SVG to docs/diagrams
+    ./scripts/render-diagrams.sh --check    # validate only (CI), non-zero exit on failure
 
-    ./scripts/render-diagrams.sh            # render SVG + PNG to docs/diagrams
-    ./scripts/render-diagrams.sh --check    # validate only (good for CI), non-zero exit on failure
+Requires Java. The PlantUML jar is fetched to `~/.cache/plantuml` on first use.
 
-Override the browser with `PUPPETEER_EXECUTABLE_PATH` if auto-detection fails. Launch flags live in `scripts/mermaid-puppeteer.json`. Label rendering uses `scripts/mermaid-config.json` (`htmlLabels: false`) so SVGs display in IDE previews.
-
-CI: `.github/workflows/validate-diagrams.yml` runs `./scripts/render-diagrams.sh --check` on PRs that touch docs or diagram scripts.
+CI: `.github/workflows/validate-diagrams.yml` runs `./scripts/render-diagrams.sh --check` on PRs that touch diagram sources.
 
 ## Development Setup
 
@@ -185,7 +183,7 @@ CI: `.github/workflows/validate-diagrams.yml` runs `./scripts/render-diagrams.sh
        ./scripts/validate-reasons-canvas.sh examples/spring-boot-order-api/spdd/canvas/FEAT-001-order-status-api.md
 
 4. Test scripts with `--dry-run` when adding file-writing behavior
-5. Test runtime scripts from `./scripts/` in this repo; confirm `init-project.sh` still copies them to `scripts/sdlc-spdd/` in targets
+5. Test runtime scripts from `./scripts/` in this repo; confirm `init-project.sh` still copies them to `sdlc-spdd/scripts/` in targets
 6. Run `./scripts/verify-project-install.sh --target <test-app>` after init changes; Planning checks must include `requirements/milestones/`
 7. Follow the confidence stack in `TESTING.md` (CI gates + local smoke + planning sync checks) for command/prompt/script changes
 

@@ -16,23 +16,23 @@ They solve four operational needs:
 |--------|---------|
 | `scripts/setup-agent-prompts.sh` | Integrated setup for folders, contracts, playbooks, Cursor prompts, Copilot prompts, and Claude Code commands |
 | `scripts/upgrade-project.sh` | Framework-only upgrade for older initialized projects without overwriting implementation files or existing memory |
-| `scripts/sdlc-spdd/sdlc.sh` | Workflow CLI: `next`, `claim`, `resume`, `advance`, `skip`, `shelf`, `sync`, `capture`, `accept`, `team`, `list-work`, `db` |
-| `scripts/sdlc-spdd/start-agent-session.sh` | Target-local script that creates a session brief for a new agent |
-| `scripts/sdlc-spdd/resync-agent-session.sh` | Target-local script that checks or reconciles the canonical canvas, validates it, and creates a session brief |
-| `scripts/sdlc-spdd/capture-session-memory.sh` | Stage session summary, decisions/pitfalls/patterns, and optional metrics as lesson records in `.sdlc/staged/lessons.jsonl` |
-| `scripts/sdlc-spdd/accept-lessons.sh` | Promote staged lesson records into the committed `spdd/memory/lessons.jsonl` (also `sdlc.sh accept`) |
-| `scripts/sdlc-spdd/index-spdd-analysis.sh` | Stage an `analysis` lesson record from a Fowler analysis artifact |
-| `scripts/sdlc-spdd/resolve-agent-context.sh` | Resolve SDLC Agents `#SkillName` / phase extensions for progressive loading |
-| `scripts/sdlc-spdd/resolve-context-backend.sh` | Runtime probe: is the Guide DICE backend enabled and reachable? |
-| `scripts/sdlc-spdd/create-work-from-milestone.sh` | Target-local script that maps milestone checklist items into SDLC-SPDD work artifacts |
-| `scripts/sdlc-spdd/sync-roadmap-from-spdd.sh` | Target-local script that refreshes a managed roadmap summary from canvas metadata |
-| `scripts/sdlc-spdd/summarize-session-notes.sh` | Target-local script that imports existing session notes as staged lesson records |
-| `scripts/sdlc-spdd/sync-agent-context.sh` | Target-local low-level canvas copy synchronization |
-| `scripts/sdlc-spdd/validate-command-adapters.sh` | Target-local checker that validates Cursor/Copilot/Claude Code command-pack parity in the installed project |
-| `scripts/sdlc-spdd/verify-agent-command-effects.sh` | Target-local verifier for deterministic artifact side-effects after `/sdlc-spdd-*` command invocations and post-capture planning sync |
-| `scripts/sdlc-spdd/validate-reasons-canvas.sh` | REASONS Canvas structure validation (+ optional readiness vocabulary) |
-| `scripts/sdlc-spdd/validate-requirements-format.sh` | Jira-compatible requirements frontmatter / Work ID reference checks |
-| `scripts/sdlc-spdd/verify-project-install.sh` | Target-local three-part install verification (Planning, SPDD, SDLC) |
+| `sdlc-spdd/scripts/sdlc.sh` | Workflow CLI: `next`, `claim`, `resume`, `advance`, `skip`, `shelf`, `sync`, `capture`, `accept`, `team`, `list-work`, `archive`, `gate`, `db`, `issues`, `local`, `quick` |
+| `sdlc-spdd/scripts/start-agent-session.sh` | Target-local script that creates a session brief for a new agent |
+| `sdlc-spdd/scripts/resync-agent-session.sh` | Target-local script that checks or reconciles the canonical canvas, validates it, and creates a session brief |
+| `sdlc-spdd/scripts/capture-session-memory.sh` | Stage session summary, decisions/pitfalls/patterns, and optional metrics as lesson records in `.sdlc/staged/lessons.jsonl` |
+| `sdlc-spdd/scripts/accept-lessons.sh` | Promote staged lesson records into the committed `spdd/memory/lessons.jsonl` (also `sdlc.sh accept`) |
+| `sdlc-spdd/scripts/index-spdd-analysis.sh` | Stage an `analysis` lesson record from a Fowler analysis artifact |
+| `sdlc-spdd/scripts/resolve-agent-context.sh` | Resolve SDLC Agents `#SkillName` / phase extensions for progressive loading |
+| `sdlc-spdd/scripts/resolve-context-backend.sh` | Runtime probe: is the Guide DICE backend enabled and reachable? |
+| `sdlc-spdd/scripts/create-work-from-milestone.sh` | Target-local script that maps milestone checklist items into SDLC-SPDD work artifacts |
+| `sdlc-spdd/scripts/sync-roadmap-from-spdd.sh` | Target-local script that refreshes a managed roadmap summary from canvas metadata |
+| `sdlc-spdd/scripts/summarize-session-notes.sh` | Target-local script that imports existing session notes as staged lesson records |
+| `sdlc-spdd/scripts/sync-agent-context.sh` | Target-local low-level canvas copy synchronization |
+| `sdlc-spdd/scripts/validate-command-adapters.sh` | Target-local checker that validates Cursor/Copilot/Claude Code command-pack parity in the installed project |
+| `sdlc-spdd/scripts/verify-agent-command-effects.sh` | Target-local verifier for deterministic artifact side-effects after `/sdlc-spdd-*` command invocations and post-capture planning sync |
+| `sdlc-spdd/scripts/validate-reasons-canvas.sh` | REASONS Canvas structure validation (+ optional readiness vocabulary) |
+| `sdlc-spdd/scripts/validate-requirements-format.sh` | Jira-compatible requirements frontmatter / Work ID reference checks |
+| `sdlc-spdd/scripts/verify-project-install.sh` | Target-local three-part install verification (Planning, SPDD, SDLC) |
 
 ## 1. Set Up Prompts and Memory
 
@@ -55,7 +55,7 @@ repo root (see the [install layout diagram](diagrams/09-install-layout.svg) and
   - `requirements/` and `requirements/milestones/`
   - `spdd/` — `canvas/`, `analysis/`, `tasks/`, `reviews/`, `sync/`, and
     `memory/` (the `lessons.jsonl` ledger + `registry.jsonl`)
-  - `harness/`, `playbooks/`, `extensions/`
+  - `harness/` and `harness/skills/`
   - `scripts/` — installed workflow CLI and session scripts
   - `ROADMAP.md`, milestone definition, `session-notes/`
   - `.sdlc/` — gitignored runtime (sessions, staged captures, optional sqlite)
@@ -75,7 +75,7 @@ Preview first:
 
     ./scripts/upgrade-project.sh --target /path/to/app --all --dry-run
 
-The upgrade updates framework-owned prompts, playbooks, harness files, target-local docs under `docs/sdlc-spdd/`, and target-local runtime scripts. It preserves application source, application docs outside `docs/sdlc-spdd/`, requirements, canvases, reviews, sync logs, the lessons ledger, existing root `CLAUDE.md`, and target workflow customizations. Legacy memory layouts are converted by `sdlc-engine storage migrate` — see [Framework upgrade](framework-upgrade.md).
+The upgrade updates framework-owned prompts, harness/skills files, target-local docs under `docs/sdlc-spdd/`, and target-local runtime scripts. It preserves application source, application docs outside `docs/sdlc-spdd/`, requirements, canvases, reviews, sync logs, the lessons ledger, existing root `CLAUDE.md`, and target workflow customizations. Legacy memory layouts are converted by `sdlc-engine storage migrate` — see [Framework upgrade](framework-upgrade.md).
 
 ## 2. Start a New Agent Session
 
@@ -87,11 +87,11 @@ from the ledger, and Framework Orientation pointers.
 See [Bootstrap and retrieval-based loading](context-loading-and-scaling.md#bootstrap-and-index-based-loading).
 
     cd /path/to/app
-    ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id FEAT-001-order-status-api --phase code
+    ./sdlc-spdd/scripts/start-agent-session.sh --target . --work-id FEAT-001-order-status-api --phase code
 
 With an explicit milestone:
 
-    ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id FEAT-001-order-status-api --phase code --milestone milestone-1.md
+    ./sdlc-spdd/scripts/start-agent-session.sh --target . --work-id FEAT-001-order-status-api --phase code --milestone milestone-1.md
 
 Session-brief rotation (keeps `.sdlc/sessions/` bounded — **hot path, gitignored**):
 
@@ -114,7 +114,7 @@ The brief includes:
 - canvas sync state, roadmap and milestone status, artifact status
 - **Related Past Work digest** — counts + top lesson titles with ids from the
   ledger (fetch bodies on demand; query menu included)
-- **Resolved Context** (phase files, extensions, Work ID artifacts)
+- **Resolved Context** (phase harness files, skills, Work ID artifacts)
 - optional **Local SQLite Index** snapshot (when the sqlite cache is enabled)
 - git status
 - copy/paste resume prompt with SDLC, SPDD, and planning-layer `@` references
@@ -128,7 +128,7 @@ Then paste the **Resume Prompt** from `.sdlc/sessions/current-session.md`. See [
 | Context | Path |
 |---------|------|
 | This orchestrator repository (development) | `./scripts/<script>.sh` |
-| Installed target application | `./scripts/sdlc-spdd/<script>.sh` |
+| Installed target application | `./sdlc-spdd/scripts/<script>.sh` |
 
 User-facing docs use the target path. When developing here, drop the `sdlc-spdd/` segment.
 
@@ -136,7 +136,7 @@ User-facing docs use the target path. When developing here, drop the `sdlc-spdd/
 
 Check the canonical canvas and validate it:
 
-    ./scripts/sdlc-spdd/resync-agent-session.sh --target . --work-id FEAT-001-order-status-api --check-only
+    ./sdlc-spdd/scripts/resync-agent-session.sh --target . --work-id FEAT-001-order-status-api --check-only
 
 `--check-only` runs sync check and canvas validation, then stops. It does **not** create a session brief. Run `start-agent-session.sh` next.
 
@@ -144,7 +144,7 @@ Check the canonical canvas and validate it:
 
 If drift exists, reconcile and create a session brief in one step. **Default:** canonical `spdd/canvas/<WORK-ID>.md` is authoritative:
 
-    ./scripts/sdlc-spdd/resync-agent-session.sh --target . --work-id FEAT-001-order-status-api --from-canvas --force --phase code
+    ./sdlc-spdd/scripts/resync-agent-session.sh --target . --work-id FEAT-001-order-status-api --from-canvas --force --phase code
 
 When reconciling, you do **not** need a separate `start-agent-session.sh` call — resync creates the brief.
 
@@ -162,7 +162,7 @@ analysis, `session-notes/`, and capture flags) for path and package tokens to
 resolve **code areas**, then writes lesson records to the gitignored stage —
 **no git noise**:
 
-    ./scripts/sdlc-spdd/capture-session-memory.sh \
+    ./sdlc-spdd/scripts/capture-session-memory.sh \
       --target . \
       --work-id FEAT-001-order-status-api \
       --phase code \
@@ -197,9 +197,9 @@ parsed areas, and `--dry-run` to preview the staged records.
 Staged records are promoted to the committed ledger at retro/sync via
 `/sdlc-spdd-accept`, which reviews them for consistency and coherence first:
 
-    ./scripts/sdlc-spdd/sdlc.sh accept --list                  # what is staged
-    ./scripts/sdlc-spdd/sdlc.sh accept --work-id <WORK-ID>     # promote for one Work ID
-    ./scripts/sdlc-spdd/sdlc.sh accept --ids <a,b,c> --discard-rest
+    ./sdlc-spdd/scripts/sdlc.sh accept --list                  # what is staged
+    ./sdlc-spdd/scripts/sdlc.sh accept --work-id <WORK-ID>     # promote for one Work ID
+    ./sdlc-spdd/scripts/sdlc.sh accept --ids <a,b,c> --discard-rest
 
 Accept dedupes by id, drains the stage, re-derives the sqlite/Guide
 projections, and leaves `spdd/memory/lessons.jsonl` ready to git-stage — one
@@ -210,17 +210,17 @@ See [Storage v3 — stage-then-accept](storage-v3.md#stage-then-accept).
 
 Orient and claim:
 
-    ./scripts/sdlc-spdd/sdlc.sh next
-    ./scripts/sdlc-spdd/sdlc.sh claim <WORK-ID>    # appends to spdd/memory/registry.jsonl; commit it on shared repos
+    ./sdlc-spdd/scripts/sdlc.sh next
+    ./sdlc-spdd/scripts/sdlc.sh claim <WORK-ID>    # appends to spdd/memory/registry.jsonl; commit it on shared repos
 
 Start or resume:
 
-    ./scripts/sdlc-spdd/sdlc.sh resume <WORK-ID> [--phase <phase>]
-    ./scripts/sdlc-spdd/sdlc.sh start
+    ./sdlc-spdd/scripts/sdlc.sh resume <WORK-ID> [--phase <phase>]
+    ./sdlc-spdd/scripts/sdlc.sh start
 
 Optional canvas sync check:
 
-    ./scripts/sdlc-spdd/resync-agent-session.sh --target . --work-id <WORK-ID> --check-only
+    ./sdlc-spdd/scripts/resync-agent-session.sh --target . --work-id <WORK-ID> --check-only
 
 Invoke the SDLC-SPDD skill:
 
@@ -228,8 +228,8 @@ Invoke the SDLC-SPDD skill:
 
 After completing a phase step:
 
-    ./scripts/sdlc-spdd/sdlc.sh advance
-    ./scripts/sdlc-spdd/sdlc.sh advance --force   # override Ready For Coding gate into code
+    ./sdlc-spdd/scripts/sdlc.sh advance
+    ./sdlc-spdd/scripts/sdlc.sh advance --force   # override Ready For Coding gate into code
 
 Review and sync:
 
@@ -238,16 +238,16 @@ Review and sync:
 
 Capture (stages quietly) and accept at the gate:
 
-    ./scripts/sdlc-spdd/sdlc.sh capture --summary "<summary>" --validation "<tests>" --next "<next command>"
+    ./sdlc-spdd/scripts/sdlc.sh capture --summary "<summary>" --validation "<tests>" --next "<next command>"
     /sdlc-spdd-accept          # review + promote staged records, git-stage the ledger
 
 Map milestone planning into SPDD work:
 
-    ./scripts/sdlc-spdd/create-work-from-milestone.sh --target . --milestone milestone-1.md --all
+    ./sdlc-spdd/scripts/create-work-from-milestone.sh --target . --milestone milestone-1.md --all
 
 Refresh roadmap from SPDD canvases:
 
-    ./scripts/sdlc-spdd/sync-roadmap-from-spdd.sh --target .
+    ./sdlc-spdd/scripts/sync-roadmap-from-spdd.sh --target .
 
 Full loop diagram: [daily loop](diagrams/11-daily-loop.svg).
 
@@ -256,17 +256,17 @@ Full loop diagram: [daily loop](diagrams/11-daily-loop.svg).
 After `/sdlc-spdd-analysis` writes `spdd/analysis/<WORK-ID>-analysis.md`, stage
 an `analysis` lesson record so future retrieval finds the keywords and areas:
 
-    ./scripts/sdlc-spdd/index-spdd-analysis.sh --target . --work-id <WORK-ID>
+    ./sdlc-spdd/scripts/index-spdd-analysis.sh --target . --work-id <WORK-ID>
 
-See [Chelsea Troy and the framework](chelsea-troy-and-the-framework.md).
+See [Context loading and scaling](context-loading-and-scaling.md).
 
-## 6. Resolve Skills and Phase Extensions (SDLC Agents)
+## 6. Resolve Skills and Phase Context (SDLC Agents)
 
-Resolve which extension, playbook, and harness files to load — do not list whole directories:
+Resolve which harness and skill files to load — do not list whole directories:
 
-    ./scripts/sdlc-spdd/resolve-agent-context.sh --target . --phase code --work-id <WORK-ID>
-    ./scripts/sdlc-spdd/resolve-agent-context.sh --target . --text "Implement retry #TDD #java !Kafka"
-    ./scripts/sdlc-spdd/resolve-agent-context.sh --list-skills
+    ./sdlc-spdd/scripts/resolve-agent-context.sh --target . --phase code --work-id <WORK-ID>
+    ./sdlc-spdd/scripts/resolve-agent-context.sh --target . --text "Implement retry #TDD #java !Kafka"
+    ./sdlc-spdd/scripts/resolve-agent-context.sh --list-skills
 
 `start-agent-session.sh` embeds resolve output under **Resolved Context** in
 `current-session.md` and passes `--work-id` when set. See [SDLC Agents and the framework](sdlc-agents-and-the-framework.md).
@@ -279,12 +279,12 @@ see [Context loading and scaling](context-loading-and-scaling.md).
 
 The scripts enforce the combined system:
 
-- SDLC Agents side: phase-specific handoffs, progressive context loading, playbook selection, and persistent learning.
+- SDLC Agents side: phase-specific handoffs, progressive context loading, skill selection, and persistent learning.
 - SPDD side: REASONS Canvas validation, prompt-first behavior changes, canvas sync, and reviewable artifacts.
 
 Use `capture-session-memory.sh` after meaningful work so future agents do not rely on chat history — and `/sdlc-spdd-accept` at gates so the ledger stays the reviewed system of record.
 
 You can verify both command effects and planning sync:
 
-    ./scripts/sdlc-spdd/verify-agent-command-effects.sh --target . --work-id <WORK-ID> --step review
-    ./scripts/sdlc-spdd/verify-agent-command-effects.sh --target . --work-id <WORK-ID> --step capture --milestone milestone-1.md --require-roadmap
+    ./sdlc-spdd/scripts/verify-agent-command-effects.sh --target . --work-id <WORK-ID> --step review
+    ./sdlc-spdd/scripts/verify-agent-command-effects.sh --target . --work-id <WORK-ID> --step capture --milestone milestone-1.md --require-roadmap

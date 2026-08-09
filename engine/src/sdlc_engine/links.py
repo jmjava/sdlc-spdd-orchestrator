@@ -117,6 +117,12 @@ def parse_milestone_requirement(path: Path) -> dict[str, str]:
         "github_url": _bullet_value(github, "URL"),
         "github_labels": _bullet_value(github, "Labels"),
         "github_body": _subsection(github, "Body"),
+        "github_description": _subsection(github, "Description"),
+        "github_acceptance": _subsection(github, "Acceptance criteria (Given/When/Then)")
+        or _subsection(github, "Acceptance criteria"),
+        "github_business_value": _subsection(github, "Business value"),
+        "github_scope_in": _subsection(github, "Scope in"),
+        "github_scope_out": _subsection(github, "Scope out"),
         "summary": _section_body(text, "Summary").strip(),
     }
 
@@ -318,14 +324,54 @@ def ensure_github_section(path: Path) -> bool:
         return False
     block = (
         "\n## GitHub\n\n"
-        "Optional — use when tracking is GitHub Issues instead of/in addition to Jira.\n\n"
+        "Create the issue in GitHub UI, then set **Number** (and matching "
+        "``github_number`` frontmatter when used) and commit.\n\n"
         "- Number: TBD\n"
         "- Title: \n"
         "- Labels: \n"
         "- URL: \n"
+        "\n"
+        "### Description\n"
+        "\n"
+        "### Acceptance criteria\n"
+        "\n"
+        "- [ ] …\n"
     )
     path.write_text(text.rstrip() + "\n" + block, encoding="utf-8")
     return True
+
+
+def set_milestone_frontmatter_field(path: Path, field: str, value: str) -> bool:
+    """Set a YAML frontmatter field when `---` block is present. Returns True if changed."""
+    if not path.is_file():
+        return False
+    text = path.read_text(encoding="utf-8")
+    if not text.startswith("---"):
+        return False
+    end = text.find("\n---", 3)
+    if end == -1:
+        return False
+    fm = text[3:end]
+    rest = text[end + 4 :]
+    pattern = re.compile(rf"^{re.escape(field)}:\s*.*$", re.MULTILINE)
+    quoted = json_escape_yaml(value)
+    new_line = f"{field}: {quoted}"
+    if pattern.search(fm):
+        new_fm = pattern.sub(new_line, fm, count=1)
+        changed = new_fm != fm
+    else:
+        new_fm = fm.rstrip() + "\n" + new_line + "\n"
+        changed = True
+    if not changed:
+        return False
+    path.write_text("---" + new_fm + "---" + rest, encoding="utf-8")
+    return True
+
+
+def json_escape_yaml(value: str) -> str:
+    """Quote a scalar for YAML frontmatter."""
+    v = (value or "").replace("\\", "\\\\").replace('"', '\\"')
+    return f'"{v}"'
 
 
 def ensure_jira_section(path: Path) -> bool:

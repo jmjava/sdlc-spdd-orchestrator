@@ -49,11 +49,11 @@ Retrieve memory with `sdlc-engine context retrieve|show|digest` — never bulk-r
 | Cursor / Copilot / Claude Code slash commands | [Initialization and invocation](initialization-and-invocation.md) |
 | Runtime scripts + workflow CLI | [Agent session scripts](agent-session-scripts.md) |
 
-## What each part brings
+## How each part works
 
-- [What planning brings](what-planning-brings.md)
-- [What SPDD brings](what-spdd-brings.md)
-- [What SDLC brings](what-sdlc-brings.md)
+- [Three-part operating path](three-part-operating-path.md)
+- [Storage v3](storage-v3.md)
+- [Workflow](workflow.md)
 
 ## Runtime scripts
 

@@ -33,14 +33,14 @@ On-demand retrieval via `sdlc-engine context retrieve` is the baseline and alway
 works. This install may optionally augment it with the Guide DICE entity
 graph, but Guide is never assumed to be present. Resolve at runtime:
 
-    ./scripts/sdlc-spdd/resolve-context-backend.sh --target .
+    ./sdlc-spdd/scripts/resolve-context-backend.sh --target .
 
 (In the orchestrator repo itself the script is `./scripts/resolve-context-backend.sh`.)
 
 - `CONTEXT_BACKEND=files` — proceed with on-demand retrieval only. This is the
   normal case, not an error.
 - `CONTEXT_BACKEND=guide-dice` — after staging and accepting lessons, run
-  `./scripts/sdlc-spdd/resolve-context-backend.sh --target . --project --work-id <WORK-ID>`
+  `./sdlc-spdd/scripts/resolve-context-backend.sh --target . --project --work-id <WORK-ID>`
   so new lessons become graph entities for future runs (no-op when files).
 
 Never block or fail this command because Guide is absent or unreachable.
@@ -56,6 +56,7 @@ Stage and accept lesson records (no retro.md, no hand-edited memory files):
 Include:
 
 - Summary
+- Outcome: `improved` / `neutral` / `worse` / `unknown`
 - Lessons learned
 - Reusable patterns
 - Mistakes to avoid

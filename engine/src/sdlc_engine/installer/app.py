@@ -12,6 +12,14 @@ from typing import Any
 from sdlc_engine.adf_work import AdfWorkService
 from sdlc_engine.context_store import ContextStore
 from sdlc_engine.db import LocalIndex
+from sdlc_engine.integration_config import save_config as save_integrations_config
+from sdlc_engine.integration_config import status_dict as integration_status
+from sdlc_engine.issue_tracker import (
+    load_config as load_tracker_config,
+    save_config as save_tracker_config,
+    status_dict as tracker_status_dict,
+)
+from sdlc_engine.issues import IssueSyncService
 from sdlc_engine.lessons_ledger import LessonsLedger
 from sdlc_engine.persistence import (
     ALL_BACKENDS,
@@ -168,19 +176,22 @@ def _dashboard_status(target: Path) -> dict[str, Any]:
     }
 
     viewer = viewer_process_status(target)
-    # Integrations report set/unset booleans only — never env values.
-    jira = {
-        "base_url_set": bool(os.environ.get("JIRA_BASE_URL", "").strip()),
-        "email_set": bool(os.environ.get("JIRA_EMAIL", "").strip()),
-        "token_set": bool(os.environ.get("JIRA_API_TOKEN", "").strip()),
-        "hint": "export JIRA_BASE_URL / JIRA_EMAIL / JIRA_API_TOKEN in the shell running this console",
-    }
-    jira["configured"] = bool(
-        jira["base_url_set"] and jira["email_set"] and jira["token_set"]
-    )
+    project = Project.resolve(target)
+    integ = integration_status(project)
+    gh_cli = _gh_auth_status()
     integrations = {
-        "jira": jira,
-        "github": _gh_auth_status(),
+        "jira": {
+            **integ["jira"],
+            "hint": "Set in Issues tab → Integrations (.sdlc/integrations-config.json) or export JIRA_* env",
+        },
+        "github": {
+            **integ["github"],
+            "installed": gh_cli.get("installed", False),
+            "authenticated": bool(integ["github"].get("configured") or gh_cli.get("authenticated")),
+            "detail": gh_cli.get("detail") if not integ["github"].get("configured") else "token configured",
+            "hint": "Set GH token in Issues tab or run `gh auth login`",
+        },
+        "tracker": integ.get("effective_tracker"),
         "viewer": {
             "running": bool(viewer.get("alive") or viewer.get("port_open")),
             "url": viewer.get("url") or "",
@@ -329,9 +340,9 @@ def _dashboard_suggestions(project: Project, status: dict[str, Any]) -> list[dic
         sections = _requirements_issue_sections(project)
         wants: list[str] = []
         if sections.get("jira") and jira_missing:
-            wants.append("set JIRA_BASE_URL / JIRA_EMAIL / JIRA_API_TOKEN")
+            wants.append("configure Jira in Issues tab or set JIRA_* env")
         if sections.get("github") and gh_missing:
-            wants.append("run `gh auth login`")
+            wants.append("configure GitHub token in Issues tab or run `gh auth login`")
         if wants:
             out.append(
                 {
@@ -651,7 +662,7 @@ def create_app(default_target: Path | str | None = None) -> Any:
             "checklist": checklist(cfg, probe, neo4j=neo),
             "embabel_mechanics": mechanics,
             "ingest_command": ingest_command(cfg),
-            "docs": "docs/guide-rag-research-and-dogfooding.md",
+            "docs": "docs/dice-projection-runbook.md",
         }
 
     @app.post("/api/guide")
@@ -1018,6 +1029,136 @@ def create_app(default_target: Path | str | None = None) -> Any:
                 ),
             }
         )
+
+    @app.post("/api/integrations/status")
+    def api_integrations_status() -> Any:
+        body = request.get_json(silent=True) or {}
+        target = _target_from_body(body)
+        if not target.is_dir():
+            return jsonify({"ok": False, "error": f"target not found: {target}"}), 400
+        project = Project.resolve(target)
+        payload = integration_status(project)
+        payload["ok"] = True
+        payload["target"] = str(target)
+        return jsonify(payload)
+
+    @app.post("/api/integrations/save")
+    def api_integrations_save() -> Any:
+        body = request.get_json(silent=True) or {}
+        target = _target_from_body(body)
+        if not target.is_dir():
+            return jsonify({"ok": False, "error": f"target not found: {target}"}), 400
+        project = Project.resolve(target)
+        try:
+            saved = save_integrations_config(project, body)
+        except ValueError as exc:
+            return jsonify({"ok": False, "error": str(exc), "target": str(target)}), 400
+        out = integration_status(project)
+        out["ok"] = True
+        out["target"] = str(target)
+        out["saved"] = saved
+        return jsonify(out)
+
+    @app.post("/api/issues/status")
+    def api_issues_status() -> Any:
+        body = request.get_json(silent=True) or {}
+        target = _target_from_body(body)
+        work_id = str(body.get("work_id") or "").strip()
+        if not work_id:
+            return jsonify({"ok": False, "error": "work_id required"}), 400
+        system = str(body.get("system") or "").strip() or None
+        svc = IssueSyncService(Project.resolve(target))
+        try:
+            status = svc.issue_link_status(work_id, system=system)
+        except (FileNotFoundError, ValueError) as exc:
+            return jsonify({"ok": False, "error": str(exc), "target": str(target)}), 400
+        return jsonify({"ok": True, "target": str(target), **status})
+
+    @app.post("/api/issues/link")
+    def api_issues_link() -> Any:
+        body = request.get_json(silent=True) or {}
+        target = _target_from_body(body)
+        work_id = str(body.get("work_id") or "").strip()
+        issue_ref = str(body.get("issue_ref") or body.get("jira_key") or body.get("github_number") or "").strip()
+        if not work_id or not issue_ref:
+            return jsonify({"ok": False, "error": "work_id and issue_ref required"}), 400
+        dry_run = body.get("dry_run") is True or body.get("apply") is not True
+        svc = IssueSyncService(Project.resolve(target))
+        try:
+            result = svc.link_issue_local(
+                work_id,
+                issue_ref,
+                system=str(body.get("system") or "").strip() or None,
+                summary=str(body.get("summary") or "").strip() or None,
+                issue_type=str(body.get("issue_type") or "").strip() or None,
+                title=str(body.get("title") or body.get("summary") or "").strip() or None,
+                url=str(body.get("url") or body.get("github_url") or "").strip() or None,
+                apply=not dry_run,
+            )
+        except (FileNotFoundError, ValueError) as exc:
+            return jsonify({"ok": False, "error": str(exc), "target": str(target)}), 400
+        return jsonify({"ok": True, "target": str(target), **result, "dry_run": dry_run})
+
+    @app.post("/api/issues/sync")
+    def api_issues_sync() -> Any:
+        body = request.get_json(silent=True) or {}
+        target = _target_from_body(body)
+        work_id = str(body.get("work_id") or "").strip()
+        direction = str(body.get("direction") or "pull").strip().lower()
+        system = str(body.get("system") or "").strip() or None
+        if not work_id:
+            return jsonify({"ok": False, "error": "work_id required"}), 400
+        if direction not in {"pull", "push"}:
+            return jsonify({"ok": False, "error": "direction must be pull or push"}), 400
+        apply = body.get("apply") is True
+        svc = IssueSyncService(Project.resolve(target))
+        try:
+            report = svc.sync_issue(
+                work_id,
+                system=system,
+                direction=direction,
+                apply=apply,
+                description_format=str(body.get("description_format") or "").strip() or None,
+            )
+        except (FileNotFoundError, ValueError, RuntimeError) as exc:
+            return jsonify({"ok": False, "error": str(exc), "target": str(target)}), 400
+        tracker = system or integration_status(Project.resolve(target)).get("effective_tracker", "jira")
+        cli = (
+            f"./scripts/sdlc.sh issues {direction} {work_id} --system {tracker}"
+            + (" --apply" if apply else "")
+        )
+        return jsonify(
+            {
+                "ok": True,
+                "target": str(target),
+                "work_id": work_id,
+                "system": tracker,
+                "direction": direction,
+                "apply": apply,
+                "report": report,
+                "cli": cli,
+            }
+        )
+
+    @app.post("/api/jira/status")
+    def api_jira_status() -> Any:
+        body = request.get_json(silent=True) or {}
+        body["system"] = "jira"
+        return api_issues_status()
+
+    @app.post("/api/jira/link")
+    def api_jira_link() -> Any:
+        body = request.get_json(silent=True) or {}
+        if body.get("jira_key") and not body.get("issue_ref"):
+            body["issue_ref"] = body["jira_key"]
+        body["system"] = "jira"
+        return api_issues_link()
+
+    @app.post("/api/jira/sync")
+    def api_jira_sync() -> Any:
+        body = request.get_json(silent=True) or {}
+        body["system"] = "jira"
+        return api_issues_sync()
 
     return app
 

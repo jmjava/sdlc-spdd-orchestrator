@@ -5,6 +5,7 @@ set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/lib.sh"
 
 ROOT="${1:?target root required}"
+HOME="$(live_home "${ROOT}")"
 echo "== 09 sqlite session context =="
 
 if ! PYTHONPATH="${REPO_ROOT}/engine/src${PYTHONPATH:+:${PYTHONPATH}}" \
@@ -17,12 +18,11 @@ export PYTHONPATH="${REPO_ROOT}/engine/src${PYTHONPATH:+:${PYTHONPATH}}"
 
 # Ensure claim + canvas so rebuild indexes a real work item.
 live_sdlc "${ROOT}" claim "${WORK_ID}" --force >/dev/null 2>&1 || true
-if [[ ! -f "${ROOT}/spdd/canvas/${WORK_ID}.md" ]]; then
-  mkdir -p "${ROOT}/spdd/canvas" "${ROOT}/agent-context/features/${WORK_ID}"
+if [[ ! -f "${HOME}/spdd/canvas/${WORK_ID}.md" ]]; then
+  mkdir -p "${HOME}/spdd/canvas" "${HOME}/requirements/milestones"
   printf '# REASONS Canvas: %s\n\n## Metadata\n\n- Work ID: %s\n- Status: In Progress\n- Readiness: Ready For Coding\n\n## Final Status\n\n- Status: In Progress\n' \
-    "${WORK_ID}" "${WORK_ID}" >"${ROOT}/spdd/canvas/${WORK_ID}.md"
-  printf '# requirement\n' >"${ROOT}/agent-context/features/${WORK_ID}/requirement.md"
-  printf '# progress\n' >"${ROOT}/agent-context/features/${WORK_ID}/progress-log.md"
+    "${WORK_ID}" "${WORK_ID}" >"${HOME}/spdd/canvas/${WORK_ID}.md"
+  printf '# requirement\n' >"${HOME}/requirements/milestones/${WORK_ID}.md"
 fi
 
 if PYTHONPATH="${PYTHONPATH}" python3 -m sdlc_engine --root "${ROOT}" db rebuild >/dev/null; then
@@ -44,16 +44,15 @@ fi
 
 # Fresh start-agent-session must embed the markdown lookup section.
 # Prefer target script (install copies start-agent-session); fall back to orchestrator.
-START="${ROOT}/scripts/sdlc-spdd/start-agent-session.sh"
+START="${HOME}/scripts/start-agent-session.sh"
 if [[ ! -x "${START}" ]]; then
   START="${REPO_ROOT}/scripts/start-agent-session.sh"
 fi
 
-# Ensure installed copy has latest lookup wiring when testing from orchestrator checkout.
 if [[ -f "${REPO_ROOT}/scripts/start-agent-session.sh" ]]; then
-  cp "${REPO_ROOT}/scripts/start-agent-session.sh" "${ROOT}/scripts/sdlc-spdd/start-agent-session.sh"
-  chmod +x "${ROOT}/scripts/sdlc-spdd/start-agent-session.sh"
-  START="${ROOT}/scripts/sdlc-spdd/start-agent-session.sh"
+  cp "${REPO_ROOT}/scripts/start-agent-session.sh" "${HOME}/scripts/start-agent-session.sh"
+  chmod +x "${HOME}/scripts/start-agent-session.sh"
+  START="${HOME}/scripts/start-agent-session.sh"
 fi
 
 if PYTHONPATH="${PYTHONPATH}" "${START}" \
@@ -65,7 +64,7 @@ else
   bad "start-agent-session"
 fi
 
-BRIEF="${ROOT}/.sdlc/sessions/current-session.md"
+BRIEF="${HOME}/.sdlc/sessions/current-session.md"
 [[ -f "${BRIEF}" ]] && ok "current-session.md exists" || bad "current-session.md missing"
 
 if grep -Fq 'Local SQLite Index (query cache)' "${BRIEF}"; then

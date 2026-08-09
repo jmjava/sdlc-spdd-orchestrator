@@ -199,6 +199,14 @@ add_work_id_artifacts() {
   local wid="$1"
   add_path "${FRAMEWORK_HOME}/spdd/canvas/${wid}.md"
   add_path "${FRAMEWORK_HOME}/spdd/analysis/${wid}-analysis.md"
+  shopt -s nullglob
+  local task
+  for task in \
+    "${FRAMEWORK_HOME}/spdd/tasks/${wid}"*.md \
+    "${FRAMEWORK_HOME}/spdd/tasks/${wid}-"*.md; do
+    add_path "${task}"
+  done
+  shopt -u nullglob
   local excerpt
   excerpt="$(_write_progress_excerpt_from_ledger "${wid}" 2>/dev/null || true)"
   if [[ -n "${excerpt}" && -f "${excerpt}" ]]; then
@@ -407,6 +415,17 @@ add_phase_index_path() {
     add_phase_index_directory "${raw}"
     return 0
   fi
+
+  case "${raw}" in
+    agent-context/harness/*)
+      add_path "$(sdlc_harness_dir "${TARGET}")/${raw#agent-context/harness/}"
+      return 0
+      ;;
+    harness/*)
+      add_path "$(sdlc_harness_dir "${TARGET}")/${raw#harness/}"
+      return 0
+      ;;
+  esac
 
   add_path "${FRAMEWORK_HOME}/${raw}"
 }

@@ -12,14 +12,15 @@ Presence of this file is **not** a promise that Guide is running. Resolution
 is always two-step and happens at runtime:
 
 ```bash
-./scripts/sdlc-spdd/resolve-context-backend.sh --target .
+./scripts/resolve-context-backend.sh --target .
 # CONTEXT_BACKEND=guide-dice  → Guide is live; augment with the tools below
 # CONTEXT_BACKEND=files       → use the file-based indexes only (normal, not an error)
 ```
 
-The file-based indexes under `agent-context/memory/` remain the baseline
-either way; DICE augments them, it never replaces them. No SDLC-SPDD command
-may fail because Guide is absent or down.
+The committed lessons ledger (`spdd/memory/lessons.jsonl`) and on-demand
+`sdlc-engine context retrieve` remain the baseline either way; DICE augments
+them, it never replaces them. No SDLC-SPDD command may fail because Guide is
+absent or down.
 
 ## When live, prefer these for retrieval
 
@@ -29,6 +30,20 @@ may fail because Guide is absent or down.
 | `spdd_areaLessons` | `GET /api/v1/data/spdd-projection/area?name={area}` | Cross-run lessons before touching a code area |
 | `spdd_findByLabel` | — | List entities of one label (capped) |
 | `spdd_projectionStats` | `GET /api/v1/data/spdd-projection/stats` | Sanity-check projection freshness |
+| `spdd_getLesson` | `GET /api/v1/data/spdd-projection/lesson/{id}` | Full untruncated lesson body |
+
+## CLI delegation (Cursor / Copilot without MCP wired)
+
+When native MCP is unavailable, agents **must** use the same tools via CLI:
+
+```bash
+./scripts/guide/query-guide.sh --text --work-id <WORK-ID>
+./scripts/guide/query-guide.sh --area engine/tests
+SDLC_ENGINE=python ./scripts/sdlc.sh context mcp-call --tool spdd_getLesson --json '{"id":"<lesson-id>"}'
+```
+
+MCP config snippet: `./scripts/guide/mcp-config-snippet.sh --cursor`  
+Details: [docs/mcp-guide-for-agents.md](../../docs/mcp-guide-for-agents.md)
 
 ## Keeping the graph current (persist side)
 
@@ -36,7 +51,7 @@ After retro/sync updates the markdown artifacts, re-project so the next run
 retrieves fresh entities:
 
 ```bash
-./scripts/sdlc-spdd/resolve-context-backend.sh --target . --project --work-id <WORK-ID>
+./scripts/resolve-context-backend.sh --target . --project --work-id <WORK-ID>
 ```
 
 This is a no-op (exit 0) when Guide is not reachable.

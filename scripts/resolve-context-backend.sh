@@ -185,7 +185,7 @@ unset IFS
 if [[ "${guide_live}" -eq 1 && "${want_guide}" -eq 1 ]]; then
   echo "CONTEXT_BACKEND=guide-dice"
   echo "GUIDE_BASE_URL=${GUIDE_BASE_URL}"
-  echo "MCP_TOOLS=spdd_workSubgraph spdd_areaLessons spdd_findByLabel spdd_projectionStats"
+  echo "MCP_TOOLS=spdd_workSubgraph spdd_areaLessons spdd_findByLabel spdd_projectionStats spdd_getLesson"
 else
   echo "CONTEXT_BACKEND=files"
   if [[ "${want_guide}" -eq 0 ]]; then

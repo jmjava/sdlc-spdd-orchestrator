@@ -35,7 +35,3 @@ stdlib from the network at render time.
 
 Regenerate the committed `.svg` files whenever a `.puml` source changes.
 Do not edit rendered images by hand.
-
-> The previous Mermaid-based diagrams (and their `README-1.*` exports)
-> described the pre-v3 storage design and were replaced wholesale by this
-> PlantUML set in the storage v3 overhaul.

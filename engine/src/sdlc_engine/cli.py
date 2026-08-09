@@ -331,6 +331,66 @@ def cmd_context(args: argparse.Namespace) -> int:
             return 0
         print(json.dumps(status_dict(project), indent=2))
         return 0
+    if action == "guide-query":
+        from .guide_client import GuideClient, resolve_guide_base_url
+        from .guide_query import format_guide_answer, run_guide_query
+        from .persistence import load_config as load_persist_cfg
+
+        project = _project(args)
+        cfg = load_persist_cfg(project)
+        base = resolve_guide_base_url(
+            explicit=getattr(args, "guide_url", None) or None,
+            project_url=str(cfg.get("guide_base_url") or ""),
+        )
+        client = GuideClient(base, timeout=float(getattr(args, "timeout", 30) or 30))
+        tool_args = {}
+        if getattr(args, "tool_json", None):
+            tool_args = json.loads(args.tool_json)
+        try:
+            payload = run_guide_query(
+                client,
+                work_id=getattr(args, "work_id", "") or "",
+                area=getattr(args, "area", "") or "",
+                lesson_id=getattr(args, "lesson_id", "") or "",
+                label=getattr(args, "label", "") or "",
+                question=getattr(args, "question", "") or "",
+                stats=bool(getattr(args, "stats", False)),
+                tool=getattr(args, "tool", "") or "",
+                tool_args=tool_args,
+                limit=int(getattr(args, "limit", 20) or 20),
+            )
+        except ValueError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 2
+        if getattr(args, "text", False):
+            print(format_guide_answer(payload))
+        else:
+            print(json.dumps(payload, indent=2))
+        return 0 if payload.get("ok") else 1
+    if action == "mcp-call":
+        from .guide_client import GuideClient, resolve_guide_base_url
+        from .persistence import load_config as load_persist_cfg
+
+        project = _project(args)
+        cfg = load_persist_cfg(project)
+        base = resolve_guide_base_url(
+            explicit=getattr(args, "guide_url", None) or None,
+            project_url=str(cfg.get("guide_base_url") or ""),
+        )
+        client = GuideClient(base, timeout=float(getattr(args, "timeout", 30) or 30))
+        tool = str(getattr(args, "tool", "") or "").strip()
+        if not tool:
+            print("error: --tool required (spdd_workSubgraph, …)", file=sys.stderr)
+            return 2
+        raw = getattr(args, "json", None) or getattr(args, "tool_json", None) or "{}"
+        try:
+            arguments = json.loads(raw)
+        except json.JSONDecodeError as exc:
+            print(f"error: invalid JSON arguments: {exc}", file=sys.stderr)
+            return 2
+        payload = client.call_mcp_tool(tool, arguments)
+        print(json.dumps(payload, indent=2))
+        return 0 if payload.get("ok") else 1
     return 2
 
 
@@ -520,6 +580,23 @@ def cmd_issues(args: argparse.Namespace) -> int:
                 apply=args.apply,
             )
         )
+        return 0
+    if action == "link":
+        jira_key = getattr(args, "jira_key", None) or ""
+        if not jira_key:
+            print("issues link requires JIRA-KEY positional argument", file=sys.stderr)
+            return 2
+        result = svc.link_jira_local(
+            args.work_id,
+            jira_key,
+            summary=getattr(args, "summary", None) or None,
+            issue_type=getattr(args, "issue_type", None) or None,
+            apply=args.apply,
+        )
+        for line in result.get("actions") or []:
+            print(line)
+        if not args.apply:
+            print("\nRe-run with --apply to write local links.")
         return 0
     return 2
 
@@ -862,20 +939,26 @@ def build_parser() -> argparse.ArgumentParser:
     iss = sub.add_parser(
         "issues",
         help=(
-            "Draft/push/pull/upload-adf/download-adf for Jira or GitHub "
+            "Draft/push/pull/link/upload-adf/download-adf for Jira or GitHub "
             "(explicit CLI; never auto-sync)"
         ),
     )
     iss.add_argument(
         "issues_cmd",
-        choices=["draft", "push", "pull", "upload-adf", "download-adf"],
+        choices=["draft", "push", "pull", "link", "upload-adf", "download-adf"],
     )
     iss.add_argument(
         "work_id",
         help=(
-            "Work ID for draft/push/pull, or Jira issue key for "
-            "upload-adf/download-adf"
+            "Work ID for draft/push/pull/link, Jira key for link second arg, "
+            "or Jira issue key for upload-adf/download-adf"
         ),
+    )
+    iss.add_argument(
+        "jira_key",
+        nargs="?",
+        default=None,
+        help="For link: manually created Jira issue key (PROJECT-123)",
     )
     iss.add_argument(
         "--system",
@@ -910,6 +993,17 @@ def build_parser() -> argparse.ArgumentParser:
             "For upload-adf/download-adf: Jira issue key "
             "(defaults to work_id positional)"
         ),
+    )
+    iss.add_argument(
+        "--summary",
+        default=None,
+        help="For link: optional local Summary bullet",
+    )
+    iss.add_argument(
+        "--issue-type",
+        dest="issue_type",
+        default=None,
+        help="For link: optional local Issue type bullet",
     )
     iss.add_argument(
         "--apply",
@@ -1154,6 +1248,48 @@ def build_parser() -> argparse.ArgumentParser:
     cb.add_argument("--guide-base-url", default=None)
     cb.add_argument("--notes", default=None)
     cb.set_defaults(func=cmd_context)
+    cgq = ctx_sub.add_parser(
+        "guide-query",
+        help="Delegate a retrieval question to Guide spdd_* tools (HTTP parity with MCP)",
+    )
+    cgq.add_argument("--work-id", default="", help="Active Work ID → spdd_workSubgraph")
+    cgq.add_argument("--area", default="", help="Code area → spdd_areaLessons")
+    cgq.add_argument("--lesson-id", default="", help="Lesson entity id → spdd_getLesson")
+    cgq.add_argument("--label", default="", help="Entity label → spdd_findByLabel")
+    cgq.add_argument(
+        "--question",
+        default="",
+        help="Natural-language hint (routes to work/area/stats when flags omitted)",
+    )
+    cgq.add_argument("--stats", action="store_true", help="Projection freshness counts")
+    cgq.add_argument("--tool", default="", help="Explicit spdd_* tool name")
+    cgq.add_argument("--tool-json", default="", help="JSON object of tool arguments")
+    cgq.add_argument("--limit", type=int, default=20)
+    cgq.add_argument("--guide-url", default="", help="Override GUIDE_BASE_URL")
+    cgq.add_argument("--timeout", type=float, default=30.0)
+    cgq.add_argument(
+        "--text",
+        action="store_true",
+        help="Human-readable answer for Cursor/Copilot chat (default: JSON)",
+    )
+    cgq.set_defaults(func=cmd_context)
+    cmc = ctx_sub.add_parser(
+        "mcp-call",
+        help="Call one Guide spdd_* MCP tool by name (REST parity; for agents/scripts)",
+    )
+    cmc.add_argument(
+        "--tool",
+        required=True,
+        help="spdd_workSubgraph | spdd_areaLessons | spdd_findByLabel | spdd_projectionStats | spdd_getLesson",
+    )
+    cmc.add_argument(
+        "--json",
+        default="{}",
+        help='Tool arguments JSON, e.g. {"workId":"FEAT-001-order-status-api"}',
+    )
+    cmc.add_argument("--guide-url", default="")
+    cmc.add_argument("--timeout", type=float, default=30.0)
+    cmc.set_defaults(func=cmd_context)
 
     st = sub.add_parser("storage", help="Storage v3 migration and status")
     st_sub = st.add_subparsers(dest="storage_cmd", required=True)

@@ -30,6 +30,20 @@ absent or down.
 | `spdd_areaLessons` | `GET /api/v1/data/spdd-projection/area?name={area}` | Cross-run lessons before touching a code area |
 | `spdd_findByLabel` | — | List entities of one label (capped) |
 | `spdd_projectionStats` | `GET /api/v1/data/spdd-projection/stats` | Sanity-check projection freshness |
+| `spdd_getLesson` | `GET /api/v1/data/spdd-projection/lesson/{id}` | Full untruncated lesson body |
+
+## CLI delegation (Cursor / Copilot without MCP wired)
+
+When native MCP is unavailable, agents **must** use the same tools via CLI:
+
+```bash
+./scripts/guide/query-guide.sh --text --work-id <WORK-ID>
+./scripts/guide/query-guide.sh --area engine/tests
+SDLC_ENGINE=python ./scripts/sdlc.sh context mcp-call --tool spdd_getLesson --json '{"id":"<lesson-id>"}'
+```
+
+MCP config snippet: `./scripts/guide/mcp-config-snippet.sh --cursor`  
+Details: `docs/mcp-guide-for-agents.md`
 
 ## Keeping the graph current (persist side)
 

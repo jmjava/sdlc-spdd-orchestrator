@@ -61,18 +61,10 @@ The user may provide:
    history when updating. Put **Scope Lock** immediately after Metadata.
 11. After writing the analysis file, run
     `./scripts/sdlc-spdd/index-spdd-analysis.sh <WORK-ID>`
-    to stage an analysis record in the lessons ledger.
+    (orchestrator repo: `./scripts/index-spdd-analysis.sh <WORK-ID>`) to stage an
+    analysis record in the lessons ledger.
 12. Recommend `/sdlc-spdd-plan` as the next command once analysis is accepted.
-
-## Common Pitfalls
-
-- **Scope creep before lock:** Do not generate full analysis and then discover
-  scope issues afterward. Lock scope first.
-- **Reference bloat:** Include existing patterns only when they inform locked
-  scope deliverables. Exclude context-only handlers, interfaces, and layers that
-  belong to other Work IDs.
-- **Layer bleed:** Schema CHOREs must not absorb entity/repository/API work;
-  defer those to their Work IDs.
+13. Do not implement code or create a REASONS Canvas.
 
 ## Context Backend (runtime-resolved)
 
