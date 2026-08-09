@@ -168,7 +168,6 @@ must_ok("profile", c.post("/api/guide/ensure-profile", json={
     "profile": ${GUIDE_PROFILE@Q},
 }))
 must_ok("neo4j", c.post("/api/guide/neo4j/start", json={"target": str(root)}))
-import os
 no_ingest = os.environ.get("GUIDE_WITH_INGEST", "") != "1"
 body = must_ok("guide-start", c.post("/api/guide/start", json={
     "target": str(root),
@@ -255,14 +254,23 @@ print("PASS: experimental Guide+Neo4j stack (Neo4j up, Guide up, NamedEntity pro
 PY
 
 _run_pytest() {
-  local marker="$1"
+  local _marker="$1"
   shift
-  local extra_env=("$@")
+  local -a env_pairs=()
+  local -a pytest_args=()
+  while [[ $# -gt 0 ]]; do
+    if [[ "$1" == *=* && "$1" != --* ]]; then
+      env_pairs+=("$1")
+    else
+      pytest_args+=("$1")
+    fi
+    shift
+  done
   if [[ -x "${ROOT}/.venv/bin/pytest" ]]; then
-    env "${extra_env[@]}" "${ROOT}/.venv/bin/pytest" -q "$@"
+    env "${env_pairs[@]}" "${ROOT}/.venv/bin/pytest" -q "${pytest_args[@]}"
   else
-    env "${extra_env[@]}" PYTHONPATH="${ROOT}/engine/src${PYTHONPATH:+:${PYTHONPATH}}" \
-      "${PYTHON_BIN}" -m pytest -q "$@"
+    env "${env_pairs[@]}" PYTHONPATH="${ROOT}/engine/src${PYTHONPATH:+:${PYTHONPATH}}" \
+      "${PYTHON_BIN}" -m pytest -q "${pytest_args[@]}"
   fi
 }
 
