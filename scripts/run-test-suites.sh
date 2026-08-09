@@ -230,6 +230,8 @@ run_integration() {
   pytest_suite integration -q \
     engine/tests_integration \
     engine/tests_unit/test_installer_runtime_units.py \
+    engine/tests_unit/test_installer_templates_api.py \
+    engine/tests_unit/test_vue3_console_serve.py \
     --cov=sdlc_engine.installer \
     --cov-report=term-missing:skip-covered \
     --cov-fail-under=90
