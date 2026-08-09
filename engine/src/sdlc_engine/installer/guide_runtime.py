@@ -247,14 +247,16 @@ def start_neo4j(cfg: dict[str, Any]) -> dict[str, Any]:
     host = "127.0.0.1"
     bolt = int(cfg.get("neo4j_bolt_port") or 7687)
     http = int(cfg.get("neo4j_http_port") or 7474)
+    bolt_url = f"bolt://localhost:{bolt}"
+    browser_url = f"http://localhost:{http}"
     # Dual-repo Cloud Agent / native /opt/neo4j often already exposes Bolt.
     if _tcp_open(host, bolt, timeout=0.8):
         return {
             "ok": True,
             "action": "already_running",
             "bolt_ready": True,
-            "bolt_url": f"bolt://localhost:{bolt}",
-            "browser_url": f"http://localhost:{http}",
+            "bolt_url": bolt_url,
+            "browser_url": browser_url,
             "log": "Neo4j Bolt already open (native or compose)",
         }
 
@@ -265,22 +267,7 @@ def start_neo4j(cfg: dict[str, Any]) -> dict[str, Any]:
             "error": "guide_home missing compose.yaml — ensure/pull jmjava/orch-guide first",
             "log": "",
         }
-    host = "127.0.0.1"
-    bolt = int(cfg.get("neo4j_bolt_port") or 7687)
-    http = int(cfg.get("neo4j_http_port") or 7474)
     container = "embabel-neo4j"
-    bolt_url = f"bolt://localhost:{bolt}"
-    browser_url = f"http://localhost:{http}"
-
-    if _tcp_open(host, bolt):
-        return {
-            "ok": True,
-            "action": "already_running",
-            "bolt_ready": True,
-            "bolt_url": bolt_url,
-            "browser_url": browser_url,
-            "log": "Neo4j Bolt already open",
-        }
 
     env = guide_env(cfg)
     # Explicit service name enables the neo4j profile service.
@@ -321,6 +308,7 @@ def start_neo4j(cfg: dict[str, Any]) -> dict[str, Any]:
     result["bolt_ready"] = ready
     result["bolt_url"] = bolt_url
     result["browser_url"] = browser_url
+    result["action"] = result.get("action") or "started"
     return result
 
 

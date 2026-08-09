@@ -102,7 +102,16 @@ def resolve_guide_home() -> Path:
 
 
 def default_config() -> dict[str, Any]:
-    home = str(resolve_guide_home())
+    home = os.environ.get("GUIDE_HOME", "").strip()
+    if not home:
+        orch = Path.home() / "github" / "jmjava" / "orch-guide"
+        legacy = Path.home() / "github" / "jmjava" / "guide"
+        if orch.is_dir():
+            home = str(orch)
+        elif legacy.is_dir():
+            home = str(legacy)
+        else:
+            home = str(orch)
     return {
         "guide_home": home,
         "guide_git_url": os.environ.get("GUIDE_GIT_URL", DEFAULT_GIT_URL).strip()

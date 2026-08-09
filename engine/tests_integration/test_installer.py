@@ -296,7 +296,7 @@ def test_resolve_guide_home_ignores_bare_env(tmp_path: Path, monkeypatch) -> Non
     bare.mkdir()
     monkeypatch.setenv("GUIDE_HOME", str(bare))
     monkeypatch.setattr(guide_mod, "_looks_like_guide_home", lambda _p: False)
-    assert resolve_guide_home() == Path.home() / "github" / "jmjava" / "guide"
+    assert resolve_guide_home() == Path.home() / "github" / "jmjava" / "orch-guide"
 
 
 def test_start_neo4j_compose_path(tmp_path: Path, monkeypatch) -> None:
