@@ -299,8 +299,8 @@ trees, `work-registry.tsv`) keep working read-only and are consolidated by
 | `scripts/` | Install, upgrade, validation, runtime templates |
 | `engine/` | Python `sdlc-engine`, ops console, ADF viewer |
 | `templates/` | Canvas + assistant command templates |
-| `spdd/` | Dogfood canvases + lean memory |
-| `requirements/` | Dogfood requirements |
+| `sdlc-spdd/spdd/` | Dogfood canvases + lean memory |
+| `sdlc-spdd/requirements/` | Dogfood requirements |
 | `examples/` | v3 sample workflow (`spring-boot-order-api/`) |
 
 ---
@@ -324,7 +324,7 @@ trees, `work-registry.tsv`) keep working read-only and are consolidated by
 - [Local SQLite index](docs/local-sqlite-index.md)  
 - [Ops console](docs/ops-console.md) · [ADF Viewer](docs/adf-viewer.md)  
 - [Jira runbook](docs/jira-runbook.md) · [Jira-compatible requirements](docs/jira-compatible-requirements-format.md)  
-- [Changelog](CHANGELOG.md) · [ROADMAP](ROADMAP.md)  
+- [Changelog](CHANGELOG.md) · [ROADMAP](sdlc-spdd/ROADMAP.md)  
 
 **Next product slice**
 
@@ -347,7 +347,7 @@ resumable, and reusable across assistants and teammates.
 
 ## Contributing & dogfood
 
-We develop this framework through its own Work IDs (`spdd/canvas/`, `requirements/milestones/`).
+We develop this framework through its own Work IDs (`sdlc-spdd/spdd/canvas/`, `sdlc-spdd/requirements/milestones/`).
 See [CONTRIBUTING.md](CONTRIBUTING.md) for script-path rules (orchestrator vs target) and
 [ROADMAP.md](ROADMAP.md) for delivery posture.
 

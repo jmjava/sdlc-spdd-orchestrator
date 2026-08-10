@@ -11,7 +11,8 @@ how we develop the orchestrator and must never ship to target projects.
 This fails if posture language appears in any surface that installs into a target
 project (templates, the docs that ship as docs/sdlc-spdd/, and the agent-context
 files that init-project.sh copies). The posture is allowed only in the
-orchestrator-internal files ROADMAP.md (repo root) and CONTRIBUTING.md.
+orchestrator-internal files sdlc-spdd/ROADMAP.md (or root ROADMAP.md) and
+CONTRIBUTING.md.
 
 If a match is a genuine, non-posture use of the words, append the marker
 "posture-boundary-ok" on that line to suppress it.
@@ -84,7 +85,7 @@ if (( violations > 0 )); then
   echo ""
   echo "Found ${violations} posture reference(s) in shipped surfaces."
   echo "The make-it-work/right/fast posture is orchestrator-internal; keep it in"
-  echo "ROADMAP.md and CONTRIBUTING.md only. See CONTRIBUTING.md → 'Boundary: the"
+  echo "sdlc-spdd/ROADMAP.md and CONTRIBUTING.md only. See CONTRIBUTING.md → 'Boundary: the"
   echo "development posture never ships'."
   exit 1
 fi

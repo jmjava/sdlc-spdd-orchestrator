@@ -1,0 +1,48 @@
+name: Test Upgrade Consolidate
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/upgrade-project.sh'
+      - 'scripts/init-project.sh'
+      - 'scripts/setup-agent-prompts.sh'
+      - 'scripts/verify-project-install.sh'
+      - 'scripts/lib/framework-install.sh'
+      - 'scripts/lib/skills.sh'
+      - 'templates/**'
+      - 'tests/test-upgrade-consolidate.sh'
+      - 'tests/test-framework-install-consolidate.sh'
+      - '.github/workflows/test-upgrade-consolidate.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/upgrade-project.sh'
+      - 'scripts/init-project.sh'
+      - 'scripts/setup-agent-prompts.sh'
+      - 'scripts/verify-project-install.sh'
+      - 'scripts/lib/framework-install.sh'
+      - 'scripts/lib/skills.sh'
+      - 'templates/**'
+      - 'tests/test-upgrade-consolidate.sh'
+      - 'tests/test-framework-install-consolidate.sh'
+      - '.github/workflows/test-upgrade-consolidate.yml'
+
+jobs:
+  test-upgrade-consolidate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check shell syntax
+        run: |
+          bash -n scripts/upgrade-project.sh
+          bash -n scripts/verify-project-install.sh
+          bash -n scripts/lib/framework-install.sh
+          bash -n tests/test-upgrade-consolidate.sh
+          bash -n tests/test-framework-install-consolidate.sh
+
+      - name: Unit — framework-install consolidate helpers
+        run: ./tests/test-framework-install-consolidate.sh
+
+      - name: Integration — upgrade layout consolidation
+        run: ./tests/test-upgrade-consolidate.sh

@@ -1,0 +1,36 @@
+name: Validate SDLC-SPDD Command Adapters
+
+on:
+  pull_request:
+    paths:
+      - '.cursor/commands/sdlc-*.md'
+      - '.cursor/rules/sdlc-spdd.mdc'
+      - '.github/prompts/sdlc-*.prompt.md'
+      - '.github/copilot-instructions.md'
+      - '.claude/commands/sdlc-*.md'
+      - 'CLAUDE.md'
+      - 'sdlc-spdd/scripts/validate-command-adapters.sh'
+      - '.github/workflows/validate-sdlc-spdd-adapters.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.cursor/commands/sdlc-*.md'
+      - '.cursor/rules/sdlc-spdd.mdc'
+      - '.github/prompts/sdlc-*.prompt.md'
+      - '.github/copilot-instructions.md'
+      - '.claude/commands/sdlc-*.md'
+      - 'CLAUDE.md'
+      - 'sdlc-spdd/scripts/validate-command-adapters.sh'
+      - '.github/workflows/validate-sdlc-spdd-adapters.yml'
+
+jobs:
+  validate-command-adapters:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check validator shell syntax
+        run: bash -n ./sdlc-spdd/scripts/validate-command-adapters.sh
+
+      - name: Validate Cursor + Copilot + Claude command-pack parity
+        run: ./sdlc-spdd/scripts/validate-command-adapters.sh --target .

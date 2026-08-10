@@ -25,6 +25,8 @@ Storage v3: all framework assets live under one folder — <target>/sdlc-spdd/
     docs/sdlc-spdd/, harness/, agent-context harness/playbooks/extensions,
     scripts/sdlc-spdd/, .sdlc/) into <target>/sdlc-spdd/ — merging when the
     home already exists (destination wins on conflicts)
+  - archives any leftover sprawled paths under
+    sdlc-spdd/.sdlc/legacy-layout-archive/<stamp>/ so the project root is clean
 
 The upgrade is framework-only and idempotent:
   - updates SDLC-SPDD assistant prompts (IDE stubs stay at the repo root but
@@ -442,15 +444,26 @@ remove_legacy_framework_file() {
 
 # Framework dirs and stay-set artifacts move under <target>/sdlc-spdd/.
 # When the home already exists, merge legacy root trees into it (dest wins).
+IS_ORCHESTRATOR_ROOT=0
+if framework_is_orchestrator_root "${TARGET}"; then
+  IS_ORCHESTRATOR_ROOT=1
+  echo "Orchestrator root detected — consolidating dogfood stay-set into sdlc-spdd/; keeping agent-context/ + scripts/ as framework source."
+fi
+
 consolidate_into_home "${TARGET}/requirements" "${HOME_DIR}/requirements"
 consolidate_into_home "${TARGET}/spdd" "${HOME_DIR}/spdd"
 consolidate_into_home "${TARGET}/session-notes" "${HOME_DIR}/session-notes"
 consolidate_into_home "${TARGET}/ROADMAP.md" "${HOME_DIR}/ROADMAP.md"
 consolidate_into_home "${TARGET}/docs/sdlc-spdd" "${HOME_DIR}/docs"
 consolidate_into_home "${TARGET}/harness" "${HOME_DIR}/harness"
-consolidate_into_home "${TARGET}/agent-context/harness" "${HOME_DIR}/harness"
-consolidate_into_home "${TARGET}/agent-context/playbooks" "${HOME_DIR}/playbooks"
-consolidate_into_home "${TARGET}/agent-context/extensions" "${HOME_DIR}/extensions"
+if [[ "${IS_ORCHESTRATOR_ROOT}" -eq 1 ]]; then
+  # Do not consume agent-context/harness — it is the install source.
+  framework_seed_home_harness_from_source "${TARGET}" "${HOME_DIR}" "${DRY_RUN}"
+else
+  consolidate_into_home "${TARGET}/agent-context/harness" "${HOME_DIR}/harness"
+  consolidate_into_home "${TARGET}/agent-context/playbooks" "${HOME_DIR}/playbooks"
+  consolidate_into_home "${TARGET}/agent-context/extensions" "${HOME_DIR}/extensions"
+fi
 migrate_playbooks_extensions_to_skills "${TARGET}" "${DRY_RUN}"
 consolidate_into_home "${TARGET}/scripts/sdlc-spdd" "${HOME_DIR}/scripts"
 consolidate_into_home "${TARGET}/.sdlc" "${HOME_DIR}/.sdlc"
@@ -462,17 +475,24 @@ shopt -u nullglob
 
 framework_prune_legacy_layout_shells "${TARGET}" "${HOME_DIR}" "${DRY_RUN}"
 
-# Legacy framework-owned files replaced by fresh copies under <home>/scripts/.
-remove_legacy_framework_file "${TARGET}/agent-context/sdlc-pointer.sh"
-remove_legacy_framework_file "${TARGET}/agent-context/sdlc-workflow.sh"
-remove_legacy_framework_file "${TARGET}/agent-context/sdlc-team-registry.sh"
-remove_legacy_framework_file "${TARGET}/agent-context/README.md"
-remove_legacy_framework_file "${TARGET}/agent-context/hooks"
-if [[ "${DRY_RUN}" -eq 0 && -d "${TARGET}/agent-context" ]]; then
-  # Drop stray .gitkeep files, then the tree itself when nothing else remains.
-  find "${TARGET}/agent-context" -name .gitkeep -delete 2>/dev/null || true
-  find "${TARGET}/agent-context" -type d -empty -delete 2>/dev/null || true
+# Target projects: remove leftover agent-context framework files, then archive
+# anything still at legacy paths. Orchestrator keeps agent-context/ as source.
+if [[ "${IS_ORCHESTRATOR_ROOT}" -eq 0 ]]; then
+  remove_legacy_framework_file "${TARGET}/agent-context/sdlc-pointer.sh"
+  remove_legacy_framework_file "${TARGET}/agent-context/sdlc-workflow.sh"
+  remove_legacy_framework_file "${TARGET}/agent-context/sdlc-team-registry.sh"
+  remove_legacy_framework_file "${TARGET}/agent-context/README.md"
+  remove_legacy_framework_file "${TARGET}/agent-context/hooks"
+  if [[ "${DRY_RUN}" -eq 0 && -d "${TARGET}/agent-context" ]]; then
+    find "${TARGET}/agent-context" -name .gitkeep -delete 2>/dev/null || true
+    find "${TARGET}/agent-context" -type d -empty -delete 2>/dev/null || true
+  fi
 fi
+
+while IFS= read -r line; do
+  [[ -n "${line}" ]] || continue
+  moved+=("${line#archive }")
+done < <(framework_archive_remaining_legacy_layout "${TARGET}" "${HOME_DIR}" "${DRY_RUN}" "${timestamp}")
 
 # ---------------------------------------------------------------------------
 # Phase 3 — framework file refresh under the home (create missing, upgrade

@@ -109,6 +109,7 @@ In orchestrator repo:
 
 - `validate-command-adapters` (`.github/workflows/validate-command-adapters.yml`)
 - `test-adapter-install` (`.github/workflows/test-adapter-install.yml`)
+- `test-upgrade-consolidate` (`.github/workflows/test-upgrade-consolidate.yml`) — storage v3 layout upgrade
 - `test-sdlc-pointer` (`.github/workflows/test-sdlc-pointer.yml`)
 - `test-sdlc-workflow` (`.github/workflows/test-sdlc-workflow.yml`)
 - `test-archive-work` (`.github/workflows/test-archive-work.yml`)
@@ -155,6 +156,27 @@ Copilot, Claude Code) into throwaway target directories and asserts:
 Run it locally before changing any install/upgrade script or command template.
 The CI workflow also runs `bash -n` over shell scripts before executing the
 regression harness.
+
+### Storage v3 upgrade consolidation harness
+
+`./tests/test-framework-install-consolidate.sh` unit-tests consolidate/archive
+helpers in `scripts/lib/framework-install.sh` (move/merge/dest-wins, dry-run,
+archive leftovers, orchestrator-vs-target agent-context handling, harness seed).
+
+`./tests/test-upgrade-consolidate.sh` is the end-to-end layout suite:
+
+- **A.** Pure legacy sprawl (no `sdlc-spdd/` yet) → single home; root stay-set gone
+- **B.** Dual layout merge when home already exists (destination wins conflicts)
+- **C.** Idempotent second upgrade
+- **D.** `--dry-run` + `--consolidate` no-op leave the tree untouched
+- **E.** Orchestrator-shaped target keeps `agent-context/` + root `scripts/` source
+- **F.** Fresh v3 init/setup then upgrade preserves project content
+- **G.** Nested helper unit suite
+
+Leftover `agent-context/` custom trees must land under
+`sdlc-spdd/.sdlc/legacy-layout-archive/`, and `verify-project-install.sh` must
+pass after each real upgrade. CI:
+`.github/workflows/test-upgrade-consolidate.yml`.
 
 ### SDLC pointer harness
 
