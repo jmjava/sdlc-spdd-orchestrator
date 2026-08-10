@@ -3,9 +3,10 @@ name: Test SDLC Workflow
 on:
   pull_request:
     paths:
-      - 'agent-context/sdlc-workflow.sh'
-      - 'agent-context/sdlc-pointer.sh'
-      - 'agent-context/README.md'
+      - 'templates/agent-context/sdlc-workflow.sh'
+      - 'templates/agent-context/sdlc-pointer.sh'
+      - 'templates/agent-context/sdlc-team-registry.sh'
+      - 'templates/agent-context/README.md'
       - 'scripts/start-agent-session.sh'
       - 'scripts/capture-session-memory.sh'
       - 'scripts/lib/readiness.sh'
@@ -20,7 +21,6 @@ on:
       - 'templates/cursor/rules/sdlc-spdd.mdc'
       - 'templates/copilot/copilot-instructions.md'
       - 'templates/claude/CLAUDE.md'
-      - 'agent-context/sdlc-team-registry.sh'
       - 'tests/test-sdlc-workflow.sh'
       - 'tests/test-sdlc-pointer.sh'
       - 'tests/test-archive-work.sh'
@@ -28,10 +28,10 @@ on:
   push:
     branches: [main]
     paths:
-      - 'agent-context/sdlc-workflow.sh'
-      - 'agent-context/sdlc-pointer.sh'
-      - 'agent-context/sdlc-team-registry.sh'
-      - 'agent-context/README.md'
+      - 'templates/agent-context/sdlc-workflow.sh'
+      - 'templates/agent-context/sdlc-pointer.sh'
+      - 'templates/agent-context/sdlc-team-registry.sh'
+      - 'templates/agent-context/README.md'
       - 'scripts/start-agent-session.sh'
       - 'scripts/capture-session-memory.sh'
       - 'scripts/lib/readiness.sh'
@@ -59,8 +59,8 @@ jobs:
 
       - name: Check shell syntax
         run: |
-          bash -n agent-context/sdlc-pointer.sh
-          bash -n agent-context/sdlc-workflow.sh
+          bash -n templates/agent-context/sdlc-pointer.sh
+          bash -n templates/agent-context/sdlc-workflow.sh
           bash -n scripts/sdlc.sh
           bash -n tests/test-sdlc-workflow.sh
           bash -n scripts/start-agent-session.sh

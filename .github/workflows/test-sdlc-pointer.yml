@@ -3,8 +3,8 @@ name: Test SDLC Pointer
 on:
   pull_request:
     paths:
-      - 'agent-context/sdlc-pointer.sh'
-      - 'agent-context/README.md'
+      - 'templates/agent-context/sdlc-pointer.sh'
+      - 'templates/agent-context/README.md'
       - 'scripts/init-project.sh'
       - 'scripts/upgrade-project.sh'
       - 'scripts/start-agent-session.sh'
@@ -14,8 +14,8 @@ on:
   push:
     branches: [main]
     paths:
-      - 'agent-context/sdlc-pointer.sh'
-      - 'agent-context/README.md'
+      - 'templates/agent-context/sdlc-pointer.sh'
+      - 'templates/agent-context/README.md'
       - 'scripts/init-project.sh'
       - 'scripts/upgrade-project.sh'
       - 'scripts/start-agent-session.sh'
@@ -30,7 +30,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Check shell syntax
-        run: bash -n agent-context/sdlc-pointer.sh tests/test-sdlc-pointer.sh scripts/start-agent-session.sh
+        run: bash -n templates/agent-context/sdlc-pointer.sh tests/test-sdlc-pointer.sh scripts/start-agent-session.sh
 
       - name: Run SDLC pointer regression tests
         run: ./tests/test-sdlc-pointer.sh
