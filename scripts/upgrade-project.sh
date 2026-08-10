@@ -22,8 +22,9 @@ Storage v3: all framework assets live under one folder — <target>/sdlc-spdd/
     into the lessons ledger via `sdlc-engine storage migrate` when the Python
     engine is available (otherwise data is left in place with instructions)
   - moves framework dirs (requirements/, spdd/, session-notes/, ROADMAP.md,
-    docs/sdlc-spdd/, agent-context harness/skills,
-    scripts/sdlc-spdd/, .sdlc/) into <target>/sdlc-spdd/
+    docs/sdlc-spdd/, harness/, agent-context harness/playbooks/extensions,
+    scripts/sdlc-spdd/, .sdlc/) into <target>/sdlc-spdd/ — merging when the
+    home already exists (destination wins on conflicts)
 
 The upgrade is framework-only and idempotent:
   - updates SDLC-SPDD assistant prompts (IDE stubs stay at the repo root but
@@ -88,6 +89,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --no-backup)
       BACKUP=0
+      shift
+      ;;
+    --consolidate)
+      # No-op: consolidation into sdlc-spdd/ always runs (storage v3).
       shift
       ;;
     --help|-h)
@@ -400,22 +405,28 @@ fi
 # Phase 2 — consolidation into the single-folder home (idempotent).
 # ---------------------------------------------------------------------------
 
-consolidate_move() {
+consolidate_into_home() {
   local src="$1"
   local dest="$2"
+  local line action detail
+
   [[ -e "${src}" ]] || return 0
-  if [[ -e "${dest}" ]]; then
-    echo "  consolidation skip: ${dest#${TARGET}/} already exists (legacy ${src#${TARGET}/} left in place)" >&2
-    preserved+=("${src}")
-    return 0
-  fi
-  if [[ "${DRY_RUN}" -eq 1 ]]; then
-    echo "[dry-run] would move ${src#${TARGET}/} -> ${dest#${TARGET}/}"
-  else
-    mkdir -p "$(dirname "${dest}")"
-    mv "${src}" "${dest}"
-  fi
-  moved+=("${src#${TARGET}/} -> ${dest#${TARGET}/}")
+  while IFS= read -r line; do
+    [[ -n "${line}" ]] || continue
+    action="${line%% *}"
+    detail="${line#* }"
+    case "${action}" in
+      move|merge)
+        moved+=("${detail}")
+        ;;
+      keep)
+        preserved+=("${detail}")
+        ;;
+      skip)
+        preserved+=("${src#${TARGET}/} (${detail})")
+        ;;
+    esac
+  done < <(framework_consolidate_path "${src}" "${dest}" "${DRY_RUN}" "${TARGET}")
 }
 
 remove_legacy_framework_file() {
@@ -430,22 +441,26 @@ remove_legacy_framework_file() {
 }
 
 # Framework dirs and stay-set artifacts move under <target>/sdlc-spdd/.
-consolidate_move "${TARGET}/requirements" "${HOME_DIR}/requirements"
-consolidate_move "${TARGET}/spdd" "${HOME_DIR}/spdd"
-consolidate_move "${TARGET}/session-notes" "${HOME_DIR}/session-notes"
-consolidate_move "${TARGET}/ROADMAP.md" "${HOME_DIR}/ROADMAP.md"
-consolidate_move "${TARGET}/docs/sdlc-spdd" "${HOME_DIR}/docs"
-consolidate_move "${TARGET}/agent-context/harness" "${HOME_DIR}/harness"
-consolidate_move "${TARGET}/agent-context/playbooks" "${HOME_DIR}/playbooks"
-consolidate_move "${TARGET}/agent-context/extensions" "${HOME_DIR}/extensions"
+# When the home already exists, merge legacy root trees into it (dest wins).
+consolidate_into_home "${TARGET}/requirements" "${HOME_DIR}/requirements"
+consolidate_into_home "${TARGET}/spdd" "${HOME_DIR}/spdd"
+consolidate_into_home "${TARGET}/session-notes" "${HOME_DIR}/session-notes"
+consolidate_into_home "${TARGET}/ROADMAP.md" "${HOME_DIR}/ROADMAP.md"
+consolidate_into_home "${TARGET}/docs/sdlc-spdd" "${HOME_DIR}/docs"
+consolidate_into_home "${TARGET}/harness" "${HOME_DIR}/harness"
+consolidate_into_home "${TARGET}/agent-context/harness" "${HOME_DIR}/harness"
+consolidate_into_home "${TARGET}/agent-context/playbooks" "${HOME_DIR}/playbooks"
+consolidate_into_home "${TARGET}/agent-context/extensions" "${HOME_DIR}/extensions"
 migrate_playbooks_extensions_to_skills "${TARGET}" "${DRY_RUN}"
-consolidate_move "${TARGET}/scripts/sdlc-spdd" "${HOME_DIR}/scripts"
-consolidate_move "${TARGET}/.sdlc" "${HOME_DIR}/.sdlc"
+consolidate_into_home "${TARGET}/scripts/sdlc-spdd" "${HOME_DIR}/scripts"
+consolidate_into_home "${TARGET}/.sdlc" "${HOME_DIR}/.sdlc"
 shopt -s nullglob
 for _root_ms in "${TARGET}"/milestone-*.md; do
-  consolidate_move "${_root_ms}" "${HOME_DIR}/$(basename "${_root_ms}")"
+  consolidate_into_home "${_root_ms}" "${HOME_DIR}/$(basename "${_root_ms}")"
 done
 shopt -u nullglob
+
+framework_prune_legacy_layout_shells "${TARGET}" "${HOME_DIR}" "${DRY_RUN}"
 
 # Legacy framework-owned files replaced by fresh copies under <home>/scripts/.
 remove_legacy_framework_file "${TARGET}/agent-context/sdlc-pointer.sh"
@@ -457,12 +472,6 @@ if [[ "${DRY_RUN}" -eq 0 && -d "${TARGET}/agent-context" ]]; then
   # Drop stray .gitkeep files, then the tree itself when nothing else remains.
   find "${TARGET}/agent-context" -name .gitkeep -delete 2>/dev/null || true
   find "${TARGET}/agent-context" -type d -empty -delete 2>/dev/null || true
-fi
-if [[ "${DRY_RUN}" -eq 0 ]]; then
-  # Only remove the now-empty parent shells the framework used to occupy.
-  rm -f "${TARGET}/scripts/.gitkeep" 2>/dev/null || true
-  rmdir "${TARGET}/scripts" 2>/dev/null || true
-  rmdir "${TARGET}/docs" 2>/dev/null || true
 fi
 
 # ---------------------------------------------------------------------------

@@ -141,7 +141,7 @@ If the project already has SDLC-SPDD files from an older version:
 The upgrade script updates framework-owned files and preserves application source,
 requirements, canvases, reviews, sync logs, and the lessons ledger. Legacy memory
 layouts are converted by `sdlc-engine storage migrate`; consolidating scattered
-paths into `sdlc-spdd/` uses `upgrade --consolidate` — see
+paths into `sdlc-spdd/` — run `upgrade-project.sh` (consolidation is always-on) — see
 [Framework upgrade](framework-upgrade.md).
 
 Backups of overwritten framework files are stored under:

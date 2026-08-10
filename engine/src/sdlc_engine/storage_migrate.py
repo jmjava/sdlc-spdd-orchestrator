@@ -251,8 +251,13 @@ class StorageMigration:
                 counts["prompt_log"] += 1
 
         # f) work-registry.tsv → registry.jsonl events
-        tsv = self.project.home / "agent-context" / "work-registry.tsv"
-        if tsv.is_file() and not self.project.registry_jsonl_path.is_file():
+        tsv = None
+        for base in (root, home):
+            candidate = base / "agent-context" / "work-registry.tsv"
+            if candidate.is_file():
+                tsv = candidate
+                break
+        if tsv is not None and not self.project.registry_jsonl_path.is_file():
             reg = TeamRegistry(self.project)
             if not dry_run:
                 reg.ensure()

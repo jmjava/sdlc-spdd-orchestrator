@@ -126,7 +126,8 @@ for t in \
   test-scripts-lib.sh \
   test-resolve-agent-context.sh \
   test-archive-work.sh \
-  test-sdlc-pointer.sh; do
+  test-sdlc-pointer.sh \
+  test-upgrade-consolidate.sh; do
   if "${REPO_ROOT}/tests/${t}" >/dev/null; then
     ok "nested ${t}"
   else
