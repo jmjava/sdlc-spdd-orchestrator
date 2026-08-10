@@ -169,18 +169,18 @@ archive leftovers, orchestrator-vs-target agent-context handling, harness seed).
 - **B.** Dual layout merge when home already exists (destination wins conflicts)
 - **C.** Idempotent second upgrade
 - **D.** `--dry-run` + `--consolidate` no-op leave the tree untouched
-- **E.** Orchestrator-shaped target keeps `agent-context/` + root `scripts/` source
+- **E.** Orchestrator-shaped target archives `agent-context/`; keeps root `scripts/`
 - **F.** Fresh v3 init/setup then upgrade preserves project content
 - **G.** Nested helper unit suite
 
-Leftover `agent-context/` custom trees must land under
-`sdlc-spdd/.sdlc/legacy-layout-archive/`, and `verify-project-install.sh` must
-pass after each real upgrade. CI:
-`.github/workflows/test-upgrade-consolidate.yml`.
+Leftover `agent-context/` trees must land under
+`sdlc-spdd/.sdlc/legacy-layout-archive/` (install source is
+`templates/agent-context/`). `verify-project-install.sh` must pass after each
+real upgrade. CI: `.github/workflows/test-upgrade-consolidate.yml`.
 
 ### SDLC pointer harness
 
-`./tests/test-sdlc-pointer.sh` exercises `agent-context/sdlc-pointer.sh`:
+`./tests/test-sdlc-pointer.sh` exercises `templates/agent-context/sdlc-pointer.sh`:
 
 - CLI round-trip (`set`/`get`/`reset`)
 - Guarded run (`run_against_pointer`) refusal on mismatch
@@ -190,7 +190,7 @@ pass after each real upgrade. CI:
 
 ### SDLC workflow + team registry harness
 
-`./tests/test-sdlc-workflow.sh` exercises `agent-context/sdlc-workflow.sh` and team registry:
+`./tests/test-sdlc-workflow.sh` exercises `templates/agent-context/sdlc-workflow.sh` and team registry:
 
 - Phase/gate tracking, `next`/`advance`/`skip`/`shelf`/`resume`/`sync`
 - `sdlc.sh` wrapper delegation

@@ -444,10 +444,10 @@ remove_legacy_framework_file() {
 
 # Framework dirs and stay-set artifacts move under <target>/sdlc-spdd/.
 # When the home already exists, merge legacy root trees into it (dest wins).
-IS_ORCHESTRATOR_ROOT=0
+# Install source for harness/workflow scripts is templates/agent-context/ —
+# any leftover root agent-context/ is legacy and gets archived.
 if framework_is_orchestrator_root "${TARGET}"; then
-  IS_ORCHESTRATOR_ROOT=1
-  echo "Orchestrator root detected — consolidating dogfood stay-set into sdlc-spdd/; keeping agent-context/ + scripts/ as framework source."
+  echo "Orchestrator root detected — consolidating dogfood stay-set into sdlc-spdd/; keeping root scripts/ as framework tooling."
 fi
 
 consolidate_into_home "${TARGET}/requirements" "${HOME_DIR}/requirements"
@@ -456,14 +456,9 @@ consolidate_into_home "${TARGET}/session-notes" "${HOME_DIR}/session-notes"
 consolidate_into_home "${TARGET}/ROADMAP.md" "${HOME_DIR}/ROADMAP.md"
 consolidate_into_home "${TARGET}/docs/sdlc-spdd" "${HOME_DIR}/docs"
 consolidate_into_home "${TARGET}/harness" "${HOME_DIR}/harness"
-if [[ "${IS_ORCHESTRATOR_ROOT}" -eq 1 ]]; then
-  # Do not consume agent-context/harness — it is the install source.
-  framework_seed_home_harness_from_source "${TARGET}" "${HOME_DIR}" "${DRY_RUN}"
-else
-  consolidate_into_home "${TARGET}/agent-context/harness" "${HOME_DIR}/harness"
-  consolidate_into_home "${TARGET}/agent-context/playbooks" "${HOME_DIR}/playbooks"
-  consolidate_into_home "${TARGET}/agent-context/extensions" "${HOME_DIR}/extensions"
-fi
+consolidate_into_home "${TARGET}/agent-context/harness" "${HOME_DIR}/harness"
+consolidate_into_home "${TARGET}/agent-context/playbooks" "${HOME_DIR}/playbooks"
+consolidate_into_home "${TARGET}/agent-context/extensions" "${HOME_DIR}/extensions"
 migrate_playbooks_extensions_to_skills "${TARGET}" "${DRY_RUN}"
 consolidate_into_home "${TARGET}/scripts/sdlc-spdd" "${HOME_DIR}/scripts"
 consolidate_into_home "${TARGET}/.sdlc" "${HOME_DIR}/.sdlc"
@@ -475,18 +470,15 @@ shopt -u nullglob
 
 framework_prune_legacy_layout_shells "${TARGET}" "${HOME_DIR}" "${DRY_RUN}"
 
-# Target projects: remove leftover agent-context framework files, then archive
-# anything still at legacy paths. Orchestrator keeps agent-context/ as source.
-if [[ "${IS_ORCHESTRATOR_ROOT}" -eq 0 ]]; then
-  remove_legacy_framework_file "${TARGET}/agent-context/sdlc-pointer.sh"
-  remove_legacy_framework_file "${TARGET}/agent-context/sdlc-workflow.sh"
-  remove_legacy_framework_file "${TARGET}/agent-context/sdlc-team-registry.sh"
-  remove_legacy_framework_file "${TARGET}/agent-context/README.md"
-  remove_legacy_framework_file "${TARGET}/agent-context/hooks"
-  if [[ "${DRY_RUN}" -eq 0 && -d "${TARGET}/agent-context" ]]; then
-    find "${TARGET}/agent-context" -name .gitkeep -delete 2>/dev/null || true
-    find "${TARGET}/agent-context" -type d -empty -delete 2>/dev/null || true
-  fi
+# Drop known framework-owned leftovers, then archive any remaining agent-context/.
+remove_legacy_framework_file "${TARGET}/agent-context/sdlc-pointer.sh"
+remove_legacy_framework_file "${TARGET}/agent-context/sdlc-workflow.sh"
+remove_legacy_framework_file "${TARGET}/agent-context/sdlc-team-registry.sh"
+remove_legacy_framework_file "${TARGET}/agent-context/README.md"
+remove_legacy_framework_file "${TARGET}/agent-context/hooks"
+if [[ "${DRY_RUN}" -eq 0 && -d "${TARGET}/agent-context" ]]; then
+  find "${TARGET}/agent-context" -name .gitkeep -delete 2>/dev/null || true
+  find "${TARGET}/agent-context" -type d -empty -delete 2>/dev/null || true
 fi
 
 while IFS= read -r line; do
@@ -568,7 +560,7 @@ for file in \
   quality-gates.md \
   validation-rules.md; do
   copy_framework_file \
-    "${REPO_ROOT}/agent-context/harness/${file}" \
+    "${REPO_ROOT}/templates/agent-context/harness/${file}" \
     "${HOME_DIR}/harness/${file}"
 done
 
@@ -604,7 +596,7 @@ for file in \
   sdlc-workflow.sh \
   sdlc-team-registry.sh; do
   copy_executable_framework_file \
-    "${REPO_ROOT}/agent-context/${file}" \
+    "${REPO_ROOT}/templates/agent-context/${file}" \
     "${HOME_DIR}/scripts/${file}"
 done
 

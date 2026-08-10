@@ -4,9 +4,9 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-WORKFLOW="${REPO_ROOT}/agent-context/sdlc-workflow.sh"
-POINTER="${REPO_ROOT}/agent-context/sdlc-pointer.sh"
-TEAM="${REPO_ROOT}/agent-context/sdlc-team-registry.sh"
+WORKFLOW="${REPO_ROOT}/templates/agent-context/sdlc-workflow.sh"
+POINTER="${REPO_ROOT}/templates/agent-context/sdlc-pointer.sh"
+TEAM="${REPO_ROOT}/templates/agent-context/sdlc-team-registry.sh"
 
 WORK="$(mktemp -d)"
 trap 'rm -rf "${WORK}"' EXIT

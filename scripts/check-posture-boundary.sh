@@ -59,14 +59,14 @@ for f in docs/*.md; do
   shipped_files+=("$f")
 done
 
-# 3) The specific agent-context files init-project.sh copies into targets
-#    (storage v3 ships only harness + playbooks; memory ledgers are seeded empty).
+# 3) Install-source harness files under templates/agent-context/ that ship
+#    into target homes (memory ledgers are seeded empty separately).
 for f in \
-  agent-context/harness/quality-gates.md \
-  agent-context/harness/validation-rules.md; do
+  templates/agent-context/harness/quality-gates.md \
+  templates/agent-context/harness/validation-rules.md; do
   [[ -e "$f" ]] && shipped_files+=("$f")
 done
-for f in agent-context/playbooks/*.md; do
+for f in templates/agent-context/harness/skills/*.md; do
   [[ -e "$f" ]] && shipped_files+=("$f")
 done
 

@@ -11,14 +11,23 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-if [[ -f "${SCRIPT_DIR}/../agent-context/sdlc-workflow.sh" ]]; then
-  # Orchestrator repo: scripts/sdlc.sh next to agent-context/.
-  ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-  WORKFLOW="${ROOT}/agent-context/sdlc-workflow.sh"
-elif [[ -f "${SCRIPT_DIR}/sdlc-workflow.sh" ]]; then
-  # Storage v3 install: <root>/sdlc-spdd/scripts/sdlc.sh.
-  ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+if [[ -f "${SCRIPT_DIR}/sdlc-workflow.sh" ]]; then
+  # Storage v3 install / dogfood home: …/sdlc-spdd/scripts/sdlc.sh
+  # or orchestrator tooling if workflow scripts were co-located.
+  if [[ "$(basename "$(dirname "${SCRIPT_DIR}")")" == "sdlc-spdd" ]]; then
+    ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+  else
+    ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+  fi
   WORKFLOW="${SCRIPT_DIR}/sdlc-workflow.sh"
+elif [[ -f "${SCRIPT_DIR}/../sdlc-spdd/scripts/sdlc-workflow.sh" ]]; then
+  # Orchestrator repo: scripts/sdlc.sh with dogfood home under sdlc-spdd/.
+  ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+  WORKFLOW="${ROOT}/sdlc-spdd/scripts/sdlc-workflow.sh"
+elif [[ -f "${SCRIPT_DIR}/../templates/agent-context/sdlc-workflow.sh" ]]; then
+  # Orchestrator source checkout before dogfood home exists.
+  ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+  WORKFLOW="${ROOT}/templates/agent-context/sdlc-workflow.sh"
 elif [[ -f "${SCRIPT_DIR}/../../agent-context/sdlc-workflow.sh" ]]; then
   # Legacy sprawled install: <root>/scripts/sdlc-spdd/sdlc.sh.
   ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
@@ -27,7 +36,7 @@ else
   ROOT="$(git -C "${PWD}" rev-parse --show-toplevel 2>/dev/null || pwd)"
   WORKFLOW="${ROOT}/sdlc-spdd/scripts/sdlc-workflow.sh"
   if [[ ! -f "${WORKFLOW}" ]]; then
-    WORKFLOW="${ROOT}/agent-context/sdlc-workflow.sh"
+    WORKFLOW="${ROOT}/templates/agent-context/sdlc-workflow.sh"
   fi
 fi
 

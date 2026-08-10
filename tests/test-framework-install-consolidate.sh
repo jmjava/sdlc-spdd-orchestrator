@@ -78,8 +78,7 @@ else
   bad "archive legacy path (got: ${line})"
 fi
 
-echo "== framework_archive_remaining_legacy_layout: target vs orchestrator =="
-# Plain target: agent-context leftover is archived.
+echo "== framework_archive_remaining_legacy_layout archives agent-context always =="
 mkdir -p "${WORK}/t5/home/.sdlc" "${WORK}/t5/agent-context/custom"
 echo custom > "${WORK}/t5/agent-context/custom/n.md"
 echo roadmap > "${WORK}/t5/ROADMAP.md"
@@ -92,7 +91,7 @@ else
   bad "target archive remaining leftovers"
 fi
 
-# Fake orchestrator: keep agent-context, still archive stay-set leftovers.
+# Fake orchestrator: agent-context still archived; root scripts/ kept.
 mkdir -p "${WORK}/t6/home/.sdlc" \
   "${WORK}/t6/agent-context/harness" \
   "${WORK}/t6/scripts" \
@@ -103,27 +102,16 @@ mkdir -p "${WORK}/t6/home/.sdlc" \
 : > "${WORK}/t6/scripts/upgrade-project.sh"
 echo keep-src > "${WORK}/t6/agent-context/harness/quality-gates.md"
 echo leftover-req > "${WORK}/t6/requirements/x.md"
+printf '%s\n' '# keep' > "${WORK}/t6/scripts/keep-me.sh"
 framework_archive_remaining_legacy_layout "${WORK}/t6" "${WORK}/t6/home" 0 "STAMP3" >/dev/null
-if [[ -f "${WORK}/t6/agent-context/harness/quality-gates.md" \
+if [[ ! -e "${WORK}/t6/agent-context" \
+   && -f "${WORK}/t6/scripts/keep-me.sh" \
    && ! -e "${WORK}/t6/requirements" \
+   && -f "${WORK}/t6/home/.sdlc/legacy-layout-archive/STAMP3/agent-context/harness/quality-gates.md" \
    && -f "${WORK}/t6/home/.sdlc/legacy-layout-archive/STAMP3/requirements/x.md" ]]; then
-  ok "orchestrator keeps agent-context source, archives stay-set"
+  ok "orchestrator archives agent-context; keeps root scripts/"
 else
   bad "orchestrator archive remaining leftovers"
-fi
-
-echo "== framework_seed_home_harness_from_source =="
-mkdir -p "${WORK}/t7/agent-context/harness/skills" "${WORK}/t7/home/harness"
-echo gates > "${WORK}/t7/agent-context/harness/quality-gates.md"
-echo existing > "${WORK}/t7/home/harness/quality-gates.md"
-echo skill > "${WORK}/t7/agent-context/harness/skills/bugfix.md"
-framework_seed_home_harness_from_source "${WORK}/t7" "${WORK}/t7/home" 0
-if [[ "$(cat "${WORK}/t7/home/harness/quality-gates.md")" == "existing" \
-   && -f "${WORK}/t7/home/harness/skills/bugfix.md" \
-   && -f "${WORK}/t7/agent-context/harness/quality-gates.md" ]]; then
-  ok "seed copies missing harness files without consuming source"
-else
-  bad "seed home harness from source"
 fi
 
 echo

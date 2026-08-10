@@ -5,7 +5,7 @@
 #   C. Leftover agent-context archived (not left at root)
 #   D. Idempotent second upgrade
 #   E. Dry-run + --consolidate no-op flag
-#   F. Orchestrator-shaped target keeps agent-context/ + scripts/ source
+#   F. Orchestrator-shaped target archives agent-context/; keeps root scripts/
 #   G. verify-project-install accepts orchestrator after stay-set move
 set -euo pipefail
 
@@ -231,32 +231,30 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-echo "== E. Orchestrator-shaped target keeps install source =="
+echo "== E. Orchestrator-shaped target archives agent-context/ =="
 # ---------------------------------------------------------------------------
 E="${WORK}/orch-shaped"
 mkdir -p "${E}"
-# Minimal orchestrator markers + stay-set sprawl + install source tree.
+# Minimal orchestrator markers + stay-set sprawl + leftover agent-context.
 mkdir -p \
   "${E}/scripts" \
   "${E}/templates/cursor" \
   "${E}/engine/src" \
   "${E}/agent-context/harness/skills" \
+  "${E}/agent-context/custom" \
   "${E}/requirements" \
   "${E}/spdd/canvas" \
   "${E}/session-notes" \
   "${E}/.sdlc/sessions" \
   "${E}/.cursor/commands" \
   "${E}/.cursor/rules"
-# Point upgrade's REPO_ROOT copies are from real orchestrator; target only needs
-# markers so framework_is_orchestrator_root returns true for the *target*.
 cp "${REPO_ROOT}/scripts/init-project.sh" "${E}/scripts/init-project.sh"
 cp "${REPO_ROOT}/scripts/upgrade-project.sh" "${E}/scripts/upgrade-project.sh"
-# Real upgrade still reads REPO_ROOT (orchestrator checkout), not E/scripts.
-printf '%s\n' '# orch harness source' > "${E}/agent-context/harness/quality-gates.md"
-printf '%s\n' '# orch skill source' > "${E}/agent-context/harness/skills/source-skill.md"
+printf '%s\n' '# orch harness leftover' > "${E}/agent-context/harness/quality-gates.md"
+printf '%s\n' '# orch skill leftover' > "${E}/agent-context/harness/skills/source-skill.md"
+printf '%s\n' '# custom leftover' > "${E}/agent-context/custom/note.md"
 printf '%s\n' '#!/bin/sh' > "${E}/agent-context/sdlc-workflow.sh"
 chmod +x "${E}/agent-context/sdlc-workflow.sh"
-printf '%s\n' '# orch README' > "${E}/agent-context/README.md"
 printf '%s\n' '# stay-set req' > "${E}/requirements/orch-req.md"
 printf '%s\n' '# stay-set canvas' > "${E}/spdd/canvas/ORCH-001.md"
 printf '%s\n' '# stay-set note' > "${E}/session-notes/orch.md"
@@ -266,7 +264,6 @@ printf '%s\n' '# stub' > "${E}/.cursor/commands/sdlc-spdd-plan.md"
 printf '%s\n' '# stub' > "${E}/.cursor/commands/sdlc-spdd-init.md"
 printf '%s\n' 'stub' > "${E}/.cursor/rules/sdlc-spdd.mdc"
 printf '%s\n' $'\n' > "${E}/.gitignore"
-# Extra file under scripts so prune must not remove the tree.
 printf '%s\n' '# keep' > "${E}/scripts/keep-me.sh"
 
 EH="${E}/sdlc-spdd"
@@ -277,25 +274,28 @@ assert_absent "${E}" "spdd" "E stay-set spdd moved"
 assert_absent "${E}" "session-notes" "E stay-set session-notes moved"
 assert_absent "${E}" "ROADMAP.md" "E stay-set ROADMAP moved"
 assert_absent "${E}" ".sdlc" "E root .sdlc moved"
+assert_absent "${E}" "agent-context" "E agent-context archived"
 
-if [[ -f "${E}/agent-context/harness/quality-gates.md" \
-   && -f "${E}/agent-context/sdlc-workflow.sh" \
-   && -f "${E}/scripts/keep-me.sh" \
-   && -f "${E}/scripts/init-project.sh" ]]; then
-  ok "E: orchestrator source trees preserved"
+if [[ -f "${E}/scripts/keep-me.sh" && -f "${E}/scripts/init-project.sh" ]]; then
+  ok "E: orchestrator root scripts/ preserved"
 else
-  bad "E: orchestrator source trees were consumed"
+  bad "E: orchestrator root scripts/ were removed"
 fi
 
 assert_file_contains "${EH}/requirements/orch-req.md" "stay-set req" "E home req"
 assert_file_contains "${EH}/spdd/canvas/ORCH-001.md" "stay-set canvas" "E home canvas"
 assert_file_contains "${EH}/ROADMAP.md" "stay-set roadmap" "E home ROADMAP"
-# Seed copies missing files from agent-context/harness; phase 3 may refresh
-# framework-owned quality-gates.md from the real orchestrator REPO_ROOT.
-assert_file_contains "${EH}/harness/skills/source-skill.md" "orch skill source" "E seeded skill"
+assert_file_contains "${EH}/harness/skills/source-skill.md" "orch skill leftover" "E harness skill consolidated"
 assert_file "${EH}/harness/quality-gates.md" "E home harness quality-gates present"
-assert_file_contains "${E}/agent-context/harness/quality-gates.md" "orch harness source" "E source harness still present"
-assert_file_contains "${E}/agent-context/harness/skills/source-skill.md" "orch skill source" "E source skill still present"
+
+shopt -s nullglob
+archive_hits=("${EH}"/.sdlc/legacy-layout-archive/*/agent-context/custom/note.md)
+shopt -u nullglob
+if ((${#archive_hits[@]} > 0)); then
+  ok "E: leftover agent-context custom archived"
+else
+  bad "E: leftover agent-context custom not archived"
+fi
 
 if "${VERIFY}" --target "${E}" --require-cursor >/dev/null; then
   ok "E: verify passes for orchestrator-shaped target"

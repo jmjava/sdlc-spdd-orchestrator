@@ -12,8 +12,8 @@ quietly and accepted at gates.**
 
 - **One home.** Framework-owned paths live under `<repo>/sdlc-spdd/`. Contracts,
   harness, scripts, and ledgers share one install layout (this orchestrator
-  dogfoods the same layout; `agent-context/` + root `scripts/` remain only as
-  framework *source*).
+  dogfoods the same layout). Install *source* lives under `templates/`; root
+  `scripts/` is orchestrator tooling only. Leftover `agent-context/` is archived.
 - **Ledger-first.** One committed JSONL lessons file is the system of record;
   the work registry is a separate append-only event log. Neither is hand-edited.
 - **Stage-then-accept.** Captures land in gitignored `.sdlc/staged/`; accept at

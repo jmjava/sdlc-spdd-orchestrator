@@ -163,10 +163,6 @@ framework_prune_legacy_layout_shells() {
   for rel in requirements spdd session-notes harness scripts/sdlc-spdd docs/sdlc-spdd agent-context; do
     path="${target}/${rel}"
     [[ -e "${path}" ]] || continue
-    # Orchestrator keeps agent-context/ as the install source tree.
-    if [[ "${is_orch}" -eq 1 && "${rel}" == "agent-context" ]]; then
-      continue
-    fi
     case "${rel}" in
       requirements|spdd|session-notes|harness)
         [[ -d "${home}/${rel}" ]] || continue
@@ -178,6 +174,7 @@ framework_prune_legacy_layout_shells() {
         [[ -d "${home}/docs" ]] || continue
         ;;
       agent-context)
+        # Always prune/archive — install source lives under templates/.
         ;;
     esac
     if [[ "${dry_run}" -eq 1 ]]; then
@@ -265,8 +262,8 @@ framework_archive_remaining_legacy_layout() {
   done
   shopt -u nullglob
 
-  # Target projects: leftover agent-context/ is legacy. Orchestrator: keep source.
-  if [[ "${is_orch}" -eq 0 && -e "${target}/agent-context" ]]; then
+  # Leftover agent-context/ is always legacy (install source is templates/).
+  if [[ -e "${target}/agent-context" ]]; then
     framework_archive_legacy_path "${target}" "${home}" "agent-context" "${stamp}" "${dry_run}"
   fi
 
@@ -276,31 +273,4 @@ framework_archive_remaining_legacy_layout() {
       rmdir "${target}/docs" 2>/dev/null || true
     fi
   fi
-}
-
-# Seed home/harness from orchestrator agent-context/harness without consuming source.
-framework_seed_home_harness_from_source() {
-  local target="$1"
-  local home="$2"
-  local dry_run="$3"
-  local src="${target}/agent-context/harness"
-  local dest="${home}/harness"
-
-  [[ -d "${src}" ]] || return 0
-  if [[ "${dry_run}" -eq 1 ]]; then
-    echo "[dry-run] would seed ${dest#"${target}/"} from agent-context/harness" >&2
-    return 0
-  fi
-  mkdir -p "${dest}"
-  # Copy missing files/dirs only (dest wins if already present).
-  local child name
-  shopt -s nullglob
-  for child in "${src}"/*; do
-    name="$(basename "${child}")"
-    if [[ -e "${dest}/${name}" ]]; then
-      continue
-    fi
-    cp -a "${child}" "${dest}/${name}"
-  done
-  shopt -u nullglob
 }

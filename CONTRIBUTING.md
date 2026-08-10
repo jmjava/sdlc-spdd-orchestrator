@@ -53,7 +53,7 @@ installs into a target project.
   `scripts/lib/shipped-docs-boundary.sh` (installed as `docs/sdlc-spdd/`), the
   grounding files
   (`templates/{claude/CLAUDE.md,copilot/copilot-instructions.md,cursor/rules/sdlc-spdd.mdc}`),
-  and the `agent-context/` memory/playbook/harness files that install copies.
+  and the `templates/agent-context/` harness files that install copies.
 - **Internal-only surfaces (posture allowed):** `sdlc-spdd/ROADMAP.md` (dogfood home —
   targets get `templates/project-docs/ROADMAP.md` instead), this `CONTRIBUTING.md`, the repo-root
   `README.md`, and orchestrator-only docs such as

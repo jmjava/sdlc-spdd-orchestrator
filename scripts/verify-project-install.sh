@@ -226,19 +226,14 @@ echo
 # no-legacy-reference sweep over scripts/ stays clean.
 legacy_ac="agent-context"
 legacy_wr="work-registry"
-# Orchestrator dogfood keeps agent-context/ + root scripts/ as install source.
-is_orchestrator_root=0
-if [[ -f "${TARGET}/scripts/init-project.sh" \
-   && -f "${TARGET}/scripts/upgrade-project.sh" \
-   && -d "${TARGET}/templates" \
-   && -d "${TARGET}/engine" ]]; then
-  is_orchestrator_root=1
-fi
+# Install source is templates/agent-context/; root agent-context/ is always legacy.
 legacy_checks=(
   Legacy "legacy memory tree" "${legacy_ac}/memory" absent
   Legacy "legacy feature mirrors" "${legacy_ac}/features" absent
   Legacy "legacy session briefs" "${legacy_ac}/sessions" absent
   Legacy "legacy work registry" "${legacy_ac}/${legacy_wr}.tsv" absent
+  Legacy "legacy workflow manager" "${legacy_ac}/sdlc-workflow.sh" absent
+  Legacy "legacy agent-context tree" "${legacy_ac}" absent
   Legacy "legacy runtime scripts" "scripts/sdlc-spdd" absent
   Legacy "legacy root requirements" "requirements" absent
   Legacy "legacy root spdd" "spdd" absent
@@ -247,12 +242,6 @@ legacy_checks=(
   Legacy "legacy root harness" "harness" absent
   Legacy "legacy root .sdlc" ".sdlc" absent
 )
-if [[ "${is_orchestrator_root}" -eq 0 ]]; then
-  legacy_checks+=(
-    Legacy "legacy workflow manager" "${legacy_ac}/sdlc-workflow.sh" absent
-    Legacy "legacy agent-context tree" "${legacy_ac}" absent
-  )
-fi
 run_part "No legacy sprawled layout" "${legacy_checks[@]}"
 
 if [[ "${REQUIRE_CURSOR}" -eq 1 && "${REQUIRE_COPILOT}" -eq 1 ]]; then
