@@ -40,6 +40,22 @@ def test_migration_dry_run_detects_legacy(tmp_path: Path) -> None:
     assert "agent-context/memory" in detect["legacy_present"]
 
 
+def test_migration_reads_registry_tsv_at_root_when_home_is_sdlc_spdd(tmp_path: Path) -> None:
+    home = tmp_path / "sdlc-spdd"
+    home.mkdir()
+    (tmp_path / "agent-context").mkdir()
+    (tmp_path / "agent-context" / "work-registry.tsv").write_text(
+        "# header\nwork_id\tstatus\tphase\toperation\towner\tupdated\tnote\n"
+        "FEAT-ROOT\tavailable\tinit\t\tdev\t2026-08-08T00:00:00Z\t\n",
+        encoding="utf-8",
+    )
+    mig = StorageMigration(Project(tmp_path))
+    out = mig.run(dry_run=False)
+    assert out["ok"] is True
+    assert out["records_migrated"]["registry_tsv"] == 1
+    assert (home / ".sdlc" / "storage-v3-migrated").is_file()
+
+
 def test_migration_appends_records_and_exports(tmp_path: Path) -> None:
     _legacy_fixture(tmp_path)
     mig = StorageMigration(Project(tmp_path))

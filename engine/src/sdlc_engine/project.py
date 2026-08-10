@@ -12,7 +12,7 @@ folder — ``<repo>/sdlc-spdd/`` — called the *home*:
         .sdlc/             gitignored runtime (sessions, staged, sqlite)
 
 Legacy sprawled layouts (framework dirs at repo root) resolve ``home == root``
-so every path helper keeps working until ``upgrade --consolidate`` runs.
+so every path helper keeps working until ``upgrade-project.sh`` consolidates into ``sdlc-spdd/``.
 """
 
 from __future__ import annotations

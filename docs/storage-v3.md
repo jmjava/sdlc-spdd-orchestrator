@@ -199,7 +199,7 @@ they cannot drift by design. Verify or repair at any time:
 ```bash
 sdlc-engine storage status          # detect non-v3 layouts
 sdlc-engine storage migrate         # one-shot → ledger + registry
-./scripts/upgrade-project.sh --target . --all --consolidate   # single sdlc-spdd/ home
+./scripts/upgrade-project.sh --target . --all   # always consolidates into sdlc-spdd/
 sdlc-engine context parity --repair # rebuild projections
 ```
 

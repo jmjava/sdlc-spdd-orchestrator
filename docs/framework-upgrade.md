@@ -64,7 +64,7 @@ sdlc-engine storage status
 sdlc-engine storage migrate [--dry-run]
 
 # Move scattered framework paths into the single sdlc-spdd/ home
-./scripts/upgrade-project.sh --target . --all --consolidate
+./scripts/upgrade-project.sh --target . --all
 ```
 
 Migration exports converted originals aside; the committed system of record becomes
