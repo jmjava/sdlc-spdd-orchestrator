@@ -5,7 +5,6 @@ on:
     paths:
       - 'docs/**'
       - 'templates/**'
-      - 'agent-context/**'
       - 'scripts/init-project.sh'
       - 'scripts/upgrade-project.sh'
       - 'scripts/verify-docgen-dev-boundary.sh'
@@ -18,7 +17,6 @@ on:
     paths:
       - 'docs/**'
       - 'templates/**'
-      - 'agent-context/**'
       - 'scripts/init-project.sh'
       - 'scripts/upgrade-project.sh'
       - 'scripts/verify-docgen-dev-boundary.sh'

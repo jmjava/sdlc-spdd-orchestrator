@@ -25,6 +25,8 @@ Storage v3: all framework assets live under one folder — <target>/sdlc-spdd/
     docs/sdlc-spdd/, harness/, agent-context harness/playbooks/extensions,
     scripts/sdlc-spdd/, .sdlc/) into <target>/sdlc-spdd/ — merging when the
     home already exists (destination wins on conflicts)
+  - archives any leftover sprawled paths under
+    sdlc-spdd/.sdlc/legacy-layout-archive/<stamp>/ so the project root is clean
 
 The upgrade is framework-only and idempotent:
   - updates SDLC-SPDD assistant prompts (IDE stubs stay at the repo root but
@@ -442,6 +444,12 @@ remove_legacy_framework_file() {
 
 # Framework dirs and stay-set artifacts move under <target>/sdlc-spdd/.
 # When the home already exists, merge legacy root trees into it (dest wins).
+# Install source for harness/workflow scripts is templates/agent-context/ —
+# any leftover root agent-context/ is legacy and gets archived.
+if framework_is_orchestrator_root "${TARGET}"; then
+  echo "Orchestrator root detected — consolidating dogfood stay-set into sdlc-spdd/; keeping root scripts/ as framework tooling."
+fi
+
 consolidate_into_home "${TARGET}/requirements" "${HOME_DIR}/requirements"
 consolidate_into_home "${TARGET}/spdd" "${HOME_DIR}/spdd"
 consolidate_into_home "${TARGET}/session-notes" "${HOME_DIR}/session-notes"
@@ -462,17 +470,21 @@ shopt -u nullglob
 
 framework_prune_legacy_layout_shells "${TARGET}" "${HOME_DIR}" "${DRY_RUN}"
 
-# Legacy framework-owned files replaced by fresh copies under <home>/scripts/.
+# Drop known framework-owned leftovers, then archive any remaining agent-context/.
 remove_legacy_framework_file "${TARGET}/agent-context/sdlc-pointer.sh"
 remove_legacy_framework_file "${TARGET}/agent-context/sdlc-workflow.sh"
 remove_legacy_framework_file "${TARGET}/agent-context/sdlc-team-registry.sh"
 remove_legacy_framework_file "${TARGET}/agent-context/README.md"
 remove_legacy_framework_file "${TARGET}/agent-context/hooks"
 if [[ "${DRY_RUN}" -eq 0 && -d "${TARGET}/agent-context" ]]; then
-  # Drop stray .gitkeep files, then the tree itself when nothing else remains.
   find "${TARGET}/agent-context" -name .gitkeep -delete 2>/dev/null || true
   find "${TARGET}/agent-context" -type d -empty -delete 2>/dev/null || true
 fi
+
+while IFS= read -r line; do
+  [[ -n "${line}" ]] || continue
+  moved+=("${line#archive }")
+done < <(framework_archive_remaining_legacy_layout "${TARGET}" "${HOME_DIR}" "${DRY_RUN}" "${timestamp}")
 
 # ---------------------------------------------------------------------------
 # Phase 3 — framework file refresh under the home (create missing, upgrade
@@ -548,7 +560,7 @@ for file in \
   quality-gates.md \
   validation-rules.md; do
   copy_framework_file \
-    "${REPO_ROOT}/agent-context/harness/${file}" \
+    "${REPO_ROOT}/templates/agent-context/harness/${file}" \
     "${HOME_DIR}/harness/${file}"
 done
 
@@ -584,7 +596,7 @@ for file in \
   sdlc-workflow.sh \
   sdlc-team-registry.sh; do
   copy_executable_framework_file \
-    "${REPO_ROOT}/agent-context/${file}" \
+    "${REPO_ROOT}/templates/agent-context/${file}" \
     "${HOME_DIR}/scripts/${file}"
 done
 

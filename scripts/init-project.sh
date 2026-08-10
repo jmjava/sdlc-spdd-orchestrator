@@ -232,11 +232,11 @@ copy_if_missing \
   "${HOME_DIR}/harness/phase-index.md"
 
 copy_if_missing \
-  "${REPO_ROOT}/agent-context/harness/quality-gates.md" \
+  "${REPO_ROOT}/templates/agent-context/harness/quality-gates.md" \
   "${HOME_DIR}/harness/quality-gates.md"
 
 copy_if_missing \
-  "${REPO_ROOT}/agent-context/harness/validation-rules.md" \
+  "${REPO_ROOT}/templates/agent-context/harness/validation-rules.md" \
   "${HOME_DIR}/harness/validation-rules.md"
 
 migrate_playbooks_extensions_to_skills "${TARGET}" "${DRY_RUN}"
@@ -278,7 +278,7 @@ for file in \
   sdlc-workflow.sh \
   sdlc-team-registry.sh; do
   copy_if_missing \
-    "${REPO_ROOT}/agent-context/${file}" \
+    "${REPO_ROOT}/templates/agent-context/${file}" \
     "${HOME_DIR}/scripts/${file}"
   if [[ "${DRY_RUN}" -eq 0 && -f "${HOME_DIR}/scripts/${file}" ]]; then
     chmod +x "${HOME_DIR}/scripts/${file}"

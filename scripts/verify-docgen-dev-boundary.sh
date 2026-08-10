@@ -105,16 +105,8 @@ shipped_docs=()
 collect_shipped_doc_paths shipped_docs
 shipped_files+=("${shipped_docs[@]}")
 
-# Storage v3 ships only harness + playbooks from agent-context; memory ledgers
-# are seeded empty and never copied from the orchestrator.
-for f in \
-  agent-context/harness/quality-gates.md \
-  agent-context/harness/validation-rules.md; do
-  [[ -e "$f" ]] && shipped_files+=("$f")
-done
-for f in agent-context/playbooks/*.md; do
-  [[ -e "$f" ]] && shipped_files+=("$f")
-done
+# Install-source harness files under templates/agent-context/ are already
+# covered by the templates/ scan above.
 
 for f in "${shipped_files[@]}"; do
   while IFS= read -r line; do

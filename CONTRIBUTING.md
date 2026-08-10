@@ -17,7 +17,7 @@ right → make it fast** — applied to the project as a whole, not to individua
 branches. This is a planning posture, not a branching strategy: we stay on one
 line of work and advance the framework through the stages in order. The
 authoritative stage table and current state live in
-[ROADMAP.md → Delivery posture](ROADMAP.md#delivery-posture-kent-beck-make-it-work--make-it-right--make-it-fast).
+[ROADMAP.md → Delivery posture](sdlc-spdd/ROADMAP.md#delivery-posture-kent-beck-make-it-work--make-it-right--make-it-fast).
 
 **Where we are now:** transitioning from *make it work* (the MVP functions end to
 end) to *make it right* — refactoring the existing framework for readability,
@@ -28,7 +28,7 @@ What this means when you contribute:
 
 1. **Name the stage your change serves.** In the PR and any REASONS Canvas, say
    whether the work is making it work, right, or fast. Use the
-   [Stage classification rubric](ROADMAP.md#stage-classification-rubric) — including
+   [Stage classification rubric](sdlc-spdd/ROADMAP.md#stage-classification-rubric) — including
    its one-line litmus and the worked example — to decide. It is the single
    source of truth for how work is categorized.
 2. **Default new framework work to "make it right" (a refactor).** Near-term work
@@ -53,9 +53,9 @@ installs into a target project.
   `scripts/lib/shipped-docs-boundary.sh` (installed as `docs/sdlc-spdd/`), the
   grounding files
   (`templates/{claude/CLAUDE.md,copilot/copilot-instructions.md,cursor/rules/sdlc-spdd.mdc}`),
-  and the `agent-context/` memory/playbook/harness files that install copies.
-- **Internal-only surfaces (posture allowed):** `ROADMAP.md` (repo root — targets get
-  `templates/project-docs/ROADMAP.md` instead), this `CONTRIBUTING.md`, the repo-root
+  and the `templates/agent-context/` harness files that install copies.
+- **Internal-only surfaces (posture allowed):** `sdlc-spdd/ROADMAP.md` (dogfood home —
+  targets get `templates/project-docs/ROADMAP.md` instead), this `CONTRIBUTING.md`, the repo-root
   `README.md`, and orchestrator-only docs such as
   `docs/contributing-command-specs.md`, `docs/contributing-skills.md`,
   `docs/engine-v2.md`, `docs/dice-projection-runbook.md`, and
@@ -113,7 +113,7 @@ Before removing folders, skipping install steps, or consolidating docs:
 
 1. Read [Three-part design mandate](docs/three-part-operating-path.md#three-part-design-mandate).
 2. Identify which part owns the artifact.
-3. **Never delete Planning artifacts** (`ROADMAP.md`, `milestone-*.md`, `requirements/milestones/`, `session-notes/`) to simplify code — they are the Planning part.
+3. **Never delete Planning artifacts** (`sdlc-spdd/ROADMAP.md`, `milestone-*.md`, `sdlc-spdd/requirements/milestones/`, `sdlc-spdd/session-notes/`) to simplify code — they are the Planning part.
 4. **Never replace SPDD canvases with planning files** — planning informs; canvas governs.
 5. **Never drop SDLC handoffs** — session briefs and memory capture are required.
 
@@ -131,7 +131,7 @@ not just `/sdlc-spdd-*` command runs — is grounded in the full ecosystem
 
 When you add a new assistant or edit these files, keep the shared operating-model
 anchors (lifecycle line, `## Operating Model`, `## Work Rules`) and the Planning
-(`ROADMAP.md`, `milestone-*.md`, `session-notes/`), SPDD (`spdd/canvas/`), and
+(`sdlc-spdd/ROADMAP.md`, `milestone-*.md`, `sdlc-spdd/session-notes/`), SPDD (`sdlc-spdd/spdd/canvas/`), and
 SDLC (`.sdlc/sessions/`, `spdd/memory/lessons.jsonl`) runtime.
 `validate-command-adapters.sh` enforces this in CI; run
 `./tests/test-adapter-install.sh` before pushing.

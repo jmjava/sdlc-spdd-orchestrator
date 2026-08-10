@@ -56,7 +56,7 @@ cp "${REPO_ROOT}/templates/agent-context/harness/skills/pr-review.md" \
   "${WORK}/harness/skills/"
 cp "${REPO_ROOT}/templates/agent-context/harness/phase-index.md" \
   "${WORK}/harness/phase-index.md"
-cp "${REPO_ROOT}/agent-context/harness/quality-gates.md" "${WORK}/harness/" 2>/dev/null || \
+cp "${REPO_ROOT}/templates/agent-context/harness/quality-gates.md" "${WORK}/harness/" 2>/dev/null || \
   printf '# Quality Gates\n\n' > "${WORK}/harness/quality-gates.md"
 # Tab-delimited skill metadata requires a non-empty aliases field when phases are present.
 for skill in bugfix pr-review; do

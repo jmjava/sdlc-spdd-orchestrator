@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Regression harness for agent-context/sdlc-pointer.sh
+# Regression harness for templates/agent-context/sdlc-pointer.sh
 #
 # Usage: ./tests/test-sdlc-pointer.sh
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-POINTER="${REPO_ROOT}/agent-context/sdlc-pointer.sh"
+POINTER="${REPO_ROOT}/templates/agent-context/sdlc-pointer.sh"
+if [[ ! -f "${POINTER}" ]]; then
+  POINTER="${REPO_ROOT}/sdlc-spdd/scripts/sdlc-pointer.sh"
+fi
 START="${REPO_ROOT}/scripts/start-agent-session.sh"
 
 WORK="$(mktemp -d)"

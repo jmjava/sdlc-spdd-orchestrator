@@ -11,7 +11,8 @@ how we develop the orchestrator and must never ship to target projects.
 This fails if posture language appears in any surface that installs into a target
 project (templates, the docs that ship as docs/sdlc-spdd/, and the agent-context
 files that init-project.sh copies). The posture is allowed only in the
-orchestrator-internal files ROADMAP.md (repo root) and CONTRIBUTING.md.
+orchestrator-internal files sdlc-spdd/ROADMAP.md (or root ROADMAP.md) and
+CONTRIBUTING.md.
 
 If a match is a genuine, non-posture use of the words, append the marker
 "posture-boundary-ok" on that line to suppress it.
@@ -58,14 +59,14 @@ for f in docs/*.md; do
   shipped_files+=("$f")
 done
 
-# 3) The specific agent-context files init-project.sh copies into targets
-#    (storage v3 ships only harness + playbooks; memory ledgers are seeded empty).
+# 3) Install-source harness files under templates/agent-context/ that ship
+#    into target homes (memory ledgers are seeded empty separately).
 for f in \
-  agent-context/harness/quality-gates.md \
-  agent-context/harness/validation-rules.md; do
+  templates/agent-context/harness/quality-gates.md \
+  templates/agent-context/harness/validation-rules.md; do
   [[ -e "$f" ]] && shipped_files+=("$f")
 done
-for f in agent-context/playbooks/*.md; do
+for f in templates/agent-context/harness/skills/*.md; do
   [[ -e "$f" ]] && shipped_files+=("$f")
 done
 
@@ -84,7 +85,7 @@ if (( violations > 0 )); then
   echo ""
   echo "Found ${violations} posture reference(s) in shipped surfaces."
   echo "The make-it-work/right/fast posture is orchestrator-internal; keep it in"
-  echo "ROADMAP.md and CONTRIBUTING.md only. See CONTRIBUTING.md → 'Boundary: the"
+  echo "sdlc-spdd/ROADMAP.md and CONTRIBUTING.md only. See CONTRIBUTING.md → 'Boundary: the"
   echo "development posture never ships'."
   exit 1
 fi

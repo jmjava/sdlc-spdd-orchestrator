@@ -1,0 +1,110 @@
+# SDLC-SPDD Copilot Instructions
+
+Use these instructions for every GitHub Copilot Chat request in this workspace.
+
+## Operating Model
+
+This repository uses SDLC-SPDD: SDLC Agents-style lifecycle roles backed by SPDD REASONS Canvas design contracts.
+
+Default lifecycle (Fowler SPDD + SDLC hybrid):
+
+    Initialize -> Analysis -> Plan -> Architect -> Code -> API Test -> Review -> Retro -> Sync
+
+The matching slash commands live in `.github/prompts/` (invoke in Copilot Chat):
+
+    /sdlc-spdd-init
+    /sdlc-spdd-analysis
+    /sdlc-spdd-plan
+    /sdlc-spdd-architect
+    /sdlc-spdd-code
+    /sdlc-spdd-api-test
+    /sdlc-spdd-review
+    /sdlc-spdd-commit-message
+    /sdlc-spdd-prompt-update
+    /sdlc-spdd-retro
+    /sdlc-spdd-accept
+    /sdlc-spdd-sync
+    /sdlc-spdd-whereami
+
+If slash commands are not listed, reference a prompt file: `#prompt:sdlc-spdd-analysis`
+
+## Workflow Commands
+
+Manage your Work ID and lifecycle phase without leaving chat:
+
+    /sdlc-claim <WORK-ID>        Claim a work item (sets pointer + team registry)
+    /sdlc-shelf [reason]         Shelf current work (pause temporarily)
+    /sdlc-advance [--to PHASE]   Advance to next phase gate
+    /sdlc-next                   Show next action for current work
+    /sdlc-team                   See team work registry
+
+Workflow state is tracked in `sdlc-spdd/.sdlc/` (local, private) and `sdlc-spdd/spdd/memory/registry.jsonl` (shared, via `sdlc.sh claim/release`).
+
+Preserve context by reading relevant artifacts before answering:
+
+- `sdlc-spdd/requirements/`
+- `sdlc-spdd/spdd/analysis/`
+- `sdlc-spdd/spdd/canvas/`
+- `sdlc-spdd/spdd/tasks/`
+- `sdlc-spdd/spdd/reviews/`
+- `sdlc-spdd/spdd/sync/`
+- `sdlc-spdd/spdd/memory/lessons.jsonl` (committed ledger — never edit by hand)
+- `sdlc-spdd/spdd/memory/registry.jsonl` (committed registry — managed via `sdlc.sh claim/release`)
+- `sdlc-spdd/ROADMAP.md`
+- `milestone-*.md` (root) and/or `sdlc-spdd/requirements/milestones/milestone-N/MILESTONE-N.md`
+- `sdlc-spdd/session-notes/`
+- `sdlc-spdd/harness/`
+
+Use progressive disclosure ([SDLC Agents](https://github.com/dsilahcilar/sdlc-agents)): load only the artifacts relevant to the current Work ID, phase, and operation. Never list or read whole directories — use indexes. See `sdlc-spdd/docs/sdlc-agents-and-the-framework.md`.
+
+## Context Loading
+
+Load context on demand, not by bulk-reading directories. Keep working context small and relevant regardless of project size. See `sdlc-spdd/docs/context-loading-and-scaling.md`.
+
+1. Start at `sdlc-spdd/.sdlc/sessions/current-session.md` (gitignored hot brief with a Related Past Work digest) to resume the active Work ID and phase. For a quick orientation, run `./sdlc-spdd/scripts/sdlc.sh next` or invoke `/sdlc-spdd-whereami`.
+2. Retrieve by relevance, not recency. Query with `sdlc-engine context retrieve --work-id <ID> [--area A] [--kind K]`, load bodies only for relevant record ids via `sdlc-engine context show <record-id>`, or use `sdlc-engine context digest --work-id <ID>`. A Work ID's contracts are `sdlc-spdd/spdd/canvas/<WORK-ID>.md` and phase artifacts under `sdlc-spdd/spdd/` — read those directly; use retrieval for cross-work lessons.
+3. Never bulk-read `sdlc-spdd/spdd/memory/lessons.jsonl` or whole directories. Staged records live in `sdlc-spdd/.sdlc/staged/lessons.jsonl` (gitignored); agents stage via `./sdlc-spdd/scripts/sdlc.sh capture ...` (or `sdlc-engine context persist-lesson`) and promote at retro/sync with `./sdlc-spdd/scripts/sdlc.sh accept --work-id <ID>`. Work registry events live in `sdlc-spdd/spdd/memory/registry.jsonl` (via `sdlc.sh claim/release` — never hand-edited). For static playbooks and harness files, use `./sdlc-spdd/scripts/resolve-agent-context.sh --phase <phase>`. When sqlite cache is enabled, `./sdlc-spdd/scripts/sdlc.sh db query` may supplement retrieval. After `/sdlc-spdd-analysis`, run `index-spdd-analysis.sh <WORK-ID>` to stage an analysis record.
+
+Optional Guide DICE backend: on-demand retrieval is always the baseline. If
+`sdlc-spdd/harness/guide-dice.md` exists, resolve the backend at runtime
+with `./sdlc-spdd/scripts/resolve-context-backend.sh --target .` and, only
+when it reports `CONTEXT_BACKEND=guide-dice`, augment retrieval with the
+`spdd_*` MCP tools (`spdd_workSubgraph`, `spdd_areaLessons`, `spdd_findByLabel`,
+`spdd_projectionStats`). Never assume Guide is present, and never fail a
+command because it is not.
+
+Per-phase context budget:
+
+- plan: the requirement, `sdlc-spdd/spdd/analysis/<WORK-ID>-analysis.md`, `sdlc-spdd/ROADMAP.md`, active milestone definition (root `milestone-*.md` or `sdlc-spdd/requirements/milestones/milestone-N/`)
+- analysis: the requirement (Scope Lock first), one retrieval query (`--kind analysis`), scoped code areas only
+- architect: the Work ID canvas, retrieval query (`--kind decision`), `sdlc-spdd/harness/`
+- code: the Work ID canvas, retrieval query (`--kind pitfall`); progress via `./sdlc-spdd/scripts/sdlc.sh capture`
+- api-test: the Work ID canvas Requirements/Operations, implemented endpoints for this Work ID
+- review: the Work ID canvas, the diff, retrieval query (`--kind pattern`), `sdlc-spdd/harness/quality-gates.md`
+- retro / sync: the Work ID canvas, review/sync artifacts, retrieval to avoid duplicate lessons; accept staged records
+
+## Work Rules
+
+- Use a Work ID for each unit of work, such as `FEAT-001-order-status-api`.
+- Prefer prefixes: FEAT, BUG, REF, SPIKE, DOC, TEST, CHORE.
+- Planning, architecture, retro, and sync requests must not modify application source code unless explicitly requested.
+- Coding requests should implement exactly one approved operation from the canvas.
+- Follow the canvas sections: Requirements, Entities, Approach, Structure, Operations, Norms, Safeguards.
+- Update progress, review, retro, and sync artifacts when the active SDLC skill calls for it.
+- Preserve useful project memory via `./sdlc-spdd/scripts/sdlc.sh capture` and `./sdlc-spdd/scripts/sdlc.sh accept` (never edit `sdlc-spdd/spdd/memory/lessons.jsonl` by hand).
+- Ask clarifying questions only when needed to prevent incorrect work; otherwise state assumptions in the canvas or staged session capture.
+- For behavior or requirement changes, update the REASONS Canvas before changing code.
+- For non-behavioral refactors, review the code change and then sync the canvas back to implementation reality.
+- Treat `#SkillName` markers as explicit skill requests and `!SkillName` markers as exclusions. Resolve paths with `./sdlc-spdd/scripts/resolve-agent-context.sh --text "<prompt>"` or `--phase <phase>`; load only returned files. Record selected skills in the canvas or staged session capture when relevant.
+
+## Context-Preserving Questions
+
+When the user asks a question, answer using the current Work ID and relevant artifacts when available. If a Work ID is not provided, ask for it or infer it from the active files and say what you inferred.
+
+Good question patterns:
+
+    For FEAT-001, read @sdlc-spdd/spdd/canvas/FEAT-001-order-status-api.md and answer: what operation should I do next?
+
+    For BUG-003, run `sdlc-engine context digest --work-id BUG-003` and compare with the current diff. What context am I missing before coding?
+
+    Using the current canvas and `sdlc-engine context retrieve --work-id <ID> --kind pitfall`, what risks should I check before review?

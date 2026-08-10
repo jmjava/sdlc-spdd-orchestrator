@@ -1,5 +1,7 @@
-# Local SDLC pointer state (see agent-context/sdlc-pointer.sh)
+# Local SDLC pointer / runtime (storage v3 home + transitional root)
+sdlc-spdd/.sdlc/
 .sdlc/
+.sdlc-spdd-upgrade-backups/
 
 # Python venv for docgen (orchestrator dev only — see scripts/setup-docgen-venv.sh)
 .venv/

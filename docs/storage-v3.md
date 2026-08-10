@@ -10,9 +10,10 @@ quietly and accepted at gates.**
 
 ## Design principles
 
-- **One home.** Framework-owned paths live under `<repo>/sdlc-spdd/` (or repo
-  root in the dogfood orchestrator). Contracts, harness, scripts, and ledgers
-  share one install layout.
+- **One home.** Framework-owned paths live under `<repo>/sdlc-spdd/`. Contracts,
+  harness, scripts, and ledgers share one install layout (this orchestrator
+  dogfoods the same layout). Install *source* lives under `templates/`; root
+  `scripts/` is orchestrator tooling only. Leftover `agent-context/` is archived.
 - **Ledger-first.** One committed JSONL lessons file is the system of record;
   the work registry is a separate append-only event log. Neither is hand-edited.
 - **Stage-then-accept.** Captures land in gitignored `.sdlc/staged/`; accept at
@@ -41,7 +42,9 @@ Older installs with scattered memory trees are converted by
 | SQLite cache | `.sdlc/index.sqlite` | No (projection) | Opt-in local query cache, schema v5 |
 
 Everything the framework owns lives in a single folder, `<repo>/sdlc-spdd/`
-(the *home*; `SDLC_HOME` overrides, legacy root layouts still resolve). See the
+(the *home*; `SDLC_HOME` overrides). Older sprawled root layouts still resolve
+read-only until `upgrade-project.sh` consolidates them (leftovers are archived
+under `sdlc-spdd/.sdlc/legacy-layout-archive/`). See the
 [install layout diagram](diagrams/09-install-layout.svg) and
 [installing into your project](installing-into-your-project.md).
 

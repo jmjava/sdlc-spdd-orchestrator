@@ -139,12 +139,26 @@ framework_consolidate_path() {
   return 0
 }
 
+# True when target is this orchestrator repo (framework source lives at root).
+framework_is_orchestrator_root() {
+  local target="$1"
+  [[ -f "${target}/scripts/init-project.sh" \
+    && -f "${target}/scripts/upgrade-project.sh" \
+    && -d "${target}/templates" \
+    && -d "${target}/engine" ]]
+}
+
 # Drop empty legacy shells at repo root once the home copy exists.
 framework_prune_legacy_layout_shells() {
   local target="$1"
   local home="$2"
   local dry_run="$3"
   local rel path
+  local is_orch=0
+
+  if framework_is_orchestrator_root "${target}"; then
+    is_orch=1
+  fi
 
   for rel in requirements spdd session-notes harness scripts/sdlc-spdd docs/sdlc-spdd agent-context; do
     path="${target}/${rel}"
@@ -160,6 +174,7 @@ framework_prune_legacy_layout_shells() {
         [[ -d "${home}/docs" ]] || continue
         ;;
       agent-context)
+        # Always prune/archive — install source lives under templates/.
         ;;
     esac
     if [[ "${dry_run}" -eq 1 ]]; then
@@ -171,8 +186,91 @@ framework_prune_legacy_layout_shells() {
   done
 
   if [[ "${dry_run}" -eq 0 ]]; then
-    rm -f "${target}/scripts/.gitkeep" 2>/dev/null || true
-    rmdir "${target}/scripts" 2>/dev/null || true
-    rmdir "${target}/docs" 2>/dev/null || true
+    # Never remove the orchestrator's root scripts/ or docs/ trees.
+    if [[ "${is_orch}" -eq 0 ]]; then
+      rm -f "${target}/scripts/.gitkeep" 2>/dev/null || true
+      rmdir "${target}/scripts" 2>/dev/null || true
+      rmdir "${target}/docs" 2>/dev/null || true
+    fi
+  fi
+}
+
+# Move a leftover legacy path under home/.sdlc/legacy-layout-archive/<stamp>/.
+# Emits: archive <rel> -> <archive-rel>
+framework_archive_legacy_path() {
+  local target="$1"
+  local home="$2"
+  local rel="$3"
+  local stamp="$4"
+  local dry_run="$5"
+  local src dest
+
+  src="${target}/${rel}"
+  [[ -e "${src}" ]] || return 0
+  # Never archive the home itself or paths already under it.
+  [[ "${src}" == "${home}" || "${src}" == "${home}/"* ]] && return 0
+
+  dest="${home}/.sdlc/legacy-layout-archive/${stamp}/${rel}"
+  if [[ "${dry_run}" -eq 1 ]]; then
+    echo "[dry-run] would archive ${rel} -> ${dest#"${target}/"}" >&2
+    echo "archive ${rel} -> ${dest#"${target}/"}"
+    return 0
+  fi
+  mkdir -p "$(dirname "${dest}")"
+  mv "${src}" "${dest}"
+  echo "archive ${rel} -> ${dest#"${target}/"}"
+}
+
+# After merge+prune, archive any remaining sprawled stay-set paths so the
+# project root only keeps application source + IDE adapters (+ orchestrator
+# framework source trees when dogfooding this repo).
+framework_archive_remaining_legacy_layout() {
+  local target="$1"
+  local home="$2"
+  local dry_run="$3"
+  local stamp="$4"
+  local is_orch=0
+  local rel
+
+  if framework_is_orchestrator_root "${target}"; then
+    is_orch=1
+  fi
+
+  for rel in \
+    requirements \
+    spdd \
+    session-notes \
+    ROADMAP.md \
+    harness \
+    playbooks \
+    extensions \
+    docs/sdlc-spdd \
+    scripts/sdlc-spdd; do
+    [[ -e "${target}/${rel}" ]] || continue
+    framework_archive_legacy_path "${target}" "${home}" "${rel}" "${stamp}" "${dry_run}"
+  done
+
+  # Root runtime always belongs under the home after v3.
+  if [[ -e "${target}/.sdlc" && ! "${target}/.sdlc" -ef "${home}/.sdlc" ]]; then
+    framework_archive_legacy_path "${target}" "${home}" ".sdlc" "${stamp}" "${dry_run}"
+  fi
+
+  shopt -s nullglob
+  for rel in "${target}"/milestone-*.md; do
+    [[ -e "${rel}" ]] || continue
+    framework_archive_legacy_path "${target}" "${home}" "$(basename "${rel}")" "${stamp}" "${dry_run}"
+  done
+  shopt -u nullglob
+
+  # Leftover agent-context/ is always legacy (install source is templates/).
+  if [[ -e "${target}/agent-context" ]]; then
+    framework_archive_legacy_path "${target}" "${home}" "agent-context" "${stamp}" "${dry_run}"
+  fi
+
+  if [[ "${dry_run}" -eq 0 ]]; then
+    if [[ "${is_orch}" -eq 0 ]]; then
+      rmdir "${target}/scripts" 2>/dev/null || true
+      rmdir "${target}/docs" 2>/dev/null || true
+    fi
   fi
 }
