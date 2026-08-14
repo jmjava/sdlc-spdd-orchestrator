@@ -30,6 +30,7 @@ The matching slash commands live in `.cursor/commands/`:
     /sdlc-spdd-retro
     /sdlc-spdd-accept
     /sdlc-spdd-sync
+    /sdlc-spdd-sunset
     /sdlc-spdd-whereami
 
 ## Workflow Commands

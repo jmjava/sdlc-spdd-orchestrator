@@ -59,6 +59,7 @@ commands=(
   prompt-update
   retro
   sync
+  sunset
   whereami
 )
 
@@ -267,6 +268,13 @@ check_pack() {
       require_contains "${path}" "Do not implement code" "commit-message no-code guardrail"
       require_contains "${path}" 'Do not run `git commit`' "commit-message no-commit guardrail"
       require_contains "${path}" "sdlc.sh commit-message" "commit-message engine delegation"
+      ;;
+    sunset)
+      require_contains "${path}" "Do not implement code" "sunset no-code guardrail"
+      require_contains "${path}" "sdlc.sh sunset" "sunset engine delegation"
+      require_contains "${path}" "GitHub PR" "sunset GitHub PR collection"
+      require_contains "${path}" "Jira" "sunset Jira collection"
+      require_contains "${path}" "lessons.jsonl" "sunset ledger destination"
       ;;
     *)
       require_contains "${path}" "Do not implement code" "no-code guardrail"

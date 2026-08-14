@@ -24,7 +24,7 @@ For *which prompt standard to open*, see [Which prompt standard?](session-prompt
 | `.sdlc/sessions/` | Hot session briefs (gitignored) |
 | `sdlc-spdd/scripts/sdlc.sh` | Daily workflow CLI in target projects |
 
-Primary assistant commands (run in chat, not the terminal): `/sdlc-spdd-plan`, `/sdlc-spdd-architect`, `/sdlc-spdd-code`, `/sdlc-spdd-review`, `/sdlc-spdd-sync`. Full list: [Initialization and invocation](initialization-and-invocation.md).
+Primary assistant commands (run in chat, not the terminal): `/sdlc-spdd-plan`, `/sdlc-spdd-architect`, `/sdlc-spdd-code`, `/sdlc-spdd-review`, `/sdlc-spdd-sync`, `/sdlc-spdd-sunset`. Full list: [Initialization and invocation](initialization-and-invocation.md).
 
 ## Three-Part Design Mandate
 
@@ -176,8 +176,9 @@ Maps the [15-step workflow](workflow.md) to the three parts:
 | 11 | `/sdlc-spdd-prompt-update` | SPDD | When intent changes |
 | 12 | `/sdlc-spdd-retro` | SDLC | Writes reusable memory |
 | 13 | `/sdlc-spdd-sync` | SPDD | Reconciles canvas with code |
-| 14 | `sdlc.sh capture` | SDLC + Planning | Session notes, milestone |
-| 15 | `sync-roadmap-from-spdd.sh` | Planning | Summary from SPDD metadata |
+| 14 | `/sdlc-spdd-sunset` | SDLC | PR + commits + Jira → ledger |
+| 15 | `sdlc.sh capture` | SDLC + Planning | Session notes, milestone |
+| 16 | `sync-roadmap-from-spdd.sh` | Planning | Summary from SPDD metadata |
 
 ## Decision Guide: Which Part Right Now?
 

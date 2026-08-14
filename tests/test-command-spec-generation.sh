@@ -31,7 +31,7 @@ missing=0
 for slug in claim shelf advance next team; do
   [[ -f "${REPO_ROOT}/spec/commands/workflow-${slug}.spec.md" ]] || missing=1
 done
-for slug in init analysis plan architect code api-test review commit-message prompt-update retro sync whereami; do
+for slug in init analysis plan architect code api-test review commit-message prompt-update retro sync sunset whereami; do
   [[ -f "${REPO_ROOT}/spec/commands/lifecycle-${slug}.spec.md" ]] || missing=1
 done
 if [[ "${missing}" -eq 0 ]]; then

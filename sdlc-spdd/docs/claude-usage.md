@@ -26,6 +26,7 @@ This installs:
 - `.claude/commands/sdlc-spdd-prompt-update.md`
 - `.claude/commands/sdlc-spdd-retro.md`
 - `.claude/commands/sdlc-spdd-sync.md`
+- `.claude/commands/sdlc-spdd-sunset.md`
 - `.claude/commands/sdlc-spdd-whereami.md`
 - `.claude/commands/sdlc-claim.md`
 - `.claude/commands/sdlc-shelf.md`
@@ -59,6 +60,7 @@ Project-scoped commands installed under `.claude/commands/` are available in any
 | `/sdlc-spdd-prompt-update` | Update canvas first when requirements or behavior intent change |
 | `/sdlc-spdd-retro` | Capture learnings into memory |
 | `/sdlc-spdd-sync` | Reconcile canvas with code |
+| `/sdlc-spdd-sunset` | Close out a Work ID: sync GitHub PR, commit, and Jira state into the ledger via `sdlc.sh sunset` |
 
 ### Workflow (`/sdlc-*`)
 

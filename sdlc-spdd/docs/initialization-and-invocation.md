@@ -213,6 +213,7 @@ The same `/sdlc-spdd-*` syntax works in Cursor, Copilot, and Claude Code.
 | Prompt update | `/sdlc-spdd-prompt-update @spdd/canvas/WORK-ID.md` | Update the canvas first when requirements, acceptance criteria, or behavior intent change |
 | Retro | `/sdlc-spdd-retro @spdd/canvas/WORK-ID.md` | Capture reusable learnings |
 | Sync | `/sdlc-spdd-sync @spdd/canvas/WORK-ID.md` | Reconcile implementation reality with the canvas |
+| Sunset | `/sdlc-spdd-sunset [WORK-ID]` | Close out: sync GitHub PR, commit, and Jira state into the ledger |
 
 ## Daily Invocation Pattern
 
@@ -226,6 +227,7 @@ Full step order and part ownership: [Workflow](workflow.md). Typical command seq
     /sdlc-spdd-review @spdd/canvas/<WORK-ID>.md
     /sdlc-spdd-retro @spdd/canvas/<WORK-ID>.md
     /sdlc-spdd-sync @spdd/canvas/<WORK-ID>.md
+    /sdlc-spdd-sunset <WORK-ID>
 
 Use review after each coding operation when the change is risky, touches shared behavior, or changes user-visible behavior.
 

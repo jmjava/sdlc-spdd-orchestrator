@@ -124,6 +124,12 @@ const STEPS = [
     soft: true,
   },
   {
+    slug: "sdlc-spdd-sunset",
+    userArgs: "",
+    verify: [],
+    soft: true,
+  },
+  {
     slug: "sdlc-spdd-whereami",
     userArgs: "",
     verify: [],

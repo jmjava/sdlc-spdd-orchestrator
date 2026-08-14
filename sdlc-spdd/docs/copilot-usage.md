@@ -28,6 +28,7 @@ This installs:
 - `.github/prompts/sdlc-spdd-prompt-update.prompt.md`
 - `.github/prompts/sdlc-spdd-retro.prompt.md`
 - `.github/prompts/sdlc-spdd-sync.prompt.md`
+- `.github/prompts/sdlc-spdd-sunset.prompt.md`
 - `.github/prompts/sdlc-spdd-whereami.prompt.md`
 - `.github/prompts/sdlc-claim.prompt.md`
 - `.github/prompts/sdlc-shelf.prompt.md`
@@ -63,6 +64,7 @@ In GitHub Copilot Chat, invoke prompt files with slash commands:
     /sdlc-spdd-prompt-update @spdd/canvas/FEAT-001-order-status-api.md
     /sdlc-spdd-retro @spdd/canvas/FEAT-001-order-status-api.md
     /sdlc-spdd-sync @spdd/canvas/FEAT-001-order-status-api.md
+    /sdlc-spdd-sunset FEAT-001-order-status-api
 
 If slash commands are not listed, reference a prompt file directly:
 

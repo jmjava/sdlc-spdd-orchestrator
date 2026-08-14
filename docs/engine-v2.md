@@ -107,6 +107,23 @@ Always routed to the Python engine (even when `SDLC_ENGINE=shell`):
 
 Implementation: `engine/src/sdlc_engine/commit_message.py`.
 
+## Feature sunset snapshot
+
+Collect GitHub PR, commit, and Jira state for a Work ID and optionally stage
+a `session` record (`source=sunset`) into the lesson ledger. Used by
+`/sdlc-spdd-sunset`. Remote pulls are best-effort (missing `gh` or Jira
+credentials become warnings).
+
+Always routed to the Python engine (even when `SDLC_ENGINE=shell`):
+
+```bash
+./scripts/sdlc.sh sunset --work-id FEAT-001-example
+./scripts/sdlc.sh sunset --work-id FEAT-001-example --apply
+./scripts/sdlc.sh sunset --work-id FEAT-001-example --accept --json
+```
+
+Implementation: `engine/src/sdlc_engine/sunset.py`.
+
 ## Context store
 
 One committed ledger, regenerable projections ([storage-v3.md](storage-v3.md)):

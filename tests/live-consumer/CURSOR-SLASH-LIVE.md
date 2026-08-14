@@ -30,12 +30,13 @@ Work ID: `FEAT-001-hello-live`
 | 9 | `/sdlc-spdd-retro` | `--step retro` |
 | 10 | `/sdlc-spdd-prompt-update` | `--step prompt-update` |
 | 11 | `/sdlc-spdd-commit-message` | prints a message; does **not** commit |
-| 12 | `/sdlc-spdd-whereami` | matches `./scripts/sdlc-spdd/sdlc.sh next` |
-| 13 | `/sdlc-claim FEAT-001-hello-live` | pointer + registry updated |
-| 14 | `/sdlc-next` | actionable "Do now" |
-| 15 | `/sdlc-advance` | phase moves |
-| 16 | `/sdlc-shelf` | pointer cleared |
-| 17 | `/sdlc-team` | shows claims |
+| 12 | `/sdlc-spdd-sunset` | engine snapshot of PR/commits/Jira; stages ledger record |
+| 13 | `/sdlc-spdd-whereami` | matches `./scripts/sdlc-spdd/sdlc.sh next` |
+| 14 | `/sdlc-claim FEAT-001-hello-live` | pointer + registry updated |
+| 15 | `/sdlc-next` | actionable "Do now" |
+| 16 | `/sdlc-advance` | phase moves |
+| 17 | `/sdlc-shelf` | pointer cleared |
+| 18 | `/sdlc-team` | shows claims |
 
 Effect verifier from the consumer root:
 

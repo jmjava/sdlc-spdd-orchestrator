@@ -7,7 +7,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 SPEC_DIR="${REPO_ROOT}/spec/commands"
 
 lifecycle_commands=(
-  init analysis plan architect code api-test review commit-message prompt-update retro accept sync whereami
+  init analysis plan architect code api-test review commit-message prompt-update retro accept sync sunset whereami
 )
 workflow_commands=(
   claim shelf advance next team

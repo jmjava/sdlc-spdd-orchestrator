@@ -30,6 +30,12 @@ else
   skipped "engine commit-message (no diff / exit non-zero)"
 fi
 
+if run_engine sunset --work-id FEAT-001-hello-live >/dev/null 2>&1; then
+  ok "engine sunset"
+else
+  skipped "engine sunset (no Work ID artifacts / exit non-zero)"
+fi
+
 if run_engine db status >/dev/null 2>&1 || run_engine db-status >/dev/null 2>&1; then
   ok "engine db status"
 else

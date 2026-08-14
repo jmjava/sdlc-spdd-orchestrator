@@ -19,6 +19,7 @@ COMMANDS=(
   sdlc-spdd-retro
   sdlc-spdd-prompt-update
   sdlc-spdd-commit-message
+  sdlc-spdd-sunset
   sdlc-spdd-whereami
   sdlc-claim
   sdlc-next

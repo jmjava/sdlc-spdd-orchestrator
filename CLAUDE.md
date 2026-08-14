@@ -25,6 +25,7 @@ The matching slash commands live in `.claude/commands/`:
     /sdlc-spdd-retro
     /sdlc-spdd-accept
     /sdlc-spdd-sync
+    /sdlc-spdd-sunset
     /sdlc-spdd-whereami
 
 ## Workflow Commands

@@ -106,6 +106,18 @@ Rule:
 
     Non-behavioral refactors sync the canvas after review.
 
+### Sunset
+
+Use sunset when a Work ID is done and you want GitHub PR, commit, and Jira
+state written into the lesson ledger for that ticket.
+
+Command:
+
+    /sdlc-spdd-sunset <WORK-ID>
+
+The engine collects the snapshot (`sdlc.sh sunset --apply`) and stages a
+`session` record. Promote it with `/sdlc-spdd-accept`.
+
 ### Session Brief
 
 A file that lets a new agent session resume work from repository context.
