@@ -287,4 +287,7 @@ git commit -m "PROJ-123 FEAT-001: add order status endpoint"
 
 # 5. Keep doc and tracker aligned
 sdlc-engine issues pull FEAT-001-order-status-api --system jira --apply
+
+# 6. Close out: PR + issue + commits + Jira → ledger (also /sdlc-spdd-sunset)
+sdlc-engine sunset --work-id FEAT-001-order-status-api --apply
 ```

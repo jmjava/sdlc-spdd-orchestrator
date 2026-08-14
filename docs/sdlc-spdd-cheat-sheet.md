@@ -196,6 +196,7 @@ and continue to planning:
 | Update changed intent | `/sdlc-spdd-prompt-update @spdd/canvas/WORK-ID.md` |
 | Capture learnings | `/sdlc-spdd-retro @spdd/canvas/WORK-ID.md` |
 | Reconcile drift | `/sdlc-spdd-sync @spdd/canvas/WORK-ID.md` |
+| Close out (PR + issue + commits + Jira → ledger) | `/sdlc-spdd-sunset [WORK-ID]` |
 
 ## Ask Questions That Keep Context
 

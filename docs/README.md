@@ -119,6 +119,7 @@ Also useful day to day:
 | [Local SQLite index](local-sqlite-index.md) | Zero-install `.sdlc/index.sqlite` query cache; opt-in, fully regenerable from the ledger |
 | [Jira ADF + requirements sync (research)](research/jira-adf-and-requirements-sync.md) | Exact Cloud ADF / Server wiki payloads; requirements as source of truth for Jira + REASONS |
 | [SDLC Engine — commit-message](engine-v2.md#commit-message-diff-report) | Python engine diff report for `/sdlc-spdd-commit-message` |
+| [SDLC Engine — sunset](engine-v2.md#feature-sunset-snapshot) | Close-out snapshot of GitHub PR, GitHub issue, commits, and Jira into the ledger |
 | [Guide flow](guide-flow.md) | End-to-end Guide working store: ledger + canvas ingest, runtime resolution, per-phase tools, persist loop |
 | [DICE projection runbook](dice-projection-runbook.md) | Run against Guide tag `spdd-projection-v3` (or `GUIDE_GIT_REF=main`): typed entity persist/retrieve, `spdd_*` MCP tools |
 | [Narrated demos bundle](demos/README.md) | You maintain or extend the docgen bundle under `docs/demos/` |

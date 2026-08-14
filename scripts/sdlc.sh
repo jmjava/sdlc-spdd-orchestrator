@@ -106,6 +106,9 @@ case "${cmd}" in
   commit-message)
     _py_only_args=("commit-message" "$@")
     ;;
+  sunset)
+    _py_only_args=("sunset" "$@")
+    ;;
   viewer)
     _py_only_args=("viewer" "$@")
     ;;

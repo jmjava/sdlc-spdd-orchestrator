@@ -41,8 +41,9 @@ Claim the Work ID, then open a session brief. Prefer `./sdlc-spdd/scripts/sdlc.s
 | 11 | SPDD | **Prompt update when intent changes** — `/sdlc-spdd-prompt-update @spdd/canvas/<WORK-ID>.md` |
 | 12 | SDLC | **Retro** — `/sdlc-spdd-retro @spdd/canvas/<WORK-ID>.md` |
 | 13 | SPDD | **Sync** — `/sdlc-spdd-sync @spdd/canvas/<WORK-ID>.md` |
-| 14 | SDLC + Planning | **Capture memory and session notes** — `./sdlc-spdd/scripts/sdlc.sh capture ...` (milestone auto-detected when Work ID is in `milestone-*.md`) |
-| 15 | Planning ← SPDD | **Refresh roadmap summary** — `./sdlc-spdd/scripts/sync-roadmap-from-spdd.sh --target .` |
+| 14 | SDLC | **Sunset** — `/sdlc-spdd-sunset <WORK-ID>` (engine collects GitHub PR, GitHub issue, commit, and Jira state into the ledger) |
+| 15 | SDLC + Planning | **Capture memory and session notes** — `./sdlc-spdd/scripts/sdlc.sh capture ...` (milestone auto-detected when Work ID is in `milestone-*.md`) |
+| 16 | Planning ← SPDD | **Refresh roadmap summary** — `./sdlc-spdd/scripts/sync-roadmap-from-spdd.sh --target .` |
 
 ## Work IDs
 

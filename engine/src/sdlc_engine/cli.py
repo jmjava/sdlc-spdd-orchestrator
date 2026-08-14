@@ -11,6 +11,7 @@ from pathlib import Path
 from . import __version__
 from .archive import ArchiveService
 from .commit_message import CommitMessageError, CommitMessageService
+from .sunset import SunsetError, SunsetService
 from .context_store import ContextStore
 from .db import LocalIndex, format_rows
 from .issues import IssueSyncService
@@ -631,6 +632,33 @@ def cmd_commit_message(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_sunset(args: argparse.Namespace) -> int:
+    svc = SunsetService(_project(args))
+    try:
+        if args.json:
+            print(
+                svc.report_json(
+                    args.work_id or None,
+                    apply=bool(args.apply),
+                    accept=bool(args.accept),
+                ),
+                end="",
+            )
+        else:
+            print(
+                svc.report_text(
+                    args.work_id or None,
+                    apply=bool(args.apply),
+                    accept=bool(args.accept),
+                ),
+                end="",
+            )
+    except SunsetError as exc:
+        print(f"sunset: {exc}", file=sys.stderr)
+        return 1
+    return 0
+
+
 def cmd_db(args: argparse.Namespace) -> int:
     idx = LocalIndex(_project(args))
     action = args.db_cmd
@@ -1168,6 +1196,27 @@ def build_parser() -> argparse.ArgumentParser:
     )
     cm.add_argument("--json", action="store_true", help="Emit DiffSnapshot JSON")
     cm.set_defaults(func=cmd_commit_message)
+
+    sun = sub.add_parser(
+        "sunset",
+        help=(
+            "Collect GitHub PR, GitHub issue, commit, and Jira state for a Work ID "
+            "and optionally stage it into the lesson ledger"
+        ),
+    )
+    sun.add_argument("--work-id", help="Work ID (default: active pointer)")
+    sun.add_argument(
+        "--apply",
+        action="store_true",
+        help="Stage a session record (source=sunset) in the gitignored ledger",
+    )
+    sun.add_argument(
+        "--accept",
+        action="store_true",
+        help="Promote the sunset record into the committed ledger (implies --apply)",
+    )
+    sun.add_argument("--json", action="store_true", help="Emit SunsetSnapshot JSON")
+    sun.set_defaults(func=cmd_sunset)
 
     db = sub.add_parser(
         "db",

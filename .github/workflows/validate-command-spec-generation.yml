@@ -13,6 +13,7 @@ on:
       - 'templates/claude/commands/sdlc-*.md'
       - 'tests/test-command-spec-generation.sh'
       - 'tests/test-commit-message-command.sh'
+      - 'tests/test-sunset-command.sh'
       - '.github/workflows/validate-command-spec-generation.yml'
   push:
     branches: [main]
@@ -27,6 +28,7 @@ on:
       - 'templates/claude/commands/sdlc-*.md'
       - 'tests/test-command-spec-generation.sh'
       - 'tests/test-commit-message-command.sh'
+      - 'tests/test-sunset-command.sh'
       - '.github/workflows/validate-command-spec-generation.yml'
 
 jobs:
@@ -52,3 +54,6 @@ jobs:
 
       - name: Run commit-message command regression harness
         run: ./tests/test-commit-message-command.sh
+
+      - name: Run sunset command regression harness
+        run: ./tests/test-sunset-command.sh

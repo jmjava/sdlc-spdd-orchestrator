@@ -24,6 +24,7 @@ The matching slash commands live in `.github/prompts/` (invoke in Copilot Chat):
     /sdlc-spdd-retro
     /sdlc-spdd-accept
     /sdlc-spdd-sync
+    /sdlc-spdd-sunset
     /sdlc-spdd-whereami
 
 If slash commands are not listed, reference a prompt file: `#prompt:sdlc-spdd-analysis`
