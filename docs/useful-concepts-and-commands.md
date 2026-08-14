@@ -108,7 +108,7 @@ Rule:
 
 ### Sunset
 
-Use sunset when a Work ID is done and you want GitHub PR, commit, and Jira
+Use sunset when a Work ID is done and you want GitHub PR, GitHub issue, commit, and Jira
 state written into the lesson ledger for that ticket.
 
 Command:

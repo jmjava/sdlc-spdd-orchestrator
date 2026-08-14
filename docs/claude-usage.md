@@ -60,7 +60,7 @@ Project-scoped commands installed under `.claude/commands/` are available in any
 | `/sdlc-spdd-prompt-update` | Update canvas first when requirements or behavior intent change |
 | `/sdlc-spdd-retro` | Capture learnings into memory |
 | `/sdlc-spdd-sync` | Reconcile canvas with code |
-| `/sdlc-spdd-sunset` | Close out a Work ID: sync GitHub PR, commit, and Jira state into the ledger via `sdlc.sh sunset` |
+| `/sdlc-spdd-sunset` | Close out a Work ID: sync GitHub PR, GitHub issue, commit, and Jira state into the ledger via `sdlc.sh sunset` |
 
 ### Workflow (`/sdlc-*`)
 

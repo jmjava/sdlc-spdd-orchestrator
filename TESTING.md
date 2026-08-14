@@ -226,7 +226,7 @@ still pass (FEAT-008 / #41). Engine coverage lives in
 `engine/tests_unit/test_commit_message.py`.
 
 `./tests/test-sunset-command.sh` asserts `/sdlc-spdd-sunset` adapters exist with
-Python engine delegation (`sdlc.sh sunset`), GitHub PR / Jira / ledger language,
+Python engine delegation (`sdlc.sh sunset`), GitHub PR / issue / Jira / ledger language,
 and that `sunset --apply` stages a `session` record. Engine coverage lives in
 `engine/tests_unit/test_sunset.py`.
 

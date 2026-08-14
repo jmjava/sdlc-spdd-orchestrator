@@ -67,7 +67,7 @@ SDLC_ENGINE=auto ./scripts/sdlc.sh next   # python if importable, else shell
 | `local_sessions` | `LOCAL-*` offline sessions + promote into documented Work IDs |
 | `db` | Regenerable local SQLite index (`.sdlc/index.sqlite`) before GUIDE |
 | `commit_message` | Staged/unstaged/ahead-of-base diff report for commit-message drafts |
-| `sunset` | Close-out snapshot: GitHub PR + commits + Jira → lesson ledger |
+| `sunset` | Close-out snapshot: GitHub PR + issue + commits + Jira → lesson ledger |
 | `viewer` | ADF WYSIWYG editor for checked-in `adf/*.json` (optional `[viewer]` / Flask) |
 | `installer` / `console` / `dashboard` | **EXPERIMENTAL** ops console: install/upgrade, SQLite, rollback, Guide+Neo4j, ADF viewer lifecycle (optional `[viewer]` / Flask) |
 | `cli` | `sdlc-engine` / `python -m sdlc_engine` |

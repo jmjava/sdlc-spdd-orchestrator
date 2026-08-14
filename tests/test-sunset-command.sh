@@ -44,6 +44,7 @@ for path in "${CURSOR}" "${COPILOT}" "${CLAUDE}"; do
   assert_contains "${path}" "Do not implement code" "no-code guardrail (${path##*/})"
   assert_contains "${path}" "sdlc.sh sunset" "engine delegation (${path##*/})"
   assert_contains "${path}" "GitHub PR" "GitHub PR collection (${path##*/})"
+  assert_contains "${path}" "GitHub issue" "GitHub issue collection (${path##*/})"
   assert_contains "${path}" "Jira" "Jira collection (${path##*/})"
   assert_contains "${path}" "lessons.jsonl" "ledger destination (${path##*/})"
   assert_contains "${path}" "--apply" "apply stages snapshot (${path##*/})"

@@ -176,7 +176,7 @@ Maps the [15-step workflow](workflow.md) to the three parts:
 | 11 | `/sdlc-spdd-prompt-update` | SPDD | When intent changes |
 | 12 | `/sdlc-spdd-retro` | SDLC | Writes reusable memory |
 | 13 | `/sdlc-spdd-sync` | SPDD | Reconciles canvas with code |
-| 14 | `/sdlc-spdd-sunset` | SDLC | PR + commits + Jira → ledger |
+| 14 | `/sdlc-spdd-sunset` | SDLC | PR + issue + commits + Jira → ledger |
 | 15 | `sdlc.sh capture` | SDLC + Planning | Session notes, milestone |
 | 16 | `sync-roadmap-from-spdd.sh` | Planning | Summary from SPDD metadata |
 

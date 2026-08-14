@@ -109,7 +109,7 @@ Implementation: `engine/src/sdlc_engine/commit_message.py`.
 
 ## Feature sunset snapshot
 
-Collect GitHub PR, commit, and Jira state for a Work ID and optionally stage
+Collect GitHub PR, GitHub issue, commit, and Jira state for a Work ID and optionally stage
 a `session` record (`source=sunset`) into the lesson ledger. Used by
 `/sdlc-spdd-sunset`. Remote pulls are best-effort (missing `gh` or Jira
 credentials become warnings).

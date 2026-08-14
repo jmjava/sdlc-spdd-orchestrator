@@ -213,7 +213,7 @@ The same `/sdlc-spdd-*` syntax works in Cursor, Copilot, and Claude Code.
 | Prompt update | `/sdlc-spdd-prompt-update @spdd/canvas/WORK-ID.md` | Update the canvas first when requirements, acceptance criteria, or behavior intent change |
 | Retro | `/sdlc-spdd-retro @spdd/canvas/WORK-ID.md` | Capture reusable learnings |
 | Sync | `/sdlc-spdd-sync @spdd/canvas/WORK-ID.md` | Reconcile implementation reality with the canvas |
-| Sunset | `/sdlc-spdd-sunset [WORK-ID]` | Close out: sync GitHub PR, commit, and Jira state into the ledger |
+| Sunset | `/sdlc-spdd-sunset [WORK-ID]` | Close out: sync GitHub PR, GitHub issue, commit, and Jira state into the ledger |
 
 ## Daily Invocation Pattern
 

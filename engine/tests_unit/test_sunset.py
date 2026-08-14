@@ -10,7 +10,12 @@ from subprocess import CompletedProcess
 from sdlc_engine.cli import main
 from sdlc_engine.lessons_ledger import LessonsLedger
 from sdlc_engine.project import Project
-from sdlc_engine.sunset import SunsetError, SunsetService, normalize_pr_number
+from sdlc_engine.sunset import (
+    SunsetError,
+    SunsetService,
+    normalize_issue_number,
+    normalize_pr_number,
+)
 
 
 def _git(root: Path, *args: str) -> None:
@@ -90,6 +95,22 @@ Sunset demo for {work_id}.
 
 
 def _fake_gh(cmd: list[str], cwd: Path) -> CompletedProcess:
+    if cmd[:3] == ["gh", "issue", "list"]:
+        payload = [
+            {
+                "number": 99,
+                "title": "Sunset demo GH",
+                "state": "CLOSED",
+                "url": "https://github.com/example/repo/issues/99",
+            },
+            {
+                "number": 100,
+                "title": "Follow-up issue",
+                "state": "OPEN",
+                "url": "https://github.com/example/repo/issues/100",
+            },
+        ]
+        return CompletedProcess(cmd, 0, stdout=json.dumps(payload), stderr="")
     if cmd[:3] == ["gh", "pr", "list"]:
         payload = [
             {
@@ -124,12 +145,17 @@ def _fake_gh(cmd: list[str], cwd: Path) -> CompletedProcess:
         }
         return CompletedProcess(cmd, 0, stdout=json.dumps(payload), stderr="")
     if cmd[:3] == ["gh", "issue", "view"]:
+        num = cmd[3]
+        titles = {"99": "Sunset demo GH", "100": "Follow-up issue"}
+        states = {"99": "CLOSED", "100": "OPEN"}
         payload = {
-            "title": "Sunset demo GH",
-            "state": "CLOSED",
-            "url": "https://github.com/example/repo/issues/99",
-            "labels": [],
-            "body": "issue body",
+            "number": int(num),
+            "title": titles.get(num, f"Issue {num}"),
+            "state": states.get(num, "OPEN"),
+            "url": f"https://github.com/example/repo/issues/{num}",
+            "labels": [{"name": "sdlc"}] if num == "99" else [],
+            "closedAt": "2026-08-13T18:00:00Z" if num == "99" else "",
+            "author": {"login": "octocat"},
         }
         return CompletedProcess(cmd, 0, stdout=json.dumps(payload), stderr="")
     return CompletedProcess(cmd, 1, stdout="", stderr=f"unexpected: {cmd}")
@@ -140,7 +166,16 @@ def test_normalize_pr_number() -> None:
     assert normalize_pr_number("7") == "7"
     assert normalize_pr_number("https://github.com/acme/widgets/pull/42") == "42"
     assert normalize_pr_number("pr:#9") == "9"
+    assert normalize_pr_number("https://github.com/acme/widgets/issues/99") == ""
     assert normalize_pr_number("TBD") == ""
+
+
+def test_normalize_issue_number() -> None:
+    assert normalize_issue_number("#99") == "99"
+    assert normalize_issue_number("github:#99") == "99"
+    assert normalize_issue_number("https://github.com/acme/widgets/issues/99") == "99"
+    assert normalize_issue_number("https://github.com/acme/widgets/pull/7") == ""
+    assert normalize_issue_number("TBD") == ""
 
 
 def test_collect_prs_commits_and_local_jira(tmp_path: Path, monkeypatch) -> None:
@@ -158,9 +193,10 @@ def test_collect_prs_commits_and_local_jira(tmp_path: Path, monkeypatch) -> None
     assert snap.jira is not None
     assert snap.jira.key == "ORCH-42"
     assert any("Jira pull skipped" in w for w in snap.warnings)
-    assert snap.github_issue is not None
-    assert snap.github_issue["number"] == "99"
-    assert snap.github_issue["state"] == "CLOSED"
+    assert [i.number for i in snap.issues] == ["99", "100"]
+    assert snap.issues[0].state == "CLOSED"
+    assert snap.issues[0].labels == ["sdlc"]
+    assert snap.issues[1].title == "Follow-up issue"
     assert len(snap.prs) == 1
     assert snap.prs[0].number == "7"
     assert snap.prs[0].state == "MERGED"
@@ -185,6 +221,8 @@ def test_apply_stages_session_record(tmp_path: Path) -> None:
     assert rec.work_id == work_id
     assert "ORCH-42" in rec.body
     assert "#7" in rec.body
+    assert "## GitHub issues" in rec.body
+    assert "#99" in rec.body
     staged = Project(root).staged_ledger_path
     assert staged.is_file()
     assert snap.ledger_id in staged.read_text(encoding="utf-8")

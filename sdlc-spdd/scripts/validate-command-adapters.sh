@@ -273,6 +273,7 @@ check_pack() {
       require_contains "${path}" "Do not implement code" "sunset no-code guardrail"
       require_contains "${path}" "sdlc.sh sunset" "sunset engine delegation"
       require_contains "${path}" "GitHub PR" "sunset GitHub PR collection"
+      require_contains "${path}" "GitHub issue" "sunset GitHub issue collection"
       require_contains "${path}" "Jira" "sunset Jira collection"
       require_contains "${path}" "lessons.jsonl" "sunset ledger destination"
       ;;

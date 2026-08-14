@@ -1200,8 +1200,8 @@ def build_parser() -> argparse.ArgumentParser:
     sun = sub.add_parser(
         "sunset",
         help=(
-            "Collect GitHub PR, commit, and Jira state for a Work ID and "
-            "optionally stage it into the lesson ledger"
+            "Collect GitHub PR, GitHub issue, commit, and Jira state for a Work ID "
+            "and optionally stage it into the lesson ledger"
         ),
     )
     sun.add_argument("--work-id", help="Work ID (default: active pointer)")
