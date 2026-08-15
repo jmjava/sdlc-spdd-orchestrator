@@ -18,6 +18,7 @@ from typing import Any
 from .context_store import ContextStore
 from .issues import GhRunner, IssueSyncService, _default_gh_runner
 from .links import collect_links, note_token, parse_canvas_metadata, parse_milestone_requirement
+from .placeholders import is_placeholder
 from .pointer import PointerStore
 from .project import Project
 from .registry import TeamRegistry
@@ -44,7 +45,7 @@ def _normalize_github_number(raw: str, *, prefer: str = "either") -> str:
     or ``either`` (either URL shape, then bare numbers).
     """
     text = (raw or "").strip()
-    if not text or text.upper() in {"TBD", "TODO", "NONE", "N/A"}:
+    if is_placeholder(text):
         return ""
     if prefer in {"pr", "either"}:
         m = _PR_URL_RE.search(text)

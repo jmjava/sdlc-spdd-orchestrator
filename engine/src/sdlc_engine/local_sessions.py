@@ -12,12 +12,13 @@ import os
 import re
 import subprocess
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
 from pathlib import Path
 
 from .pointer import PointerStore
 from .project import Project
 from .registry import TeamRegistry
+from .timeutil import utc_date
+from .timeutil import utc_now as _utc_now
 
 LOCAL_PREFIX = "LOCAL"
 _STATUS_OPEN = "open"
@@ -37,10 +38,6 @@ _TYPE_PREFIX = {
     "test": "TEST",
     "chore": "CHORE",
 }
-
-
-def _utc_now() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def is_local_id(work_id: str | None) -> bool:
@@ -333,7 +330,7 @@ class LocalSessionService:
         self._write_session_brief(session)
         # Optional daily session-notes tag (committed) — only when explicitly wanted via env
         if os.environ.get("SDLC_LOCAL_SESSION_NOTES", "0") == "1":
-            day = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+            day = utc_date()
             notes_dir = self.project.root / "session-notes"
             notes_dir.mkdir(parents=True, exist_ok=True)
             path = notes_dir / f"{day}.md"

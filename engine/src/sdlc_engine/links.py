@@ -6,6 +6,7 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from .placeholders import is_placeholder
 from .project import Project
 
 _JIRA_KEY_RE = re.compile(r"^[A-Z][A-Z0-9]+-\d+$")
@@ -71,7 +72,7 @@ def _bullet_value(section: str, label: str) -> str:
 
 def _normalize_jira_key(raw: str) -> tuple[str, bool]:
     key = raw.strip()
-    if not key or key.upper() in {"TBD", "TODO", "NONE", "N/A"}:
+    if is_placeholder(key):
         return "", True
     if _JIRA_KEY_RE.match(key):
         return key, False
@@ -80,7 +81,7 @@ def _normalize_jira_key(raw: str) -> tuple[str, bool]:
 
 def _normalize_github(raw: str) -> str:
     raw = raw.strip()
-    if not raw or raw.upper() in {"TBD", "TODO", "NONE"}:
+    if is_placeholder(raw):
         return ""
     m = _GH_NUM_RE.match(raw)
     if m:

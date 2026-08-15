@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
 from pathlib import Path
 
 from . import canvas as canvas_mod
@@ -22,10 +21,7 @@ from .phases import (
 from .pointer import PointerStore
 from .project import Project
 from .quiet import is_quiet, quiet_resume_blurb
-
-
-def _utc_now() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+from .timeutil import utc_now as _utc_now
 
 
 @dataclass

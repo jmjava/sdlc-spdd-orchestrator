@@ -18,6 +18,9 @@ engine/
   README.md
   src/sdlc_engine/
     cli.py              # argparse CLI (sdlc-engine)
+    timeutil.py         # shared UTC stamps
+    io_util.py          # JSON/path helpers
+    placeholders.py     # TBD/TODO/NONE/N/A sentinels
     project.py          # root + sdlc-spdd/ home resolution
     phases.py           # phase/gate tables
     pointer.py
@@ -37,8 +40,11 @@ engine/
     db.py               # opt-in SQLite cache (.sdlc/index.sqlite)
     commit_message.py   # diff report for commit drafts
     installer/          # ops console (:5051)
+      process_util.py   # shared tcp/pid/run helpers
     viewer/             # ADF viewer (:5050)
-  tests/
+  tests_unit/
+  tests_integration/
+  tests_e2e/
 ```
 
 ## Usage

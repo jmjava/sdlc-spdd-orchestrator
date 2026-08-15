@@ -209,8 +209,6 @@ def cmd_pointer(args: argparse.Namespace) -> int:
 
 
 def cmd_context(args: argparse.Namespace) -> int:
-    import sys
-
     from .lessons_ledger import LEDGER_KINDS
 
     store = ContextStore(_project(args))

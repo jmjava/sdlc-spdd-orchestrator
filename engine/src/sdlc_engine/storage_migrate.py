@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import shutil
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -15,14 +14,8 @@ from .lessons_ledger import LEDGER_KINDS, LessonRecord, LessonsLedger, lesson_id
 from .persistence import BACKEND_SQLITE, enabled as backend_enabled
 from .project import Project
 from .registry import RegistryRow, TeamRegistry
-
-
-def _utc_stamp() -> str:
-    return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-
-
-def _utc_now() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+from .timeutil import utc_now as _utc_now
+from .timeutil import utc_stamp as _utc_stamp
 
 
 EXPORT_PATHS = (

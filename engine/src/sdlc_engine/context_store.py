@@ -13,7 +13,6 @@ import os
 import urllib.error
 import urllib.request
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -26,10 +25,6 @@ from .persistence import (
     load_config as load_persistence_config,
 )
 from .project import Project
-
-
-def _utc_now() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 @dataclass
@@ -186,10 +181,7 @@ class ContextStore:
         return result
 
     def _rel(self, path: Path) -> str:
-        try:
-            return str(path.resolve().relative_to(self.project.root.resolve()))
-        except ValueError:
-            return str(path)
+        return self.project.rel(path)
 
     # --- Guide ---
 

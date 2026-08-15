@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- Engine polish: shared `timeutil` / `io_util` / `placeholders` / installer `process_util`; `__version__` aligned to `2.0.0a6`; GitHub link sentinels treat `N/A` as empty
 - Guide dogfood default → **`jmjava/orch-guide`** @ **`sdlc-spdd-projection-v2`** (standalone home; cutover from `jmjava/guide`)
 - **`jmjava/orch-guide` seeded** (Phase 2): exact mirror of `jmjava/guide` heads+tags; not an Embabel fork
 - SPIKE-089 / agent-context cleanup docs: Guide dual-read marked complete; issue #89 closeable

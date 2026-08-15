@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterator
 
+from .io_util import load_json_dict
 from .project import Project
 
 CONFIG_REL = Path(".sdlc") / "integrations-config.json"
@@ -63,13 +64,7 @@ def config_path(project: Project) -> Path:
 
 
 def _read_json(path: Path) -> dict[str, Any]:
-    if not path.is_file():
-        return {}
-    try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return {}
-    return data if isinstance(data, dict) else {}
+    return load_json_dict(path)
 
 
 def _first_env(keys: tuple[str, ...]) -> str:
