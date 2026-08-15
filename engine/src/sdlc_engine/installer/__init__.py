@@ -1,4 +1,4 @@
-"""Ops console: visual install/upgrade, SQLite stats, rollback, Guide config."""
+"""Ops console: Vue3 UI + Flask JSON API (install, SQLite, rollback, Guide)."""
 
 from .app import create_app, run_installer
 

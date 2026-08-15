@@ -13,13 +13,14 @@ through the ADF editor. The ADF Viewer does **not** talk to Guide (Jira/GitHub s
 | UI | Default URL | Start | Responsibility |
 |----|-------------|-------|----------------|
 | **Ops console** | `http://127.0.0.1:5051/` | `./scripts/sdlc.sh console --target <path>` | **Dashboard** (default tab), install/upgrade, persistence backends, SQLite, rollback, Guide+Neo4j lifecycle, **Jira link & sync**, ADF templates API, **start/stop** ADF Viewer |
-| **Vue3 console (dev)** | `http://127.0.0.1:5173/` | `cd console-ui && npm run dev` (proxies `/api` → `:5051`) | Same tabs as the Flask console (Dashboard default, Persistence, Templates, Install, SQLite, Rollback, Guide, Issues, ADF); see [adf-template-library-and-vue3-console.md](adf-template-library-and-vue3-console.md) |
+| **Vue3 console (dev)** | `http://127.0.0.1:5173/` | `cd console-ui && npm run dev` (proxies `/api` → `:5051`) | Same tabs as `sdlc.sh console` (Dashboard default, Persistence, Templates, Install, SQLite, Rollback, Guide, Issues, ADF); see [adf-template-library-and-vue3-console.md](adf-template-library-and-vue3-console.md) |
 | **ADF Viewer** | `http://127.0.0.1:5050/` | `./scripts/sdlc.sh viewer` or console **ADF** tab | Edit `adf/*.adf.json`, Jira/GitHub prepare/apply sync |
 
 Aliases for the console: `installer`, `dashboard`. Wrapper: `./scripts/visual-installer.sh`.
 
 ```bash
 python3 -m pip install -e './engine[viewer]'   # Flask extra
+./scripts/sdlc.sh console --playground          # disposable seed, no consumer install
 ./scripts/sdlc.sh console --target /path/to/app
 ./scripts/sdlc.sh viewer --root /path/to/app --port 5050
 ```
@@ -98,7 +99,7 @@ HTTP `7474`. Override Guide git ref with `GUIDE_GIT_REF` (default tag
 |------|-------|---------|
 | 1 | Unit | `pytest -q engine/tests_unit` |
 | 2 | Local integration (installer API) | `pytest -q engine/tests_integration` |
-| 3 | E2E Playwright (Flask HTML + Vue3) | `./scripts/run-test-suites.sh e2e` (builds `console-ui` when needed) |
+| 3 | E2E Playwright (Vue3 ops console + ADF Viewer) | `./scripts/run-test-suites.sh e2e` (builds `console-ui` when needed) |
 | 3 | Guide + Neo4j live stack | `SDLC_GUIDE_STACK_LIVE=1 ./tests/test-guide-stack-live.sh` |
 | 3 | Vue3 Playwright live Guide stack (opt-in) | `SDLC_GUIDE_STACK_LIVE=1 pytest -q engine/tests_e2e/test_vue3_console_live_playwright.py -m guide_live --run-guide-live` |
 | 3 | Vue3 Playwright live ADF viewer (opt-in) | `SDLC_ADF_VIEWER_LIVE=1 pytest -q engine/tests_e2e/test_vue3_console_live_playwright.py -m adf_viewer_live --run-adf-viewer-live` |

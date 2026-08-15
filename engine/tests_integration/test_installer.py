@@ -60,7 +60,6 @@ def test_api_health_and_detect(tmp_path: Path) -> None:
     page = client.get("/")
     assert page.status_code == 200
     assert b"SDLC-SPDD Ops Console" in page.data
-    assert b"experimental" in page.data
 
     det = client.post("/api/detect", json={"target": str(tmp_path)})
     assert det.status_code == 200
@@ -395,21 +394,33 @@ def test_embabel_profile_and_named_entity_gate(tmp_path: Path) -> None:
 
 
 def test_api_guide_page_has_runtime_controls(tmp_path: Path) -> None:
-    app = create_app(tmp_path)
-    client = app.test_client()
-    page = client.get("/")
-    assert b"Start Neo4j" in page.data
-    assert b"Start Guide (+ingest)" in page.data
-    assert b"Ensure / pull jmjava/orch-guide" in page.data
-    assert b"Load NamedEntity projection" in page.data
-    assert b"Embabel mechanics" in page.data
-    assert b"Incremental ingest" in page.data
-    assert b"Purge preview" in page.data
-    assert b"Purge ALL RAG" in page.data
-    assert b"ADF Viewer" in page.data
-    assert b"Start viewer" in page.data
-    assert b"Open ADF Viewer" in page.data
-    assert b'data-tab="adf"' in page.data
+    """Vue Guide/ADF tabs own the operator buttons (Flask HTML retired)."""
+    from sdlc_engine.installer.runner import orchestrator_root
+
+    guide = (orchestrator_root() / "console-ui" / "src" / "components" / "GuideTab.vue").read_text(
+        encoding="utf-8"
+    )
+    adf = (orchestrator_root() / "console-ui" / "src" / "components" / "AdfTab.vue").read_text(
+        encoding="utf-8"
+    )
+    for needle in (
+        "Start Neo4j",
+        "Start Guide (+ingest)",
+        "Load NamedEntity projection",
+        "Incremental ingest",
+        "Purge preview",
+        "Purge ALL RAG",
+        'data-testid="btn-purge"',
+        'data-testid="btn-git-reset"',
+    ):
+        assert needle in guide, needle
+    for needle in ("Start viewer", 'data-testid="btn-adf-start"', "Init SPDD"):
+        assert needle in adf, needle
+
+    app = create_app(tmp_path, vue_dist=False)
+    page = app.test_client().get("/")
+    assert page.status_code == 200
+    assert b"Vue3 console dist is not built" in page.data
 
 
 def test_guide_ops_helpers_and_purge_confirm(tmp_path: Path) -> None:

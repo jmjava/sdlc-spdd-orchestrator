@@ -6,6 +6,8 @@ no `agent-context/memory/` indexes or `agent-context/features/` mirrors.
 | Example | Purpose |
 |---------|---------|
 | [`spring-boot-order-api/`](spring-boot-order-api/) | End-to-end command flow sample; canvas validated in CI |
+| [`console-playground/`](console-playground/) | Docs for `sdlc.sh console --playground` (generated under `.sdlc/`) |
+| [`console-playground/`](console-playground/) | Docs for `sdlc.sh console --playground` (tree is generated under `.sdlc/`) |
 
 Install targets get their own `requirements/`, `spdd/`, and `harness/` trees —
 see [docs/installing-into-your-project.md](../docs/installing-into-your-project.md).

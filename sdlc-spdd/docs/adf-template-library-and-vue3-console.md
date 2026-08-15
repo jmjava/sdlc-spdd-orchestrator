@@ -81,7 +81,7 @@ Flask BFF (ops console):
 3. Port tabs: Install, Persistence, SQLite, Rollback, Guide, ADF, **Templates**.
    - Done: Persistence + Templates
    - Stubbed: Install, SQLite, Rollback, Guide, ADF
-4. Retire Flask `pages.py` HTML once parity + e2e smoke exist.
+4. Retire Flask `pages.py` HTML once parity + e2e smoke exist. ✅ (`sdlc.sh console` serves Vue3; stub if dist is missing)
 
 Dev: see [`console-ui/README.md`](../console-ui/README.md).
 
@@ -110,7 +110,7 @@ Flask can serve the Vite build when `SDLC_VUE_CONSOLE_DIST=console-ui/dist` (or
 
 ## Next slices
 
-- Default `console` to Vue dist when present (retire Flask `pages.py` HTML)
+- Default `console` to Vue dist when present (retire Flask `pages.py` HTML) ✅
 - Chore / milestone-sync combos
 - Explicit “open viewer after write” affordance (still no auto Jira push)
 

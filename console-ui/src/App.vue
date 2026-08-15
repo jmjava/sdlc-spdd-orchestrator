@@ -78,6 +78,15 @@ onMounted(refreshHealth);
     <p v-if="healthError" class="status err" data-testid="health-status">{{ healthError }}</p>
     <p v-else-if="health" class="status ok muted" data-testid="health-status">
       API ok · default {{ health.default_target || "—" }}
+      <template v-if="health.playground"> · playground</template>
+    </p>
+    <p
+      v-if="health && health.playground"
+      class="status"
+      data-testid="playground-banner"
+    >
+      Playground target — disposable seed. Guide/Jira/GitHub stay mocked or DOWN.
+      Regenerate with <code>sdlc.sh console --playground</code>.
     </p>
 
     <nav class="tabs" aria-label="Console tabs" data-testid="console-tabs">

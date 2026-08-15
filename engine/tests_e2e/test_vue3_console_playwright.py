@@ -688,6 +688,9 @@ def test_vue3_guide_tab_shows_config_and_probe(page, live_vue_console) -> None: 
     assert page.get_by_test_id("btn-guide-start").count() == 1
     assert page.get_by_test_id("btn-neo-start").count() == 1
     assert page.get_by_test_id("btn-guide-save").count() == 1
+    assert page.get_by_test_id("btn-purge").count() == 1
+    assert page.get_by_test_id("btn-git-reset").count() == 1
+    assert page.get_by_test_id("btn-purge-all-rag").count() == 1
     page.get_by_test_id("btn-guide-probe").click()
     _wait_guide_loaded(page)
 

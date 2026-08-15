@@ -1,8 +1,7 @@
-"""Flask application for the SDLC-SPDD ops console (install, SQLite, rollback, Guide)."""
+"""Flask JSON API for the SDLC-SPDD ops console (Vue3 UI + install/SQLite/Guide)."""
 
 from __future__ import annotations
 
-import os
 import webbrowser
 from pathlib import Path
 from typing import Any
@@ -57,9 +56,10 @@ from .guide_runtime import (
     stop_neo4j,
     stack_status,
 )
-from .pages import PAGE
 from .rollback import list_backups, restore_backup
 from .runner import orchestrator_root, run_action
+from .playground import is_playground
+from .vue_console import STUB_HTML, ensure_vue_console_dist, resolve_vue_console_dist
 from .viewer_runtime import (
     DEFAULT_HOST as ADF_DEFAULT_HOST,
     DEFAULT_PORT as ADF_DEFAULT_PORT,
@@ -104,16 +104,17 @@ def _dashboard_suggestions(project: Project, status: dict[str, Any]) -> list[dic
 def create_app(
     default_target: Path | str | None = None,
     *,
-    vue_dist: Path | str | None = None,
+    vue_dist: Path | str | bool | None = None,
 ) -> Any:
-    """Create the ops console Flask app (localhost tool).
+    """Create the ops console Flask app (localhost JSON API + Vue3 UI).
 
-    When ``vue_dist`` (or env ``SDLC_VUE_CONSOLE_DIST``) points at a Vite
-    ``console-ui/dist`` directory, ``/`` serves the Vue3 shell and ``/assets/*``
-    from that build. Otherwise the legacy Flask HTML console is served.
+    ``/`` serves the Vue3 shell when a Vite ``console-ui/dist`` is resolved
+    (explicit ``vue_dist``, ``SDLC_VUE_CONSOLE_DIST``, or auto-detect).
+    Otherwise a short stub page is served. The Flask HTML console is gone.
+    Pass ``vue_dist=False`` or ``SDLC_CONSOLE_UI=stub`` to force the stub.
     """
     try:
-        from flask import Flask, jsonify, render_template_string, request, send_from_directory
+        from flask import Flask, jsonify, request, send_from_directory
     except ImportError as exc:  # pragma: no cover
         raise SystemExit(
             "Flask is required for the installer console. Install with: "
@@ -122,14 +123,7 @@ def create_app(
 
     orch = orchestrator_root()
     start = Path(default_target or Path.cwd()).expanduser().resolve()
-    raw_vue = vue_dist if vue_dist is not None else os.environ.get("SDLC_VUE_CONSOLE_DIST")
-    vue_root: Path | None = None
-    if raw_vue:
-        vue_root = Path(str(raw_vue)).expanduser().resolve()
-        if not (vue_root / "index.html").is_file():
-            raise FileNotFoundError(
-                f"Vue console dist missing index.html: {vue_root}"
-            )
+    vue_root = resolve_vue_console_dist(vue_dist, orch=orch)
 
     app = Flask(__name__)
     app.config["INSTALLER_DEFAULT_TARGET"] = str(start)
@@ -146,12 +140,8 @@ def create_app(
     if vue_root is None:
 
         @app.get("/")
-        def index() -> str:
-            return render_template_string(
-                PAGE,
-                default_target=app.config["INSTALLER_DEFAULT_TARGET"],
-                orchestrator_root=app.config["ORCHESTRATOR_ROOT"],
-            )
+        def index() -> Any:
+            return STUB_HTML, 200, {"Content-Type": "text/html; charset=utf-8"}
 
     else:
         dist = vue_root
@@ -166,11 +156,13 @@ def create_app(
 
     @app.get("/api/health")
     def api_health() -> Any:
+        default_target = app.config["INSTALLER_DEFAULT_TARGET"]
         return jsonify(
             {
                 "ok": True,
                 "orchestrator_root": app.config["ORCHESTRATOR_ROOT"],
-                "default_target": app.config["INSTALLER_DEFAULT_TARGET"],
+                "default_target": default_target,
+                "playground": is_playground(default_target),
             }
         )
 
@@ -990,12 +982,14 @@ def run_installer(
     debug: bool = False,
     open_browser: bool = True,
 ) -> None:
-    """Start the ops console web UI."""
-    app = create_app(default_target)
+    """Start the ops console web UI (Vue3 when dist is available)."""
+    dist = ensure_vue_console_dist(build=True)
+    app = create_app(default_target, vue_dist=dist if dist else False)
     url = f"http://{host}:{port}/"
     print(f"SDLC-SPDD ops console: {url}")
     print(f"  orchestrator: {app.config['ORCHESTRATOR_ROOT']}")
     print(f"  default target: {app.config['INSTALLER_DEFAULT_TARGET']}")
+    print(f"  ui: {'Vue3 ' + str(dist) if dist else 'stub (build console-ui to enable Vue)'}")
     if open_browser and host in {"127.0.0.1", "localhost"}:
         try:
             webbrowser.open(url)

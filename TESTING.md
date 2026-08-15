@@ -92,7 +92,7 @@ Then: `./scripts/setup-engine-venv.sh --e2e`
 |-----------|---------|----------------|
 | One unit test red | `unit -- path::test` then `unit --lf` | `unit` (full 158 tests) |
 | Unit green, editing installer | `integration -- path::test` | `all` from scratch |
-| Playwright flake | `e2e -- engine/tests_e2e/test_console_playwright.py::test_foo` | `e2e --guide` |
+| Playwright flake | `e2e -- engine/tests_e2e/test_vue3_console_playwright.py::test_foo` | `e2e --guide` |
 | Guide not up | `preflight e2e --guide` first | bare `curl …/sse` |
 | Stale background pytest | `unit --clean-stale` | start another full run |
 

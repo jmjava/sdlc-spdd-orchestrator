@@ -34,8 +34,6 @@ jobs:
           python3 -m playwright install --with-deps chromium
       - name: Suite 3 — viewer Playwright
         run: PYTHONPATH=engine/src pytest -q engine/tests_e2e/test_viewer_playwright.py --screenshot=only-on-failure
-      - name: Suite 3 — ops console Playwright
-        run: PYTHONPATH=engine/src pytest -q engine/tests_e2e/test_console_playwright.py --screenshot=only-on-failure
       - uses: actions/setup-node@v4
         with:
           node-version: '22'

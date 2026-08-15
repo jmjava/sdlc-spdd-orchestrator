@@ -148,16 +148,16 @@ def test_persistence_parity_endpoint(tmp_path: Path) -> None:
 
 
 def test_persistence_tab_in_console_html(tmp_path: Path) -> None:
-    app = create_app(tmp_path)
-    client = app.test_client()
-    html = client.get("/").data.decode("utf-8")
-    assert 'data-tab="persist"' in html
-    assert "/api/persistence/status" in html
-    assert "/api/persistence/save" in html
-    assert "/api/persistence/parity" in html
-    assert "btn-persist-parity" in html
-    assert "pb-sqlite" in html
-    # v3 storage copy: committed ledger + registry, staged captures, sqlite cache.
-    assert "spdd/memory/lessons.jsonl" in html
-    assert "spdd/memory/registry.jsonl" in html
-    assert ".sdlc/staged/lessons.jsonl" in html
+    from sdlc_engine.installer.runner import orchestrator_root
+
+    ui = orchestrator_root() / "console-ui" / "src"
+    app_vue = (ui / "App.vue").read_text(encoding="utf-8")
+    persist = (ui / "components" / "PersistenceTab.vue").read_text(encoding="utf-8")
+    assert 'id: "persistence"' in app_vue
+    assert "/api/persistence/status" in persist
+    assert "/api/persistence/save" in persist
+    assert "/api/persistence/parity" in persist
+    assert "persistence-parity" in persist
+    assert "pb-sqlite" in persist
+    assert "spdd/memory/lessons.jsonl" in persist
+    assert "persistence-config.json" in persist

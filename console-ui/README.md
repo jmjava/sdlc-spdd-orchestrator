@@ -16,6 +16,13 @@ Vite + Vue3 shell that talks to the existing Flask installer JSON API (`/api/*`)
 
 ## Dev
 
+Playground (no consumer install — seeds `.sdlc/console-playground`):
+
+```bash
+./scripts/sdlc.sh console --playground --no-browser
+# or: python -m sdlc_engine console --playground --no-browser --port 5051
+```
+
 ```bash
 # terminal 1 — Flask BFF (repo root / engine)
 python -m sdlc_engine console --target . --no-browser --port 5051
@@ -39,12 +46,16 @@ CONSOLE_API=http://127.0.0.1:5051 CONSOLE_TARGET=/path/to/project npm run smoke
 npm run build   # → console-ui/dist
 ```
 
-Serve the build from Flask (same origin as `/api/*`):
+`sdlc.sh console` / `python -m sdlc_engine console` serves this build at `/`
+(same origin as `/api/*`). It runs `npm run build` when `dist/` is missing.
 
 ```bash
-SDLC_VUE_CONSOLE_DIST=$PWD/dist python -m sdlc_engine console --target .. --no-browser --port 5051
+python -m sdlc_engine console --target .. --no-browser --port 5051
 # open http://127.0.0.1:5051/
 ```
+
+Force the stub page (API only): `SDLC_CONSOLE_UI=stub`. Override the dist path:
+`SDLC_VUE_CONSOLE_DIST=$PWD/dist`.
 
 ## Playwright
 

@@ -322,15 +322,15 @@ def test_api_adf_browse_and_init_work(tmp_path: Path) -> None:
 
 
 def test_console_page_includes_adf_init_ui(tmp_path: Path) -> None:
-    app = create_app(tmp_path)
-    client = app.test_client()
-    page = client.get("/")
-    assert page.status_code == 200
-    html = page.get_data(as_text=True)
-    assert "Init SPDD work from ADF" in html
-    assert "/api/adf/browse" in html
-    assert "/api/adf/init-work" in html
-    assert "btn-adf-init" in html
+    from sdlc_engine.installer.runner import orchestrator_root
+
+    adf = (orchestrator_root() / "console-ui" / "src" / "components" / "AdfTab.vue").read_text(
+        encoding="utf-8"
+    )
+    assert "Init SPDD work" in adf or "btn-adf-init" in adf
+    assert "/api/adf/browse" in adf or "adf/browse" in adf
+    assert "/api/adf/init-work" in adf or "adf/init-work" in adf
+    assert "btn-adf-init" in adf
 
 
 def test_start_viewer_missing_target(tmp_path: Path) -> None:
