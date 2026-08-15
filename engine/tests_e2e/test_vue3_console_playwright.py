@@ -441,6 +441,9 @@ def test_vue3_templates_render_each_combo(page, live_vue_console, combo: str) ->
     log = page.get_by_test_id("templates-log").inner_text()
     assert work_id in log
     assert '"type": "doc"' in log or '"type":"doc"' in log
+    preview = page.get_by_test_id("templates-preview").inner_text()
+    assert preview.strip()
+    assert work_id in preview or "Summary" in preview or len(preview) > 20
 
 
 def test_vue3_templates_write_adf_to_disk(page, live_vue_console) -> None:  # type: ignore[no-untyped-def]
@@ -517,6 +520,52 @@ def test_vue3_sqlite_refresh_and_rebuild(page, live_vue_console) -> None:  # typ
     )
     assert page.get_by_test_id("sq-work").inner_text() != "—"
     assert page.get_by_test_id("sqlite-stats").count() == 1
+
+
+def test_vue3_sqlite_work_browser_filter_and_jump(page, live_vue_console) -> None:  # type: ignore[no-untyped-def]
+    work_id = live_vue_console["works"]["feature"]
+    _goto_vue(page, live_vue_console)
+    _open_tab(page, "sqlite")
+    page.get_by_test_id("sqlite-panel").wait_for(state="visible")
+    page.get_by_test_id("btn-sqlite-rebuild").click()
+    page.wait_for_function(
+        """() => {
+          const t = document.querySelector('[data-testid="sqlite-status"]')?.textContent || '';
+          return t.includes('Index rebuilt') || t.includes('work(s)');
+        }"""
+    )
+    page.get_by_test_id("sqlite-filter").fill("FEAT-920")
+    page.get_by_test_id("sqlite-filter-apply").click()
+    page.wait_for_function(
+        f"""() => (document.querySelector('[data-testid="sqlite-rows"]')?.textContent || '')
+          .includes('{work_id}')"""
+    )
+    page.locator(f'[data-testid="sqlite-rows"] tr[data-work-id="{work_id}"]').get_by_test_id(
+        "sqlite-open-templates"
+    ).click()
+    page.get_by_test_id("templates-panel").wait_for(state="visible")
+    assert page.get_by_test_id("templates-work-id").input_value() == work_id
+
+
+def test_vue3_templates_open_viewer_shows_edit_url(page, live_vue_console) -> None:  # type: ignore[no-untyped-def]
+    work_id = live_vue_console["works"]["feature"]
+    _goto_vue(page, live_vue_console)
+    _open_tab(page, "templates")
+    page.wait_for_function(
+        """() => /combo\\(s\\) available/.test(
+          document.querySelector('[data-testid="templates-status"]')?.textContent || '')"""
+    )
+    page.get_by_test_id("templates-combo").select_option("feature")
+    page.get_by_test_id("templates-work-id").fill(work_id)
+    page.get_by_test_id("templates-open-viewer").check()
+    page.get_by_test_id("templates-render").click()
+    page.wait_for_function(
+        """() => (document.querySelector('[data-testid="templates-viewer-url"]')?.textContent || '')
+          .includes('/edit?path=')"""
+    )
+    url = page.get_by_test_id("templates-viewer-url").inner_text()
+    assert work_id in url
+    assert live_vue_console["state"]["alive"] is True
 
 
 def test_vue3_rollback_backups_pane_loads(page, live_vue_console) -> None:  # type: ignore[no-untyped-def]

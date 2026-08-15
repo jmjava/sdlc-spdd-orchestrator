@@ -57,6 +57,62 @@ def test_playground_dashboard_templates_sqlite_rollback(tmp_path: Path) -> None:
     browse = client.post("/api/adf/browse", json={**body, "path": str(dest / "adf")}).get_json()
     assert browse["ok"] is True
 
+    works = client.post("/api/sqlite/works", json={**body, "q": "FEAT-930"}).get_json()
+    assert works["ok"] is True
+    assert works["count"] >= 1
+    assert any(row["work_id"] == active for row in works["works"])
+
+    assert tmpl_body.get("markdown")
+    assert tmpl_body.get("adf", {}).get("type") == "doc"
+
+
+def test_templates_open_viewer_returns_edit_url(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    dest = materialize_playground(tmp_path / "play")
+    from sdlc_engine.installer import app as installer_app
+
+    monkeypatch.setattr(
+        installer_app,
+        "start_viewer",
+        lambda target, *, host="127.0.0.1", port=5050: {
+            "ok": True,
+            "log": "stub",
+            "pid": 1,
+        },
+    )
+    app = create_app(dest, vue_dist=False)
+    client = app.test_client()
+    active = WORKS[0][0]
+    res = client.post(
+        "/api/templates/render",
+        json={
+            "target": str(dest),
+            "work_id": active,
+            "combo": "feature",
+            "open_viewer": True,
+        },
+    )
+    assert res.status_code == 200
+    body = res.get_json()
+    assert body["output_path"]
+    assert Path(body["output_path"]).is_file()
+    assert body["viewer"]["ok"] is True
+    assert "/edit?path=" in body["viewer"]["edit_url"]
+    assert active in body["viewer"]["edit_url"]
+
+
+def test_sqlite_works_missing_index(tmp_path: Path) -> None:
+    dest = materialize_playground(tmp_path / "play")
+    app = create_app(dest, vue_dist=False)
+    client = app.test_client()
+    empty = client.post("/api/sqlite/works", json={"target": str(dest)}).get_json()
+    assert empty["ok"] is True
+    assert empty["exists"] is False
+    assert empty["works"] == []
+    missing = client.post("/api/sqlite/works", json={"target": str(tmp_path / "missing")})
+    assert missing.status_code == 400
+
 
 def test_playground_guide_jira_github_fakes(tmp_path: Path) -> None:
     dest = materialize_playground(tmp_path / "play")

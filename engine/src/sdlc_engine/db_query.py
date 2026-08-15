@@ -363,12 +363,14 @@ class IndexQueryMixin:
             if search:
                 fts = self._meta(conn, "fts")
                 if fts == "fts5":
+                    # Hyphens in Work IDs (FEAT-930-…) are FTS5 column syntax unless quoted.
+                    phrase = '"' + search.replace('"', " ").strip() + '"'
                     rows = conn.execute(
                         "SELECT w.* FROM work_items w "
                         "WHERE w.work_id IN ("
                         "  SELECT work_id FROM work_search WHERE work_search MATCH ?"
                         ") ORDER BY w.work_id LIMIT ?",
-                        (search, limit),
+                        (phrase, limit),
                     ).fetchall()
                 else:
                     like = f"%{search}%"

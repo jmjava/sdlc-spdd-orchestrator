@@ -19,6 +19,8 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- Vue Templates tab: markdown + ADF preview, and **Open in ADF Viewer after write** (`open_viewer` on `/api/templates/render`)
+- Vue SQLite work browser: `/api/sqlite/works` filter + jump to Templates / Issues / ADF with the Work ID filled
 - Vue3 ops console **Dashboard** + **Issues** tabs (parity with the Flask console) and Playwright coverage for refresh, tracker save/toggle, link preview, and sync dry-run
 - Vue3 Persistence **Check ledger parity** / **Parity + repair** buttons (same `/api/persistence/parity` as the Flask console)
 - Vue3 Guide operators that were Flask-only: Purge ContentElements, Reset git revision, Purge ALL RAG, URI prefix

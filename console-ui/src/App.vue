@@ -25,8 +25,22 @@ const tabs = [
 
 const active = ref("dashboard");
 const target = ref("");
+const focusWorkId = ref("");
 const health = ref(null);
 const healthError = ref("");
+
+function gotoTab(tab, workId) {
+  if (workId) focusWorkId.value = workId;
+  active.value = tab;
+}
+
+function onGotoTab(payload) {
+  if (typeof payload === "string") {
+    gotoTab(payload);
+    return;
+  }
+  gotoTab(payload?.tab || "dashboard", payload?.workId || "");
+}
 
 async function refreshHealth() {
   healthError.value = "";
@@ -104,14 +118,22 @@ onMounted(refreshHealth);
       </button>
     </nav>
 
-    <DashboardTab v-if="active === 'dashboard'" :target="target" @goto-tab="active = $event" />
+    <DashboardTab v-if="active === 'dashboard'" :target="target" @goto-tab="onGotoTab" />
     <PersistenceTab v-else-if="active === 'persistence'" :target="target" />
-    <TemplatesTab v-else-if="active === 'templates'" :target="target" />
+    <TemplatesTab
+      v-else-if="active === 'templates'"
+      :target="target"
+      :focus-work-id="focusWorkId"
+    />
     <InstallTab v-else-if="active === 'install'" :target="target" />
-    <SqliteTab v-else-if="active === 'sqlite'" :target="target" />
+    <SqliteTab v-else-if="active === 'sqlite'" :target="target" @open-work="onGotoTab" />
     <RollbackTab v-else-if="active === 'rollback'" :target="target" />
     <GuideTab v-else-if="active === 'guide'" :target="target" />
-    <IssuesTab v-else-if="active === 'issues'" :target="target" />
-    <AdfTab v-else-if="active === 'adf'" :target="target" />
+    <IssuesTab
+      v-else-if="active === 'issues'"
+      :target="target"
+      :focus-work-id="focusWorkId"
+    />
+    <AdfTab v-else-if="active === 'adf'" :target="target" :focus-work-id="focusWorkId" />
   </div>
 </template>
