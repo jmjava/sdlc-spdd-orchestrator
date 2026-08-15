@@ -124,7 +124,12 @@ def live_console(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.setattr(mod, "stop_viewer", fake_stop)
         monkeypatch.setattr(mod, "restart_viewer", fake_restart)
 
-    app = create_app(tmp_path)
+    from sdlc_engine.installer.vue_console import ensure_vue_console_dist
+
+    dist = ensure_vue_console_dist(build=True)
+    if dist is None:
+        pytest.skip("Vue console dist unavailable (npm build failed)")
+    app = create_app(tmp_path, vue_dist=dist)
     port = _free_port()
     server = make_server("127.0.0.1", port, app)
     thread = threading.Thread(target=server.serve_forever, daemon=True)

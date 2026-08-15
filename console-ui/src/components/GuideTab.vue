@@ -34,6 +34,7 @@ const actionStatusClass = ref("");
 const actionLog = ref("No runtime action yet.");
 const busy = ref(false);
 const opDirectory = ref("");
+const opUriPrefix = ref("");
 const formTouched = ref(false);
 
 function markFormTouched() {
@@ -178,6 +179,54 @@ async function guideAction(url, extra, label) {
   } finally {
     busy.value = false;
   }
+}
+
+function confirmPurge() {
+  const dir = opDirectory.value.trim();
+  const uri = opUriPrefix.value.trim();
+  const scope = uri || dir || "(orchestrator root)";
+  if (
+    !window.confirm(
+      `Purge ContentElements for\n${scope}\n\nThis deletes matching RAG chunks.`,
+    )
+  ) {
+    return;
+  }
+  guideAction(
+    "/api/guide/purge",
+    { confirm: true, directory: dir || undefined, uri_prefix: uri || undefined },
+    "Purge ContentElements",
+  );
+}
+
+function confirmGitReset() {
+  const dir = opDirectory.value.trim();
+  if (!dir) {
+    window.alert("Directory required for git revision reset");
+    return;
+  }
+  if (
+    !window.confirm(
+      `Reset git-ingestion revision for\n${dir}\n\nNext ingest will re-scan the full tree.`,
+    )
+  ) {
+    return;
+  }
+  guideAction("/api/guide/git-revision/reset", { directory: dir }, "Reset git revision");
+}
+
+function confirmPurgeAllRag() {
+  if (
+    !window.confirm(
+      "WIPE ALL ContentElement RAG nodes in embabel-neo4j via docker cypher-shell?\n\nTyped __Entity__ projection nodes are NOT deleted by this.",
+    )
+  ) {
+    return;
+  }
+  if (!window.confirm("Type-confirm: really purge ALL RAG chunks?")) {
+    return;
+  }
+  guideAction("/api/guide/purge-all-rag", { confirm: true }, "Purge ALL RAG");
 }
 
 onMounted(loadGuide);
@@ -390,6 +439,16 @@ onMounted(loadGuide);
           placeholder="orchestrator root or subdir"
         />
       </label>
+      <label>
+        Or URI prefix (≥ 8 chars)
+        <input
+          v-model="opUriPrefix"
+          type="text"
+          spellcheck="false"
+          data-testid="op-uri-prefix"
+          placeholder="file:/… or https://…"
+        />
+      </label>
     </div>
     <div class="actions">
       <button
@@ -418,12 +477,39 @@ onMounted(loadGuide);
         @click="
           guideAction(
             '/api/guide/purge/preview',
-            { directory: opDirectory },
+            { directory: opDirectory, uri_prefix: opUriPrefix },
             'Purge preview',
           )
         "
       >
         Purge preview
+      </button>
+      <button
+        class="btn btn-warn"
+        type="button"
+        data-testid="btn-purge"
+        :disabled="busy"
+        @click="confirmPurge"
+      >
+        Purge ContentElements
+      </button>
+      <button
+        class="btn btn-secondary"
+        type="button"
+        data-testid="btn-git-reset"
+        :disabled="busy"
+        @click="confirmGitReset"
+      >
+        Reset git revision
+      </button>
+      <button
+        class="btn btn-warn"
+        type="button"
+        data-testid="btn-purge-all-rag"
+        :disabled="busy"
+        @click="confirmPurgeAllRag"
+      >
+        Purge ALL RAG
       </button>
     </div>
     <div class="stats">

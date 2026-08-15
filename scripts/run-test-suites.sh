@@ -269,7 +269,6 @@ run_e2e() {
     pytest_suite e2e -q "${PYTEST_EXTRA[@]}" --screenshot=only-on-failure
   else
     pytest_suite e2e -q \
-      engine/tests_e2e/test_console_playwright.py \
       engine/tests_e2e/test_viewer_playwright.py \
       engine/tests_e2e/test_vue3_console_playwright.py \
       engine/tests_e2e/test_issues_github_integration.py \

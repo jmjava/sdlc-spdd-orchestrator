@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- Ops console `/` defaults to the Vue3 build (`console-ui/dist`); `sdlc.sh console` builds dist when needed. The Flask HTML template (`installer/pages.py`) is removed — Flask remains the `/api/*` BFF and the ADF Viewer
 - Engine polish: shared `timeutil` / `io_util` / `placeholders` / installer `process_util`; `__version__` aligned to `2.0.0a6`; GitHub link sentinels treat `N/A` as empty
 - Engine split: CLI handlers/parser (`cli_commands`, `cli_parser`) and SQLite index (`db_schema`, `db_rebuild`, `db_query`) — public `sdlc_engine.cli` / `sdlc_engine.db` imports unchanged
 - Ops console: dashboard helpers extracted to `installer/dashboard.py` (Flask wrappers keep existing monkeypatches)
@@ -18,6 +19,7 @@ All notable changes to this project will be documented in this file.
 
 - Vue3 ops console **Dashboard** + **Issues** tabs (parity with the Flask console) and Playwright coverage for refresh, tracker save/toggle, link preview, and sync dry-run
 - Vue3 Persistence **Check ledger parity** / **Parity + repair** buttons (same `/api/persistence/parity` as the Flask console)
+- Vue3 Guide operators that were Flask-only: Purge ContentElements, Reset git revision, Purge ALL RAG, URI prefix
 - Vue3 Playwright: Issues Jira tracker select, health refresh, persistence parity, rollback dry-run restore, Guide config save (wait for probe load; in-flight `/api/guide` does not overwrite typed notes/port)
 - Experimental Guide stack: raise orch-guide codegen-gradle wrapper download timeout (10s → 180s), prefetch Gradle in CI, fail fast on Maven `BUILD FAILURE`, and skip live Guide+Neo4j (plus Vue `guide_live`) when `repo.embabel.com` is unreachable — ADF viewer live still runs
 

@@ -343,20 +343,17 @@ def test_dashboard_never_echoes_secrets(
 
 
 def test_dashboard_tab_in_console_html(tmp_path: Path) -> None:
-    app = create_app(tmp_path)
-    client = app.test_client()
-    html = client.get("/").data.decode("utf-8")
-    # Dashboard is the default (active) landing tab; Install no longer is.
-    assert '<button type="button" class="tab active" data-tab="dashboard">' in html
-    assert '<button type="button" class="tab" data-tab="install">' in html
-    assert '<section class="tab-pane active" id="pane-dashboard">' in html
-    assert '<section class="tab-pane" id="pane-install">' in html
-    # Endpoints and JS hooks wired in.
-    assert "/api/dashboard/status" in html
-    assert "/api/dashboard/activity" in html
-    assert "/api/dashboard/suggestions" in html
-    assert "dash-suggestions" in html
-    assert "dash-activity" in html
-    assert "btn-dash-refresh" in html
-    assert "loadDashboard" in html
-    assert 'data-goto-tab="persist"' in html
+    from sdlc_engine.installer.runner import orchestrator_root
+
+    ui = orchestrator_root() / "console-ui" / "src"
+    app_vue = (ui / "App.vue").read_text(encoding="utf-8")
+    dash = (ui / "components" / "DashboardTab.vue").read_text(encoding="utf-8")
+    assert 'id: "dashboard"' in app_vue
+    assert 'id: "install"' in app_vue
+    assert 'active = ref("dashboard")' in app_vue
+    assert "/api/dashboard/status" in dash
+    assert "/api/dashboard/activity" in dash
+    assert "/api/dashboard/suggestions" in dash
+    assert "dash-suggestions" in dash
+    assert "dash-activity" in dash
+    assert "btn-dash-refresh" in dash
