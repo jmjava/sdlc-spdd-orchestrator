@@ -16,6 +16,22 @@ from sdlc_engine.installer import runner as rn
 from sdlc_engine.installer import viewer_runtime as vr
 
 
+def test_relax_codegen_gradle_network_timeout(tmp_path: Path) -> None:
+    props = tmp_path / "codegen-gradle" / "gradle" / "wrapper" / "gradle-wrapper.properties"
+    props.parent.mkdir(parents=True)
+    props.write_text(
+        "distributionUrl=https\\://services.gradle.org/distributions/gradle-9.6.1-bin.zip\n"
+        "networkTimeout=10000\n",
+        encoding="utf-8",
+    )
+    assert gr.relax_codegen_gradle_network_timeout(tmp_path) is True
+    text = props.read_text(encoding="utf-8")
+    assert f"networkTimeout={gr.MIN_GRADLE_NETWORK_TIMEOUT_MS}" in text
+    assert "networkTimeout=10000" not in text
+    assert gr.relax_codegen_gradle_network_timeout(tmp_path) is False
+    assert gr.relax_codegen_gradle_network_timeout(tmp_path / "missing") is False
+
+
 def test_guide_runtime_ensure_clone_and_present(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

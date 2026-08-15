@@ -187,6 +187,17 @@ while (( elapsed < GUIDE_START_TIMEOUT_SEC )); do
     echo "Guide healthy after ${elapsed}s"
     break
   fi
+  if [[ -f "${GUIDE_LOG}" ]] && grep -qE "BUILD FAILURE|Failed to execute goal" "${GUIDE_LOG}"; then
+    echo "FAIL: Guide Maven/KSP build failed before health (see ${GUIDE_LOG})" >&2
+    tail -40 "${GUIDE_LOG}" >&2 || true
+    "${PYTHON_BIN}" <<PY
+from pathlib import Path
+from sdlc_engine.installer.app import create_app
+app = create_app(Path(${ROOT@Q}))
+print(app.test_client().post("/api/guide/stop", json={"target": ${ROOT@Q}}).get_json())
+PY
+    exit 1
+  fi
   sleep 5
   elapsed=$((elapsed + 5))
   if pgrep -f "append-ingest\.sh" >/dev/null 2>&1 && (( elapsed % 60 == 0 )); then

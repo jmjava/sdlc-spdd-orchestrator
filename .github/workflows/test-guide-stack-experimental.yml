@@ -89,6 +89,19 @@ jobs:
         working-directory: guide
         run: ./mvnw -q -DskipTests dependency:go-offline || ./mvnw -q -DskipTests -DskipITs validate
 
+      # orch-guide codegen-gradle wrapper ships networkTimeout=10000ms. Cold
+      # runners cannot fetch gradle-9.6.1-bin.zip in 10s, so KSP dies and the
+      # live job waits the full GUIDE_START_TIMEOUT_SEC. Prefetch here.
+      - name: Prefetch codegen-gradle (KSP)
+        working-directory: guide/codegen-gradle
+        run: |
+          if [[ -f gradle/wrapper/gradle-wrapper.properties ]]; then
+            sed -i 's/networkTimeout=[0-9][0-9]*/networkTimeout=180000/' \
+              gradle/wrapper/gradle-wrapper.properties
+          fi
+          ./gradlew --no-daemon --version
+          ./gradlew --no-daemon kspKotlin
+
       - name: Live Guide + Neo4j stack test (API)
         working-directory: sdlc-spdd-orchestrator
         env:

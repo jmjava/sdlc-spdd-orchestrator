@@ -19,6 +19,7 @@ All notable changes to this project will be documented in this file.
 - Vue3 ops console **Dashboard** + **Issues** tabs (parity with the Flask console) and Playwright coverage for refresh, tracker save/toggle, link preview, and sync dry-run
 - Vue3 Persistence **Check ledger parity** / **Parity + repair** buttons (same `/api/persistence/parity` as the Flask console)
 - Vue3 Playwright: Issues Jira tracker select, health refresh, persistence parity, rollback dry-run restore, Guide config save
+- Experimental Guide stack: raise orch-guide codegen-gradle wrapper download timeout (10s → 180s), prefetch Gradle/KSP in CI, and fail fast on Maven `BUILD FAILURE` instead of waiting 15 minutes
 
 ## [2.0.0a6] - 2026-08-08
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import re
 import signal
 import subprocess
 import time
@@ -17,6 +18,40 @@ from .process_util import tcp_open as _tcp_open
 
 DEFAULT_GIT_URL = "https://github.com/jmjava/orch-guide.git"
 RUNTIME_REL = Path(".sdlc") / "guide-runtime.json"
+CODEGEN_GRADLE_WRAPPER_PROPS = (
+    Path("codegen-gradle") / "gradle" / "wrapper" / "gradle-wrapper.properties"
+)
+# orch-guide sdlc-spdd-projection-v2 ships networkTimeout=10000 (10s). Cold CI
+# cannot fetch gradle-9.6.1-bin.zip in that window, so KSP codegen fails and
+# Guide never binds :21337.
+MIN_GRADLE_NETWORK_TIMEOUT_MS = 180_000
+
+
+def relax_codegen_gradle_network_timeout(home: Path | str) -> bool:
+    """Raise a too-low codegen-gradle wrapper download timeout. Returns True if written."""
+    props = Path(home).expanduser() / CODEGEN_GRADLE_WRAPPER_PROPS
+    if not props.is_file():
+        return False
+    try:
+        text = props.read_text(encoding="utf-8")
+    except OSError:
+        return False
+    match = re.search(r"networkTimeout=(\d+)", text)
+    if match and int(match.group(1)) >= MIN_GRADLE_NETWORK_TIMEOUT_MS:
+        return False
+    if match:
+        new = re.sub(
+            r"networkTimeout=\d+",
+            f"networkTimeout={MIN_GRADLE_NETWORK_TIMEOUT_MS}",
+            text,
+        )
+    else:
+        new = text.rstrip() + f"\nnetworkTimeout={MIN_GRADLE_NETWORK_TIMEOUT_MS}\n"
+    try:
+        props.write_text(new, encoding="utf-8")
+    except OSError:
+        return False
+    return True
 
 
 def runtime_path(target: Path | str) -> Path:
@@ -330,6 +365,7 @@ def start_guide(
 ) -> dict[str, Any]:
     """Start Guide (append-ingest or spring-boot) in the background."""
     home = Path(str(cfg.get("guide_home") or "")).expanduser()
+    relax_codegen_gradle_network_timeout(home)
     script = home / "scripts" / "append-ingest.sh"
     if not script.is_file():
         return {
