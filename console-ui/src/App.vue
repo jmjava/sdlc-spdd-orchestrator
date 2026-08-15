@@ -1,25 +1,29 @@
 <script setup>
 import { onMounted, ref } from "vue";
 import { getHealth } from "./api.js";
+import DashboardTab from "./components/DashboardTab.vue";
 import PersistenceTab from "./components/PersistenceTab.vue";
 import TemplatesTab from "./components/TemplatesTab.vue";
 import InstallTab from "./components/InstallTab.vue";
 import SqliteTab from "./components/SqliteTab.vue";
 import RollbackTab from "./components/RollbackTab.vue";
 import GuideTab from "./components/GuideTab.vue";
+import IssuesTab from "./components/IssuesTab.vue";
 import AdfTab from "./components/AdfTab.vue";
 
 const tabs = [
+  { id: "dashboard", label: "Dashboard" },
   { id: "persistence", label: "Persistence" },
   { id: "templates", label: "Templates" },
   { id: "install", label: "Install" },
   { id: "sqlite", label: "SQLite" },
   { id: "rollback", label: "Rollback" },
   { id: "guide", label: "Guide" },
+  { id: "issues", label: "Issues" },
   { id: "adf", label: "ADF" },
 ];
 
-const active = ref("persistence");
+const active = ref("dashboard");
 const target = ref("");
 const health = ref(null);
 const healthError = ref("");
@@ -49,7 +53,7 @@ onMounted(refreshHealth);
     <header class="brand-row">
       <h1 class="brand" data-testid="console-brand">SDLC-SPDD</h1>
       <p class="tagline">
-        Vue3 ops console — Persistence, Templates, Install, SQLite, Rollback, Guide, and ADF.
+        Vue3 ops console — Dashboard, Persistence, Templates, Install, SQLite, Rollback, Guide, Issues, and ADF.
       </p>
     </header>
 
@@ -91,12 +95,14 @@ onMounted(refreshHealth);
       </button>
     </nav>
 
-    <PersistenceTab v-if="active === 'persistence'" :target="target" />
+    <DashboardTab v-if="active === 'dashboard'" :target="target" @goto-tab="active = $event" />
+    <PersistenceTab v-else-if="active === 'persistence'" :target="target" />
     <TemplatesTab v-else-if="active === 'templates'" :target="target" />
     <InstallTab v-else-if="active === 'install'" :target="target" />
     <SqliteTab v-else-if="active === 'sqlite'" :target="target" />
     <RollbackTab v-else-if="active === 'rollback'" :target="target" />
     <GuideTab v-else-if="active === 'guide'" :target="target" />
+    <IssuesTab v-else-if="active === 'issues'" :target="target" />
     <AdfTab v-else-if="active === 'adf'" :target="target" />
   </div>
 </template>

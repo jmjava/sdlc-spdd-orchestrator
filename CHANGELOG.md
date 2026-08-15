@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file.
 
 - Engine polish: shared `timeutil` / `io_util` / `placeholders` / installer `process_util`; `__version__` aligned to `2.0.0a6`; GitHub link sentinels treat `N/A` as empty
 - Engine split: CLI handlers/parser (`cli_commands`, `cli_parser`) and SQLite index (`db_schema`, `db_rebuild`, `db_query`) — public `sdlc_engine.cli` / `sdlc_engine.db` imports unchanged
+- Ops console: dashboard helpers extracted to `installer/dashboard.py` (Flask wrappers keep existing monkeypatches)
 - Guide dogfood default → **`jmjava/orch-guide`** @ **`sdlc-spdd-projection-v2`** (standalone home; cutover from `jmjava/guide`)
 - **`jmjava/orch-guide` seeded** (Phase 2): exact mirror of `jmjava/guide` heads+tags; not an Embabel fork
 - SPIKE-089 / agent-context cleanup docs: Guide dual-read marked complete; issue #89 closeable
@@ -15,7 +16,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- (templating / Vue3 ops console — in progress)
+- Vue3 ops console **Dashboard** + **Issues** tabs (parity with the Flask console) and Playwright coverage for refresh, tracker save/toggle, link preview, and sync dry-run
 
 ## [2.0.0a6] - 2026-08-08
 

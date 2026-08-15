@@ -44,7 +44,7 @@ engine/
     db_rebuild.py       # full-index rebuild / ingest
     db_query.py         # lookup / find / export
     commit_message.py   # diff report for commit drafts
-    installer/          # ops console (:5051)
+    installer/          # ops console (:5051); dashboard.py landing-tab helpers
       process_util.py   # shared tcp/pid/run helpers
     viewer/             # ADF viewer (:5050)
   tests_unit/

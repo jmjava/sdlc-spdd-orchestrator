@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import json
 import os
-import subprocess
 import webbrowser
 from pathlib import Path
 from typing import Any
@@ -15,25 +13,23 @@ from sdlc_engine.context_store import ContextStore
 from sdlc_engine.db import LocalIndex
 from sdlc_engine.integration_config import save_config as save_integrations_config
 from sdlc_engine.integration_config import status_dict as integration_status
-from sdlc_engine.issue_tracker import (
-    load_config as load_tracker_config,
-    save_config as save_tracker_config,
-    status_dict as tracker_status_dict,
-)
 from sdlc_engine.issues import IssueSyncService
-from sdlc_engine.lessons_ledger import LessonsLedger
 from sdlc_engine.persistence import (
     ALL_BACKENDS,
     load_config as load_persistence_config,
     save_config as save_persistence_config,
     status_dict as persistence_status,
 )
-from sdlc_engine.phases import GATE_LABELS, gates_for_phase
 from sdlc_engine.project import Project
-from sdlc_engine.registry import TeamRegistry
 from sdlc_engine.viewer.store import AdfStore, AdfStoreError
-from sdlc_engine.workflow import WorkflowEngine
 
+from .dashboard import (
+    build_dashboard_status,
+    dashboard_activity,
+    dashboard_suggestions,
+    gh_auth_status,
+    requirements_issue_sections,
+)
 from .detect import detect_target
 from .guide import checklist, ingest_command, load_config, probe_guide, save_config
 from .guide_compliance import (
@@ -76,286 +72,33 @@ from .viewer_runtime import (
 
 
 # --- Dashboard (landing tab) helpers ---------------------------------------
-# Module-level so tests can patch _gh_auth_status / probe_guide /
-# viewer_process_status without touching the Flask closures.
+# Module-level wrappers so tests can patch _gh_auth_status / probe_guide /
+# viewer_process_status / _dashboard_status without touching Flask closures.
 
 
 def _gh_auth_status(timeout: float = 3.0) -> dict[str, Any]:
-    """Report `gh auth status` as booleans only.
-
-    The raw command output can contain (masked) tokens and account names, so
-    it is never echoed into the payload.
-    """
-    try:
-        proc = subprocess.run(
-            ["gh", "auth", "status"],
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-            check=False,
-        )
-    except FileNotFoundError:
-        return {"installed": False, "authenticated": False, "detail": "gh not installed"}
-    except subprocess.TimeoutExpired:
-        return {"installed": True, "authenticated": False, "detail": "gh auth status timed out"}
-    except OSError as exc:
-        return {"installed": False, "authenticated": False, "detail": f"gh check failed: {exc}"}
-    if proc.returncode == 0:
-        return {"installed": True, "authenticated": True, "detail": "gh authenticated"}
-    return {
-        "installed": True,
-        "authenticated": False,
-        "detail": "gh not authenticated (run: gh auth login)",
-    }
+    return gh_auth_status(timeout)
 
 
 def _dashboard_status(target: Path) -> dict[str, Any]:
-    """Status + config cards for the Dashboard tab (one round-trip)."""
-    project = Project.resolve(target)
-    engine = WorkflowEngine(project)
-    status = json.loads(engine.status_json())
-    open_gates: list[dict[str, str]] = []
-    if status.get("work_id"):
-        gates = status.get("gates") or {}
-        for gate in gates_for_phase(str(status.get("phase") or "")):
-            if gates.get(gate) != "passed":
-                open_gates.append({"gate": gate, "label": GATE_LABELS.get(gate, gate)})
-    work = {
-        "pointer": status.get("pointer") or "",
-        "phase": status.get("phase") or "",
-        "operation": status.get("operation") or "",
-        "recommended_command": status.get("recommended_command") or "",
-        "open_gates": open_gates,
-    }
-
-    ledger = LessonsLedger(project)
-    accepted = ledger.records(include_staged=False)
-    staged_count = len(ledger.staged_ids())
-    events = TeamRegistry(project, workflow=engine).lean_events()
-    last = events[-1] if events else None
-    memory = {
-        "accepted_count": len(accepted),
-        "last_accepted_ts": accepted[0].ts if accepted else "",
-        "staged_count": staged_count,
-        "needs_accept": staged_count > 0,
-        "ledger_path": "spdd/memory/lessons.jsonl",
-        "staged_path": ".sdlc/staged/lessons.jsonl",
-        "registry_last_event": (
-            {
-                "event": last.get("event") or "",
-                "work_id": last.get("work_id") or "",
-                "owner": last.get("owner") or "",
-                "phase": last.get("phase") or "",
-                "ts": last.get("ts") or "",
-                "note": last.get("note") or "",
-            }
-            if last
-            else None
-        ),
-    }
-
-    pstat = persistence_status(project)
-    guide_cfg = load_config(target)
-    host = str(guide_cfg.get("host") or "127.0.0.1")
-    port = int(guide_cfg.get("port") or 21337)
-    probe = probe_guide(host, port, timeout=1.0)
-    backends = {
-        "backends": list(pstat.get("backends") or []),
-        "enabled": pstat.get("enabled") or {},
-        "source": pstat.get("source") or "",
-        "sqlite": pstat.get("sqlite") or {},
-        "guide": {
-            "enabled": bool((pstat.get("enabled") or {}).get("guide-dice")),
-            "host": host,
-            "port": port,
-            "reachable": bool(probe.get("tcp_open")),
-            "detail": str(probe.get("detail") or ""),
-            "effective_base_url": (pstat.get("guide") or {}).get("effective_base_url") or "",
-        },
-        # Parity runs ContextStore.parity() — explicit button only, never on load.
-        "parity_hint": "Run parity from the Persistence tab (Check ledger parity / Parity + repair).",
-    }
-
-    viewer = viewer_process_status(target)
-    project = Project.resolve(target)
-    integ = integration_status(project)
-    gh_cli = _gh_auth_status()
-    integrations = {
-        "jira": {
-            **integ["jira"],
-            "hint": "Set in Issues tab → Integrations (.sdlc/integrations-config.json) or export JIRA_* env",
-        },
-        "github": {
-            **integ["github"],
-            "installed": gh_cli.get("installed", False),
-            "authenticated": bool(integ["github"].get("configured") or gh_cli.get("authenticated")),
-            "detail": gh_cli.get("detail") if not integ["github"].get("configured") else "token configured",
-            "hint": "Set GH token in Issues tab or run `gh auth login`",
-        },
-        "tracker": integ.get("effective_tracker"),
-        "viewer": {
-            "running": bool(viewer.get("alive") or viewer.get("port_open")),
-            "url": viewer.get("url") or "",
-            "host": viewer.get("host") or ADF_DEFAULT_HOST,
-            "port": viewer.get("port") or ADF_DEFAULT_PORT,
-        },
-    }
-    return {"work": work, "memory": memory, "backends": backends, "integrations": integrations}
+    return build_dashboard_status(
+        target,
+        gh_auth=_gh_auth_status,
+        guide_probe=probe_guide,
+        viewer_status=viewer_process_status,
+    )
 
 
 def _dashboard_activity(project: Project, limit: int) -> list[dict[str, Any]]:
-    """Merged feed: registry events + accepted/staged records + workflow history."""
-    items: list[dict[str, Any]] = []
-    for ev in TeamRegistry(project).lean_events():
-        wid = (ev.get("work_id") or "").strip()
-        text = f"{ev.get('event') or 'update'} {wid}".strip()
-        if ev.get("owner"):
-            text += f" by {ev['owner']}"
-        if ev.get("phase"):
-            text += f" ({ev['phase']})"
-        items.append({"ts": ev.get("ts") or "", "source": "registry", "text": text, "work_id": wid})
-    ledger = LessonsLedger(project)
-    staged_ids = ledger.staged_ids()
-    for rec in ledger.records(include_staged=False):
-        items.append(
-            {
-                "ts": rec.ts,
-                "source": "ledger",
-                "text": f"{rec.kind} accepted: {rec.title} [{rec.work_id}]",
-                "work_id": rec.work_id,
-            }
-        )
-    for rec in ledger.records(include_staged=True):
-        if rec.id in staged_ids:
-            items.append(
-                {
-                    "ts": rec.ts,
-                    "source": "staged",
-                    "text": f"staged: {rec.kind} {rec.title}",
-                    "work_id": rec.work_id,
-                }
-            )
-    workflows = project.workflows_dir
-    if workflows.is_dir():
-        for hist in sorted(workflows.glob("*.history")):
-            try:
-                lines = hist.read_text(encoding="utf-8").splitlines()
-            except OSError:
-                continue
-            for line in lines:
-                parts = line.split("\t", 2)
-                if len(parts) < 2 or not parts[0].strip():
-                    continue
-                detail = parts[2].strip() if len(parts) > 2 else ""
-                items.append(
-                    {
-                        "ts": parts[0].strip(),
-                        "source": "workflow",
-                        "text": parts[1].strip() + (f" {detail}" if detail else ""),
-                        "work_id": hist.stem,
-                    }
-                )
-    items.sort(key=lambda it: (it.get("ts") or "", it.get("source") or ""), reverse=True)
-    return items[: max(1, limit)]
+    return dashboard_activity(project, limit)
 
 
 def _requirements_issue_sections(project: Project, *, max_files: int = 40) -> dict[str, bool]:
-    """Cheap capped scan: do any requirements mention ## Jira / ## GitHub?"""
-    found = {"jira": False, "github": False}
-    req_dir = project.requirements_dir
-    if not req_dir.is_dir():
-        return found
-    scanned = 0
-    for path in sorted(req_dir.rglob("*.md")):
-        if scanned >= max_files or (found["jira"] and found["github"]):
-            break
-        scanned += 1
-        try:
-            text = path.read_text(encoding="utf-8", errors="ignore")[:65536]
-        except OSError:
-            continue
-        if "## Jira" in text:
-            found["jira"] = True
-        if "## GitHub" in text:
-            found["github"] = True
-    return found
+    return requirements_issue_sections(project, max_files=max_files)
 
 
 def _dashboard_suggestions(project: Project, status: dict[str, Any]) -> list[dict[str, Any]]:
-    """Deterministic 'Today' checklist — plain rules over the status payload."""
-    out: list[dict[str, Any]] = []
-    work = status.get("work") or {}
-    memory = status.get("memory") or {}
-    backends = status.get("backends") or {}
-    integrations = status.get("integrations") or {}
-
-    staged = int(memory.get("staged_count") or 0)
-    if staged > 0:
-        wid = work.get("pointer") or "<WORK-ID>"
-        out.append(
-            {
-                "id": "accept-staged",
-                "text": (
-                    f"{staged} staged record(s) await review: run /sdlc-spdd-accept "
-                    f"(or ./scripts/sdlc.sh accept --work-id {wid})"
-                ),
-            }
-        )
-
-    pointer = work.get("pointer") or ""
-    open_gates = work.get("open_gates") or []
-    if pointer and open_gates:
-        top = open_gates[0].get("label") or open_gates[0].get("gate") or ""
-        text = f"{pointer} ({work.get('phase') or '?'}): open gate — {top}."
-        if work.get("recommended_command"):
-            text += f" Do now: {work['recommended_command']}"
-        out.append({"id": "open-gate", "text": text})
-    if not pointer:
-        recent: list[str] = []
-        for ev in reversed(TeamRegistry(project).lean_events()):
-            wid = (ev.get("work_id") or "").strip()
-            if wid and wid not in recent:
-                recent.append(wid)
-            if len(recent) >= 3:
-                break
-        text = "No active work — claim: ./scripts/sdlc.sh claim <WORK-ID>"
-        if recent:
-            text += " (recent: " + ", ".join(recent) + ")"
-        out.append({"id": "claim-work", "text": text})
-
-    guide = backends.get("guide") or {}
-    if guide.get("enabled") and not guide.get("reachable"):
-        out.append(
-            {
-                "id": "guide-down",
-                "text": (
-                    "Guide is configured but unreachable — start it from the Guide tab, "
-                    "or continue files-only (normal)."
-                ),
-            }
-        )
-
-    jira_missing = not (integrations.get("jira") or {}).get("configured")
-    gh_missing = not (integrations.get("github") or {}).get("authenticated")
-    if jira_missing or gh_missing:
-        sections = _requirements_issue_sections(project)
-        wants: list[str] = []
-        if sections.get("jira") and jira_missing:
-            wants.append("configure Jira in Issues tab or set JIRA_* env")
-        if sections.get("github") and gh_missing:
-            wants.append("configure GitHub token in Issues tab or run `gh auth login`")
-        if wants:
-            out.append(
-                {
-                    "id": "issue-sync",
-                    "text": (
-                        "Requirements reference Jira/GitHub — "
-                        + " and ".join(wants)
-                        + " to enable issue sync."
-                    ),
-                }
-            )
-    return out
+    return dashboard_suggestions(project, status)
 
 
 def create_app(
