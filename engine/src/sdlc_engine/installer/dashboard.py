@@ -253,6 +253,8 @@ def dashboard_suggestions(project: Project, status: dict[str, Any]) -> list[dict
                     f"{staged} staged record(s) await review: run /sdlc-spdd-accept "
                     f"(or ./scripts/sdlc.sh accept --work-id {wid})"
                 ),
+                "tab": "persistence",
+                "work_id": work.get("pointer") or "",
             }
         )
 
@@ -263,7 +265,14 @@ def dashboard_suggestions(project: Project, status: dict[str, Any]) -> list[dict
         text = f"{pointer} ({work.get('phase') or '?'}): open gate — {top}."
         if work.get("recommended_command"):
             text += f" Do now: {work['recommended_command']}"
-        out.append({"id": "open-gate", "text": text})
+        out.append(
+            {
+                "id": "open-gate",
+                "text": text,
+                "tab": "sqlite",
+                "work_id": pointer,
+            }
+        )
     if not pointer:
         recent: list[str] = []
         for ev in reversed(TeamRegistry(project).lean_events()):
@@ -275,7 +284,7 @@ def dashboard_suggestions(project: Project, status: dict[str, Any]) -> list[dict
         text = "No active work — claim: ./scripts/sdlc.sh claim <WORK-ID>"
         if recent:
             text += " (recent: " + ", ".join(recent) + ")"
-        out.append({"id": "claim-work", "text": text})
+        out.append({"id": "claim-work", "text": text, "tab": "sqlite", "work_id": ""})
 
     guide = backends.get("guide") or {}
     if guide.get("enabled") and not guide.get("reachable"):
@@ -286,6 +295,8 @@ def dashboard_suggestions(project: Project, status: dict[str, Any]) -> list[dict
                     "Guide is configured but unreachable — start it from the Guide tab, "
                     "or continue files-only (normal)."
                 ),
+                "tab": "guide",
+                "work_id": work.get("pointer") or "",
             }
         )
 
@@ -307,6 +318,8 @@ def dashboard_suggestions(project: Project, status: dict[str, Any]) -> list[dict
                         + " and ".join(wants)
                         + " to enable issue sync."
                     ),
+                    "tab": "issues",
+                    "work_id": work.get("pointer") or "",
                 }
             )
     return out

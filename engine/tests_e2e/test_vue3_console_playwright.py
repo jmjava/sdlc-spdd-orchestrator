@@ -336,6 +336,27 @@ def test_vue3_dashboard_configure_opens_issues(page, live_vue_console) -> None: 
     assert page.get_by_test_id("int-tracker").count() == 1
 
 
+def test_vue3_dashboard_jumps_to_templates_with_work_id(page, live_vue_console) -> None:  # type: ignore[no-untyped-def]
+    target = Path(live_vue_console["target"])
+    work_id = live_vue_console["works"]["feature"]
+    (target / ".sdlc").mkdir(parents=True, exist_ok=True)
+    (target / ".sdlc" / "pointer").write_text(work_id + "\n", encoding="utf-8")
+    _goto_vue(page, live_vue_console)
+    page.get_by_test_id("dashboard-panel").wait_for(state="visible")
+    page.wait_for_function(
+        f"""() => (document.querySelector('[data-testid="dw-id"]')?.textContent || '')
+          .includes('{work_id}')"""
+    )
+    page.get_by_test_id("dash-open-templates").click()
+    page.get_by_test_id("templates-panel").wait_for(state="visible")
+    assert page.get_by_test_id("templates-work-id").input_value() == work_id
+    page.get_by_test_id("tab-dashboard").click()
+    page.get_by_test_id("dashboard-panel").wait_for(state="visible")
+    page.get_by_test_id("dash-open-sqlite").click()
+    page.get_by_test_id("sqlite-panel").wait_for(state="visible")
+    assert page.get_by_test_id("sqlite-filter").input_value() == work_id
+
+
 # --- Persistence -----------------------------------------------------------
 
 

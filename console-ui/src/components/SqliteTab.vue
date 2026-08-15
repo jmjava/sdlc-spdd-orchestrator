@@ -1,9 +1,10 @@
 <script setup>
-import { onMounted, ref } from "vue";
+import { onMounted, ref, watch } from "vue";
 import { postJson } from "../api.js";
 
 const props = defineProps({
   target: { type: String, default: "" },
+  focusWorkId: { type: String, default: "" },
 });
 
 const emit = defineEmits(["open-work"]);
@@ -102,6 +103,14 @@ async function rebuild() {
 function openWork(workId, tab) {
   emit("open-work", { tab, workId });
 }
+
+watch(
+  () => props.focusWorkId,
+  (id) => {
+    if (id) query.value = id;
+  },
+  { immediate: true },
+);
 
 onMounted(loadStatus);
 </script>

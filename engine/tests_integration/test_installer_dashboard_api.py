@@ -263,6 +263,11 @@ def test_dashboard_suggestions_populated(tmp_path: Path) -> None:
     assert "1 staged record" in by_id["accept-staged"]
     assert "/sdlc-spdd-accept" in by_id["accept-staged"]
     assert WID in by_id["accept-staged"]
+    by_meta = {s["id"]: s for s in suggestions}
+    assert by_meta["accept-staged"]["tab"] == "persistence"
+    assert by_meta["accept-staged"]["work_id"] == WID
+    assert by_meta["open-gate"]["tab"] == "sqlite"
+    assert by_meta["issue-sync"]["tab"] == "issues"
 
     assert "open-gate" in by_id
     assert "REASONS Canvas exists" in by_id["open-gate"]
@@ -357,3 +362,5 @@ def test_dashboard_tab_in_console_html(tmp_path: Path) -> None:
     assert "dash-suggestions" in dash
     assert "dash-activity" in dash
     assert "btn-dash-refresh" in dash
+    assert "dash-open-templates" in dash
+    assert "dash-suggestion-" in dash

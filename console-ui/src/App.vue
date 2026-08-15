@@ -126,7 +126,12 @@ onMounted(refreshHealth);
       :focus-work-id="focusWorkId"
     />
     <InstallTab v-else-if="active === 'install'" :target="target" />
-    <SqliteTab v-else-if="active === 'sqlite'" :target="target" @open-work="onGotoTab" />
+    <SqliteTab
+      v-else-if="active === 'sqlite'"
+      :target="target"
+      :focus-work-id="focusWorkId"
+      @open-work="onGotoTab"
+    />
     <RollbackTab v-else-if="active === 'rollback'" :target="target" />
     <GuideTab v-else-if="active === 'guide'" :target="target" />
     <IssuesTab
