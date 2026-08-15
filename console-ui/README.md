@@ -16,6 +16,13 @@ Vite + Vue3 shell that talks to the existing Flask installer JSON API (`/api/*`)
 
 ## Dev
 
+Playground (no consumer install — seeds `.sdlc/console-playground`):
+
+```bash
+./scripts/sdlc.sh console --playground --no-browser
+# or: python -m sdlc_engine console --playground --no-browser --port 5051
+```
+
 ```bash
 # terminal 1 — Flask BFF (repo root / engine)
 python -m sdlc_engine console --target . --no-browser --port 5051

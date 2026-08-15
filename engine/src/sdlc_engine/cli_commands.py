@@ -862,6 +862,12 @@ def cmd_installer(args: argparse.Namespace) -> int:
     project = _project(args)
     host = "0.0.0.0" if getattr(args, "lan", False) else args.host
     target = getattr(args, "target", None) or str(project.root)
+    if getattr(args, "playground", False):
+        from .installer.playground import materialize_playground
+
+        dest = materialize_playground(getattr(args, "playground_dir", None))
+        print(f"Playground seeded at {dest}")
+        target = str(dest)
     run_installer(
         target,
         host=host,

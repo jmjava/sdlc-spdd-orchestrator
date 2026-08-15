@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 ### Changed
 
 - Ops console `/` defaults to the Vue3 build (`console-ui/dist`); `sdlc.sh console` builds dist when needed. The Flask HTML template (`installer/pages.py`) is removed — Flask remains the `/api/*` BFF and the ADF Viewer
+- `sdlc.sh console --playground` seeds a disposable SPDD tree under `.sdlc/console-playground` so Vue tabs can be clicked without installing into an app
 - Engine polish: shared `timeutil` / `io_util` / `placeholders` / installer `process_util`; `__version__` aligned to `2.0.0a6`; GitHub link sentinels treat `N/A` as empty
 - Engine split: CLI handlers/parser (`cli_commands`, `cli_parser`) and SQLite index (`db_schema`, `db_rebuild`, `db_query`) — public `sdlc_engine.cli` / `sdlc_engine.db` imports unchanged
 - Ops console: dashboard helpers extracted to `installer/dashboard.py` (Flask wrappers keep existing monkeypatches)

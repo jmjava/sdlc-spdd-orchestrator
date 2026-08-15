@@ -58,6 +58,7 @@ from .guide_runtime import (
 )
 from .rollback import list_backups, restore_backup
 from .runner import orchestrator_root, run_action
+from .playground import is_playground
 from .vue_console import STUB_HTML, ensure_vue_console_dist, resolve_vue_console_dist
 from .viewer_runtime import (
     DEFAULT_HOST as ADF_DEFAULT_HOST,
@@ -155,11 +156,13 @@ def create_app(
 
     @app.get("/api/health")
     def api_health() -> Any:
+        default_target = app.config["INSTALLER_DEFAULT_TARGET"]
         return jsonify(
             {
                 "ok": True,
                 "orchestrator_root": app.config["ORCHESTRATOR_ROOT"],
-                "default_target": app.config["INSTALLER_DEFAULT_TARGET"],
+                "default_target": default_target,
+                "playground": is_playground(default_target),
             }
         )
 

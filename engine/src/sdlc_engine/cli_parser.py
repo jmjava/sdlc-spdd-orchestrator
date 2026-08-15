@@ -579,6 +579,17 @@ def build_parser() -> argparse.ArgumentParser:
             action="store_true",
             help="Do not open a browser tab automatically",
         )
+        inst.add_argument(
+            "--playground",
+            action="store_true",
+            help="Seed a disposable SPDD tree and open the console against it "
+            "(no consumer install)",
+        )
+        inst.add_argument(
+            "--playground-dir",
+            default=None,
+            help="Playground dest (default: <orchestrator>/.sdlc/console-playground)",
+        )
         inst.set_defaults(func=cmd_installer)
 
     _add_console_parser(
