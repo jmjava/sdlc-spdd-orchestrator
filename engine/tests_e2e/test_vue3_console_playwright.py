@@ -275,6 +275,16 @@ def _open_tab(page, tab_id: str) -> None:  # type: ignore[no-untyped-def]
     page.get_by_test_id(f"tab-{tab_id}").click()
 
 
+def _wait_guide_loaded(page) -> None:  # type: ignore[no-untyped-def]
+    page.get_by_test_id("guide-panel").wait_for(state="visible")
+    page.wait_for_function(
+        """() => {
+          const t = document.querySelector('[data-testid="guide-probe"]')?.textContent || '';
+          return t && t !== 'Status not loaded.';
+        }"""
+    )
+
+
 # --- Shell -----------------------------------------------------------------
 
 
@@ -672,26 +682,21 @@ def test_vue3_issues_sync_prepare_push_dry(page, live_vue_console) -> None:  # t
 def test_vue3_guide_tab_shows_config_and_probe(page, live_vue_console) -> None:  # type: ignore[no-untyped-def]
     _goto_vue(page, live_vue_console)
     _open_tab(page, "guide")
-    page.get_by_test_id("guide-panel").wait_for(state="visible")
+    _wait_guide_loaded(page)
     page.get_by_test_id("guide-home").wait_for()
     assert page.get_by_test_id("guide-port").count() == 1
     assert page.get_by_test_id("btn-guide-start").count() == 1
     assert page.get_by_test_id("btn-neo-start").count() == 1
     assert page.get_by_test_id("btn-guide-save").count() == 1
     page.get_by_test_id("btn-guide-probe").click()
-    page.wait_for_function(
-        """() => {
-          const t = document.querySelector('[data-testid="guide-probe"]')?.textContent || '';
-          return t && t !== 'Status not loaded.';
-        }"""
-    )
+    _wait_guide_loaded(page)
 
 
 def test_vue3_guide_save_writes_config(page, live_vue_console) -> None:  # type: ignore[no-untyped-def]
     target = Path(live_vue_console["target"])
     _goto_vue(page, live_vue_console)
     _open_tab(page, "guide")
-    page.get_by_test_id("guide-panel").wait_for(state="visible")
+    _wait_guide_loaded(page)
     page.get_by_test_id("guide-home").wait_for()
     page.get_by_test_id("guide-notes").fill("vue3-playwright-guide")
     page.get_by_test_id("guide-port").fill("21338")
