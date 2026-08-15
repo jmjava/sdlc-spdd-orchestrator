@@ -504,24 +504,29 @@ def test_vue3_rollback_backups_pane_loads(page, live_vue_console) -> None:  # ty
 # --- Issues ----------------------------------------------------------------
 
 
-def _wait_vue_issues_tracker_saved(page, tracker: str) -> None:  # type: ignore[no-untyped-def]
+def _select_tracker(page, tracker: str) -> None:  # type: ignore[no-untyped-def]
+    page.get_by_test_id("int-tracker").select_option(tracker)
+    page.get_by_test_id("int-tracker").dispatch_event("change")
     panel = "issues-link-jira" if tracker == "jira" else "issues-link-github"
+    if tracker in {"jira", "github"}:
+        page.get_by_test_id(panel).wait_for(state="visible")
+
+
+def _wait_vue_issues_tracker_saved(page, tracker: str) -> None:  # type: ignore[no-untyped-def]
     page.wait_for_function(
-        f"""() => {{
-          const st = document.querySelector('[data-testid="int-status"]')?.textContent || '';
-          const panel = document.querySelector('[data-testid="{panel}"]');
-          if (!st.includes('Saved') || !panel) return false;
-          const style = window.getComputedStyle(panel);
-          return style.display !== 'none' && style.visibility !== 'hidden';
-        }}"""
+        """() => (document.querySelector('[data-testid="int-status"]')?.textContent || '')
+          .includes('Saved')"""
     )
+    panel = "issues-link-jira" if tracker == "jira" else "issues-link-github"
+    if tracker in {"jira", "github"}:
+        page.get_by_test_id(panel).wait_for(state="visible")
 
 
 def test_vue3_issues_integrations_save_and_tracker_toggle(page, live_vue_console) -> None:  # type: ignore[no-untyped-def]
     _goto_vue(page, live_vue_console)
     _open_tab(page, "issues")
     page.get_by_test_id("issues-panel").wait_for(state="visible")
-    page.get_by_test_id("int-tracker").select_option("jira")
+    _select_tracker(page, "jira")
     page.get_by_test_id("int-jira-url").fill("https://example.atlassian.net")
     page.get_by_test_id("int-jira-email").fill("ci@example.com")
     page.get_by_test_id("int-jira-project").fill("PROJ")
@@ -530,7 +535,7 @@ def test_vue3_issues_integrations_save_and_tracker_toggle(page, live_vue_console
     assert page.get_by_test_id("issues-link-jira").is_visible()
     assert not page.get_by_test_id("issues-link-github").is_visible()
 
-    page.get_by_test_id("int-tracker").select_option("github")
+    _select_tracker(page, "github")
     page.get_by_test_id("int-gh-repo").fill("org/repo")
     page.get_by_test_id("btn-int-save").click()
     _wait_vue_issues_tracker_saved(page, "github")
@@ -551,7 +556,7 @@ def test_vue3_issues_jira_link_preview(page, live_vue_console) -> None:  # type:
     _seed_issue_work(Path(live_vue_console["target"]), work_id)
     _goto_vue(page, live_vue_console)
     _open_tab(page, "issues")
-    page.get_by_test_id("int-tracker").select_option("jira")
+    _select_tracker(page, "jira")
     page.get_by_test_id("btn-int-save").click()
     _wait_vue_issues_tracker_saved(page, "jira")
     page.get_by_test_id("jira-work-id").fill(work_id)
@@ -570,7 +575,7 @@ def test_vue3_issues_github_link_preview(page, live_vue_console) -> None:  # typ
     _seed_issue_work(Path(live_vue_console["target"]), work_id)
     _goto_vue(page, live_vue_console)
     _open_tab(page, "issues")
-    page.get_by_test_id("int-tracker").select_option("github")
+    _select_tracker(page, "github")
     page.get_by_test_id("btn-int-save").click()
     _wait_vue_issues_tracker_saved(page, "github")
     page.get_by_test_id("gh-work-id").fill(work_id)
@@ -589,7 +594,7 @@ def test_vue3_issues_sync_prepare_push_dry(page, live_vue_console) -> None:  # t
     _seed_issue_work(Path(live_vue_console["target"]), work_id)
     _goto_vue(page, live_vue_console)
     _open_tab(page, "issues")
-    page.get_by_test_id("int-tracker").select_option("github")
+    _select_tracker(page, "github")
     page.get_by_test_id("btn-int-save").click()
     _wait_vue_issues_tracker_saved(page, "github")
     page.get_by_test_id("gh-work-id").fill(work_id)
