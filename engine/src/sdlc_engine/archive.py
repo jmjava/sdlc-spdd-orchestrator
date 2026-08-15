@@ -4,17 +4,13 @@ from __future__ import annotations
 
 import shutil
 from dataclasses import dataclass
-from datetime import datetime, timezone
 from pathlib import Path
 
 from . import canvas as canvas_mod
 from .project import Project
 from .registry import RegistryRow, TeamRegistry
+from .timeutil import utc_now as _utc_now
 from .workflow import WorkflowEngine
-
-
-def _utc_now() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 @dataclass

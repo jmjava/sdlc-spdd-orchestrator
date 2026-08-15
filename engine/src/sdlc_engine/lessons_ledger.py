@@ -22,20 +22,16 @@ import os
 import subprocess
 import tempfile
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
 from .project import Project
+from .timeutil import utc_now as _utc_now
 
 # Committed kinds — the pared-down, highest-value set.
 LEDGER_KINDS = ("decision", "pitfall", "pattern", "session", "analysis")
 
 SCHEMA = 1
-
-
-def _utc_now() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def lesson_id(kind: str, work_id: str, area: str, source: str) -> str:
@@ -333,7 +329,4 @@ class LessonsLedger:
             return ""
 
     def _rel(self, path: Path) -> str:
-        try:
-            return str(path.resolve().relative_to(self.project.root.resolve()))
-        except ValueError:
-            return str(path)
+        return self.project.rel(path)

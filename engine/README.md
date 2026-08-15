@@ -53,11 +53,12 @@ SDLC_ENGINE=auto ./scripts/sdlc.sh next   # python if importable, else shell
 
 | Module | Responsibility |
 |--------|----------------|
+| `timeutil` / `io_util` / `placeholders` | Shared UTC stamps, JSON/path helpers, TBD sentinels |
 | `project` | Resolve project root and artifact paths |
 | `phases` | Phase order, gates, recommended assistant commands |
 | `pointer` | `.sdlc/pointer` get/set/reset + guarded run |
 | `workflow` | Resume/advance/skip/shelf/sync/next/status |
-| `registry` | `work-registry.tsv` claim/release/team/list-work |
+| `registry` | `spdd/memory/registry.jsonl` claim/release/team/list-work (legacy TSV fallback) |
 | `archive` | Remove Complete/Cancelled work artifacts (git history retains them) |
 | `canvas` | Final Status + next-operation inference |
 | `links` / `sync_local` | Milestone↔canvas↔registry drift check/repair + ROADMAP sync |
@@ -84,7 +85,7 @@ python3 -m pip install -e './engine[dev,viewer]'
 
 ## Compatibility
 
-- File formats stay identical (`.sdlc/`, `work-registry.tsv`, canvas paths).
+- File formats stay identical (`.sdlc/`, `spdd/memory/registry.jsonl`, canvas paths).
 - Shell `sdlc.sh` can delegate to this engine (`SDLC_ENGINE=auto|python|shell`).
 - Target projects can keep using bash until they opt into the engine.
 
@@ -98,7 +99,7 @@ pytest -q engine/tests_unit
 Or without install (viewer tests need Flask):
 
 ```bash
-PYTHONPATH=engine/src python3 -m pytest -q engine/tests_unit_unit
+PYTHONPATH=engine/src python3 -m pytest -q engine/tests_unit
 ```
 
 Three suites — see [TESTING.md](../TESTING.md#engine-test-suites-3-packages):

@@ -168,6 +168,8 @@ def test_normalize_pr_number() -> None:
     assert normalize_pr_number("pr:#9") == "9"
     assert normalize_pr_number("https://github.com/acme/widgets/issues/99") == ""
     assert normalize_pr_number("TBD") == ""
+    assert normalize_pr_number("N/A") == ""
+    assert normalize_pr_number("none") == ""
 
 
 def test_normalize_issue_number() -> None:
@@ -176,6 +178,8 @@ def test_normalize_issue_number() -> None:
     assert normalize_issue_number("https://github.com/acme/widgets/issues/99") == "99"
     assert normalize_issue_number("https://github.com/acme/widgets/pull/7") == ""
     assert normalize_issue_number("TBD") == ""
+    assert normalize_issue_number("N/A") == ""
+    assert normalize_issue_number("TODO") == ""
 
 
 def test_collect_prs_commits_and_local_jira(tmp_path: Path, monkeypatch) -> None:

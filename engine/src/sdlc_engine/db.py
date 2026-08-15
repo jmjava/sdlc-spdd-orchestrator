@@ -12,7 +12,6 @@ import re
 import sqlite3
 import subprocess
 from dataclasses import dataclass
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -21,6 +20,8 @@ from .lessons_ledger import LessonRecord, LessonsLedger
 from .links import collect_links, note_token, parse_canvas_metadata, parse_milestone_requirement
 from .project import Project
 from .registry import TeamRegistry
+from .timeutil import utc_from_timestamp
+from .timeutil import utc_now as _utc_now
 
 SCHEMA_VERSION = "5"
 DEFAULT_DB_NAME = "index.sqlite"
@@ -52,10 +53,6 @@ _FORBIDDEN_SQL = re.compile(
     r"\b(insert|update|delete|drop|alter|attach|detach|pragma|create|replace)\b",
     re.IGNORECASE,
 )
-
-
-def _utc_now() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 @dataclass
@@ -469,9 +466,7 @@ class LocalIndex:
                         continue
                     mtime = ""
                     try:
-                        mtime = datetime.fromtimestamp(
-                            path.stat().st_mtime, tz=timezone.utc
-                        ).strftime("%Y-%m-%dT%H:%M:%SZ")
+                        mtime = utc_from_timestamp(path.stat().st_mtime)
                     except OSError:
                         pass
                     conn.execute(
@@ -538,10 +533,7 @@ class LocalIndex:
         return stats
 
     def _rel(self, path: Path) -> str:
-        try:
-            return str(path.resolve().relative_to(self.project.root.resolve()))
-        except ValueError:
-            return str(path)
+        return self.project.rel(path)
 
     def _artifact_paths(self, wid: str, links) -> list[tuple[str, Path]]:
         out: list[tuple[str, Path]] = []

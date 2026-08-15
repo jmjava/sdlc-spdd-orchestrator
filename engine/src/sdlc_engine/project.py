@@ -23,6 +23,8 @@ import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
+from .io_util import rel_to
+
 HOME_DIR_NAME = "sdlc-spdd"
 
 
@@ -197,6 +199,10 @@ class Project:
 
     def current_session_path(self) -> Path:
         return self.hot_session_dir() / "current-session.md"
+
+    def rel(self, path: Path | str) -> str:
+        """Path relative to the repo root, or the original string if outside it."""
+        return rel_to(self.root, path)
 
     def ensure_runtime_dirs(self) -> None:
         self.sdlc_dir.mkdir(parents=True, exist_ok=True)

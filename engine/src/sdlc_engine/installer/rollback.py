@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import shutil
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+from ..timeutil import utc_stamp
 
 BACKUP_DIRNAME = ".sdlc-spdd-upgrade-backups"
 
@@ -71,7 +72,7 @@ def restore_backup(
     safety_path: Path | None = None
     restored: list[str] = []
     if safety_backup and not dry_run:
-        stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        stamp = utc_stamp()
         safety_path = backups_root(target_root) / f"pre-rollback-{stamp}"
         safety_path.mkdir(parents=True, exist_ok=True)
 

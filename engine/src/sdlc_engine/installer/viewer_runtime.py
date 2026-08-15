@@ -2,18 +2,21 @@
 
 from __future__ import annotations
 
-import json
 import os
 import signal
-import socket
 import subprocess
 import sys
 import time
 import urllib.error
 import urllib.request
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+from ..io_util import clear_file, load_json_dict, save_json_dict
+from ..timeutil import utc_now as _utc_now
+from .process_util import pid_alive as _pid_alive
+from .process_util import run_cmd
+from .process_util import tcp_open as _tcp_open
 
 RUNTIME_REL = Path(".sdlc") / "adf-viewer-runtime.json"
 DEFAULT_HOST = "127.0.0.1"
@@ -24,64 +27,20 @@ def runtime_path(target: Path | str) -> Path:
     return Path(target).expanduser().resolve() / RUNTIME_REL
 
 
-def _utc_now() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-
-
 def _load_runtime(target: Path | str) -> dict[str, Any]:
-    path = runtime_path(target)
-    if not path.is_file():
-        return {}
-    try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-        return data if isinstance(data, dict) else {}
-    except (OSError, json.JSONDecodeError):
-        return {}
+    return load_json_dict(runtime_path(target))
 
 
 def _save_runtime(target: Path | str, data: dict[str, Any]) -> None:
-    path = runtime_path(target)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    save_json_dict(runtime_path(target), data)
 
 
 def _clear_runtime(target: Path | str) -> None:
-    path = runtime_path(target)
-    if path.is_file():
-        path.unlink()
-
-
-def _tcp_open(host: str, port: int, timeout: float = 1.0) -> bool:
-    try:
-        with socket.create_connection((host, int(port)), timeout=timeout):
-            return True
-    except OSError:
-        return False
-
-
-def _pid_alive(pid: int) -> bool:
-    try:
-        os.kill(pid, 0)
-        return True
-    except OSError:
-        return False
+    clear_file(runtime_path(target))
 
 
 def _run(cmd: list[str], *, timeout: int = 30) -> dict[str, Any]:
-    proc = subprocess.run(
-        cmd,
-        capture_output=True,
-        text=True,
-        timeout=timeout,
-        check=False,
-    )
-    log = (proc.stdout or "") + (("\n" + proc.stderr) if proc.stderr else "")
-    return {
-        "ok": proc.returncode == 0,
-        "exit_code": proc.returncode,
-        "command": cmd,
-        "log": log.strip(),
-    }
+    return run_cmd(cmd, timeout=timeout)
 
 
 def viewer_url(host: str, port: int) -> str:

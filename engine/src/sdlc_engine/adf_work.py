@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import dataclass
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -14,6 +13,7 @@ from .local_sessions import slugify
 from .pointer import PointerStore
 from .project import Project
 from .registry import TeamRegistry
+from .timeutil import utc_now as _utc_now
 
 _TYPE_PREFIX = {
     "feature": "FEAT",
@@ -43,10 +43,6 @@ _WORK_ID_RE = re.compile(
     r"^(FEAT|BUG|REF|SPIKE|DOC|TEST|CHORE)-\d{3}-[a-z0-9]+(?:-[a-z0-9]+)*$",
     re.IGNORECASE,
 )
-
-
-def _utc_now() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _first_heading(doc: dict[str, Any]) -> str:

@@ -6,7 +6,7 @@ from .workflow import WorkflowEngine
 from .registry import TeamRegistry
 from .archive import ArchiveService
 
-__version__ = "2.0.0a5"
+__version__ = "2.0.0a6"
 
 __all__ = [
     "Project",
