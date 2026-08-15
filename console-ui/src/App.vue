@@ -85,8 +85,8 @@ onMounted(refreshHealth);
       class="status"
       data-testid="playground-banner"
     >
-      Playground target — disposable seed. Guide/Jira/GitHub stay mocked or DOWN.
-      Regenerate with <code>sdlc.sh console --playground</code>.
+      Playground target — disposable seed. Guide, Jira, and GitHub are in-process
+      fakes (no network). Regenerate with <code>sdlc.sh console --playground</code>.
     </p>
 
     <nav class="tabs" aria-label="Console tabs" data-testid="console-tabs">

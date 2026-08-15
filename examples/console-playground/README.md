@@ -9,7 +9,8 @@ regenerated) at `<orchestrator>/.sdlc/console-playground` — gitignored.
 
 Seeds three Work IDs (feature / spike / bug), a pointer, ledger + staged
 capture, registry, sample ADF, a fake upgrade backup, and persistence /
-integrations config. Guide, Jira, and GitHub stay mocked or DOWN.
+integrations config. Guide, Jira, and GitHub are in-process fakes (UP by
+default; Start/Stop and sync never leave this process).
 
 Do not install this tree into a real app. Click around; wipe by re-running
 `--playground`.
