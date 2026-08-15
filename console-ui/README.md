@@ -16,7 +16,8 @@ Vite + Vue3 shell that talks to the existing Flask installer JSON API (`/api/*`)
 
 ## Dev
 
-Playground (no consumer install — seeds `.sdlc/console-playground`):
+Playground (no consumer install — seeds `.sdlc/console-playground` with
+in-process Guide / Jira / GitHub fakes so those tabs look live):
 
 ```bash
 ./scripts/sdlc.sh console --playground --no-browser
