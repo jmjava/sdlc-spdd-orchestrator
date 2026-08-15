@@ -326,7 +326,11 @@ onMounted(loadIntegrations);
       <div class="field-row">
         <label>
           Active tracker
-          <select v-model="tracker" data-testid="int-tracker">
+          <select
+            :value="tracker"
+            data-testid="int-tracker"
+            @change="tracker = $event.target.value"
+          >
             <option value="github">GitHub Issues</option>
             <option value="jira">Jira</option>
             <option value="none">None (link only)</option>
