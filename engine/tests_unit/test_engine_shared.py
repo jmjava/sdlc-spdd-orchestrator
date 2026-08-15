@@ -79,3 +79,21 @@ def test_process_util_pid_and_run() -> None:
     assert result["ok"] is True
     assert "hi" in result["log"]
     assert tcp_open("127.0.0.1", 1, timeout=0.05) is False
+
+
+def test_cli_and_db_module_split_keeps_public_imports() -> None:
+    from sdlc_engine.cli import build_parser, main
+    from sdlc_engine.cli_commands import cmd_next, cmd_version
+    from sdlc_engine.db import SCHEMA_VERSION, LocalIndex, RebuildStats, format_rows
+    from sdlc_engine.db_query import IndexQueryMixin
+    from sdlc_engine.db_rebuild import IndexRebuildMixin
+    from sdlc_engine.db_schema import init_schema
+
+    parser = build_parser()
+    assert parser.prog == "sdlc-engine"
+    assert callable(main) and callable(cmd_next) and callable(cmd_version)
+    assert SCHEMA_VERSION == "5"
+    assert issubclass(LocalIndex, IndexRebuildMixin)
+    assert issubclass(LocalIndex, IndexQueryMixin)
+    assert callable(init_schema) and callable(format_rows)
+    assert RebuildStats().work_items == 0

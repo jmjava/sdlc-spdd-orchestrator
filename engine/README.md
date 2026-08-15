@@ -66,12 +66,12 @@ SDLC_ENGINE=auto ./scripts/sdlc.sh next   # python if importable, else shell
 | `jira_format` | Markdown ↔ ADF; optional ADF→wiki shim (`adf_to_wiki`) for Server/DC — raw ADF is default on Cloud v3 |
 | `issues` CLI | `draft` / `push` / `pull` / `upload-adf` / `download-adf` — explicit only; `--description-format adf\|wiki` |
 | `local_sessions` | `LOCAL-*` offline sessions + promote into documented Work IDs |
-| `db` | Regenerable local SQLite index (`.sdlc/index.sqlite`) before GUIDE |
+| `db` / `db_schema` / `db_rebuild` / `db_query` | Regenerable local SQLite index (`.sdlc/index.sqlite`) before GUIDE |
 | `commit_message` | Staged/unstaged/ahead-of-base diff report for commit-message drafts |
 | `sunset` | Close-out snapshot: GitHub PR + issue + commits + Jira → lesson ledger |
 | `viewer` | ADF WYSIWYG editor for checked-in `adf/*.json` (optional `[viewer]` / Flask) |
 | `installer` / `console` / `dashboard` | **EXPERIMENTAL** ops console: install/upgrade, SQLite, rollback, Guide+Neo4j, ADF viewer lifecycle (optional `[viewer]` / Flask) |
-| `cli` | `sdlc-engine` / `python -m sdlc_engine` |
+| `cli` / `cli_commands` / `cli_parser` | `sdlc-engine` / `python -m sdlc_engine` |
 
 Two local GUIs + Guide map: [docs/ops-console.md](../docs/ops-console.md)
 (Guide pin for console dogfood: **`jmjava/orch-guide`** tag **`sdlc-spdd-projection-v2`**).  
