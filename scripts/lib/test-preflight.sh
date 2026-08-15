@@ -109,6 +109,17 @@ test_preflight_playwright() {
   fi
 }
 
+# orch-guide KSP resolves com.embabel.agent:embabel-agent-api SNAPSHOT here.
+# GitHub-hosted runners often cannot connect (TCP timeout). Live Guide boot
+# then dies with BUILD FAILURE; skip instead of waiting GUIDE_START_TIMEOUT_SEC.
+EMBABEL_SNAPSHOT_REPO_URL="${EMBABEL_SNAPSHOT_REPO_URL:-https://repo.embabel.com/artifactory/libs-snapshot/}"
+
+test_preflight_embabel_snapshot_repo() {
+  local url="${1:-${EMBABEL_SNAPSHOT_REPO_URL}}"
+  local timeout="${2:-15}"
+  curl -fsS --max-time "${timeout}" -o /dev/null "${url}" >/dev/null 2>&1
+}
+
 test_preflight_guide_stack() {
   local port="${GUIDE_PORT:-21337}"
   if test_preflight_guide_health "${port}"; then

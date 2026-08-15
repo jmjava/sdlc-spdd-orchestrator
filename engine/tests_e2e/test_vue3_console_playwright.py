@@ -1,9 +1,9 @@
 """Playwright GUI tests for the Vue3 ops console (`console-ui`).
 
 Covers every shipped Vue3 tab: Dashboard (status/suggestions/goto), Persistence
-(load+save), Templates (feature/spike/bug + write-to-disk), Install, SQLite,
-Rollback, Guide, Issues (integrations save + link/sync dry-run), and ADF
-(viewer lifecycle + init).
+(load+save+parity), Templates (feature/spike/bug + write-to-disk), Install, SQLite,
+Rollback (list + dry-run restore), Guide (probe+save), Issues (integrations save
++ link/sync dry-run), and ADF (viewer lifecycle + init).
 
 Requires optional extras + a Vite build of ``console-ui``::
 
@@ -275,6 +275,16 @@ def _open_tab(page, tab_id: str) -> None:  # type: ignore[no-untyped-def]
     page.get_by_test_id(f"tab-{tab_id}").click()
 
 
+def _wait_guide_loaded(page) -> None:  # type: ignore[no-untyped-def]
+    page.get_by_test_id("guide-panel").wait_for(state="visible")
+    page.wait_for_function(
+        """() => {
+          const t = document.querySelector('[data-testid="guide-probe"]')?.textContent || '';
+          return t && t !== 'Status not loaded.';
+        }"""
+    )
+
+
 # --- Shell -----------------------------------------------------------------
 
 
@@ -288,6 +298,11 @@ def test_vue3_shell_loads_health_and_target(page, live_vue_console) -> None:  # 
     page.get_by_test_id("dashboard-panel").wait_for(state="visible")
     assert page.get_by_test_id("tab-dashboard").get_attribute("class") is not None
     assert "active" in (page.get_by_test_id("tab-dashboard").get_attribute("class") or "")
+    page.get_by_test_id("refresh-health").click()
+    page.wait_for_function(
+        """() => (document.querySelector('[data-testid="health-status"]')?.textContent || '')
+          .includes('API ok')"""
+    )
 
 
 # --- Dashboard -------------------------------------------------------------
@@ -354,6 +369,24 @@ def test_vue3_persistence_load_and_save(page, live_vue_console) -> None:  # type
     assert "sqlite" in cfg["backends"]
     assert "guide-dice" not in cfg["backends"]
     assert cfg["notes"] == "vue3-playwright-persist"
+
+
+def test_vue3_persistence_parity_check(page, live_vue_console) -> None:  # type: ignore[no-untyped-def]
+    _goto_vue(page, live_vue_console)
+    _open_tab(page, "persistence")
+    page.get_by_test_id("persistence-panel").wait_for(state="visible")
+    page.get_by_test_id("persistence-parity").click()
+    page.wait_for_function(
+        """() => {
+          const t = document.querySelector('[data-testid="persistence-status"]')?.textContent || '';
+          return t.startsWith('Parity OK') || t.startsWith('Parity drift')
+            || t.includes('Parity check failed');
+        }""",
+        timeout=60000,
+    )
+    status = page.get_by_test_id("persistence-status").inner_text()
+    assert "Parity OK" in status or "Parity drift" in status, status
+    assert page.get_by_test_id("persistence-parity-repair").count() == 1
 
 
 # --- Templates -------------------------------------------------------------
@@ -501,27 +534,62 @@ def test_vue3_rollback_backups_pane_loads(page, live_vue_console) -> None:  # ty
     assert "No backups" in rows or "Restore" in rows
 
 
+def test_vue3_rollback_dry_run_restore(page, live_vue_console) -> None:  # type: ignore[no-untyped-def]
+    target = Path(live_vue_console["target"])
+    backup_id = "20260101T000000Z"
+    backup = target / ".sdlc-spdd-upgrade-backups" / backup_id
+    backup.mkdir(parents=True)
+    (backup / "README.md").write_text("vue3 rollback seed\n", encoding="utf-8")
+
+    _goto_vue(page, live_vue_console)
+    _open_tab(page, "rollback")
+    page.get_by_test_id("rollback-panel").wait_for(state="visible")
+    page.get_by_test_id("btn-backups-refresh").click()
+    page.get_by_test_id(f"btn-restore-{backup_id}").wait_for(state="visible")
+    assert page.get_by_test_id("opt-rollback-dry").is_checked()
+    page.get_by_test_id(f"btn-restore-{backup_id}").click()
+    page.wait_for_function(
+        """() => (document.querySelector('[data-testid="rollback-status"]')?.textContent || '')
+          .includes('Dry-run: would restore')"""
+    )
+    assert "1" in page.get_by_test_id("rollback-status").inner_text()
+    assert not (target / "README.md").exists()
+
+
 # --- Issues ----------------------------------------------------------------
 
 
-def _wait_vue_issues_tracker_saved(page, tracker: str) -> None:  # type: ignore[no-untyped-def]
-    panel = "issues-link-jira" if tracker == "jira" else "issues-link-github"
+def _open_issues(page) -> None:  # type: ignore[no-untyped-def]
+    _open_tab(page, "issues")
+    page.get_by_test_id("issues-panel").wait_for(state="visible")
     page.wait_for_function(
-        f"""() => {{
-          const st = document.querySelector('[data-testid="int-status"]')?.textContent || '';
-          const panel = document.querySelector('[data-testid="{panel}"]');
-          if (!st.includes('Saved') || !panel) return false;
-          const style = window.getComputedStyle(panel);
-          return style.display !== 'none' && style.visibility !== 'hidden';
-        }}"""
+        """() => (document.querySelector('[data-testid="int-meta"]')?.textContent || '')
+          .includes('tracker=')"""
     )
+
+
+def _select_tracker(page, tracker: str) -> None:  # type: ignore[no-untyped-def]
+    page.get_by_test_id("int-tracker").select_option(tracker)
+    page.get_by_test_id("int-tracker").dispatch_event("change")
+    panel = "issues-link-jira" if tracker == "jira" else "issues-link-github"
+    if tracker in {"jira", "github"}:
+        page.get_by_test_id(panel).wait_for(state="visible")
+
+
+def _wait_vue_issues_tracker_saved(page, tracker: str) -> None:  # type: ignore[no-untyped-def]
+    page.wait_for_function(
+        """() => (document.querySelector('[data-testid="int-status"]')?.textContent || '')
+          .includes('Saved')"""
+    )
+    panel = "issues-link-jira" if tracker == "jira" else "issues-link-github"
+    if tracker in {"jira", "github"}:
+        page.get_by_test_id(panel).wait_for(state="visible")
 
 
 def test_vue3_issues_integrations_save_and_tracker_toggle(page, live_vue_console) -> None:  # type: ignore[no-untyped-def]
     _goto_vue(page, live_vue_console)
-    _open_tab(page, "issues")
-    page.get_by_test_id("issues-panel").wait_for(state="visible")
-    page.get_by_test_id("int-tracker").select_option("jira")
+    _open_issues(page)
+    _select_tracker(page, "jira")
     page.get_by_test_id("int-jira-url").fill("https://example.atlassian.net")
     page.get_by_test_id("int-jira-email").fill("ci@example.com")
     page.get_by_test_id("int-jira-project").fill("PROJ")
@@ -530,7 +598,7 @@ def test_vue3_issues_integrations_save_and_tracker_toggle(page, live_vue_console
     assert page.get_by_test_id("issues-link-jira").is_visible()
     assert not page.get_by_test_id("issues-link-github").is_visible()
 
-    page.get_by_test_id("int-tracker").select_option("github")
+    _select_tracker(page, "github")
     page.get_by_test_id("int-gh-repo").fill("org/repo")
     page.get_by_test_id("btn-int-save").click()
     _wait_vue_issues_tracker_saved(page, "github")
@@ -550,8 +618,8 @@ def test_vue3_issues_jira_link_preview(page, live_vue_console) -> None:  # type:
     work_id = "FEAT-pw-vue-jira-link"
     _seed_issue_work(Path(live_vue_console["target"]), work_id)
     _goto_vue(page, live_vue_console)
-    _open_tab(page, "issues")
-    page.get_by_test_id("int-tracker").select_option("jira")
+    _open_issues(page)
+    _select_tracker(page, "jira")
     page.get_by_test_id("btn-int-save").click()
     _wait_vue_issues_tracker_saved(page, "jira")
     page.get_by_test_id("jira-work-id").fill(work_id)
@@ -569,8 +637,8 @@ def test_vue3_issues_github_link_preview(page, live_vue_console) -> None:  # typ
     work_id = "FEAT-pw-vue-gh-link"
     _seed_issue_work(Path(live_vue_console["target"]), work_id)
     _goto_vue(page, live_vue_console)
-    _open_tab(page, "issues")
-    page.get_by_test_id("int-tracker").select_option("github")
+    _open_issues(page)
+    _select_tracker(page, "github")
     page.get_by_test_id("btn-int-save").click()
     _wait_vue_issues_tracker_saved(page, "github")
     page.get_by_test_id("gh-work-id").fill(work_id)
@@ -588,8 +656,8 @@ def test_vue3_issues_sync_prepare_push_dry(page, live_vue_console) -> None:  # t
     work_id = "FEAT-pw-vue-sync-dry"
     _seed_issue_work(Path(live_vue_console["target"]), work_id)
     _goto_vue(page, live_vue_console)
-    _open_tab(page, "issues")
-    page.get_by_test_id("int-tracker").select_option("github")
+    _open_issues(page)
+    _select_tracker(page, "github")
     page.get_by_test_id("btn-int-save").click()
     _wait_vue_issues_tracker_saved(page, "github")
     page.get_by_test_id("gh-work-id").fill(work_id)
@@ -614,19 +682,32 @@ def test_vue3_issues_sync_prepare_push_dry(page, live_vue_console) -> None:  # t
 def test_vue3_guide_tab_shows_config_and_probe(page, live_vue_console) -> None:  # type: ignore[no-untyped-def]
     _goto_vue(page, live_vue_console)
     _open_tab(page, "guide")
-    page.get_by_test_id("guide-panel").wait_for(state="visible")
+    _wait_guide_loaded(page)
     page.get_by_test_id("guide-home").wait_for()
     assert page.get_by_test_id("guide-port").count() == 1
     assert page.get_by_test_id("btn-guide-start").count() == 1
     assert page.get_by_test_id("btn-neo-start").count() == 1
     assert page.get_by_test_id("btn-guide-save").count() == 1
     page.get_by_test_id("btn-guide-probe").click()
+    _wait_guide_loaded(page)
+
+
+def test_vue3_guide_save_writes_config(page, live_vue_console) -> None:  # type: ignore[no-untyped-def]
+    target = Path(live_vue_console["target"])
+    _goto_vue(page, live_vue_console)
+    _open_tab(page, "guide")
+    _wait_guide_loaded(page)
+    page.get_by_test_id("guide-home").wait_for()
+    page.get_by_test_id("guide-notes").fill("vue3-playwright-guide")
+    page.get_by_test_id("guide-port").fill("21338")
+    page.get_by_test_id("btn-guide-save").click()
     page.wait_for_function(
-        """() => {
-          const t = document.querySelector('[data-testid="guide-probe"]')?.textContent || '';
-          return t && t !== 'Status not loaded.';
-        }"""
+        """() => (document.querySelector('[data-testid="guide-action-status"]')?.textContent || '')
+          .includes('Config saved')"""
     )
+    cfg = json.loads((target / ".sdlc" / "guide-config.json").read_text(encoding="utf-8"))
+    assert cfg["notes"] == "vue3-playwright-guide"
+    assert int(cfg["port"]) == 21338
 
 
 def test_vue3_guide_dual_repo_defaults_and_native_neo4j(page, live_vue_console) -> None:  # type: ignore[no-untyped-def]

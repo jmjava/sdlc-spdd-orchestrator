@@ -5,7 +5,7 @@ Vite + Vue3 shell that talks to the existing Flask installer JSON API (`/api/*`)
 ## Tabs (Vue3 parity)
 
 - **Dashboard** (default) → status / activity / suggestions (`/api/dashboard/*`)
-- **Persistence** → status + save (`/api/persistence/*`)
+- **Persistence** → status + save + ledger parity (`/api/persistence/*`)
 - **Templates** → list/render/write ADF (`/api/templates/*`)
 - **Install** → detect + run/verify (`/api/detect`, `/api/run`)
 - **SQLite** → status + rebuild (`/api/sqlite/*`)

@@ -34,6 +34,11 @@ const actionStatusClass = ref("");
 const actionLog = ref("No runtime action yet.");
 const busy = ref(false);
 const opDirectory = ref("");
+const formTouched = ref(false);
+
+function markFormTouched() {
+  formTouched.value = true;
+}
 
 function formBody(extra = {}) {
   return {
@@ -62,21 +67,23 @@ function checklistText(items) {
     .join("\n");
 }
 
-function applyGuide(data) {
+function applyGuide(data, { forceForm = false } = {}) {
   const cfg = data?.config || {};
-  guideHome.value = cfg.guide_home || "";
-  guideGit.value = cfg.guide_git_url || "https://github.com/jmjava/guide.git";
-  guideRef.value = cfg.guide_git_ref || "";
-  guideProfile.value = cfg.profile || "";
-  guideHost.value = cfg.host || "127.0.0.1";
-  guidePort.value = cfg.port || 21337;
-  guideMcp.value = cfg.mcp_server || "embabel-dev";
-  neoBolt.value = cfg.neo4j_bolt_port || 7687;
-  neoHttp.value = cfg.neo4j_http_port || 7474;
-  neoHttps.value = cfg.neo4j_https_port || 7473;
-  neoUser.value = cfg.neo4j_username || "neo4j";
-  if (cfg.neo4j_password) neoPass.value = cfg.neo4j_password;
-  guideNotes.value = cfg.notes || "";
+  if (forceForm || !formTouched.value) {
+    guideHome.value = cfg.guide_home || "";
+    guideGit.value = cfg.guide_git_url || "https://github.com/jmjava/guide.git";
+    guideRef.value = cfg.guide_git_ref || "";
+    guideProfile.value = cfg.profile || "";
+    guideHost.value = cfg.host || "127.0.0.1";
+    guidePort.value = cfg.port || 21337;
+    guideMcp.value = cfg.mcp_server || "embabel-dev";
+    neoBolt.value = cfg.neo4j_bolt_port || 7687;
+    neoHttp.value = cfg.neo4j_http_port || 7474;
+    neoHttps.value = cfg.neo4j_https_port || 7473;
+    neoUser.value = cfg.neo4j_username || "neo4j";
+    if (cfg.neo4j_password) neoPass.value = cfg.neo4j_password;
+    guideNotes.value = cfg.notes || "";
+  }
 
   const probe = data?.probe || {};
   const neo = data?.neo4j || {};
@@ -118,10 +125,10 @@ function applyGuide(data) {
   }
 }
 
-async function loadGuide() {
+async function loadGuide({ forceForm = false } = {}) {
   try {
     const { data } = await postJson("/api/guide", { target: props.target });
-    applyGuide(data);
+    applyGuide(data, { forceForm });
   } catch (err) {
     actionStatusClass.value = "err";
     actionStatus.value = String(err?.message || err);
@@ -133,7 +140,8 @@ async function saveGuide() {
   busy.value = true;
   try {
     const { ok, data } = await postJson("/api/guide/save", formBody());
-    applyGuide(data);
+    applyGuide(data, { forceForm: true });
+    formTouched.value = false;
     actionStatus.value = ok ? "Config saved." : data?.error || "Save failed";
     actionStatusClass.value = ok ? "ok" : "err";
     actionLog.value = JSON.stringify(data, null, 2);
@@ -176,7 +184,7 @@ onMounted(loadGuide);
 </script>
 
 <template>
-  <section class="panel" data-testid="guide-panel">
+  <section class="panel" data-testid="guide-panel" @input="markFormTouched">
     <h2>Embabel Guide + Neo4j</h2>
     <p class="lead">
       Pulls from <code>jmjava/guide</code>, starts Compose Neo4j and Guide on custom ports.
@@ -266,7 +274,7 @@ onMounted(loadGuide);
         type="button"
         data-testid="btn-guide-probe"
         :disabled="busy"
-        @click="loadGuide"
+        @click="loadGuide({ forceForm: true })"
       >
         Refresh status
       </button>

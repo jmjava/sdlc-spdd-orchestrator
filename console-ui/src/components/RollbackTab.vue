@@ -14,18 +14,22 @@ const statusClass = ref("");
 const log = ref("No restore yet.");
 const loading = ref(false);
 
-async function loadBackups() {
+async function loadBackups({ silent = false } = {}) {
   loading.value = true;
   try {
     const { data } = await postJson("/api/backups", { target: props.target });
     backups.value = data.backups || [];
-    statusClass.value = "ok";
-    statusText.value = backups.value.length
-      ? `${backups.value.length} backup(s) found.`
-      : "No backups under .sdlc-spdd-upgrade-backups/";
+    if (!silent) {
+      statusClass.value = "ok";
+      statusText.value = backups.value.length
+        ? `${backups.value.length} backup(s) found.`
+        : "No backups under .sdlc-spdd-upgrade-backups/";
+    }
   } catch (err) {
-    statusClass.value = "err";
-    statusText.value = String(err?.message || err);
+    if (!silent) {
+      statusClass.value = "err";
+      statusText.value = String(err?.message || err);
+    }
   } finally {
     loading.value = false;
   }
@@ -52,7 +56,7 @@ async function restoreBackup(backupId) {
       statusText.value = data.dry_run
         ? `Dry-run: would restore ${data.count} files.`
         : `Restored ${data.count} files.`;
-      await loadBackups();
+      await loadBackups({ silent: true });
     } else {
       statusClass.value = "err";
       statusText.value = data?.error || "Restore failed";

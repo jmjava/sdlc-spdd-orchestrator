@@ -483,6 +483,15 @@ done
 assert_eq "${found_session}" "1" "shipped list includes session-prompt-standard.md"
 
 # ---------------------------------------------------------------------------
+echo "== test-preflight.sh: Embabel snapshot repo =="
+# shellcheck source=/dev/null
+source "${LIB}/test-preflight.sh"
+assert_match "${EMBABEL_SNAPSHOT_REPO_URL}" 'repo\.embabel\.com' \
+  "default Embabel snapshot URL"
+assert_false "unreachable host fails Embabel preflight" \
+  test_preflight_embabel_snapshot_repo "http://127.0.0.1:1/" 1
+
+# ---------------------------------------------------------------------------
 echo "== framework-install.sh =="
 fw="${WORK}/fw"
 framework_ensure_dir "${fw}/a/b" 0

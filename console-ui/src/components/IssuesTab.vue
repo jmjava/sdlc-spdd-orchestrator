@@ -8,6 +8,7 @@ const props = defineProps({
 
 const loading = ref(false);
 const tracker = ref("github");
+const trackerTouched = ref(false);
 const jiraUrl = ref("");
 const jiraEmail = ref("");
 const jiraToken = ref("");
@@ -58,8 +59,15 @@ const syncMeta = computed(() => {
   return "Set tracker to Jira or GitHub to enable server sync.";
 });
 
-function applyIntegrations(data) {
-  tracker.value = data.effective_tracker || data.tracker || "github";
+function setTracker(value) {
+  tracker.value = value;
+  trackerTouched.value = true;
+}
+
+function applyIntegrations(data, { forceTracker = false } = {}) {
+  if (forceTracker || !trackerTouched.value) {
+    tracker.value = data.effective_tracker || data.tracker || "github";
+  }
   const j = data.jira || {};
   const g = data.github || {};
   jiraUrl.value = j.base_url || "";
@@ -326,7 +334,11 @@ onMounted(loadIntegrations);
       <div class="field-row">
         <label>
           Active tracker
-          <select v-model="tracker" data-testid="int-tracker">
+          <select
+            :value="tracker"
+            data-testid="int-tracker"
+            @change="setTracker($event.target.value)"
+          >
             <option value="github">GitHub Issues</option>
             <option value="jira">Jira</option>
             <option value="none">None (link only)</option>
