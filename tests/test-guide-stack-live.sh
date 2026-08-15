@@ -17,6 +17,8 @@
 #   GUIDE_START_TIMEOUT_SEC wait for Guide TCP (default 600)
 #   GUIDE_KEEP=1            leave Guide + Neo4j running after the test
 #   GUIDE_WITH_INGEST=1     allow startup RAG ingest (slow; off by default)
+#   SDLC_GUIDE_SKIP_EMBABEL_PREFLIGHT=1
+#                           boot even when repo.embabel.com is unreachable
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -90,6 +92,15 @@ if pgrep -f "append-ingest\.sh" >/dev/null 2>&1 && ! test_preflight_guide_health
   echo "FAIL: append-ingest still running but Guide not healthy — wait or: pkill -f append-ingest.sh" >&2
   echo "  tail -20 ${GUIDE_LOG}" >&2
   exit 1
+fi
+
+if [[ "${SKIP_GUIDE_BOOT:-}" != "1" && "${SDLC_GUIDE_SKIP_EMBABEL_PREFLIGHT:-}" != "1" ]]; then
+  if ! test_preflight_embabel_snapshot_repo; then
+    echo "SKIP: ${EMBABEL_SNAPSHOT_REPO_URL} unreachable — Guide KSP cannot resolve embabel-agent-api SNAPSHOT"
+    echo "  Set SDLC_GUIDE_SKIP_EMBABEL_PREFLIGHT=1 to boot anyway."
+    exit 0
+  fi
+  echo "preflight OK: Embabel snapshot repo reachable"
 fi
 
 echo "== experimental Guide+Neo4j stack =="

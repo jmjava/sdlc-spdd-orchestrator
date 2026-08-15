@@ -105,6 +105,8 @@ HTTP `7474`. Override Guide git ref with `GUIDE_GIT_REF` (default tag
 
 CI: `./scripts/test-ci-local.sh` mirrors tier 1+2 via `.venv`.
 Guide live stack: `./scripts/test-ci-local.sh --guide` or `test-guide-stack-experimental.yml`.
+The experimental workflow skips live Guide+Neo4j (and Vue `guide_live`) when
+`repo.embabel.com` is unreachable; ADF viewer live still runs.
 Fast Playwright-only gate: `test-e2e-playwright.yml`.
 
 ## Related

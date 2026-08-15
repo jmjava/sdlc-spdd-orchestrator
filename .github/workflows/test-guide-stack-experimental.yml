@@ -2,6 +2,8 @@ name: Test Guide Stack (Experimental)
 
 # EXPERIMENTAL — full Guide + Neo4j live stack. Not required for consumer installs.
 # Runs on workflow_dispatch and when ops-console / guide-test paths change on PRs.
+# Live Guide+Neo4j (and Vue guide_live) skip with a warning when repo.embabel.com
+# is unreachable; Gradle wrapper prefetch and ADF viewer live still run.
 
 on:
   workflow_dispatch:
@@ -85,14 +87,10 @@ jobs:
         working-directory: sdlc-spdd-orchestrator
         run: python3 -m pip install -e './engine[dev,viewer]'
 
-      - name: Prefetch Guide Maven deps
-        working-directory: guide
-        run: ./mvnw -q -DskipTests dependency:go-offline || ./mvnw -q -DskipTests -DskipITs validate
-
       # orch-guide codegen-gradle wrapper ships networkTimeout=10000ms. Cold
-      # runners cannot fetch gradle-9.6.1-bin.zip in 10s, so KSP dies and the
-      # live job waits the full GUIDE_START_TIMEOUT_SEC. Prefetch here.
-      - name: Prefetch codegen-gradle (KSP)
+      # runners cannot fetch gradle-9.6.1-bin.zip in 10s. Prefetch the wrapper
+      # only — kspKotlin also needs repo.embabel.com (gated below).
+      - name: Prefetch codegen-gradle wrapper
         working-directory: guide/codegen-gradle
         run: |
           if [[ -f gradle/wrapper/gradle-wrapper.properties ]]; then
@@ -100,9 +98,33 @@ jobs:
               gradle/wrapper/gradle-wrapper.properties
           fi
           ./gradlew --no-daemon --version
-          ./gradlew --no-daemon kspKotlin
+
+      - name: Preflight Embabel snapshot repo
+        id: embabel
+        working-directory: sdlc-spdd-orchestrator
+        run: |
+          # shellcheck source=scripts/lib/test-preflight.sh
+          source scripts/lib/test-preflight.sh
+          if test_preflight_embabel_snapshot_repo; then
+            echo "reachable=true" >> "${GITHUB_OUTPUT}"
+            echo "Embabel snapshot repo reachable — live Guide+Neo4j will run"
+          else
+            echo "reachable=false" >> "${GITHUB_OUTPUT}"
+            echo "::warning::repo.embabel.com unreachable from this runner; skipping live Guide+Neo4j (experimental). ADF viewer live still runs."
+          fi
+
+      - name: Prefetch Guide Maven deps
+        if: steps.embabel.outputs.reachable == 'true'
+        working-directory: guide
+        run: ./mvnw -q -DskipTests dependency:go-offline || ./mvnw -q -DskipTests -DskipITs validate
+
+      - name: Prefetch codegen-gradle KSP
+        if: steps.embabel.outputs.reachable == 'true'
+        working-directory: guide/codegen-gradle
+        run: ./gradlew --no-daemon kspKotlin
 
       - name: Live Guide + Neo4j stack test (API)
+        if: steps.embabel.outputs.reachable == 'true'
         working-directory: sdlc-spdd-orchestrator
         env:
           CI: 'true'
@@ -121,7 +143,7 @@ jobs:
           ./tests/test-guide-stack-live.sh
 
       - name: Teardown Guide + Neo4j
-        if: always()
+        if: always() && steps.embabel.outputs.reachable == 'true'
         working-directory: sdlc-spdd-orchestrator
         env:
           GUIDE_STOP_NEO4J: '1'
@@ -149,6 +171,7 @@ jobs:
           cd console-ui && npm ci && npm run build
 
       - name: Vue3 Playwright live Guide stack
+        if: steps.embabel.outputs.reachable == 'true'
         working-directory: sdlc-spdd-orchestrator
         env:
           CI: 'true'
