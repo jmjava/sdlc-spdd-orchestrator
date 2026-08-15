@@ -342,6 +342,56 @@ td {
   margin-top: 0.85rem;
 }
 
+.check-list,
+.feed-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 0.85rem;
+}
+
+.check-list li,
+.feed-list li {
+  display: flex;
+  gap: 0.55rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.check-list .mark {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.check-list .mark.ok {
+  color: var(--ok);
+}
+
+.feed-list .src {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--muted);
+  min-width: 5.5rem;
+}
+
+.feed-list .hint {
+  display: block;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+pre.cmd {
+  margin: 0 0 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--line);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .panel h3 {
   margin: 1rem 0 0.4rem;
   font-size: 0.95rem;

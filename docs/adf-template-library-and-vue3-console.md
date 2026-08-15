@@ -118,12 +118,14 @@ Flask can serve the Vite build when `SDLC_VUE_CONSOLE_DIST=console-ui/dist` (or
 
 | Tab | Vue3 | Playwright |
 |-----|------|------------|
+| Dashboard (status + suggestions + configure) | ✅ | ✅ |
 | Persistence (load + save) | ✅ | ✅ |
 | Templates (feature/spike/bug + write) | ✅ | ✅ |
 | Install | ✅ | ✅ |
 | SQLite | ✅ | ✅ |
 | Rollback | ✅ | ✅ |
 | Guide | ✅ | ✅ stubbed probe + dual-env defaults; **live** via `guide_live` |
+| Issues (integrations + link/sync dry-run) | ✅ | ✅ |
 | ADF viewer + init-from-ADF | ✅ | ✅ stubbed lifecycle; **live** via `adf_viewer_live` |
 
 ### Live dual-repo gates (the former “no” gaps)

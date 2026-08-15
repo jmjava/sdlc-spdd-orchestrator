@@ -4,12 +4,14 @@ Vite + Vue3 shell that talks to the existing Flask installer JSON API (`/api/*`)
 
 ## Tabs (Vue3 parity)
 
+- **Dashboard** (default) → status / activity / suggestions (`/api/dashboard/*`)
 - **Persistence** → status + save (`/api/persistence/*`)
 - **Templates** → list/render/write ADF (`/api/templates/*`)
 - **Install** → detect + run/verify (`/api/detect`, `/api/run`)
 - **SQLite** → status + rebuild (`/api/sqlite/*`)
 - **Rollback** → backups + restore (`/api/backups`, `/api/rollback`)
 - **Guide** → config/probe/lifecycle (`/api/guide/*`)
+- **Issues** → integrations save + link/sync (`/api/integrations/*`, `/api/issues/*`)
 - **ADF** → viewer lifecycle + browse/init (`/api/adf/*`)
 
 ## Dev
@@ -49,5 +51,5 @@ SDLC_VUE_CONSOLE_DIST=$PWD/dist python -m sdlc_engine console --target .. --no-b
 From the repo root (builds `dist` if needed):
 
 ```bash
-SDLC_CONSOLE_E2E=1 pytest -q engine/tests/test_vue3_console_playwright.py -m console_e2e
+pytest -q engine/tests_e2e/test_vue3_console_playwright.py
 ```

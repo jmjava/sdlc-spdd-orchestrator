@@ -1,7 +1,9 @@
 """Playwright GUI tests for the Vue3 ops console (`console-ui`).
 
-Covers every shipped Vue3 tab: Persistence (load+save), Templates (feature/spike/bug
-+ write-to-disk), Install, SQLite, Rollback, Guide, and ADF (viewer lifecycle + init).
+Covers every shipped Vue3 tab: Dashboard (status/suggestions/goto), Persistence
+(load+save), Templates (feature/spike/bug + write-to-disk), Install, SQLite,
+Rollback, Guide, Issues (integrations save + link/sync dry-run), and ADF
+(viewer lifecycle + init).
 
 Requires optional extras + a Vite build of ``console-ui``::
 
@@ -92,6 +94,57 @@ def _seed_work(root: Path, work_id: str, summary: str) -> None:
     )
 
 
+def _seed_issue_work(root: Path, work_id: str) -> None:
+    req = root / "requirements" / "milestones" / f"{work_id}.md"
+    req.parent.mkdir(parents=True, exist_ok=True)
+    req.write_text(
+        f"""---
+work_id: "{work_id}"
+jira_key: ""
+github_number: ""
+---
+
+# Requirement: {work_id}
+
+## Summary
+
+Vue3 Playwright issue-link seed.
+
+## Jira
+
+- Key: TBD
+- Summary: Demo summary
+- Issue type: Story
+
+### Description
+Local description
+
+## GitHub
+
+- Number: TBD
+""",
+        encoding="utf-8",
+    )
+    canvas = root / "spdd" / "canvas" / f"{work_id}.md"
+    canvas.parent.mkdir(parents=True, exist_ok=True)
+    canvas.write_text(
+        f"""# REASONS Canvas: {work_id} - Demo
+
+## Metadata
+
+- Work ID: {work_id}
+- Source System:
+- Source Issue:
+- Source URL:
+""",
+        encoding="utf-8",
+    )
+    (root / "spdd" / "memory").mkdir(parents=True, exist_ok=True)
+    reg = root / "spdd" / "memory" / "registry.jsonl"
+    if not reg.is_file():
+        reg.write_text("", encoding="utf-8")
+
+
 @pytest.fixture()
 def live_vue_console(tmp_path: Path, vue_dist: Path, monkeypatch: pytest.MonkeyPatch):
     """Start Flask serving Vue3 dist + JSON API; stub ADF viewer process lifecycle."""
@@ -160,6 +213,28 @@ def live_vue_console(tmp_path: Path, vue_dist: Path, monkeypatch: pytest.MonkeyP
         monkeypatch.setattr(mod, "stop_viewer", fake_stop)
         monkeypatch.setattr(mod, "restart_viewer", fake_restart)
 
+    monkeypatch.setattr(
+        installer_app,
+        "_gh_auth_status",
+        lambda timeout=3.0: {
+            "installed": True,
+            "authenticated": False,
+            "detail": "gh not authenticated (run: gh auth login)",
+        },
+    )
+    monkeypatch.setattr(
+        installer_app,
+        "probe_guide",
+        lambda host, port, timeout=1.5: {
+            "host": host,
+            "port": port,
+            "tcp_open": False,
+            "http_ok": False,
+            "detail": "TCP closed (test stub)",
+            "sse_url": "",
+        },
+    )
+
     app = create_app(tmp_path, vue_dist=vue_dist)
     port = _free_port()
     server = make_server("127.0.0.1", port, app)
@@ -210,6 +285,40 @@ def test_vue3_shell_loads_health_and_target(page, live_vue_console) -> None:  # 
     assert page.get_by_test_id("target-input").input_value() == str(
         live_vue_console["target"].resolve()
     )
+    page.get_by_test_id("dashboard-panel").wait_for(state="visible")
+    assert page.get_by_test_id("tab-dashboard").get_attribute("class") is not None
+    assert "active" in (page.get_by_test_id("tab-dashboard").get_attribute("class") or "")
+
+
+# --- Dashboard -------------------------------------------------------------
+
+
+def test_vue3_dashboard_refresh_loads(page, live_vue_console) -> None:  # type: ignore[no-untyped-def]
+    _goto_vue(page, live_vue_console)
+    page.get_by_test_id("dashboard-panel").wait_for(state="visible")
+    page.get_by_test_id("btn-dash-refresh").click()
+    page.wait_for_function(
+        """() => {
+          const t = document.querySelector('[data-testid="dash-status"]')?.textContent || '';
+          return t.includes('Loaded');
+        }"""
+    )
+    suggestions = page.get_by_test_id("dash-suggestions").inner_text()
+    assert "Refresh to load" not in suggestions
+    assert page.get_by_test_id("dw-id").inner_text().strip()
+    assert page.get_by_test_id("dm-accepted").inner_text().strip() != ""
+
+
+def test_vue3_dashboard_configure_opens_issues(page, live_vue_console) -> None:  # type: ignore[no-untyped-def]
+    _goto_vue(page, live_vue_console)
+    page.get_by_test_id("dashboard-panel").wait_for(state="visible")
+    page.wait_for_function(
+        """() => (document.querySelector('[data-testid="dash-status"]')?.textContent || '')
+          .includes('Loaded')"""
+    )
+    page.get_by_test_id("dash-goto-issues").click()
+    page.get_by_test_id("issues-panel").wait_for(state="visible")
+    assert page.get_by_test_id("int-tracker").count() == 1
 
 
 # --- Persistence -----------------------------------------------------------
@@ -392,6 +501,113 @@ def test_vue3_rollback_backups_pane_loads(page, live_vue_console) -> None:  # ty
     assert "No backups" in rows or "Restore" in rows
 
 
+# --- Issues ----------------------------------------------------------------
+
+
+def _wait_vue_issues_tracker_saved(page, tracker: str) -> None:  # type: ignore[no-untyped-def]
+    panel = "issues-link-jira" if tracker == "jira" else "issues-link-github"
+    page.wait_for_function(
+        f"""() => {{
+          const st = document.querySelector('[data-testid="int-status"]')?.textContent || '';
+          const panel = document.querySelector('[data-testid="{panel}"]');
+          if (!st.includes('Saved') || !panel) return false;
+          const style = window.getComputedStyle(panel);
+          return style.display !== 'none' && style.visibility !== 'hidden';
+        }}"""
+    )
+
+
+def test_vue3_issues_integrations_save_and_tracker_toggle(page, live_vue_console) -> None:  # type: ignore[no-untyped-def]
+    _goto_vue(page, live_vue_console)
+    _open_tab(page, "issues")
+    page.get_by_test_id("issues-panel").wait_for(state="visible")
+    page.get_by_test_id("int-tracker").select_option("jira")
+    page.get_by_test_id("int-jira-url").fill("https://example.atlassian.net")
+    page.get_by_test_id("int-jira-email").fill("ci@example.com")
+    page.get_by_test_id("int-jira-project").fill("PROJ")
+    page.get_by_test_id("btn-int-save").click()
+    _wait_vue_issues_tracker_saved(page, "jira")
+    assert page.get_by_test_id("issues-link-jira").is_visible()
+    assert not page.get_by_test_id("issues-link-github").is_visible()
+
+    page.get_by_test_id("int-tracker").select_option("github")
+    page.get_by_test_id("int-gh-repo").fill("org/repo")
+    page.get_by_test_id("btn-int-save").click()
+    _wait_vue_issues_tracker_saved(page, "github")
+    assert page.get_by_test_id("issues-link-github").is_visible()
+    assert not page.get_by_test_id("issues-link-jira").is_visible()
+    cfg = json.loads(
+        (Path(live_vue_console["target"]) / ".sdlc" / "integrations-config.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert cfg["tracker"] == "github"
+    assert cfg["github"]["repo"] == "org/repo"
+    assert cfg["jira"]["project"] == "PROJ"
+
+
+def test_vue3_issues_jira_link_preview(page, live_vue_console) -> None:  # type: ignore[no-untyped-def]
+    work_id = "FEAT-pw-vue-jira-link"
+    _seed_issue_work(Path(live_vue_console["target"]), work_id)
+    _goto_vue(page, live_vue_console)
+    _open_tab(page, "issues")
+    page.get_by_test_id("int-tracker").select_option("jira")
+    page.get_by_test_id("btn-int-save").click()
+    _wait_vue_issues_tracker_saved(page, "jira")
+    page.get_by_test_id("jira-work-id").fill(work_id)
+    page.get_by_test_id("jira-key").fill("PROJ-999")
+    page.get_by_test_id("btn-jira-link-dry").click()
+    page.wait_for_function(
+        """() => (document.querySelector('[data-testid="jira-link-status"]')?.textContent || '')
+          .includes('Preview OK')"""
+    )
+    log = page.get_by_test_id("jira-link-log").inner_text()
+    assert "PROJ-999" in log or "dry_run" in log
+
+
+def test_vue3_issues_github_link_preview(page, live_vue_console) -> None:  # type: ignore[no-untyped-def]
+    work_id = "FEAT-pw-vue-gh-link"
+    _seed_issue_work(Path(live_vue_console["target"]), work_id)
+    _goto_vue(page, live_vue_console)
+    _open_tab(page, "issues")
+    page.get_by_test_id("int-tracker").select_option("github")
+    page.get_by_test_id("btn-int-save").click()
+    _wait_vue_issues_tracker_saved(page, "github")
+    page.get_by_test_id("gh-work-id").fill(work_id)
+    page.get_by_test_id("gh-number").fill("42")
+    page.get_by_test_id("btn-gh-link-dry").click()
+    page.wait_for_function(
+        """() => (document.querySelector('[data-testid="gh-link-status"]')?.textContent || '')
+          .includes('Preview OK')"""
+    )
+    log = page.get_by_test_id("gh-link-log").inner_text()
+    assert "42" in log or "dry_run" in log
+
+
+def test_vue3_issues_sync_prepare_push_dry(page, live_vue_console) -> None:  # type: ignore[no-untyped-def]
+    work_id = "FEAT-pw-vue-sync-dry"
+    _seed_issue_work(Path(live_vue_console["target"]), work_id)
+    _goto_vue(page, live_vue_console)
+    _open_tab(page, "issues")
+    page.get_by_test_id("int-tracker").select_option("github")
+    page.get_by_test_id("btn-int-save").click()
+    _wait_vue_issues_tracker_saved(page, "github")
+    page.get_by_test_id("gh-work-id").fill(work_id)
+    page.get_by_test_id("gh-number").fill("77")
+    page.get_by_test_id("btn-gh-link").click()
+    page.wait_for_function(
+        """() => (document.querySelector('[data-testid="gh-link-status"]')?.textContent || '')
+          .includes('Linked')"""
+    )
+    page.get_by_test_id("btn-jira-push-dry").click()
+    page.wait_for_function(
+        """() => (document.querySelector('[data-testid="jira-sync-status"]')?.textContent || '')
+          .includes('preview OK')"""
+    )
+    cli = page.get_by_test_id("jira-sync-cli").inner_text()
+    assert "issues push" in cli
+
+
 # --- Guide / ADF -----------------------------------------------------------
 
 
@@ -563,11 +779,13 @@ def test_vue3_adf_browse_select_and_init(page, live_vue_console, monkeypatch) ->
 def test_vue3_tab_round_trip_all_panels(page, live_vue_console) -> None:  # type: ignore[no-untyped-def]
     _goto_vue(page, live_vue_console)
     for tab_id, panel in [
+        ("dashboard", "dashboard-panel"),
         ("templates", "templates-panel"),
         ("install", "install-panel"),
         ("sqlite", "sqlite-panel"),
         ("rollback", "rollback-panel"),
         ("guide", "guide-panel"),
+        ("issues", "issues-panel"),
         ("adf", "adf-panel"),
         ("persistence", "persistence-panel"),
     ]:

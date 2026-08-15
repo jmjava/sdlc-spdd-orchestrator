@@ -17,7 +17,9 @@ engine/
   pyproject.toml
   README.md
   src/sdlc_engine/
-    cli.py              # argparse CLI (sdlc-engine)
+    cli.py              # argparse CLI entry (sdlc-engine)
+    cli_commands.py     # command handlers
+    cli_parser.py       # argparse builders
     timeutil.py         # shared UTC stamps
     io_util.py          # JSON/path helpers
     placeholders.py     # TBD/TODO/NONE/N/A sentinels
@@ -37,9 +39,12 @@ engine/
     issues.py           # Jira/GitHub draft|push|pull|upload-adf|download-adf
     jira_format.py      # markdown ↔ ADF / wiki
     local_sessions.py   # LOCAL-* offline sessions + promote
-    db.py               # opt-in SQLite cache (.sdlc/index.sqlite)
+    db.py               # LocalIndex facade + public re-exports
+    db_schema.py        # SQLite DDL + graph constants
+    db_rebuild.py       # full-index rebuild / ingest
+    db_query.py         # lookup / find / export
     commit_message.py   # diff report for commit drafts
-    installer/          # ops console (:5051)
+    installer/          # ops console (:5051); dashboard.py landing-tab helpers
       process_util.py   # shared tcp/pid/run helpers
     viewer/             # ADF viewer (:5050)
   tests_unit/
