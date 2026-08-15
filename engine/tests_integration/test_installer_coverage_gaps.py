@@ -16,6 +16,7 @@ import pytest
 pytest.importorskip("flask")
 
 import sdlc_engine.installer.app as app_module
+import sdlc_engine.installer.dashboard as dash_module
 from sdlc_engine.installer import guide as guide_mod
 from sdlc_engine.installer import guide_compliance as gc
 from sdlc_engine.installer import guide_ops as go
@@ -293,12 +294,12 @@ def test_guide_compliance_load_projection_edges(monkeypatch: pytest.MonkeyPatch)
 
 
 def test_gh_auth_status_branches(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(app_module.subprocess, "run", lambda *a, **k: (_ for _ in ()).throw(FileNotFoundError()))
+    monkeypatch.setattr(dash_module.subprocess, "run", lambda *a, **k: (_ for _ in ()).throw(FileNotFoundError()))
     missing = _gh_auth_status()
     assert missing["installed"] is False
 
     monkeypatch.setattr(
-        app_module.subprocess,
+        dash_module.subprocess,
         "run",
         lambda *a, **k: (_ for _ in ()).throw(subprocess.TimeoutExpired("gh", 3)),
     )
@@ -307,7 +308,7 @@ def test_gh_auth_status_branches(monkeypatch: pytest.MonkeyPatch) -> None:
     assert timed["authenticated"] is False
 
     monkeypatch.setattr(
-        app_module.subprocess,
+        dash_module.subprocess,
         "run",
         lambda *a, **k: (_ for _ in ()).throw(OSError("gh broken")),
     )
@@ -316,14 +317,14 @@ def test_gh_auth_status_branches(monkeypatch: pytest.MonkeyPatch) -> None:
     assert "gh broken" in broken["detail"]
 
     monkeypatch.setattr(
-        app_module.subprocess,
+        dash_module.subprocess,
         "run",
         lambda *a, **k: MagicMock(returncode=0, stdout="", stderr=""),
     )
     assert _gh_auth_status()["authenticated"] is True
 
     monkeypatch.setattr(
-        app_module.subprocess,
+        dash_module.subprocess,
         "run",
         lambda *a, **k: MagicMock(returncode=1, stdout="", stderr=""),
     )
