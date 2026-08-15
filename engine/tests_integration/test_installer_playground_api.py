@@ -56,3 +56,103 @@ def test_playground_dashboard_templates_sqlite_rollback(tmp_path: Path) -> None:
 
     browse = client.post("/api/adf/browse", json={**body, "path": str(dest / "adf")}).get_json()
     assert browse["ok"] is True
+
+
+def test_playground_guide_jira_github_fakes(tmp_path: Path) -> None:
+    dest = materialize_playground(tmp_path / "play")
+    app = create_app(dest, vue_dist=False)
+    client = app.test_client()
+    body = {"target": str(dest)}
+    active = WORKS[0][0]
+
+    dash = client.post("/api/dashboard/status", json=body).get_json()
+    assert dash["integrations"]["jira"]["configured"] is True
+    assert dash["integrations"]["github"]["configured"] is True
+    assert dash["integrations"]["github"]["authenticated"] is True
+
+    guide = client.post("/api/guide", json=body).get_json()
+    assert guide["playground"] is True
+    assert guide["probe"]["tcp_open"] is True
+    assert guide["neo4j"]["bolt_open"] is True
+    assert guide["guide_stats"]["data"]["contentElementCount"] == 42
+    assert any(item.get("ok") for item in guide["checklist"] if item.get("id") == "guide_home")
+
+    stopped = client.post("/api/guide/stop", json=body)
+    assert stopped.status_code == 200
+    assert stopped.get_json()["probe"]["tcp_open"] is False
+
+    ingest_down = client.post("/api/guide/ingest", json=body)
+    assert ingest_down.status_code == 400
+
+    started = client.post("/api/guide/start", json={**body, "no_ingest": True})
+    assert started.status_code == 200
+    assert started.get_json()["probe"]["tcp_open"] is True
+
+    ensure = client.post("/api/guide/ensure", json=body)
+    assert ensure.status_code == 200
+    assert ensure.get_json()["ensure"]["action"] == "playground-stub"
+
+    neo = client.post("/api/guide/neo4j/start", json=body)
+    assert neo.status_code == 200
+    profile = client.post("/api/guide/ensure-profile", json=body)
+    assert profile.status_code == 200
+    proj = client.post("/api/guide/projection/load", json=body)
+    assert proj.status_code == 200
+
+    stats = client.post("/api/guide/stats", json=body).get_json()
+    assert stats["ok"] is True
+    assert stats["result"]["data"]["contentElementCount"] >= 42
+
+    wipe = client.post("/api/guide/purge-all-rag", json={**body, "confirm": True})
+    assert wipe.status_code == 200
+    assert wipe.get_json()["guide_stats"]["data"]["contentElementCount"] == 0
+
+    preview = client.post("/api/guide/purge/preview", json=body)
+    assert preview.status_code == 200
+
+    deny = client.post("/api/guide/purge", json=body)
+    assert deny.status_code == 400
+    assert "confirm" in deny.get_json()["error"]
+
+    integ = client.post("/api/integrations/status", json=body).get_json()
+    assert integ["jira"]["token_set"] is True
+    assert integ["github"]["token_set"] is True
+
+    jira = client.post(
+        "/api/issues/sync",
+        json={**body, "work_id": active, "system": "jira", "direction": "pull"},
+    )
+    assert jira.status_code == 200
+    jira_body = jira.get_json()
+    assert jira_body["ok"] is True
+    assert jira_body["playground"] is True
+    assert "PLAY-930" in jira_body["report"]
+
+    gh = client.post(
+        "/api/jira/sync",
+        json={**body, "work_id": active, "direction": "push", "apply": True},
+    )
+    # /api/jira/sync forces system=jira
+    assert gh.status_code == 200
+    assert gh.get_json()["system"] == "jira"
+    assert gh.get_json()["apply"] is True
+
+    github = client.post(
+        "/api/issues/sync",
+        json={
+            **body,
+            "work_id": active,
+            "system": "github",
+            "direction": "pull",
+            "apply": True,
+        },
+    )
+    assert github.status_code == 200
+    assert github.get_json()["system"] == "github"
+    assert "playground" in github.get_json()["report"]
+
+    missing = client.post(
+        "/api/issues/sync",
+        json={**body, "work_id": "NOPE-000", "system": "jira", "direction": "pull"},
+    )
+    assert missing.status_code == 400

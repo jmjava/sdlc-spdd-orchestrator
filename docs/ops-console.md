@@ -20,7 +20,7 @@ Aliases for the console: `installer`, `dashboard`. Wrapper: `./scripts/visual-in
 
 ```bash
 python3 -m pip install -e './engine[viewer]'   # Flask extra
-./scripts/sdlc.sh console --playground          # disposable seed, no consumer install
+./scripts/sdlc.sh console --playground          # disposable seed + in-process Guide/Jira/GitHub fakes
 ./scripts/sdlc.sh console --target /path/to/app
 ./scripts/sdlc.sh viewer --root /path/to/app --port 5050
 ```

@@ -59,6 +59,13 @@ from .guide_runtime import (
 from .rollback import list_backups, restore_backup
 from .runner import orchestrator_root, run_action
 from .playground import is_playground
+from .playground_fakes import (
+    fake_gh_auth_status,
+    fake_guide_action,
+    fake_guide_payload,
+    fake_issue_sync,
+    playground_guide_probe,
+)
 from .vue_console import STUB_HTML, ensure_vue_console_dist, resolve_vue_console_dist
 from .viewer_runtime import (
     DEFAULT_HOST as ADF_DEFAULT_HOST,
@@ -81,6 +88,15 @@ def _gh_auth_status(timeout: float = 3.0) -> dict[str, Any]:
 
 
 def _dashboard_status(target: Path) -> dict[str, Any]:
+    if is_playground(target):
+        return build_dashboard_status(
+            target,
+            gh_auth=fake_gh_auth_status,
+            guide_probe=lambda host, port, timeout=1.0: playground_guide_probe(
+                target, host, port, timeout
+            ),
+            viewer_status=viewer_process_status,
+        )
     return build_dashboard_status(
         target,
         gh_auth=_gh_auth_status,
@@ -384,6 +400,10 @@ def create_app(
         return jsonify(result), status
 
     def _guide_payload(target: Path, cfg: dict[str, Any]) -> dict[str, Any]:
+        if is_playground(target):
+            return fake_guide_payload(
+                target, cfg, orch=Path(app.config["ORCHESTRATOR_ROOT"])
+            )
         stack = stack_status(target, cfg)
         probe = stack["guide_probe"]
         neo = stack["neo4j"]
@@ -432,6 +452,26 @@ def create_app(
             "docs": "docs/dice-projection-runbook.md",
         }
 
+    def _playground_guide_op(
+        target: Path,
+        cfg: dict[str, Any],
+        action: str,
+        body: dict[str, Any] | None = None,
+        *,
+        result_key: str = "result",
+    ) -> Any:
+        result = fake_guide_action(
+            target,
+            cfg,
+            action,
+            body or {},
+            orch=Path(app.config["ORCHESTRATOR_ROOT"]),
+        )
+        out = _guide_payload(target, load_config(target))
+        out[result_key] = result
+        out["ok"] = bool(result.get("ok"))
+        return jsonify(out), (200 if result.get("ok") else 400)
+
     @app.post("/api/guide")
     def api_guide_get() -> Any:
         body = request.get_json(silent=True) or {}
@@ -468,6 +508,8 @@ def create_app(
         for key in ("port", "neo4j_bolt_port", "neo4j_http_port", "neo4j_https_port"):
             if key in body and body[key] is not None:
                 cfg[key] = int(body[key])
+        if is_playground(target):
+            return _playground_guide_op(target, cfg, "ensure", body, result_key="ensure")
         result = ensure_guide_repo(cfg, pull=not bool(body.get("no_pull")))
         out = _guide_payload(target, load_config(target) if result.get("ok") else cfg)
         out["ensure"] = result
@@ -482,6 +524,8 @@ def create_app(
         for key in ("neo4j_bolt_port", "neo4j_http_port", "neo4j_https_port"):
             if key in body and body[key] is not None:
                 cfg[key] = int(body[key])
+        if is_playground(target):
+            return _playground_guide_op(target, cfg, "neo4j_start", body)
         result = start_neo4j(cfg)
         out = _guide_payload(target, cfg)
         out["result"] = result
@@ -493,6 +537,8 @@ def create_app(
         body = request.get_json(silent=True) or {}
         target = _target_from_body(body)
         cfg = load_config(target)
+        if is_playground(target):
+            return _playground_guide_op(target, cfg, "neo4j_stop", body)
         result = stop_neo4j(cfg)
         out = _guide_payload(target, cfg)
         out["result"] = result
@@ -510,6 +556,8 @@ def create_app(
         for key in ("port", "neo4j_bolt_port", "neo4j_http_port", "neo4j_https_port"):
             if key in body and body[key] is not None:
                 cfg[key] = int(body[key])
+        if is_playground(target):
+            return _playground_guide_op(target, cfg, "start", body)
         result = start_guide(
             target,
             cfg,
@@ -526,6 +574,8 @@ def create_app(
         body = request.get_json(silent=True) or {}
         target = _target_from_body(body)
         cfg = load_config(target)
+        if is_playground(target):
+            return _playground_guide_op(target, cfg, "stop", body)
         result = stop_guide(target, cfg)
         out = _guide_payload(target, cfg)
         out["result"] = result
@@ -538,6 +588,8 @@ def create_app(
         target = _target_from_body(body)
         cfg = load_config(target)
         profile = str(body.get("profile") or cfg.get("profile") or "sdlc-spdd")
+        if is_playground(target):
+            return _playground_guide_op(target, cfg, "ensure_profile", body)
         result = ensure_spdd_profile(
             str(cfg.get("guide_home") or ""),
             orchestrator_root=str(app.config["ORCHESTRATOR_ROOT"]),
@@ -563,6 +615,8 @@ def create_app(
         host = str(cfg.get("host") or "127.0.0.1")
         port = int(cfg.get("port") or 21337)
         root = str(body.get("root_path") or app.config["ORCHESTRATOR_ROOT"])
+        if is_playground(target):
+            return _playground_guide_op(target, cfg, "projection_load", body)
         result = load_spdd_projection(host, port, root_path=root)
         out = _guide_payload(target, cfg)
         out["result"] = result
@@ -578,6 +632,8 @@ def create_app(
         target = _target_from_body(body)
         cfg = load_config(target)
         host, port = _cfg_host_port(cfg)
+        if is_playground(target):
+            return _playground_guide_op(target, cfg, "stats", body)
         result = guide_stats(host, port)
         out = _guide_payload(target, cfg)
         out["result"] = result
@@ -591,6 +647,8 @@ def create_app(
         target = _target_from_body(body)
         cfg = load_config(target)
         host, port = _cfg_host_port(cfg)
+        if is_playground(target):
+            return _playground_guide_op(target, cfg, "ingest", body)
         result = load_references(host, port)
         out = _guide_payload(target, cfg)
         out["result"] = result
@@ -607,6 +665,13 @@ def create_app(
         uri_prefix = str(body.get("uri_prefix") or "").strip() or None
         if not directory and not uri_prefix:
             directory = str(app.config["ORCHESTRATOR_ROOT"])
+        if is_playground(target):
+            return _playground_guide_op(
+                target,
+                cfg,
+                "purge_preview",
+                {**body, "directory": directory, "uri_prefix": uri_prefix},
+            )
         result = purge_preview(
             host,
             port,
@@ -631,6 +696,13 @@ def create_app(
         uri_prefix = str(body.get("uri_prefix") or "").strip() or None
         if not directory and not uri_prefix:
             directory = str(app.config["ORCHESTRATOR_ROOT"])
+        if is_playground(target):
+            return _playground_guide_op(
+                target,
+                cfg,
+                "purge",
+                {**body, "directory": directory, "uri_prefix": uri_prefix},
+            )
         result = purge_content(
             host,
             port,
@@ -650,6 +722,10 @@ def create_app(
         cfg = load_config(target)
         host, port = _cfg_host_port(cfg)
         directory = str(body.get("directory") or app.config["ORCHESTRATOR_ROOT"]).strip()
+        if is_playground(target):
+            return _playground_guide_op(
+                target, cfg, "git_reset", {**body, "directory": directory}
+            )
         result = reset_git_revision(host, port, directory=directory)
         out = _guide_payload(target, cfg)
         out["result"] = result
@@ -669,6 +745,8 @@ def create_app(
                     "error": "confirm=true required — this wipes ALL RAG ContentElement nodes",
                 }
             ), 400
+        if is_playground(target):
+            return _playground_guide_op(target, cfg, "purge_all_rag", body)
         result = purge_all_content_elements_docker(
             username=str(cfg.get("neo4j_username") or "neo4j"),
             password=str(cfg.get("neo4j_password") or "brahmsian"),
@@ -922,6 +1000,19 @@ def create_app(
         if direction not in {"pull", "push"}:
             return jsonify({"ok": False, "error": "direction must be pull or push"}), 400
         apply = body.get("apply") is True
+        if is_playground(target):
+            try:
+                return jsonify(
+                    fake_issue_sync(
+                        target,
+                        work_id=work_id,
+                        system=system,
+                        direction=direction,
+                        apply=apply,
+                    )
+                )
+            except (FileNotFoundError, ValueError) as exc:
+                return jsonify({"ok": False, "error": str(exc), "target": str(target)}), 400
         svc = IssueSyncService(Project.resolve(target))
         try:
             report = svc.sync_issue(
