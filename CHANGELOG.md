@@ -17,6 +17,8 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 - Vue3 ops console **Dashboard** + **Issues** tabs (parity with the Flask console) and Playwright coverage for refresh, tracker save/toggle, link preview, and sync dry-run
+- Vue3 Persistence **Check ledger parity** / **Parity + repair** buttons (same `/api/persistence/parity` as the Flask console)
+- Vue3 Playwright: Issues Jira tracker select, health refresh, persistence parity, rollback dry-run restore, Guide config save
 
 ## [2.0.0a6] - 2026-08-08
 

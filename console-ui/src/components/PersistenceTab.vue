@@ -97,6 +97,55 @@ async function saveOptions() {
   }
 }
 
+async function checkParity(repair) {
+  if (
+    repair &&
+    !window.confirm(
+      "Repair re-derives projections (SQLite rebuild + Guide reproject) when parity drifts. Continue?"
+    )
+  ) {
+    return;
+  }
+  loading.value = true;
+  statusClass.value = "";
+  statusText.value = repair ? "Checking ledger parity (repair)…" : "Checking ledger parity…";
+  try {
+    // Drift is HTTP 200 with ok=false — do not treat that as a request failure.
+    const res = await fetch("/api/persistence/parity", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({ target: props.target, repair: !!repair }),
+    });
+    let data = null;
+    try {
+      data = await res.json();
+    } catch {
+      data = { error: `Non-JSON response (${res.status})` };
+    }
+    log.value = JSON.stringify(data, null, 2);
+    if (!res.ok) {
+      statusClass.value = "err";
+      statusText.value = data?.error || `Parity check failed (${res.status})`;
+      return;
+    }
+    const parity = data.parity || {};
+    const ledger = parity.ledger || {};
+    const count = ledger.count != null ? ledger.count : "?";
+    const path = ledger.path || "spdd/memory/lessons.jsonl";
+    statusText.value =
+      (parity.ok ? "Parity OK" : "Parity drift") +
+      ` · ledger ${count} accepted (${path})` +
+      (parity.repaired ? " · repair ran (db rebuild / Guide reproject)" : "");
+    statusClass.value = parity.ok ? "ok" : "err";
+  } catch (err) {
+    statusClass.value = "err";
+    statusText.value = String(err?.message || err);
+    log.value = String(err);
+  } finally {
+    loading.value = false;
+  }
+}
+
 onMounted(loadStatus);
 </script>
 
@@ -160,6 +209,24 @@ onMounted(loadStatus);
         @click="saveOptions"
       >
         Save options
+      </button>
+      <button
+        class="btn btn-secondary"
+        type="button"
+        data-testid="persistence-parity"
+        :disabled="loading"
+        @click="checkParity(false)"
+      >
+        Check ledger parity
+      </button>
+      <button
+        class="btn btn-warn"
+        type="button"
+        data-testid="persistence-parity-repair"
+        :disabled="loading"
+        @click="checkParity(true)"
+      >
+        Parity + repair
       </button>
     </div>
     <div class="stats" data-testid="persist-stats">
