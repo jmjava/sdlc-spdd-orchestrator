@@ -73,8 +73,10 @@ from .viewer_runtime import (
     restart_viewer,
     start_viewer,
     stop_viewer,
+    viewer_edit_url,
     viewer_payload,
     viewer_process_status,
+    viewer_url,
 )
 
 
@@ -115,6 +117,24 @@ def _requirements_issue_sections(project: Project, *, max_files: int = 40) -> di
 
 def _dashboard_suggestions(project: Project, status: dict[str, Any]) -> list[dict[str, Any]]:
     return dashboard_suggestions(project, status)
+
+
+def _slim_work_row(row: dict[str, Any]) -> dict[str, Any]:
+    """Columns the SQLite work browser and status table need."""
+    return {
+        "work_id": row.get("work_id") or "",
+        "title": row.get("title") or "",
+        "work_type": row.get("work_type") or "",
+        "registry_status": row.get("registry_status") or "",
+        "canvas_status": row.get("canvas_status") or "",
+        "registry_phase": row.get("registry_phase") or "",
+        "jira_key": row.get("jira_key") or "",
+        "github_number": row.get("github_number") or "",
+        "has_canvas": bool(row.get("has_canvas")),
+        "has_requirement": bool(row.get("has_requirement")),
+        "canvas_path": row.get("canvas_path") or "",
+        "requirement_path": row.get("requirement_path") or "",
+    }
 
 
 def create_app(
@@ -233,7 +253,8 @@ def create_app(
         if info.get("exists") and not info.get("error"):
             try:
                 recent = index.query_sql(
-                    "SELECT work_id, title, registry_status, canvas_status, jira_key "
+                    "SELECT work_id, title, work_type, registry_status, canvas_status, "
+                    "jira_key, github_number, registry_phase, has_canvas, has_requirement "
                     "FROM work_items ORDER BY work_id LIMIT 25"
                 )
             except Exception:  # noqa: BLE001
@@ -241,6 +262,67 @@ def create_app(
         info["recent"] = recent
         info["target"] = str(target)
         return jsonify(info)
+
+    @app.post("/api/sqlite/works")
+    def api_sqlite_works() -> Any:
+        """Filterable work-item list for the SQLite work browser."""
+        body = request.get_json(silent=True) or {}
+        target = _target_from_body(body)
+        if not target.is_dir():
+            return jsonify({"ok": False, "error": f"target not found: {target}"}), 400
+        project = Project.resolve(target)
+        index = LocalIndex(project)
+        info = index.status_dict()
+        if not info.get("exists") or info.get("error"):
+            return jsonify(
+                {
+                    "ok": True,
+                    "exists": False,
+                    "works": [],
+                    "count": 0,
+                    "target": str(target),
+                    "error": info.get("error") or "",
+                }
+            )
+        search = str(body.get("q") or body.get("search") or "").strip()
+        status = str(body.get("status") or "").strip()
+        work_id = str(body.get("work_id") or "").strip()
+        try:
+            limit = int(body.get("limit") or 50)
+        except (TypeError, ValueError):
+            limit = 50
+        try:
+            rows = index.find(
+                work_id=work_id,
+                status="" if search else status,
+                search=search,
+                limit=limit,
+            )
+        except Exception as exc:  # noqa: BLE001
+            return jsonify({"ok": False, "error": str(exc), "target": str(target)}), 400
+        if search and status:
+            rows = [
+                row
+                for row in rows
+                if status
+                in {
+                    str(row.get("registry_status") or ""),
+                    str(row.get("canvas_status") or ""),
+                    str(row.get("final_status") or ""),
+                }
+            ]
+        works = [_slim_work_row(row) for row in rows]
+        return jsonify(
+            {
+                "ok": True,
+                "exists": True,
+                "works": works,
+                "count": len(works),
+                "q": search,
+                "status": status,
+                "target": str(target),
+            }
+        )
 
     @app.post("/api/sqlite/rebuild")
     def api_sqlite_rebuild() -> Any:
@@ -898,13 +980,14 @@ def create_app(
         combo_id = str(body.get("combo") or "").strip()
         work_type = str(body.get("type") or "").strip()
         write = bool(body.get("write"))
+        open_viewer = bool(body.get("open_viewer"))
         output = str(body.get("output") or "").strip()
         try:
             lib = AdfTemplateLibrary()
             if not combo_id:
                 combo_id = lib.suggest_combo(work_id, work_type)
             out_path = None
-            if write:
+            if write or open_viewer:
                 out_path = output or f"adf/{work_id}.adf.json"
             result = lib.render(
                 Project.resolve(target),
@@ -917,6 +1000,17 @@ def create_app(
             return jsonify({"ok": False, "error": str(exc), "target": str(target)}), 400
         payload = result.to_dict()
         payload["target"] = str(target)
+        if open_viewer and result.output_path:
+            host, port = _adf_host_port(body)
+            started = start_viewer(target, host=host, port=port)
+            payload["viewer"] = {
+                "ok": bool(started.get("ok")),
+                "url": viewer_url(host, port),
+                "edit_url": viewer_edit_url(host, port, result.output_path),
+                "result": started,
+            }
+            if started.get("error"):
+                payload["viewer"]["error"] = started["error"]
         return jsonify(payload)
 
     @app.post("/api/integrations/status")

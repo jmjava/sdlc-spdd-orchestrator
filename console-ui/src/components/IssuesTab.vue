@@ -1,9 +1,10 @@
 <script setup>
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { postJson } from "../api.js";
 
 const props = defineProps({
   target: { type: String, default: "" },
+  focusWorkId: { type: String, default: "" },
 });
 
 const loading = ref(false);
@@ -318,6 +319,16 @@ async function syncIssues(direction, apply) {
     loading.value = false;
   }
 }
+
+watch(
+  () => props.focusWorkId,
+  (id) => {
+    if (!id) return;
+    jiraWorkId.value = id;
+    ghWorkId.value = id;
+  },
+  { immediate: true },
+);
 
 onMounted(loadIntegrations);
 </script>

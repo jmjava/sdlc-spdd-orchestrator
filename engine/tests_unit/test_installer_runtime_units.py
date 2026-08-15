@@ -458,3 +458,12 @@ def test_viewer_runtime_probe_http_and_kill_paths(
         ensure_neo4j=False,
     )
     assert popen_fail["ok"] is False
+
+
+def test_viewer_edit_url_encodes_path(tmp_path: Path) -> None:
+    dest = tmp_path / "adf" / "FEAT-1.adf.json"
+    dest.parent.mkdir()
+    dest.write_text("{}", encoding="utf-8")
+    url = vr.viewer_edit_url("127.0.0.1", 5050, dest)
+    assert url.startswith("http://127.0.0.1:5050/edit?path=")
+    assert "FEAT-1.adf.json" in url

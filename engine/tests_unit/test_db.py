@@ -74,6 +74,8 @@ def test_rebuild_and_query(tmp_path: Path, monkeypatch) -> None:
 
     searched = idx.find(search="Indexed")
     assert {r["work_id"] for r in searched} >= {a, b}
+    hyphen = idx.find(search=a)
+    assert any(r["work_id"] == a for r in hyphen)
 
     sql_rows = idx.query_sql(
         "SELECT work_id, jira_key FROM work_items WHERE jira_key = ?",

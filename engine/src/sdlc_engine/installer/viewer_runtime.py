@@ -11,6 +11,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
 from ..io_util import clear_file, load_json_dict, save_json_dict
 from ..timeutil import utc_now as _utc_now
@@ -45,6 +46,12 @@ def _run(cmd: list[str], *, timeout: int = 30) -> dict[str, Any]:
 
 def viewer_url(host: str, port: int) -> str:
     return f"http://{host}:{int(port)}/"
+
+
+def viewer_edit_url(host: str, port: int, adf_path: Path | str) -> str:
+    """ADF Viewer edit URL for an on-disk ticket (``/edit?path=``)."""
+    abs_path = Path(adf_path).expanduser().resolve()
+    return f"{viewer_url(host, port).rstrip('/')}/edit?path={quote(str(abs_path), safe='')}"
 
 
 def probe_viewer(host: str = DEFAULT_HOST, port: int = DEFAULT_PORT, *, timeout: float = 1.5) -> dict[str, Any]:

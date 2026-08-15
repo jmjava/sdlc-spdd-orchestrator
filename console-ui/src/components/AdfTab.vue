@@ -1,9 +1,10 @@
 <script setup>
-import { onMounted, ref } from "vue";
+import { onMounted, ref, watch } from "vue";
 import { postJson } from "../api.js";
 
 const props = defineProps({
   target: { type: String, default: "" },
+  focusWorkId: { type: String, default: "" },
 });
 
 const host = ref("127.0.0.1");
@@ -265,6 +266,15 @@ async function initFromAdf(dryRun) {
     busy.value = false;
   }
 }
+
+watch(
+  () => props.focusWorkId,
+  (id) => {
+    if (!id) return;
+    workId.value = id;
+  },
+  { immediate: true },
+);
 
 onMounted(async () => {
   await loadAdf();
