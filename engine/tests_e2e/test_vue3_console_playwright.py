@@ -549,6 +549,15 @@ def test_vue3_rollback_dry_run_restore(page, live_vue_console) -> None:  # type:
 # --- Issues ----------------------------------------------------------------
 
 
+def _open_issues(page) -> None:  # type: ignore[no-untyped-def]
+    _open_tab(page, "issues")
+    page.get_by_test_id("issues-panel").wait_for(state="visible")
+    page.wait_for_function(
+        """() => (document.querySelector('[data-testid="int-meta"]')?.textContent || '')
+          .includes('tracker=')"""
+    )
+
+
 def _select_tracker(page, tracker: str) -> None:  # type: ignore[no-untyped-def]
     page.get_by_test_id("int-tracker").select_option(tracker)
     page.get_by_test_id("int-tracker").dispatch_event("change")
@@ -569,8 +578,7 @@ def _wait_vue_issues_tracker_saved(page, tracker: str) -> None:  # type: ignore[
 
 def test_vue3_issues_integrations_save_and_tracker_toggle(page, live_vue_console) -> None:  # type: ignore[no-untyped-def]
     _goto_vue(page, live_vue_console)
-    _open_tab(page, "issues")
-    page.get_by_test_id("issues-panel").wait_for(state="visible")
+    _open_issues(page)
     _select_tracker(page, "jira")
     page.get_by_test_id("int-jira-url").fill("https://example.atlassian.net")
     page.get_by_test_id("int-jira-email").fill("ci@example.com")
@@ -600,7 +608,7 @@ def test_vue3_issues_jira_link_preview(page, live_vue_console) -> None:  # type:
     work_id = "FEAT-pw-vue-jira-link"
     _seed_issue_work(Path(live_vue_console["target"]), work_id)
     _goto_vue(page, live_vue_console)
-    _open_tab(page, "issues")
+    _open_issues(page)
     _select_tracker(page, "jira")
     page.get_by_test_id("btn-int-save").click()
     _wait_vue_issues_tracker_saved(page, "jira")
@@ -619,7 +627,7 @@ def test_vue3_issues_github_link_preview(page, live_vue_console) -> None:  # typ
     work_id = "FEAT-pw-vue-gh-link"
     _seed_issue_work(Path(live_vue_console["target"]), work_id)
     _goto_vue(page, live_vue_console)
-    _open_tab(page, "issues")
+    _open_issues(page)
     _select_tracker(page, "github")
     page.get_by_test_id("btn-int-save").click()
     _wait_vue_issues_tracker_saved(page, "github")
@@ -638,7 +646,7 @@ def test_vue3_issues_sync_prepare_push_dry(page, live_vue_console) -> None:  # t
     work_id = "FEAT-pw-vue-sync-dry"
     _seed_issue_work(Path(live_vue_console["target"]), work_id)
     _goto_vue(page, live_vue_console)
-    _open_tab(page, "issues")
+    _open_issues(page)
     _select_tracker(page, "github")
     page.get_by_test_id("btn-int-save").click()
     _wait_vue_issues_tracker_saved(page, "github")
