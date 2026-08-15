@@ -54,6 +54,15 @@ function guideLabel() {
   return guide.reachable ? "UP" : "DOWN";
 }
 
+function openWork(tab, workId) {
+  const id = String(workId || work.value.pointer || "").trim();
+  emit("goto-tab", id ? { tab, workId: id } : tab);
+}
+
+function openSuggestion(item) {
+  openWork(item?.tab || "sqlite", item?.work_id || work.value.pointer || "");
+}
+
 function integrationLines() {
   const jira = integrations.value.jira || {};
   const gh = integrations.value.github || {};
@@ -116,7 +125,14 @@ onMounted(refresh);
         </li>
         <li v-for="item in suggestions" :key="item.id" :data-suggestion-id="item.id">
           <span class="mark">[ ]</span>
-          <span>{{ item.text }}</span>
+          <button
+            class="suggestion-link"
+            type="button"
+            :data-testid="`dash-suggestion-${item.id}`"
+            @click="openSuggestion(item)"
+          >
+            {{ item.text }}
+          </button>
         </li>
       </ul>
       <div class="actions">
@@ -137,7 +153,15 @@ onMounted(refresh);
       <h2>Active work</h2>
       <div class="stats" data-testid="dash-work-stats">
         <div class="stat-card">
-          <div class="n" data-testid="dw-id">{{ work.pointer || "(none)" }}</div>
+          <button
+            class="n work-id-link"
+            type="button"
+            data-testid="dw-id"
+            :disabled="!work.pointer"
+            @click="openWork('sqlite', work.pointer)"
+          >
+            {{ work.pointer || "(none)" }}
+          </button>
           <div class="l">work id</div>
         </div>
         <div class="stat-card">
@@ -160,6 +184,20 @@ onMounted(refresh);
           {{ gate.label || gate.gate }}
         </li>
       </ul>
+      <div class="actions" v-if="work.pointer">
+        <button class="btn btn-secondary" type="button" data-testid="dash-open-sqlite" @click="openWork('sqlite', work.pointer)">
+          Open in SQLite
+        </button>
+        <button class="btn btn-ghost" type="button" data-testid="dash-open-templates" @click="openWork('templates', work.pointer)">
+          Templates
+        </button>
+        <button class="btn btn-ghost" type="button" data-testid="dash-open-issues" @click="openWork('issues', work.pointer)">
+          Issues
+        </button>
+        <button class="btn btn-ghost" type="button" data-testid="dash-open-adf" @click="openWork('adf', work.pointer)">
+          ADF
+        </button>
+      </div>
       <p class="meta">Claim/advance from the terminal: <code>./scripts/sdlc.sh next</code></p>
     </section>
 
@@ -195,7 +233,7 @@ onMounted(refresh);
         <button class="btn btn-secondary" type="button" data-testid="dash-goto-persistence" @click="emit('goto-tab', 'persistence')">
           Configure → Persistence
         </button>
-        <button class="btn btn-ghost" type="button" data-testid="dash-goto-sqlite" @click="emit('goto-tab', 'sqlite')">
+        <button class="btn btn-ghost" type="button" data-testid="dash-goto-sqlite" @click="openWork('sqlite', work.pointer)">
           Configure → SQLite
         </button>
         <button class="btn btn-ghost" type="button" data-testid="dash-goto-guide" @click="emit('goto-tab', 'guide')">
@@ -210,10 +248,10 @@ onMounted(refresh);
         <li v-for="line in integrationLines()" :key="line">{{ line }}</li>
       </ul>
       <div class="actions">
-        <button class="btn btn-ghost" type="button" data-testid="dash-goto-issues" @click="emit('goto-tab', 'issues')">
+        <button class="btn btn-ghost" type="button" data-testid="dash-goto-issues" @click="openWork('issues', work.pointer)">
           Configure → Issues
         </button>
-        <button class="btn btn-ghost" type="button" data-testid="dash-goto-adf" @click="emit('goto-tab', 'adf')">
+        <button class="btn btn-ghost" type="button" data-testid="dash-goto-adf" @click="openWork('adf', work.pointer)">
           Configure → ADF / Viewer
         </button>
       </div>
@@ -230,7 +268,16 @@ onMounted(refresh);
           <span class="src">{{ item.source }}</span>
           <span>
             {{ item.text }}
-            <span class="hint">{{ item.ts }}<template v-if="item.work_id"> · {{ item.work_id }}</template></span>
+            <button
+              v-if="item.work_id"
+              class="suggestion-link"
+              type="button"
+              data-testid="dash-activity-work"
+              @click="openWork('sqlite', item.work_id)"
+            >
+              {{ item.work_id }}
+            </button>
+            <span class="hint">{{ item.ts }}</span>
           </span>
         </li>
       </ul>

@@ -422,6 +422,34 @@ pre.cmd {
   font-size: 0.75rem;
 }
 
+.suggestion-link,
+.work-id-link {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  text-align: left;
+  font: inherit;
+}
+
+.work-id-link {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.work-id-link:disabled {
+  color: var(--muted);
+  cursor: default;
+}
+
+.suggestion-link:hover,
+.work-id-link:not(:disabled):hover {
+  text-decoration: underline;
+}
+
 @media (max-width: 640px) {
   .target-bar {
     grid-template-columns: 1fr;

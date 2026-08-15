@@ -47,7 +47,7 @@ the `--root` passed when starting the ADF Viewer.
 
 | Tab | What it does |
 |-----|----------------|
-| **Dashboard** | **Default landing tab.** Active Work ID, phase, gates, suggested next command, accepted vs staged lesson counts, backend status, integration shortcuts. Links to Persistence/SQLite/Guide for configuration. |
+| **Dashboard** | **Default landing tab.** Active Work ID, phase, gates, suggested next command, accepted vs staged lesson counts, backend status, integration shortcuts. Work ID / suggestions / activity jump to SQLite, Templates, Issues, or ADF with that id filled. |
 | **Install / Upgrade** | Detect fresh vs upgrade; run setup/upgrade/verify (dry-run supported) |
 | **Persistence** | Toggle `CONTEXT_BACKENDS` backends (`git-pointers`, `sqlite`, `guide-dice`); optional Guide URL + notes → `.sdlc/persistence-config.json`. **Check ledger parity** and **Parity + repair** buttons call `sdlc-engine context parity`. Operator guide: [triple-path-context.md](triple-path-context.md) |
 | **Templates** | Render ADF combos for a Work ID with markdown + JSON preview; optional write to `adf/<work-id>.adf.json` and open the ADF Viewer on that file |
