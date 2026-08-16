@@ -568,6 +568,39 @@ def test_vue3_sqlite_work_browser_filter_and_jump(page, live_vue_console) -> Non
     assert page.get_by_test_id("templates-work-id").input_value() == work_id
 
 
+def test_vue3_sqlite_work_detail_reads_requirement(page, live_vue_console) -> None:  # type: ignore[no-untyped-def]
+    work_id = live_vue_console["works"]["feature"]
+    _goto_vue(page, live_vue_console)
+    _open_tab(page, "sqlite")
+    page.get_by_test_id("sqlite-panel").wait_for(state="visible")
+    page.get_by_test_id("btn-sqlite-rebuild").click()
+    page.wait_for_function(
+        """() => {
+          const t = document.querySelector('[data-testid="sqlite-status"]')?.textContent || '';
+          return t.includes('Index rebuilt') || t.includes('work(s)');
+        }"""
+    )
+    page.get_by_test_id("sqlite-filter").fill("FEAT-920")
+    page.get_by_test_id("sqlite-filter-apply").click()
+    page.wait_for_function(
+        f"""() => (document.querySelector('[data-testid="sqlite-rows"]')?.textContent || '')
+          .includes('{work_id}')"""
+    )
+    page.locator(f'[data-testid="sqlite-rows"] tr[data-work-id="{work_id}"]').get_by_test_id(
+        "sqlite-open-detail"
+    ).click()
+    page.get_by_test_id("sqlite-detail").wait_for(state="visible")
+    assert page.get_by_test_id("sqlite-detail-id").inner_text() == work_id
+    text = page.get_by_test_id("sqlite-detail-text").inner_text()
+    assert "Vue3 Playwright feature work" in text
+    page.get_by_test_id("sqlite-detail-canvas").click()
+    canvas = page.get_by_test_id("sqlite-detail-text").inner_text()
+    assert "missing canvas" in canvas
+    page.get_by_test_id("sqlite-detail-templates").click()
+    page.get_by_test_id("templates-panel").wait_for(state="visible")
+    assert page.get_by_test_id("templates-work-id").input_value() == work_id
+
+
 def test_vue3_templates_open_viewer_shows_edit_url(page, live_vue_console) -> None:  # type: ignore[no-untyped-def]
     work_id = live_vue_console["works"]["feature"]
     _goto_vue(page, live_vue_console)

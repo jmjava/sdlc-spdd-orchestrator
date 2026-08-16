@@ -18,6 +18,9 @@ const breakdown = ref("—");
 const rows = ref([]);
 const query = ref("");
 const statusFilter = ref("");
+const selectedId = ref("");
+const detail = ref(null);
+const detailKind = ref("requirement");
 const loading = ref(false);
 const statusText = ref("");
 const statusClass = ref("");
@@ -77,6 +80,10 @@ async function loadWorks() {
     statusText.value = `${rows.value.length} work(s)`;
     statusClass.value = "ok";
   }
+  const focus = selectedId.value || props.focusWorkId;
+  if (focus && rows.value.some((r) => r.work_id === focus)) {
+    await showDetail(focus);
+  }
 }
 
 async function rebuild() {
@@ -104,6 +111,33 @@ function openWork(workId, tab) {
   emit("open-work", { tab, workId });
 }
 
+async function showDetail(workId) {
+  if (!workId || !props.target.trim()) return;
+  selectedId.value = workId;
+  const { ok, data } = await postJson("/api/sqlite/work", {
+    target: props.target,
+    work_id: workId,
+  });
+  if (!ok) {
+    statusClass.value = "err";
+    statusText.value = data?.error || "Failed to load work detail";
+    detail.value = null;
+    return;
+  }
+  detail.value = data;
+  if (detailKind.value === "canvas" && !data.canvas?.exists) {
+    detailKind.value = data.requirement?.exists ? "requirement" : "analysis";
+  }
+  if (detailKind.value === "analysis" && !data.analysis?.exists && data.requirement?.exists) {
+    detailKind.value = "requirement";
+  }
+}
+
+function detailDoc() {
+  const kind = detailKind.value;
+  return (detail.value && detail.value[kind]) || { exists: false, text: "", path: "" };
+}
+
 watch(
   () => props.focusWorkId,
   (id) => {
@@ -119,8 +153,8 @@ onMounted(loadStatus);
   <section class="panel" data-testid="sqlite-panel">
     <h2>Local SQLite index</h2>
     <p class="lead">
-      Regenerable cache under <code>.sdlc/index.sqlite</code>. Filter the work list and jump to
-      Templates, Issues, or ADF. Git remains source of truth.
+      Regenerable cache under <code>.sdlc/index.sqlite</code>. Filter the work list, read the
+      requirement/canvas, and jump to Templates, Issues, or ADF. Git remains source of truth.
     </p>
     <div class="stats" data-testid="sqlite-stats">
       <div class="stat-card"><div class="n" data-testid="sq-work">{{ workItems }}</div><div class="l">work items</div></div>
@@ -185,8 +219,17 @@ onMounted(loadStatus);
         </thead>
         <tbody data-testid="sqlite-rows">
           <tr v-if="!rows.length"><td colspan="7">Refresh or rebuild to load.</td></tr>
-          <tr v-for="r in rows" :key="r.work_id" :data-work-id="r.work_id">
-            <td><code>{{ r.work_id }}</code></td>
+          <tr
+            v-for="r in rows"
+            :key="r.work_id"
+            :data-work-id="r.work_id"
+            :class="{ selected: selectedId === r.work_id }"
+          >
+            <td>
+              <button class="suggestion-link" type="button" data-testid="sqlite-open-detail" @click="showDetail(r.work_id)">
+                <code>{{ r.work_id }}</code>
+              </button>
+            </td>
             <td>{{ r.registry_status }}</td>
             <td>{{ r.canvas_status }}</td>
             <td>{{ r.jira_key }}</td>
@@ -207,5 +250,48 @@ onMounted(loadStatus);
         </tbody>
       </table>
     </div>
+    <section v-if="detail" class="detail-panel" data-testid="sqlite-detail">
+      <h3 data-testid="sqlite-detail-id">{{ detail.work_id }}</h3>
+      <p class="meta" data-testid="sqlite-detail-meta">
+        {{ detail.work?.title || "—" }}
+        <template v-if="detailDoc().path"> · {{ detailDoc().path }}</template>
+        <template v-if="detailDoc().truncated"> · truncated</template>
+      </p>
+      <div class="actions">
+        <button
+          class="btn btn-ghost"
+          type="button"
+          data-testid="sqlite-detail-requirement"
+          :class="{ active: detailKind === 'requirement' }"
+          @click="detailKind = 'requirement'"
+        >
+          Requirement
+        </button>
+        <button
+          class="btn btn-ghost"
+          type="button"
+          data-testid="sqlite-detail-canvas"
+          :class="{ active: detailKind === 'canvas' }"
+          @click="detailKind = 'canvas'"
+        >
+          Canvas
+        </button>
+        <button
+          class="btn btn-ghost"
+          type="button"
+          data-testid="sqlite-detail-analysis"
+          :class="{ active: detailKind === 'analysis' }"
+          @click="detailKind = 'analysis'"
+        >
+          Analysis
+        </button>
+        <button class="btn btn-secondary" type="button" data-testid="sqlite-detail-templates" @click="openWork(detail.work_id, 'templates')">
+          Templates
+        </button>
+      </div>
+      <pre class="preview" data-testid="sqlite-detail-text">{{
+        detailDoc().exists ? detailDoc().text : `(missing ${detailKind} — ${detailDoc().path || "no path"})`
+      }}</pre>
+    </section>
   </section>
 </template>

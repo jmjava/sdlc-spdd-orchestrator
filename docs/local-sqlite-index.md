@@ -96,6 +96,8 @@ Visual status + rebuild live in the ops console:
 ./scripts/sdlc.sh console --target .
 ```
 
-Open the **SQLite** tab for counts, registry breakdown, and rebuild. The
-**Guide** tab stores local Guide connection settings (gitignored under
+Open the **SQLite** tab for counts, registry breakdown, rebuild, and a
+filterable work browser. Click a Work ID to read the requirement / canvas /
+analysis from git (`POST /api/sqlite/work`); the cache is only the index.
+The **Guide** tab stores local Guide connection settings (gitignored under
 `.sdlc/guide-config.json`). See [ops-console.md](ops-console.md).

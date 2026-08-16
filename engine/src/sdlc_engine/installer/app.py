@@ -119,6 +119,20 @@ def _dashboard_suggestions(project: Project, status: dict[str, Any]) -> list[dic
     return dashboard_suggestions(project, status)
 
 
+_WORK_DOC_MAX = 80_000
+
+
+def _work_doc(path: Path, rel: str) -> dict[str, Any]:
+    """Read a contract file for the work-item detail panel."""
+    if not path.is_file():
+        return {"exists": False, "path": rel, "text": "", "truncated": False}
+    text = path.read_text(encoding="utf-8", errors="replace")
+    truncated = len(text) > _WORK_DOC_MAX
+    if truncated:
+        text = text[:_WORK_DOC_MAX]
+    return {"exists": True, "path": rel, "text": text, "truncated": truncated}
+
+
 def _slim_work_row(row: dict[str, Any]) -> dict[str, Any]:
     """Columns the SQLite work browser and status table need."""
     return {
@@ -321,6 +335,42 @@ def create_app(
                 "q": search,
                 "status": status,
                 "target": str(target),
+            }
+        )
+
+    @app.post("/api/sqlite/work")
+    def api_sqlite_work() -> Any:
+        """Requirement + canvas markdown for one Work ID (git is source of truth)."""
+        body = request.get_json(silent=True) or {}
+        target = _target_from_body(body)
+        if not target.is_dir():
+            return jsonify({"ok": False, "error": f"target not found: {target}"}), 400
+        work_id = str(body.get("work_id") or "").strip()
+        if not work_id:
+            return jsonify({"ok": False, "error": "work_id required", "target": str(target)}), 400
+        project = Project.resolve(target)
+        req_path = project.milestone_path(work_id)
+        canvas_path = project.canvas_path(work_id)
+        analysis_path = project.analysis_path(work_id)
+        index = LocalIndex(project)
+        work: dict[str, Any] = {"work_id": work_id}
+        info = index.status_dict()
+        if info.get("exists") and not info.get("error"):
+            try:
+                found = index.find(work_id=work_id, limit=1)
+            except Exception:  # noqa: BLE001
+                found = []
+            if found:
+                work = _slim_work_row(found[0])
+        return jsonify(
+            {
+                "ok": True,
+                "target": str(target),
+                "work_id": work_id,
+                "work": work,
+                "requirement": _work_doc(req_path, project.rel(req_path)),
+                "canvas": _work_doc(canvas_path, project.rel(canvas_path)),
+                "analysis": _work_doc(analysis_path, project.rel(analysis_path)),
             }
         )
 

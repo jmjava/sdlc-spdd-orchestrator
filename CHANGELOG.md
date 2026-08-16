@@ -21,6 +21,7 @@ All notable changes to this project will be documented in this file.
 
 - Vue Templates tab: markdown + ADF preview, and **Open in ADF Viewer after write** (`open_viewer` on `/api/templates/render`)
 - Vue SQLite work browser: `/api/sqlite/works` filter + jump to Templates / Issues / ADF with the Work ID filled
+- Vue SQLite work detail: click a Work ID to read requirement / canvas / analysis via `POST /api/sqlite/work` (git files, not sqlite blobs)
 - Vue Dashboard jumps: active Work ID, suggestions, and activity open SQLite / Templates / Issues / ADF with that id filled
 - Vue3 ops console **Dashboard** + **Issues** tabs (parity with the Flask console) and Playwright coverage for refresh, tracker save/toggle, link preview, and sync dry-run
 - Vue3 Persistence **Check ledger parity** / **Parity + repair** buttons (same `/api/persistence/parity` as the Flask console)
