@@ -224,6 +224,74 @@ def test_guide_compliance_http(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) 
     assert written["ok"] is True
 
 
+def test_summarize_run_log_parses_install_upgrade_verify() -> None:
+    install = rn.summarize_run_log(
+        action="install",
+        log=(
+            "[dry-run] would create /tmp/app/sdlc-spdd/ROADMAP.md\n"
+            "[dry-run] would copy templates/x -> /tmp/app/sdlc-spdd/x\n"
+            "SDLC-SPDD initialization complete for: /tmp/app\n"
+            "Created or updated (2):\n"
+            "  sdlc-spdd/ROADMAP.md\n"
+            "  none\n"
+            "Skipped existing (0):\n"
+            "  none\n"
+            "Recommended next step: run /sdlc-spdd-init then /sdlc-spdd-plan\n"
+            "Framework home: /tmp/app/sdlc-spdd (docs at sdlc-spdd/docs/)\n"
+            "Next steps:\n"
+            "  1. Open the target project.\n"
+            "  2. Start or resume context:\n"
+            "     /tmp/app/sdlc-spdd/scripts/start-agent-session.sh --phase init\n"
+            "  3. Invoke:\n"
+            "     /sdlc-spdd-init\n"
+        ),
+        command=["setup-agent-prompts.sh", "--dry-run"],
+        dry_run=True,
+        ok=True,
+        exit_code=0,
+    )
+    assert install["would_count"] == 2
+    assert install["would"][0].startswith("create ")
+    assert install["headline"].startswith("SDLC-SPDD initialization complete")
+    assert "/sdlc-spdd-init" in install["next_steps"][0]
+    assert any("Open the target" in step for step in install["next_steps"])
+    assert any("start-agent-session.sh" in step for step in install["next_steps"])
+    assert install["dry_run"] is True
+
+    upgrade = rn.summarize_run_log(
+        action="upgrade",
+        log=(
+            "WARNING: leftover agent-context/\n"
+            "SDLC-SPDD framework upgrade complete for: /tmp/app\n"
+            "Created (1):\n"
+            "  sdlc-spdd/docs/README.md\n"
+            "Backups (1):\n"
+            "  /tmp/app/.sdlc-spdd-upgrade-backups/20260816T000000Z/x\n"
+        ),
+        ok=True,
+        exit_code=0,
+    )
+    assert upgrade["created"] == ["sdlc-spdd/docs/README.md"]
+    assert upgrade["backups"]
+    assert upgrade["warnings"][0].startswith("WARNING")
+
+    verify = rn.summarize_run_log(
+        action="verify",
+        log=(
+            "  ok  Home: sdlc-spdd/\n"
+            "  fail Cursor commands: .cursor/commands/sdlc-spdd-init.md\n"
+            "Summary: 1/2 checks passed\n"
+            "Install verification failed (1 missing or invalid items).\n"
+        ),
+        ok=False,
+        exit_code=1,
+    )
+    assert verify["check_ok_count"] == 1
+    assert verify["check_fail_count"] == 1
+    assert "1/2 checks passed" in verify["checks_summary"]
+    assert "verification failed" in verify["headline"].lower()
+
+
 def test_runner_flags_and_engine_install(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

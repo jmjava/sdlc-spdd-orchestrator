@@ -520,6 +520,11 @@ def test_vue3_install_detect_and_dry_run(page, live_vue_console) -> None:  # typ
     log = page.get_by_test_id("install-log").inner_text()
     assert log.strip()
     assert "dry" in log.lower() or "setup-agent-prompts" in log or "Would" in log
+    page.get_by_test_id("install-summary").wait_for(state="visible")
+    assert page.get_by_test_id("detect-mode").inner_text().strip() == "fresh"
+    assert int(page.get_by_test_id("install-would-count").inner_text()) >= 1
+    next_steps = page.get_by_test_id("install-next-steps").inner_text()
+    assert "sdlc-spdd-init" in next_steps
 
 
 def test_vue3_sqlite_refresh_and_rebuild(page, live_vue_console) -> None:  # type: ignore[no-untyped-def]
@@ -875,7 +880,7 @@ def test_vue3_adf_start_status_stop(page, live_vue_console) -> None:  # type: ig
     page.wait_for_function(
         """() => {
           const meta = document.querySelector('[data-testid="adf-meta"]')?.textContent || '';
-          return meta.includes('process alive') || meta.includes('url http');
+          return meta.includes('process alive');
         }"""
     )
     assert live_vue_console["state"]["alive"] is True
