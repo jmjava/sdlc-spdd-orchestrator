@@ -102,6 +102,52 @@ def test_templates_open_viewer_returns_edit_url(
     assert active in body["viewer"]["edit_url"]
 
 
+def test_sqlite_work_detail_reads_git_docs(tmp_path: Path) -> None:
+    dest = materialize_playground(tmp_path / "play")
+    app = create_app(dest, vue_dist=False)
+    client = app.test_client()
+    body = {"target": str(dest)}
+    active = WORKS[0][0]
+    summary = WORKS[0][2]
+
+    missing_id = client.post("/api/sqlite/work", json=body)
+    assert missing_id.status_code == 400
+    assert "work_id" in missing_id.get_json()["error"]
+
+    missing_target = client.post(
+        "/api/sqlite/work",
+        json={"target": str(tmp_path / "missing"), "work_id": active},
+    )
+    assert missing_target.status_code == 400
+
+    before_index = client.post("/api/sqlite/work", json={**body, "work_id": active})
+    assert before_index.status_code == 200
+    raw = before_index.get_json()
+    assert raw["ok"] is True
+    assert raw["requirement"]["exists"] is True
+    assert summary in raw["requirement"]["text"]
+    assert raw["canvas"]["exists"] is True
+    assert raw["analysis"]["exists"] is True
+    assert raw["work"]["work_id"] == active
+    assert raw["requirement"]["truncated"] is False
+
+    client.post("/api/sqlite/rebuild", json=body)
+    indexed = client.post("/api/sqlite/work", json={**body, "work_id": active}).get_json()
+    assert indexed["work"]["title"]
+    assert indexed["work"]["work_id"] == active
+
+    unknown = client.post("/api/sqlite/work", json={**body, "work_id": "NOPE-000"}).get_json()
+    assert unknown["ok"] is True
+    assert unknown["requirement"]["exists"] is False
+    assert unknown["canvas"]["exists"] is False
+
+    req = dest / "requirements" / "milestones" / f"{active}.md"
+    req.write_text("X" * 80_001, encoding="utf-8")
+    truncated = client.post("/api/sqlite/work", json={**body, "work_id": active}).get_json()
+    assert truncated["requirement"]["truncated"] is True
+    assert len(truncated["requirement"]["text"]) == 80_000
+
+
 def test_sqlite_works_missing_index(tmp_path: Path) -> None:
     dest = materialize_playground(tmp_path / "play")
     app = create_app(dest, vue_dist=False)

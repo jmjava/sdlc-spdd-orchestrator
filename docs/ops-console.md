@@ -51,7 +51,7 @@ the `--root` passed when starting the ADF Viewer.
 | **Install / Upgrade** | Detect fresh vs upgrade; run setup/upgrade/verify (dry-run supported) |
 | **Persistence** | Toggle `CONTEXT_BACKENDS` backends (`git-pointers`, `sqlite`, `guide-dice`); optional Guide URL + notes → `.sdlc/persistence-config.json`. **Check ledger parity** and **Parity + repair** buttons call `sdlc-engine context parity`. Operator guide: [triple-path-context.md](triple-path-context.md) |
 | **Templates** | Render ADF combos for a Work ID with markdown + JSON preview; optional write to `adf/<work-id>.adf.json` and open the ADF Viewer on that file |
-| **SQLite** | `.sdlc/index.sqlite` status + rebuild, plus a filterable work browser that jumps to Templates / Issues / ADF |
+| **SQLite** | `.sdlc/index.sqlite` status + rebuild, plus a filterable work browser. Click a Work ID to read the requirement / canvas / analysis (from git files). Jump to Templates / Issues / ADF |
 | **Rollback** | List `.sdlc-spdd-upgrade-backups/<timestamp>/` and restore |
 | **Guide** | Config (`.sdlc/guide-config.json`), ensure `jmjava/orch-guide` @ `sdlc-spdd-projection-v2`, Neo4j/Guide start/stop, projection load, ingest/purge operators. Dual-repo Cloud Agent: defaults `guide_home` to sibling `../guide` and treats an already-open Bolt (`/opt/neo4j`) as Neo4j up (no Compose required). |
 | **Jira** | Link a **manually created** Jira key to a Work ID (requirement + canvas + registry); prepare/apply **pull** and **push** (update only — no issue create) |
