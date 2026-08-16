@@ -880,7 +880,7 @@ def test_vue3_adf_start_status_stop(page, live_vue_console) -> None:  # type: ig
     page.wait_for_function(
         """() => {
           const meta = document.querySelector('[data-testid="adf-meta"]')?.textContent || '';
-          return meta.includes('process alive') || meta.includes('url http');
+          return meta.includes('process alive');
         }"""
     )
     assert live_vue_console["state"]["alive"] is True
