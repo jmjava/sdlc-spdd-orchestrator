@@ -22,6 +22,7 @@ const statusClass = ref("");
 const log = ref("Awaiting action…");
 const loading = ref(false);
 const lastDetect = ref(null);
+const lastResult = ref(null);
 
 function assistants() {
   if (asAll.value) return ["all"];
@@ -96,6 +97,7 @@ async function run(actionOverride) {
       no_backup: noBackup.value,
       with_python_engine: withEngine.value,
     });
+    lastResult.value = data;
     const cmd = (data.command || []).join(" ");
     log.value = (cmd ? `$ ${cmd}\n\n` : "") + (data.log || data.error || "");
     if (ok && data.ok !== false) {
@@ -115,8 +117,14 @@ async function run(actionOverride) {
   }
 }
 
+function assistantNames(info) {
+  const a = (info && info.assistants) || {};
+  return ["cursor", "copilot", "claude"].filter((name) => a[name]);
+}
+
 function clearLog() {
   log.value = "Awaiting action…";
+  lastResult.value = null;
   statusText.value = "Ready.";
   statusClass.value = "";
 }
@@ -139,6 +147,27 @@ function clearLog() {
       <span class="mode-pill" :data-mode="modePill" data-testid="mode-pill">{{ modePill }}</span>
     </div>
     <p class="meta" data-testid="detect-detail">{{ detectDetail }}</p>
+    <div v-if="lastDetect && lastDetect.mode" class="stats" data-testid="detect-stats">
+      <div class="stat-card">
+        <div class="n" data-testid="detect-mode">{{ lastDetect.mode }}</div>
+        <div class="l">mode</div>
+      </div>
+      <div class="stat-card">
+        <div class="n" data-testid="detect-recommendation">{{ lastDetect.recommendation }}</div>
+        <div class="l">recommend</div>
+      </div>
+      <div class="stat-card">
+        <div class="n" data-testid="detect-marker-count">{{ (lastDetect.markers || []).length }}</div>
+        <div class="l">markers</div>
+      </div>
+      <div class="stat-card">
+        <div class="n" data-testid="detect-assistants">{{ assistantNames(lastDetect).join(", ") || "none" }}</div>
+        <div class="l">adapters</div>
+      </div>
+    </div>
+    <ul v-if="lastDetect && (lastDetect.markers || []).length" class="result-list" data-testid="detect-markers">
+      <li v-for="m in lastDetect.markers" :key="m">{{ m }}</li>
+    </ul>
     <div class="checks">
       <label class="check"><input v-model="action" type="radio" value="auto" data-testid="action-auto" /> Auto</label>
       <label class="check"><input v-model="action" type="radio" value="install" data-testid="action-install" /> Force install</label>
@@ -166,6 +195,47 @@ function clearLog() {
       <button class="btn btn-ghost" type="button" data-testid="btn-clear" @click="clearLog">Clear log</button>
     </div>
     <p class="status" :class="statusClass" data-testid="run-status">{{ statusText }}</p>
+    <section v-if="lastResult && lastResult.summary" class="detail-panel" data-testid="install-summary">
+      <h3 data-testid="install-headline">{{ lastResult.summary.headline || lastResult.summary.action }}</h3>
+      <div class="stats">
+        <div class="stat-card">
+          <div class="n" data-testid="install-exit">{{ lastResult.summary.exit_code }}</div>
+          <div class="l">exit</div>
+        </div>
+        <div v-if="lastResult.summary.dry_run" class="stat-card">
+          <div class="n" data-testid="install-would-count">{{ lastResult.summary.would_count }}</div>
+          <div class="l">would</div>
+        </div>
+        <div v-if="lastResult.summary.created_count" class="stat-card">
+          <div class="n" data-testid="install-created-count">{{ lastResult.summary.created_count }}</div>
+          <div class="l">created</div>
+        </div>
+        <div v-if="lastResult.summary.check_ok_count || lastResult.summary.check_fail_count" class="stat-card">
+          <div class="n" data-testid="install-check-counts">
+            {{ lastResult.summary.check_ok_count }}/{{ lastResult.summary.check_ok_count + lastResult.summary.check_fail_count }}
+          </div>
+          <div class="l">checks</div>
+        </div>
+      </div>
+      <p v-if="lastResult.summary.command" class="meta" data-testid="install-command">{{ lastResult.summary.command }}</p>
+      <p v-if="lastResult.summary.framework_home" class="meta" data-testid="install-home">{{ lastResult.summary.framework_home }}</p>
+      <p v-if="lastResult.summary.checks_summary" class="meta" data-testid="install-checks-summary">{{ lastResult.summary.checks_summary }}</p>
+      <ul v-if="lastResult.summary.next_steps.length" class="result-list" data-testid="install-next-steps">
+        <li v-for="(step, i) in lastResult.summary.next_steps" :key="i">{{ step }}</li>
+      </ul>
+      <ul v-if="lastResult.summary.warnings.length" class="result-list" data-testid="install-warnings">
+        <li v-for="(w, i) in lastResult.summary.warnings" :key="i">{{ w }}</li>
+      </ul>
+      <ul v-if="lastResult.summary.would.length" class="result-list" data-testid="install-would">
+        <li v-for="(item, i) in lastResult.summary.would" :key="i">{{ item }}</li>
+      </ul>
+      <ul v-if="lastResult.summary.created.length" class="result-list" data-testid="install-created">
+        <li v-for="(item, i) in lastResult.summary.created" :key="i">{{ item }}</li>
+      </ul>
+      <ul v-if="lastResult.summary.checks_fail.length" class="result-list" data-testid="install-checks-fail">
+        <li v-for="(item, i) in lastResult.summary.checks_fail" :key="i">{{ item }}</li>
+      </ul>
+    </section>
     <pre class="log" data-testid="install-log">{{ log }}</pre>
   </section>
 </template>

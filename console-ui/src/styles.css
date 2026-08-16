@@ -301,6 +301,21 @@ td {
   border: 1px solid rgba(230, 184, 77, 0.4);
 }
 
+.result-list {
+  margin: 0 0 0.75rem;
+  padding-left: 1.15rem;
+  max-height: 12rem;
+  overflow: auto;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+}
+
+.result-list li {
+  margin: 0.15rem 0;
+  word-break: break-word;
+}
+
 .mode-pill {
   display: inline-flex;
   align-items: center;
