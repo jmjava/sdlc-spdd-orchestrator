@@ -16,7 +16,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from .db import LocalIndex
+from .db import SCHEMA_VERSION, LocalIndex
 from .lessons_ledger import LEDGER_KINDS, LessonRecord, LessonsLedger
 from .persistence import (
     BACKEND_GUIDE,
@@ -131,7 +131,7 @@ class ContextStore:
         if want_sqlite:
             try:
                 self.index.upsert_lesson_record(record, staged=not accept)
-                result.sqlite = {"ok": True, "id": record.id, "schema": "5"}
+                result.sqlite = {"ok": True, "id": record.id, "schema": SCHEMA_VERSION}
             except Exception as exc:  # noqa: BLE001
                 result.sqlite = {"ok": False, "error": str(exc)}
                 result.errors.append(f"sqlite: {exc}")
