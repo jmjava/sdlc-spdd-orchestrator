@@ -18,8 +18,13 @@ framework_ensure_dir() {
 # orchestrator-relative paths; the rewrite happens only at install time.
 framework_rewrite_adapter_paths() {
   local file="$1"
+  local tmp
   [[ -f "${file}" ]] || return 0
-  sed -E -i \
+  # Write to a temp file. GNU `sed -i` and BSD/macOS `sed -i ''` disagree;
+  # `sed -E -i -e ...` on macOS treats `-e` as the backup suffix and errors
+  # with `sed: -e: No such file or directory`.
+  tmp="$(mktemp)"
+  if ! sed -E \
     -e 's#(\./)?scripts/sdlc-spdd/#\1sdlc-spdd/scripts/#g' \
     -e 's#\./scripts/sdlc\.sh#./sdlc-spdd/scripts/sdlc.sh#g' \
     -e 's#docs/sdlc-spdd/#sdlc-spdd/docs/#g' \
@@ -30,7 +35,11 @@ framework_rewrite_adapter_paths() {
     -e 's#(^|[^/[:alnum:]-])requirements/#\1sdlc-spdd/requirements/#g' \
     -e 's#(^|[^/[:alnum:]-])session-notes/#\1sdlc-spdd/session-notes/#g' \
     -e 's#(^|[^/[:alnum:]-])ROADMAP\.md#\1sdlc-spdd/ROADMAP.md#g' \
-    "${file}"
+    "${file}" > "${tmp}"; then
+    rm -f "${tmp}"
+    return 1
+  fi
+  mv "${tmp}" "${file}"
 }
 
 # Ensure the target .gitignore covers the gitignored runtime under the home.
