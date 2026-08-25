@@ -4,7 +4,10 @@
 #   ./scripts/setup-engine-venv.sh              # dev + viewer
 #   ./scripts/setup-engine-venv.sh --e2e        # + pytest-playwright
 #
-# Requires python3.12 on PATH:
+# Requires a *runnable* python3.12 (Homebrew python@3.12 or deadsnakes).
+# A committed .python-version is not used: pyenv/mise shims fail when that
+# version is not installed, and `.venv/bin/python` then looks like
+# zsh "permission denied".
 #
 # Ubuntu 24.04+ / macOS (Homebrew):
 #   sudo apt install python3.12 python3.12-venv   # or: brew install python@3.12

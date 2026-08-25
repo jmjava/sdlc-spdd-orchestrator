@@ -3,6 +3,10 @@ sdlc-spdd/.sdlc/
 .sdlc/
 .sdlc-spdd-upgrade-backups/
 
+# Local pyenv/mise pin — do not commit. A repo .python-version auto-switches
+# those tools to a missing 3.12 and breaks .venv (shim not found / permission denied).
+.python-version
+
 # Python venv for docgen (orchestrator dev only — see scripts/setup-docgen-venv.sh)
 .venv/
 
