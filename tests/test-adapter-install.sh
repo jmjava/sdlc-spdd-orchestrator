@@ -210,7 +210,8 @@ assert_target_adapter_workflow() {
   assert_contains "${wf}" ".cursor/rules/sdlc-spdd.mdc" "Cursor grounding trigger"
   assert_contains "${wf}" ".github/copilot-instructions.md" "Copilot grounding trigger"
   assert_contains "${wf}" "CLAUDE.md" "Claude grounding trigger"
-  assert_contains "${wf}" "bash -n ./sdlc-spdd/scripts/validate-command-adapters.sh" "validator syntax check"
+  assert_contains "${wf}" "bash -n sdlc-spdd/scripts/validate-command-adapters.sh" "validator syntax check"
+  assert_contains "${wf}" "bash sdlc-spdd/scripts/validate-command-adapters.sh --target ." "validator run via bash"
 }
 
 # ---------------------------------------------------------------------------
@@ -306,17 +307,33 @@ assert_claude_pack "${T}"
 expect_pass "verify all three after upgrade" "${VERIFY}" --target "${T}" --require-cursor --require-copilot --require-claude
 
 # ---------------------------------------------------------------------------
-echo "== Test 10: Upgrade preserves project-owned Claude memory and target workflow =="
+echo "== Test 10: Upgrade preserves project-owned Claude memory; refreshes adapter workflow =="
 T="${WORK}/preserve"; mkdir -p "${T}/.github/workflows"
 "${SETUP}" --target "${T}" --cursor --copilot >/dev/null 2>&1
 custom_claude="custom existing claude instructions"
-custom_workflow="custom existing adapter workflow"
 printf '%s' "${custom_claude}" > "${T}/CLAUDE.md"
-printf '%s' "${custom_workflow}" > "${T}/.github/workflows/validate-sdlc-spdd-adapters.yml"
+cat > "${T}/.github/workflows/validate-sdlc-spdd-adapters.yml" <<'OLDWF'
+name: Validate SDLC-SPDD Command Adapters
+on:
+  pull_request:
+    paths:
+      - '.cursor/commands/sdlc-spdd-*.md'
+      - '.github/prompts/sdlc-spdd-*.prompt.md'
+      - 'sdlc-spdd/scripts/validate-command-adapters.sh'
+      - '.github/workflows/validate-sdlc-spdd-adapters.yml'
+jobs:
+  validate-command-adapters:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Cursor + Copilot command-pack parity
+        run: ./sdlc-spdd/scripts/validate-command-adapters.sh --target .
+OLDWF
 "${UPGRADE}" --target "${T}" --all >/dev/null 2>&1
 assert_contains "${T}/CLAUDE.md" "${custom_claude}" "custom Claude content"
 assert_claude_grounded "${T}"
-assert_content "${T}/.github/workflows/validate-sdlc-spdd-adapters.yml" "${custom_workflow}"
+assert_target_adapter_workflow "${T}"
+assert_glob_exists "${T}/.sdlc-spdd-upgrade-backups"/*/.github/workflows/validate-sdlc-spdd-adapters.yml "stale workflow backup"
 assert_glob_exists "${T}/.sdlc-spdd-upgrade-backups"/*/CLAUDE.md "CLAUDE.md backup"
 assert_dir "${T}/.claude/commands"
 for c in "${commands[@]}"; do
