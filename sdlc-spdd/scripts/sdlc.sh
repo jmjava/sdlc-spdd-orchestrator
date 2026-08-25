@@ -40,6 +40,46 @@ else
   fi
 fi
 
+# Script-derived ROOT finds the orch .venv + engine source. --target/--root
+# only changes the project the engine operates on (otherwise `next` runs
+# against the orch clone and prints "no active Work ID").
+PROJECT_ROOT="${ROOT}"
+_forward=()
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --target|--root)
+      if [[ -z "${2:-}" ]]; then
+        echo "sdlc: $1 requires a directory path" >&2
+        exit 2
+      fi
+      if [[ ! -d "$2" ]]; then
+        echo "sdlc: $1 is not a directory: $2" >&2
+        exit 2
+      fi
+      PROJECT_ROOT="$(cd "$2" && pwd)"
+      shift 2
+      ;;
+    --target=*|--root=*)
+      _p="${1#*=}"
+      if [[ ! -d "${_p}" ]]; then
+        echo "sdlc: ${1%%=*} is not a directory: ${_p}" >&2
+        exit 2
+      fi
+      PROJECT_ROOT="$(cd "${_p}" && pwd)"
+      shift
+      ;;
+    *)
+      _forward+=("$1")
+      shift
+      ;;
+  esac
+done
+if ((${#_forward[@]} > 0)); then
+  set -- "${_forward[@]}"
+else
+  set --
+fi
+
 export SDLC_ROOT="${ROOT}"
 ENGINE_MODE="${SDLC_ENGINE:-shell}"
 
@@ -66,9 +106,9 @@ _run_python_engine() {
   resolve_engine_python || exit 1
   if [[ -d "${ROOT}/engine/src/sdlc_engine" ]]; then
     PYTHONPATH="${ROOT}/engine/src${PYTHONPATH:+:${PYTHONPATH}}" \
-      exec "${SDLC_PY}" -m sdlc_engine --root "${ROOT}" "${args[@]}"
+      exec "${SDLC_PY}" -m sdlc_engine --root "${PROJECT_ROOT}" "${args[@]}"
   fi
-  exec "${SDLC_PY}" -m sdlc_engine --root "${ROOT}" "${args[@]}"
+  exec "${SDLC_PY}" -m sdlc_engine --root "${PROJECT_ROOT}" "${args[@]}"
 }
 
 cmd="${1:-next}"

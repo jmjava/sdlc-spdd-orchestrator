@@ -24,6 +24,16 @@ def test_cli_version_flag() -> None:
     assert main(["--version"]) == 0
 
 
+def test_cli_target_alias_and_sdlc_module(tmp_path: Path, capsys) -> None:
+    assert main(["--target", str(tmp_path), "db", "status"]) == 0
+    out = capsys.readouterr().out
+    assert "SQLite index" in out
+    from sdlc.__main__ import main as sdlc_main
+
+    assert sdlc_main(["--target", str(tmp_path), "db", "path"]) == 0
+    assert str(tmp_path) in capsys.readouterr().out
+
+
 def test_cli_work_init_from_adf(tmp_path: Path, capsys) -> None:
     adf = tmp_path / "adf" / "ORCH-12.adf.json"
     adf.parent.mkdir(parents=True)

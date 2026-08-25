@@ -19,6 +19,7 @@ viewer-e2e = ["flask>=3", "pytest-playwright>=0.5.0"]
 
 [project.scripts]
 sdlc-engine = "sdlc_engine.cli:main"
+sdlc = "sdlc_engine.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

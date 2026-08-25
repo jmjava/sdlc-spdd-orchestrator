@@ -256,7 +256,7 @@ nested harnesses, and upgrade (see script sections A–F).
 
 ## Run CI locally (`.venv`)
 
-All Python for the engine uses the repo **`.venv`** (Python **3.12** only — same as CI). See `.python-version`.
+All Python for the engine uses the repo **`.venv`** (Python **3.12** only — same as CI). Do not add a committed `.python-version`; pyenv/mise auto-switch breaks Homebrew 3.12 venvs.
 
 ```bash
 # One-time: install python3.12 (Ubuntu 22.04 needs deadsnakes — see table above)

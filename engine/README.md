@@ -14,7 +14,7 @@ scripts; the engine can shell out to them via `sdlc-engine shell …` when neede
 
 ## Quick start
 
-Requires **Python 3.12** (see repo `.python-version`). From the orchestrator repo:
+Requires **Python 3.12** (`engine/pyproject.toml`, same as CI). From the orchestrator repo:
 
 ```bash
 sudo apt install python3.12 python3.12-venv   # once

@@ -501,6 +501,25 @@ assert_contains "${fw_dry}" "[dry-run] would mkdir -p" "framework_ensure_dir dry
 assert_false "framework_ensure_dir dry-run skips create" test -d "${fw}/c"
 
 # ---------------------------------------------------------------------------
+echo "== python.sh: 3.12 resolver skips broken shims =="
+# shellcheck source=/dev/null
+source "${LIB}/python.sh"
+assert_eq "$(PYTHON=/opt/custom/python3.12 pick_bootstrap_python)" \
+  "/opt/custom/python3.12" "pick_bootstrap_python honors PYTHON"
+shim="${WORK}/broken-python3.12"
+cat > "${shim}" <<'EOF'
+#!/bin/sh
+echo "pyenv: version '3.12' not installed" >&2
+exit 127
+EOF
+chmod +x "${shim}"
+assert_false "broken pyenv-style shim is not usable 3.12" _python_is_usable_312 "${shim}"
+if command -v python3.12 >/dev/null 2>&1 && _python_is_usable_312 python3.12; then
+  assert_true "real python3.12 is usable" _python_is_usable_312 python3.12
+else
+  ok "skip live python3.12 usable check (none on PATH)"
+fi
+
 # ---------------------------------------------------------------------------
 echo "== verify-script-lib-duplicates.sh =="
 if "${REPO_ROOT}/scripts/verify-script-lib-duplicates.sh" >/dev/null; then

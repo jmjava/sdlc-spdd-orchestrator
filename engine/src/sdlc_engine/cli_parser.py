@@ -47,7 +47,12 @@ def build_parser() -> argparse.ArgumentParser:
         prog="sdlc-engine",
         description="SDLC-SPDD Python orchestration engine (v2)",
     )
-    p.add_argument("--root", help="Project root (default: SDLC_ROOT or git toplevel)")
+    p.add_argument(
+        "--root",
+        "--target",
+        dest="root",
+        help="Project root (default: SDLC_ROOT or git toplevel). --target is an alias.",
+    )
     p.add_argument("--version", action="store_true", help="Print engine version")
     sub = p.add_subparsers(dest="command")
 
