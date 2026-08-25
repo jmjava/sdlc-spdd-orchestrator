@@ -179,6 +179,35 @@ else
   bad "db rebuild unexpected: ${out}"
 fi
 
+echo "== sdlc.sh --target db rebuild (not next / no pointer) =="
+rm -f "${tmp}/.sdlc/index.sqlite"
+out="$(
+  SDLC_ENGINE=shell \
+    PYTHONPATH="${REPO_ROOT}/engine/src" \
+    "${REPO_ROOT}/scripts/sdlc.sh" db rebuild --target "${tmp}"
+)"
+if grep -Fq 'Rebuilt SQLite index' <<< "${out}" && [[ -f "${tmp}/.sdlc/index.sqlite" ]]; then
+  ok "sdlc.sh db rebuild --target hits the project"
+else
+  bad "sdlc.sh --target db rebuild unexpected: ${out}"
+fi
+if grep -Fiq 'no active' <<< "${out}"; then
+  bad "sdlc.sh db rebuild --target ran next/pointer"
+else
+  ok "sdlc.sh db rebuild --target does not print pointer next"
+fi
+
+echo "== python -m sdlc alias =="
+out="$(
+  PYTHONPATH="${REPO_ROOT}/engine/src" \
+    python3 -m sdlc --root "${tmp}" db path
+)"
+if grep -Fq "${tmp}" <<< "${out}"; then
+  ok "python -m sdlc is sdlc_engine"
+else
+  bad "python -m sdlc unexpected: ${out}"
+fi
+
 echo
 echo "Results: ${pass} passed, ${fail} failed"
 if (( fail > 0 )); then exit 1; fi
