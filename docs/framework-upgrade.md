@@ -43,7 +43,9 @@ It can create when missing:
 - `.github/workflows/validate-sdlc-spdd-adapters.yml`
 
 Existing framework files are backed up before replacement by default. Existing
-root `CLAUDE.md` content and target workflow customizations are preserved. When
+root `CLAUDE.md` content is preserved. The adapter CI workflow
+(`.github/workflows/validate-sdlc-spdd-adapters.yml`) is framework-owned and
+refreshed on upgrade (stale copies are backed up). When
 Claude Code is installed or upgraded, SDLC-SPDD adds or refreshes only the
 managed grounding block inside `CLAUDE.md`:
 

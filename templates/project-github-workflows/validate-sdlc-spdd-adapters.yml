@@ -30,7 +30,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Check validator shell syntax
-        run: bash -n ./sdlc-spdd/scripts/validate-command-adapters.sh
+        run: bash -n sdlc-spdd/scripts/validate-command-adapters.sh
 
       - name: Validate Cursor + Copilot + Claude command-pack parity
-        run: ./sdlc-spdd/scripts/validate-command-adapters.sh --target .
+        run: bash sdlc-spdd/scripts/validate-command-adapters.sh --target .

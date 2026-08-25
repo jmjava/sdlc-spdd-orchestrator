@@ -138,8 +138,9 @@ Copilot, Claude Code) into throwaway target directories and asserts:
 - `--all` and `upgrade --all` install all three; Cursor and Copilot files stay
   byte-identical to their templates.
 - Upgrade preserves project-owned files such as an existing root `CLAUDE.md`
-  and target-local adapter workflow customizations; only the managed
-  SDLC-SPDD grounding block inside `CLAUDE.md` is added or refreshed.
+  (only the managed SDLC-SPDD grounding block is added or refreshed). The
+  target adapter workflow is framework-owned and refreshed so stale
+  `sdlc-spdd-*` / `./script` CI is replaced (backed up first).
 - Repeated upgrades do not duplicate the managed `CLAUDE.md` grounding block,
   and `--dry-run` paths do not mutate target files.
 - Installed target adapter workflows watch command files, always-on grounding
