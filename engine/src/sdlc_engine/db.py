@@ -195,13 +195,33 @@ class LocalIndex(IndexRebuildMixin, IndexQueryMixin):
             self.rebuild()
 
     def ensure_schema(self) -> None:
-        """Ensure DB exists at current schema (full rebuild if missing/legacy)."""
+        """Ensure DB exists at current schema (full rebuild if missing/legacy).
+
+        Persist writes v5 lesson columns (``title``, ``phase``, ``keywords``,
+        ``staged``). A leftover on-disk cache must be upgraded in place before
+        that write — including files with a stale ``schema_version``, a current
+        version label but missing v5 columns, or no readable ``meta`` table.
+        """
         if not self.db_path.is_file():
             self.rebuild()
             return
-        with self.connect() as conn:
-            ver = self._meta(conn, "schema_version")
-        if ver != SCHEMA_VERSION:
+        current = False
+        try:
+            with self.connect() as conn:
+                ver = self._meta(conn, "schema_version")
+                cols = {
+                    row[1]
+                    for row in conn.execute("PRAGMA table_info(lessons)").fetchall()
+                }
+                current = ver == SCHEMA_VERSION and {
+                    "title",
+                    "phase",
+                    "keywords",
+                    "staged",
+                } <= cols
+        except sqlite3.Error:
+            current = False
+        if not current:
             self.rebuild()
 
     def ensure_work_item(self, work_id: str, *, title: str = "") -> None:
