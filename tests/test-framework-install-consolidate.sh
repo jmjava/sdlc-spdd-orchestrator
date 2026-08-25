@@ -114,6 +114,26 @@ else
   bad "orchestrator archive remaining leftovers"
 fi
 
+echo "== framework_rewrite_adapter_paths (no GNU sed -i) =="
+cat > "${WORK}/rewrite.md" <<'EOF'
+See ./scripts/sdlc.sh and docs/sdlc-spdd/foo.md
+Then spdd/canvas/ and .sdlc/staged/lessons.jsonl
+Also requirements/x.md session-notes/ and ROADMAP.md
+EOF
+framework_rewrite_adapter_paths "${WORK}/rewrite.md"
+got="$(cat "${WORK}/rewrite.md")"
+if grep -Fq './sdlc-spdd/scripts/sdlc.sh' "${WORK}/rewrite.md" \
+  && grep -Fq 'sdlc-spdd/docs/foo.md' "${WORK}/rewrite.md" \
+  && grep -Fq 'sdlc-spdd/spdd/canvas/' "${WORK}/rewrite.md" \
+  && grep -Fq 'sdlc-spdd/.sdlc/staged/lessons.jsonl' "${WORK}/rewrite.md" \
+  && grep -Fq 'sdlc-spdd/requirements/x.md' "${WORK}/rewrite.md" \
+  && grep -Fq 'sdlc-spdd/session-notes/' "${WORK}/rewrite.md" \
+  && grep -Fq 'sdlc-spdd/ROADMAP.md' "${WORK}/rewrite.md"; then
+  ok "rewrites adapter paths without sed -i"
+else
+  bad "rewrite failed: ${got}"
+fi
+
 echo
 echo "Results: ${pass} passed, ${fail} failed"
 if [[ "${fail}" -gt 0 ]]; then
