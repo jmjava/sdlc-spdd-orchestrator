@@ -114,6 +114,14 @@ for spec in \
 done
 assert_contains "${SPEC_DIR}/lifecycle-code.spec.md" "Ready For Coding" \
   "lifecycle-code encodes readiness gate"
+assert_contains "${SPEC_DIR}/lifecycle-architect.spec.md" "Optional DIF check" \
+  "lifecycle-architect encodes optional DIF gate"
+assert_contains "${SPEC_DIR}/lifecycle-architect.spec.md" "architect --quiet" \
+  "lifecycle-architect uses quiet DIF gate"
+assert_contains "${SPEC_DIR}/lifecycle-code.spec.md" "Optional DIF check" \
+  "lifecycle-code encodes optional DIF gate"
+assert_contains "${SPEC_DIR}/workflow-next.spec.md" "Optional DIF check" \
+  "workflow-next encodes optional DIF gate"
 assert_contains "${SPEC_DIR}/workflow-advance.spec.md" "Ready For Coding" \
   "workflow-advance encodes readiness gate"
 assert_contains "${SPEC_DIR}/workflow-claim.spec.md" "--jira" \
@@ -138,6 +146,16 @@ for adapter_file in \
   "${REPO_ROOT}/templates/claude/commands/sdlc-spdd-code.md"; do
   assert_contains "${adapter_file}" "Ready For Coding" \
     "readiness in ${adapter_file#${REPO_ROOT}/templates/}"
+  assert_contains "${adapter_file}" "Optional DIF check" \
+    "optional DIF in ${adapter_file#${REPO_ROOT}/templates/}"
+done
+
+for adapter_file in \
+  "${REPO_ROOT}/templates/cursor/sdlc-spdd-architect.md" \
+  "${REPO_ROOT}/templates/copilot/prompts/sdlc-spdd-architect.prompt.md" \
+  "${REPO_ROOT}/templates/claude/commands/sdlc-spdd-architect.md"; do
+  assert_contains "${adapter_file}" "Optional DIF check" \
+    "optional DIF in ${adapter_file#${REPO_ROOT}/templates/}"
 done
 
 # ---------------------------------------------------------------------------

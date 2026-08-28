@@ -57,6 +57,11 @@ Your job is to implement exactly one approved operation from a REASONS Canvas.
 13. Update task status in the canvas and stage progress evidence via `./scripts/sdlc.sh capture` (session record).
 14. If the requested behavior conflicts with the canvas, stop and recommend `/sdlc-spdd-prompt-update` before changing code.
 15. If no task is selected, ask which approved operation to implement before changing code.
+16. Optional DIF check (never required). If `$DIF_HOME/scripts/dif-fold.sh` or a
+    sibling `../embabel-dif/scripts/dif-fold.sh` exists, run
+    `architect --quiet --canvas` on this Work ID. Exit 1: STOP and recommend
+    `/sdlc-spdd-architect` — do not implement. If the script is missing, continue
+    — that is not an error. Do not start a JVM from `sdlc.sh next` or `sdlc.sh gate`.
 ---END---
 ---BLOCK:copilot:Required Behavior---
 
@@ -81,6 +86,11 @@ Your job is to implement exactly one approved operation from a REASONS Canvas.
 12. Do not add dependencies unless the canvas allows it.
 13. Update task status in the canvas and stage progress evidence via `./scripts/sdlc.sh capture` (session record).
 14. If the requested behavior conflicts with the canvas, stop and recommend `/sdlc-spdd-prompt-update` before changing code.
+15. Optional DIF check (never required). If `$DIF_HOME/scripts/dif-fold.sh` or a
+    sibling `../embabel-dif/scripts/dif-fold.sh` exists, run
+    `architect --quiet --canvas` on this Work ID. Exit 1: STOP and recommend
+    `/sdlc-spdd-architect` — do not implement. If the script is missing, continue
+    — that is not an error. Do not start a JVM from `sdlc.sh next` or `sdlc.sh gate`.
 
 If no task is selected, ask the user which operation to implement before changing code.
 ---END---
@@ -109,6 +119,11 @@ If no task is selected, ask the user which operation to implement before changin
 13. Update task status in the canvas and stage progress evidence via `./scripts/sdlc.sh capture` (session record).
 14. If the requested behavior conflicts with the canvas, stop and recommend `/sdlc-spdd-prompt-update` before changing code.
 15. If no task is selected, ask which approved operation to implement before changing code.
+16. Optional DIF check (never required). If `$DIF_HOME/scripts/dif-fold.sh` or a
+    sibling `../embabel-dif/scripts/dif-fold.sh` exists, run
+    `architect --quiet --canvas` on this Work ID. Exit 1: STOP and recommend
+    `/sdlc-spdd-architect` — do not implement. If the script is missing, continue
+    — that is not an error. Do not start a JVM from `sdlc.sh next` or `sdlc.sh gate`.
 ---END---
 ---BLOCK:shared:Context Backend (runtime-resolved)---
 
