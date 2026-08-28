@@ -14,6 +14,8 @@ on:
       - 'tests/test-command-spec-generation.sh'
       - 'tests/test-commit-message-command.sh'
       - 'tests/test-sunset-command.sh'
+      - 'tests/test-optional-dif.sh'
+      - 'tests/fixtures/dif-fold-stub.sh'
       - '.github/workflows/validate-command-spec-generation.yml'
   push:
     branches: [main]
@@ -29,6 +31,8 @@ on:
       - 'tests/test-command-spec-generation.sh'
       - 'tests/test-commit-message-command.sh'
       - 'tests/test-sunset-command.sh'
+      - 'tests/test-optional-dif.sh'
+      - 'tests/fixtures/dif-fold-stub.sh'
       - '.github/workflows/validate-command-spec-generation.yml'
 
 jobs:
@@ -57,3 +61,6 @@ jobs:
 
       - name: Run sunset command regression harness
         run: ./tests/test-sunset-command.sh
+
+      - name: Optional DIF detect-and-skip / fail-closed (no Maven)
+        run: ./tests/test-optional-dif.sh
