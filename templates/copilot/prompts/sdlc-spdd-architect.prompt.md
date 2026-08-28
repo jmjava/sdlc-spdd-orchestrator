@@ -33,6 +33,12 @@ Review and harden a REASONS Canvas before implementation. Do not implement code.
 13. Mark whether the work is ready for coding by setting Metadata
     `- Readiness:` (or YAML frontmatter `readiness:`) to a **canvas readiness**
     vocabulary value (see Output). Prefer Title Case aliases agents already use.
+14. Optional DIF check (never required). If `$DIF_HOME/scripts/dif-fold.sh` or a
+    sibling `../embabel-dif/scripts/dif-fold.sh` exists, run
+    `architect --canvas spdd/canvas/<WORK-ID>.md`. Exit 1: set Readiness to
+    Needs Clarification; do not set Ready For Coding; quote the conflicts. If
+    the script is missing, continue — that is not an error. Do not start a JVM
+    from `sdlc.sh next` or `sdlc.sh gate`.
 
 ## Context Backend (runtime-resolved)
 
