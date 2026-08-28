@@ -116,6 +116,8 @@ assert_contains "${SPEC_DIR}/lifecycle-code.spec.md" "Ready For Coding" \
   "lifecycle-code encodes readiness gate"
 assert_contains "${SPEC_DIR}/lifecycle-architect.spec.md" "Optional DIF check" \
   "lifecycle-architect encodes optional DIF gate"
+assert_contains "${SPEC_DIR}/lifecycle-architect.spec.md" "architect --quiet" \
+  "lifecycle-architect uses quiet DIF gate"
 assert_contains "${SPEC_DIR}/lifecycle-code.spec.md" "Optional DIF check" \
   "lifecycle-code encodes optional DIF gate"
 assert_contains "${SPEC_DIR}/workflow-next.spec.md" "Optional DIF check" \

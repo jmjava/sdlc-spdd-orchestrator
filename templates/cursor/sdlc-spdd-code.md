@@ -33,7 +33,7 @@ Your job is to implement exactly one approved operation from a REASONS Canvas.
 15. If no task is selected, ask which approved operation to implement before changing code.
 16. Optional DIF check (never required). If `$DIF_HOME/scripts/dif-fold.sh` or a
     sibling `../embabel-dif/scripts/dif-fold.sh` exists, run
-    `architect --canvas` on this Work ID. Exit 1: STOP and recommend
+    `architect --quiet --canvas` on this Work ID. Exit 1: STOP and recommend
     `/sdlc-spdd-architect` — do not implement. If the script is missing, continue
     — that is not an error. Do not start a JVM from `sdlc.sh next` or `sdlc.sh gate`.
 

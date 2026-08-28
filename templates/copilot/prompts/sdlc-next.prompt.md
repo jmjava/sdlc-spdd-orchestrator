@@ -24,7 +24,7 @@ Show where the user is in the workflow and what to do next. Alias for `/sdlc-spd
 9. When `next` / status shows canvas readiness that blocks coding (Needs Analysis, Needs Clarification, Needs Redesign, Blocked), prefer `/sdlc-spdd-architect` (or prompt-update) over `/sdlc-spdd-code`, even if the stored phase is `code`.
 10. Do not start unrelated work or implement code on a Work ID claimed by another teammate (non-stale).
 11. Optional DIF check (never required). If the DIF CLI exists for the active
-    canvas, run `architect --canvas`. Exit 1: prefer `/sdlc-spdd-architect` over
+    canvas, run `architect --quiet --canvas`. Exit 1: prefer `/sdlc-spdd-architect` over
     `/sdlc-spdd-code` even if the stored phase is `code`. If the script is
     missing, continue — that is not an error. Do not start a JVM from
     `sdlc.sh next` or `sdlc.sh gate`.
