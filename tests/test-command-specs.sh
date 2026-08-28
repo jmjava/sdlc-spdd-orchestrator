@@ -122,6 +122,12 @@ assert_contains "${SPEC_DIR}/lifecycle-code.spec.md" "Optional DIF check" \
   "lifecycle-code encodes optional DIF gate"
 assert_contains "${SPEC_DIR}/workflow-next.spec.md" "Optional DIF check" \
   "workflow-next encodes optional DIF gate"
+assert_contains "${SPEC_DIR}/lifecycle-review.spec.md" "Optional DIF check" \
+  "lifecycle-review encodes optional DIF gate"
+assert_contains "${SPEC_DIR}/lifecycle-review.spec.md" "review --quiet" \
+  "lifecycle-review uses quiet DIF review"
+assert_contains "${SPEC_DIR}/lifecycle-review.spec.md" "Do not use login fixtures" \
+  "lifecycle-review must not wire login fixtures"
 assert_contains "${SPEC_DIR}/workflow-advance.spec.md" "Ready For Coding" \
   "workflow-advance encodes readiness gate"
 assert_contains "${SPEC_DIR}/workflow-claim.spec.md" "--jira" \
@@ -156,6 +162,16 @@ for adapter_file in \
   "${REPO_ROOT}/templates/claude/commands/sdlc-spdd-architect.md"; do
   assert_contains "${adapter_file}" "Optional DIF check" \
     "optional DIF in ${adapter_file#${REPO_ROOT}/templates/}"
+done
+
+for adapter_file in \
+  "${REPO_ROOT}/templates/cursor/sdlc-spdd-review.md" \
+  "${REPO_ROOT}/templates/copilot/prompts/sdlc-spdd-review.prompt.md" \
+  "${REPO_ROOT}/templates/claude/commands/sdlc-spdd-review.md"; do
+  assert_contains "${adapter_file}" "Optional DIF check" \
+    "optional DIF in ${adapter_file#${REPO_ROOT}/templates/}"
+  assert_contains "${adapter_file}" "Do not use login fixtures" \
+    "no login fixtures in ${adapter_file#${REPO_ROOT}/templates/}"
 done
 
 # ---------------------------------------------------------------------------

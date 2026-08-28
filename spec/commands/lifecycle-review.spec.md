@@ -67,6 +67,14 @@ Do not make code changes unless explicitly asked.
    `readiness:`) to **Reviewed** (or **Complete** if Final Status is also Complete).
 20. Recommend `/sdlc-spdd-prompt-update` for behavior or requirement changes before additional code changes.
 21. Recommend `/sdlc-spdd-sync` for accepted non-behavioral refactors after review.
+22. Optional DIF check (never required). If `$DIF_HOME/scripts/dif-fold.sh` or a
+    sibling `../embabel-dif/scripts/dif-fold.sh` exists **and** snapshot files
+    `spdd/snapshots/<WORK-ID>-before.json` and `spdd/snapshots/<WORK-ID>-after.json`
+    exist, run `review --quiet --before … --after … --canvas spdd/canvas/<WORK-ID>.md`.
+    Exit 1: do not set Reviewed / Approved; cite the one-line `dif=blocked` (and
+    `.gate.json` / VerificationResult). If the CLI or either snapshot is missing,
+    continue — that is not an error. Do not use login fixtures. Do not start a
+    JVM from `sdlc.sh next` or `sdlc.sh gate`.
 ---END---
 ---BLOCK:shared:Context Backend (runtime-resolved)---
 
