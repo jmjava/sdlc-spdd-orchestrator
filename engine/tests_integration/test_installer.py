@@ -83,6 +83,11 @@ def test_api_run_dry_install(tmp_path: Path) -> None:
     assert data["exit_code"] == 0
     assert "setup-agent-prompts.sh" in " ".join(data["command"])
     assert "--dry-run" in data["command"]
+    summary = data["summary"]
+    assert summary["dry_run"] is True
+    assert summary["would_count"] >= 1
+    assert summary["would"]
+    assert any("sdlc-spdd-init" in step for step in summary["next_steps"])
 
 
 def test_api_run_dry_upgrade(tmp_path: Path) -> None:
