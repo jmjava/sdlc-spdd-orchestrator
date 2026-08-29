@@ -67,7 +67,7 @@ probe only apply on the defaults path.
 ## Persist
 
 ```bash
-# Stage a lesson (decision | pitfall | pattern | session | analysis)
+# Structured day — Work ID is real
 sdlc-engine context persist-lesson \
   --kind pitfall \
   --work-id FEAT-001-example \
@@ -75,8 +75,17 @@ sdlc-engine context persist-lesson \
   --body "Never open PRs against embabel/guide" \
   --no-guide          # optional: skip Guide projection even if enabled
 
+# Unstructured day — no fake FEAT; kind + area + body
+sdlc-engine context persist-lesson \
+  --kind pitfall \
+  --area notify \
+  --source adhoc-prompt \
+  --body "Retry without an idempotency key double-posts." \
+  --no-guide
+
 # Promote staged records at the retro/sync gate
 sdlc-engine context accept --work-id FEAT-001-example
+sdlc-engine context accept --ids 'pitfall:(none):notify:adhoc-prompt'
 ```
 
 Writes go to `.sdlc/staged/lessons.jsonl` (stage; git stays quiet) and, on

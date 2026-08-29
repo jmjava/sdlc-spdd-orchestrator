@@ -144,6 +144,10 @@ One committed ledger, regenerable projections ([storage-v3.md](storage-v3.md)):
 sdlc-engine context persist-lesson --kind pitfall --work-id FEAT-001-x \
   --area src/billing --body "Legacy orders omit tax field"
 
+# Ad hoc day: omit --work-id; do not invent FEAT-ADHOC
+sdlc-engine context persist-lesson --kind pitfall --area notify \
+  --source adhoc-prompt --body "Retry without an idempotency key double-posts."
+
 # Promote at retro/sync gates
 sdlc-engine context accept --work-id FEAT-001-x
 sdlc-engine context accept --ids <a,b,c> --discard-rest

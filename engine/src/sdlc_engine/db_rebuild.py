@@ -387,10 +387,10 @@ class IndexRebuildMixin:
         """Insert one ledger record into lessons + edges + keyword nodes."""
         from . import context_model as cm
 
-        wid = record.work_id
+        wid = (record.work_id or "").strip() or "(none)"
         conn.execute(
             "INSERT OR IGNORE INTO work_items(work_id, title, updated) VALUES (?,?,?)",
-            (wid, wid, _utc_now()),
+            (wid, record.work_id or "unstructured (no Work ID)", _utc_now()),
         )
         kw_json = json.dumps(list(record.keywords or []), ensure_ascii=False)
         conn.execute(

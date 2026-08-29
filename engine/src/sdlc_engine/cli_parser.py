@@ -407,10 +407,18 @@ def build_parser() -> argparse.ArgumentParser:
         help="Stage or accept a lesson record in the ledger",
     )
     cpl.add_argument("--kind", required=True, choices=list(_LEDGER_KINDS))
-    cpl.add_argument("--work-id", required=True)
+    cpl.add_argument(
+        "--work-id",
+        default="",
+        help="Work ID (optional when --area is set; omit on an ad hoc day)",
+    )
     cpl.add_argument("--body", required=True, help="Body text or '-' for stdin")
     cpl.add_argument("--title", default="")
-    cpl.add_argument("--area", default="")
+    cpl.add_argument(
+        "--area",
+        default="",
+        help="Code area (required when --work-id is omitted)",
+    )
     cpl.add_argument("--source", default="cli")
     cpl.add_argument("--phase", default="")
     cpl.add_argument("--keywords", default="", help="Comma-separated keywords")
@@ -422,7 +430,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="Deprecated alias for persist-lesson",
     )
     cpe.add_argument("--kind", required=True)
-    cpe.add_argument("--work-id", required=True)
+    cpe.add_argument("--work-id", default="")
     cpe.add_argument("--body", required=True)
     cpe.add_argument("--area", default="")
     cpe.add_argument("--phase", default="")

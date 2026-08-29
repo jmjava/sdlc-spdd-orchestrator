@@ -500,11 +500,13 @@ class LocalIndex(IndexRebuildMixin, IndexQueryMixin):
     def upsert_lesson_record(self, record: LessonRecord, *, staged: bool) -> None:
         """Upsert one ledger record + edges (hot-path projection write)."""
         record.validate()
-        self.ensure_work_item(record.work_id)
-        try:
-            self.sync_stay_set(record.work_id)
-        except Exception:  # noqa: BLE001
-            pass
+        sql_wid = (record.work_id or "").strip() or "(none)"
+        self.ensure_work_item(sql_wid, title="" if record.work_id else "unstructured (no Work ID)")
+        if record.work_id:
+            try:
+                self.sync_stay_set(record.work_id)
+            except Exception:  # noqa: BLE001
+                pass
         stats = RebuildStats()
         with self.connect() as conn:
             self._ingest_lesson_row(conn, record, staged=staged, stats=stats)
