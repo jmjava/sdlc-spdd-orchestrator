@@ -211,6 +211,7 @@ def test_dashboard_status_populated(tmp_path: Path) -> None:
     assert last["work_id"] == OLD_WID
     assert last["owner"] == "jm"
     assert last["ts"] == "2026-08-04T09:00:00Z"
+    assert work["dif"]["present"] is False
 
 
 def test_dashboard_activity_merge_order_and_cap(tmp_path: Path) -> None:
@@ -280,6 +281,40 @@ def test_dashboard_suggestions_populated(tmp_path: Path) -> None:
     assert "issue-sync" in by_id
     assert "Issues tab" in by_id["issue-sync"] or "JIRA_*" in by_id["issue-sync"]
     assert "gh auth login" in by_id["issue-sync"]
+
+
+def test_dashboard_reads_dif_gate_without_starting_a_fold(tmp_path: Path) -> None:
+    _seed_project(tmp_path)
+    gate = tmp_path / ".dif" / "projections" / f"{WID}.gate.json"
+    gate.parent.mkdir(parents=True, exist_ok=True)
+    gate.write_text(
+        json.dumps(
+            {
+                "workId": WID,
+                "readyForImplementation": False,
+                "blockingConflicts": [{"left": "paginate", "right": "Non-goal: Pagination"}],
+                "missingObligations": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+    app = create_app(tmp_path)
+    client = app.test_client()
+
+    status = client.post("/api/dashboard/status", json={"target": str(tmp_path)}).get_json()
+    dif = status["work"]["dif"]
+    assert dif["present"] is True
+    assert dif["ready"] is False
+    assert dif["line"].startswith("dif=blocked")
+    assert WID in dif["line"]
+
+    suggestions = client.post(
+        "/api/dashboard/suggestions", json={"target": str(tmp_path)}
+    ).get_json()["suggestions"]
+    by_id = {s["id"]: s for s in suggestions}
+    assert "dif-blocked" in by_id
+    assert "fix the REASONS canvas" in by_id["dif-blocked"]["text"]
+    assert by_id["dif-blocked"]["work_id"] == WID
 
 
 def test_dashboard_suggestions_quiet_when_configured(

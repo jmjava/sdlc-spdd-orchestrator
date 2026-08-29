@@ -76,12 +76,14 @@ def build_dashboard_status(
         for gate in gates_for_phase(str(status.get("phase") or "")):
             if gates.get(gate) != "passed":
                 open_gates.append({"gate": gate, "label": GATE_LABELS.get(gate, gate)})
+    pointer = str(status.get("pointer") or "")
     work = {
-        "pointer": status.get("pointer") or "",
+        "pointer": pointer,
         "phase": status.get("phase") or "",
         "operation": status.get("operation") or "",
         "recommended_command": status.get("recommended_command") or "",
         "open_gates": open_gates,
+        "dif": read_dif_gate(project, pointer),
     }
 
     ledger = LessonsLedger(project)
@@ -155,6 +157,41 @@ def build_dashboard_status(
         },
     }
     return {"work": work, "memory": memory, "backends": backends, "integrations": integrations}
+
+
+def read_dif_gate(project: Project, work_id: str) -> dict[str, Any]:
+    """Read a DIF `.gate.json` if a sibling fold already wrote one.
+
+    Synergy on the Dashboard: same one-liner architect/review already
+    use. Does not start a JVM or invoke ``dif-fold``.
+    """
+    empty = {"present": False, "ready": None, "line": "", "path": ""}
+    wid = (work_id or "").strip()
+    if not wid:
+        return empty
+    for base in (project.root, project.home):
+        path = base / ".dif" / "projections" / f"{wid}.gate.json"
+        if not path.is_file():
+            continue
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return empty
+        ready = bool(data.get("readyForImplementation"))
+        reported = str(data.get("workId") or wid)
+        conflicts = data.get("blockingConflicts") or []
+        n = len(conflicts) if isinstance(conflicts, list) else 0
+        line = (
+            f"dif=ready workId={reported} readyForImplementation=true"
+            if ready
+            else f"dif=blocked workId={reported} readyForImplementation=false conflicts={n}"
+        )
+        try:
+            rel = str(path.relative_to(project.root))
+        except ValueError:
+            rel = str(path)
+        return {"present": True, "ready": ready, "line": line, "path": rel}
+    return empty
 
 
 def dashboard_activity(project: Project, limit: int) -> list[dict[str, Any]]:
@@ -260,6 +297,20 @@ def dashboard_suggestions(project: Project, status: dict[str, Any]) -> list[dict
 
     pointer = work.get("pointer") or ""
     open_gates = work.get("open_gates") or []
+    dif = work.get("dif") or {}
+    if pointer and dif.get("present") and dif.get("ready") is False:
+        out.append(
+            {
+                "id": "dif-blocked",
+                "text": (
+                    f"{pointer}: {dif.get('line') or 'dif=blocked'} — "
+                    "fix the REASONS canvas before Ready For Coding."
+                ),
+                "tab": "sqlite",
+                "work_id": pointer,
+            }
+        )
+
     if pointer and open_gates:
         top = open_gates[0].get("label") or open_gates[0].get("gate") or ""
         text = f"{pointer} ({work.get('phase') or '?'}): open gate — {top}."

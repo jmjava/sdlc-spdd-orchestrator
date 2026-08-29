@@ -19,6 +19,7 @@ const work = ref({
   operation: "",
   recommended_command: "",
   open_gates: [],
+  dif: { present: false, ready: null, line: "" },
 });
 const memory = ref({
   accepted_count: "—",
@@ -179,6 +180,13 @@ onMounted(refresh);
       </div>
       <h3>Do now</h3>
       <pre class="cmd" data-testid="dash-work-cmd">{{ work.recommended_command || "—" }}</pre>
+      <p
+        v-if="work.dif && work.dif.present"
+        class="meta"
+        data-testid="dash-work-dif"
+      >
+        {{ work.dif.line }}
+      </p>
       <ul class="check-list" data-testid="dash-work-gates">
         <li v-for="gate in work.open_gates || []" :key="gate.gate">
           {{ gate.label || gate.gate }}
