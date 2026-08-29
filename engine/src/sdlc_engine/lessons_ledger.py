@@ -6,7 +6,9 @@ Day-to-day captures land in the gitignored stage
 committed ledger in one batch. SQLite and Guide are pure projections of
 these records — never independently written.
 
-Record shape (IDs stay Guide-compatible ``{kind}:{workId}:{area}:{source}``):
+Record shape (IDs stay Guide-compatible ``{kind}:{workId}:{area}:{source}``).
+``workId`` may be ``(none)`` when the day had no Work ID — unstructured
+capture is ``kind + area + body``, not a invented ``FEAT-ADHOC-*``.
 
     {"id": "pitfall:FEAT-013-x:engine:retro", "kind": "pitfall",
      "work_id": "FEAT-013-x", "area": "engine", "phase": "retro",
@@ -34,10 +36,14 @@ LEDGER_KINDS = ("decision", "pitfall", "pattern", "session", "analysis")
 SCHEMA = 1
 
 
+UNSCOPED_WORK_ID = "(none)"
+
+
 def lesson_id(kind: str, work_id: str, area: str, source: str) -> str:
+    work_part = (work_id or "").strip() or UNSCOPED_WORK_ID
     area_part = (area or "").strip() or "(none)"
     src = (source or "").strip() or "capture"
-    return f"{kind}:{work_id}:{area_part}:{src}"
+    return f"{kind}:{work_part}:{area_part}:{src}"
 
 
 @dataclass
@@ -69,8 +75,8 @@ class LessonRecord:
     def validate(self) -> None:
         if self.kind not in LEDGER_KINDS:
             raise ValueError(f"kind must be one of {'|'.join(LEDGER_KINDS)}")
-        if not self.work_id:
-            raise ValueError("work_id is required")
+        if not self.work_id and not self.area:
+            raise ValueError("work_id or area is required")
         if not (self.body or self.title):
             raise ValueError("body (or title) is required")
 

@@ -212,7 +212,7 @@ def dashboard_activity(project: Project, limit: int) -> list[dict[str, Any]]:
             {
                 "ts": rec.ts,
                 "source": "ledger",
-                "text": f"{rec.kind} accepted: {rec.title} [{rec.work_id}]",
+                "text": f"{rec.kind} accepted: {rec.title} [{rec.work_id or rec.area or '(none)'}]",
                 "work_id": rec.work_id,
             }
         )

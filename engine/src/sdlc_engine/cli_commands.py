@@ -217,13 +217,18 @@ def cmd_context(args: argparse.Namespace) -> int:
         body = args.body
         if body == "-":
             body = sys.stdin.read()
+        work_id = getattr(args, "work_id", "") or ""
+        area = getattr(args, "area", "") or ""
+        if not work_id and not area:
+            print("persist-lesson: --work-id or --area is required", file=sys.stderr)
+            return 2
         keywords = [k.strip() for k in (args.keywords or "").split(",") if k.strip()]
         result = store.persist_lesson(
             kind=args.kind,
-            work_id=args.work_id,
+            work_id=work_id,
             body=body,
             title=getattr(args, "title", "") or "",
-            area=args.area or "",
+            area=area,
             source=args.source or "cli",
             phase=args.phase or "",
             keywords=keywords or None,
@@ -242,7 +247,7 @@ def cmd_context(args: argparse.Namespace) -> int:
             body = sys.stdin.read()
         result = store.persist_lesson(
             kind=args.kind if args.kind in LEDGER_KINDS else "decision",
-            work_id=args.work_id,
+            work_id=getattr(args, "work_id", "") or "",
             body=body,
             area=args.area or "",
             source=args.source or "cli",
