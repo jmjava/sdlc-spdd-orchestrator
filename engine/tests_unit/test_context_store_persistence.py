@@ -111,6 +111,56 @@ def test_cli_persist_lesson_no_guide(tmp_path: Path) -> None:
     assert LocalIndex(Project(tmp_path)).lessons_for_work(wid)
 
 
+def test_cli_persist_lesson_area_only_no_work_id(tmp_path: Path) -> None:
+    save_config(tmp_path, {"backends": ["git-pointers", "sqlite"]})
+    rc = main(
+        [
+            "--root",
+            str(tmp_path),
+            "context",
+            "persist-lesson",
+            "--kind",
+            "pitfall",
+            "--area",
+            "notify",
+            "--source",
+            "adhoc-prompt",
+            "--body",
+            "Retry without an idempotency key double-posts.",
+            "--no-guide",
+        ]
+    )
+    assert rc == 0
+    staged = (tmp_path / ".sdlc" / "staged" / "lessons.jsonl").read_text(encoding="utf-8")
+    assert "FEAT-" not in staged
+    assert '"work_id": ""' in staged
+    assert "pitfall:(none):notify:adhoc-prompt" in staged
+    store = ContextStore(Project(tmp_path), guide_base_url="http://127.0.0.1:9")
+    found = store.retrieve(area="notify")
+    ids = [row["id"] for row in found["ledger"]]
+    assert "pitfall:(none):notify:adhoc-prompt" in ids
+    assert all(row.get("work_id") == "" for row in found["ledger"])
+    lessons = LocalIndex(Project(tmp_path)).lessons_for_area("notify")
+    assert lessons
+
+
+def test_cli_persist_lesson_requires_work_id_or_area(tmp_path: Path) -> None:
+    rc = main(
+        [
+            "--root",
+            str(tmp_path),
+            "context",
+            "persist-lesson",
+            "--kind",
+            "pitfall",
+            "--body",
+            "missing both scopes",
+            "--no-guide",
+        ]
+    )
+    assert rc == 2
+
+
 def test_persist_lesson_calls_guide_project(tmp_path: Path) -> None:
     wid = "FEAT-901-guide-mock"
     _seed_canvas(tmp_path, wid)

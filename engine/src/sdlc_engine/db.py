@@ -677,10 +677,10 @@ class LocalIndex:
         """Insert one ledger record into lessons + edges + keyword nodes."""
         from . import context_model as cm
 
-        wid = record.work_id
+        wid = (record.work_id or "").strip() or "(none)"
         conn.execute(
             "INSERT OR IGNORE INTO work_items(work_id, title, updated) VALUES (?,?,?)",
-            (wid, wid, _utc_now()),
+            (wid, record.work_id or "unstructured (no Work ID)", _utc_now()),
         )
         kw_json = json.dumps(list(record.keywords or []), ensure_ascii=False)
         conn.execute(
@@ -1219,11 +1219,13 @@ class LocalIndex:
     def upsert_lesson_record(self, record: LessonRecord, *, staged: bool) -> None:
         """Upsert one ledger record + edges (hot-path projection write)."""
         record.validate()
-        self.ensure_work_item(record.work_id)
-        try:
-            self.sync_stay_set(record.work_id)
-        except Exception:  # noqa: BLE001
-            pass
+        sql_wid = (record.work_id or "").strip() or "(none)"
+        self.ensure_work_item(sql_wid, title="" if record.work_id else "unstructured (no Work ID)")
+        if record.work_id:
+            try:
+                self.sync_stay_set(record.work_id)
+            except Exception:  # noqa: BLE001
+                pass
         stats = RebuildStats()
         with self.connect() as conn:
             self._ingest_lesson_row(conn, record, staged=staged, stats=stats)

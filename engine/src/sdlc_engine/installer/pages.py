@@ -234,6 +234,7 @@ PAGE = """<!DOCTYPE html>
         </div>
         <h3>Do now</h3>
         <pre class="cmd" id="dash-work-cmd">—</pre>
+        <p class="meta" id="dash-work-dif" hidden></p>
         <ul class="check-list" id="dash-work-gates"></ul>
         <div class="meta">Claim/advance from the terminal: <code class="inline">./scripts/sdlc.sh next</code></div>
       </div>
@@ -1408,6 +1409,15 @@ PAGE = """<!DOCTYPE html>
       $("dw-op").textContent = work.operation || "—";
       $("dash-work-cmd").textContent = work.recommended_command
         || (work.pointer ? "—" : "./scripts/sdlc.sh claim <WORK-ID>");
+      const dif = work.dif || {};
+      const difEl = $("dash-work-dif");
+      if (dif.present && dif.line) {
+        difEl.hidden = false;
+        difEl.textContent = dif.line;
+      } else {
+        difEl.hidden = true;
+        difEl.textContent = "";
+      }
       const gates = work.open_gates || [];
       $("dash-work-gates").innerHTML = gates.length
         ? gates.map((g) => `<li><span class="mark bad">!!</span><span>${esc(g.label || g.gate)}</span></li>`).join("")
