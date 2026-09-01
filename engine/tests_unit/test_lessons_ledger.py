@@ -42,6 +42,58 @@ def test_stage_accept_and_dedupe(tmp_path) -> None:
     assert "Updated" in got.body
 
 
+def test_area_only_record_validates_without_work_id(tmp_path) -> None:
+    rec = LessonRecord(
+        id="",
+        kind="pitfall",
+        work_id="",
+        area="notify",
+        body="Retry without an idempotency key double-posts.",
+        source="adhoc-prompt",
+    )
+    rec.validate()
+    assert rec.id == "pitfall:(none):notify:adhoc-prompt"
+    assert rec.work_id == ""
+
+
+def test_record_requires_work_id_or_area() -> None:
+    rec = LessonRecord(
+        id="",
+        kind="pitfall",
+        work_id="",
+        area="",
+        body="no scope",
+        source="adhoc-prompt",
+    )
+    try:
+        rec.validate()
+    except ValueError as exc:
+        assert "work_id or area" in str(exc)
+    else:
+        raise AssertionError("expected validate to require work_id or area")
+
+
+def test_stage_and_retrieve_area_only(tmp_path) -> None:
+    project = Project(tmp_path)
+    project.memory_dir.mkdir(parents=True, exist_ok=True)
+    ledger = LessonsLedger(project)
+    rec = ledger.stage(
+        LessonRecord(
+            id="",
+            kind="pitfall",
+            work_id="",
+            area="notify",
+            body="Retry without an idempotency key double-posts.",
+            source="adhoc-prompt",
+        )
+    )
+    assert rec.id == "pitfall:(none):notify:adhoc-prompt"
+    by_area = ledger.records(area="notify")
+    assert [r.id for r in by_area] == [rec.id]
+    by_feat = ledger.records(work_id="FEAT-001")
+    assert by_feat == []
+
+
 def test_digest_bounded(tmp_path) -> None:
     project = Project(tmp_path)
     project.memory_dir.mkdir(parents=True, exist_ok=True)

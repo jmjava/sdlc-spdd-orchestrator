@@ -218,13 +218,18 @@ def cmd_context(args: argparse.Namespace) -> int:
         body = args.body
         if body == "-":
             body = sys.stdin.read()
+        work_id = getattr(args, "work_id", "") or ""
+        area = getattr(args, "area", "") or ""
+        if not work_id and not area:
+            print("persist-lesson: --work-id or --area is required", file=sys.stderr)
+            return 2
         keywords = [k.strip() for k in (args.keywords or "").split(",") if k.strip()]
         result = store.persist_lesson(
             kind=args.kind,
-            work_id=args.work_id,
+            work_id=work_id,
             body=body,
             title=getattr(args, "title", "") or "",
-            area=args.area or "",
+            area=area,
             source=args.source or "cli",
             phase=args.phase or "",
             keywords=keywords or None,
@@ -243,7 +248,7 @@ def cmd_context(args: argparse.Namespace) -> int:
             body = sys.stdin.read()
         result = store.persist_lesson(
             kind=args.kind if args.kind in LEDGER_KINDS else "decision",
-            work_id=args.work_id,
+            work_id=getattr(args, "work_id", "") or "",
             body=body,
             area=args.area or "",
             source=args.source or "cli",
@@ -1249,10 +1254,18 @@ def build_parser() -> argparse.ArgumentParser:
         help="Stage or accept a lesson record in the ledger",
     )
     cpl.add_argument("--kind", required=True, choices=list(_LEDGER_KINDS))
-    cpl.add_argument("--work-id", required=True)
+    cpl.add_argument(
+        "--work-id",
+        default="",
+        help="Work ID (optional when --area is set; omit on an ad hoc day)",
+    )
     cpl.add_argument("--body", required=True, help="Body text or '-' for stdin")
     cpl.add_argument("--title", default="")
-    cpl.add_argument("--area", default="")
+    cpl.add_argument(
+        "--area",
+        default="",
+        help="Code area (required when --work-id is omitted)",
+    )
     cpl.add_argument("--source", default="cli")
     cpl.add_argument("--phase", default="")
     cpl.add_argument("--keywords", default="", help="Comma-separated keywords")
@@ -1264,7 +1277,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="Deprecated alias for persist-lesson",
     )
     cpe.add_argument("--kind", required=True)
-    cpe.add_argument("--work-id", required=True)
+    cpe.add_argument("--work-id", default="")
     cpe.add_argument("--body", required=True)
     cpe.add_argument("--area", default="")
     cpe.add_argument("--phase", default="")
