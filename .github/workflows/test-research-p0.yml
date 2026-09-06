@@ -16,7 +16,7 @@ jobs:
           python-version: '3.12'
 
       - name: Syntax-check checker and tests
-        run: python3 -m py_compile sdlc-spdd/docs/research/check_p0_artifacts.py tests/research/test_p0_artifacts.py
+        run: python3 -m py_compile sdlc-spdd/docs/research/check_p0_artifacts.py tests/research/test_p0_artifacts.py tests/research/test_test002_slice.py tests/eval/test-002-hello/score_slice.py
 
       - name: Run structured research artifact tests
         run: python3 -m unittest tests.research.test_p0_artifacts -v
@@ -32,3 +32,6 @@ jobs:
 
       - name: prove-p0.sh DOC-003 (delegates to structured checker)
         run: ./sdlc-spdd/docs/research/prove-p0.sh DOC-003
+
+      - name: TEST-002 first-slice artifacts
+        run: python3 -m unittest tests.research.test_test002_slice -v

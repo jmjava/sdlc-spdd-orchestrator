@@ -14,6 +14,8 @@ All notable changes to this project will be documented in this file.
 - FEAT-017: lexical `context retrieve --query` title-body ranking vs
   keyword-list; qrel fixture with precision@k. DICE/Guide embeddings remain
   unmeasured.
+- TEST-002: first hello-gold slice (n=1, protocol incomplete); C-PORT not
+  reported. Symbol-proxy C-DRIFT only.
 
 ### Changed
 
