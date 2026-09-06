@@ -10,23 +10,53 @@ This is the **construct spec** later Work IDs must implement. It is not a paper 
 
 ---
 
-## 1. Provisional contribution sentence
+## 1. Academic review goal
 
-DOC-002 may tighten wording. It must not contradict this sentence:
+**Object of review:** this repository (`sdlc-spdd-orchestrator`) as a methods/tools artifact — process + **stores** + **retrievability**. Not a completed causal study. Not a Deterministic Intent Folding paper. The **intent store** is the REASONS canvas. The **advice store** is two legs of storage v3: the committed git **ledger** (`spdd/memory/lessons.jsonl`, system of record) and the optional **Guide** working-store projection (Neo4j via Guide DICE). SQLite is an opt-in cache, not the review object.
 
-> A **repository-native process model** for AI-assisted delivery that makes (a) intent, (b) process compliance, and (c) context load **observable and comparable**, with evidence that the hybrid reduces a defined drift measure versus unstructured chat and versus parent methods used in isolation.
+The method under review **stores**, then must be able to **read back**:
 
-Until TEST-002 records a comparison, the last clause (“with evidence that…”) is an **aim**, not a finding.
+| Store | What it is | Where | Retrievability today |
+|-------|------------|--------|----------------------|
+| Intent | REASONS canvas — what ships and what does not | `spdd/canvas/<WORK-ID>.md` | Human + `gate_check` / canvas validator |
+| Advice (ledger) | Reviewed lessons (`decision`, `pitfall`, `pattern`) | `spdd/memory/lessons.jsonl` | `sdlc-engine context retrieve` (keyword-list + lexical title-body, FEAT-017); CHORE-003 seeded dogfood |
+| Advice (Guide) | Regenerable projection of the same ledger ids | Guide DICE graph | `sdlc-engine context parity`; live e2e `engine/tests_e2e/test_guide_projection_roundtrip.py`. Guide is **optional** for replication. |
+| Process traces | Phase pointer, gates, claim/release | `.sdlc/` + `spdd/memory/registry.jsonl` | `sdlc.sh next` / registry |
+
+**In-scope empirical claim:** stored advice is **retrievable** — persist/accept then find the same id on the ledger, and when Guide is live find the same ids in the Guide projection. Cite existing tests; do not invent a new SPIKE.
+
+**Not in-scope for this bar:** that retrieve **improves later work** (RQ4 / C-MEMORY usefulness); that Guide **embeddings** are an IR result (unmeasured); that the hybrid **reduces drift** (RQ1).
+
+**Pass for this review bar:** a referee can find (1) what is stored, (2) that stored advice can be retrieved from the **ledger** and, when enabled, from the **Guide store**, (3) what `gate_check` actually checks, and (4) an allow-list of public sentences. Closest venue fit: ICSE NIER / AIware / LLM4Code, or SEIP with explicit limitations.
+
+**Fail / out of scope for this bar:**
+
+- “SDLC-SPDD reduces drift.” That sentence came from README marketing (`fixes that`). It is **not** Fowler SPDD’s job and **not** the criterion for accepting this artifact. RQ1 remains a possible later empirical paper. TEST-002 slices are **instrumentation demos**, not evidence the method works.
+- Deterministic Intent Folding (`jmjava/embabel-dif`), Embabel GOAP, or a JVM fold as a result of *this* review. Optional present-or-skip CLI attach already exists when the sibling is present; absence is skip. That pairing is **later / other-repo**. This freeze is **foundational** to it (a versioned canvas and retrievable advice ledger a fold can read) and **does not require it**.
+
+Do **not** open a new SPIKE to re-plan this. This file is the freeze. Remaining RQ1 empirical work, if any, stays on TEST-002. Retrievability uses the instruments already in this repo (FEAT-017, CHORE-003, storage-v3 parity, Guide e2e).
 
 ---
 
-## 2. Research questions
+## 2. Provisional contribution sentence
+
+DOC-002 may tighten wording. It must not contradict this sentence:
+
+> A **repository-native process model** for AI-assisted delivery that **stores intent** (REASONS canvas) and **stores agent/human advice** in a git ledger with an optional Guide working-store projection, and makes stored records **retrievable** so that (a) intent, (b) process compliance, and (c) retrievable memory are **observable and comparable**.
+
+Do **not** append “with evidence that the hybrid reduces drift.” That clause is not the review goal. It is a future RQ1 study, if someone runs one. Do **not** treat RQ4 usefulness or Guide embeddings as this review’s pass bar.
+
+---
+
+## 3. Research questions
 
 Each RQ names an independent variable (IV) and dependent construct(s). “SDLC-SPDD” means Planning artifacts + REASONS Canvas + phase commands/gates + ledger retrieval, as specified in this repo — **not** “any structured prompt.”
 
 ### RQ1 — Drift (C-DRIFT)
 
 **Does a versioned REASONS Canvas plus phase gates reduce scope deviations versus unstructured assistant chat on the same gold tasks?**
+
+This question is **not** the academic-review success criterion (see §1). It exists so that *if* someone later runs a comparison, the measure is defined. A slice that only shows the scorer can run is instrumentation, not an answer to RQ1. Academic review of this repo **fails** if the paper is framed as an RQ1 finding.
 
 | | |
 |--|--|
@@ -83,7 +113,7 @@ Each RQ names an independent variable (IV) and dependent construct(s). “SDLC-S
 
 ---
 
-## 3. Constructs
+## 4. Constructs
 
 Every row: **definition**, **measure**, **instrument** (what exists *today* vs **target Work ID**), **proxy weakness**.
 
@@ -125,7 +155,7 @@ Every row: **definition**, **measure**, **instrument** (what exists *today* vs *
 | **Measure** | Primary: C-REWORK on session 2 (`ReworkCount` or cycles). Secondary: C-DRIFT on session 2. |
 | **Instrument today** | Ledger kinds `decision|pitfall|pattern`; retrieve by work_id/area/kind/keyword and `--query` title-body (**FEAT-017**). Capture rework/cycles queryable via `context metrics --construct C-MEMORY` (**FEAT-015**). Committed dogfood ledger is **seeded** (CHORE-003); archive must not truncate it. |
 | **Target instrument** | TEST-001 two-session protocol; FEAT-015 `context metrics --construct C-MEMORY`; CHORE-003 so memory exists to retrieve. |
-| **Proxy weakness** | Counting retrieve *calls* is not usefulness. A seeded ledger makes retrieve non-vacuous; RQ4 usefulness is still unmeasured until the two-session protocol runs. |
+| **Proxy weakness** | Counting retrieve *calls* is not usefulness. A seeded ledger makes retrieve non-vacuous; RQ4 usefulness is still unmeasured until the two-session protocol runs. Retrievability (C-RETRIEVE) is a **different** claim and is in scope for this review. |
 
 ### C-PORT — Portability (assistant)
 
@@ -142,10 +172,11 @@ Every row: **definition**, **measure**, **instrument** (what exists *today* vs *
 | ID | Definition | Measure | Today | Target | Weakness |
 |----|------------|---------|-------|--------|----------|
 | **C-REWORK** | Repeated repair on the same gold-task acceptance criterion | `--rework` count / `--review-cycles` / `--validate-cycles` | `record.metrics` via `context metrics --construct C-REWORK` (**FEAT-015**) | Same query in TEST-002 session 2 | Self-reported; undefined if flags omitted |
+| **C-RETRIEVE** | A stored lesson can be found again | Ledger: persist/accept then `context retrieve` returns the id. Guide (when live): `context parity` shows ledger ids in the projection. | FEAT-017 `eval-retrieve` + `context retrieve`; CHORE-003 seeded ledger; `context parity`; e2e `test_guide_projection_roundtrip.py` | Same; Guide remains optional for replication | Not RQ4 usefulness. Guide **embeddings** unmeasured. SQLite `db query --search` is a different CLI. |
 
 ---
 
-## 4. Claims allowed today vs after Milestone 2
+## 5. Claims allowed today vs after Milestone 2
 
 Use this table when editing README, compliance, or talks. **If a cell says no, do not say it as a finding.**
 
@@ -154,17 +185,21 @@ Use this table when editing README, compliance, or talks. **If a cell says no, d
 | Unstructured chat often produces drift, lost decisions, session amnesia | **Allowed as motivation** (practitioner claim, unmeasured here) | Same | Same | Same unless you cite TEST-002 |
 | This repo is an installable operating model (Planning + SPDD + SDLC) | **Yes** | Yes | Yes | Yes |
 | Prompts/canvases are version-controlled artifacts | **Yes** | Yes | Yes | Yes |
+| Intent and advice are **stored in git** and queryable | **Yes** — canvas + `lessons.jsonl` + FEAT-015 metrics. | Yes | Yes | Yes |
+| Stored advice is **retrievable** from the ledger (`context retrieve`) | **Yes** as an engineering round-trip (FEAT-017 + CHORE-003). Not RQ4 usefulness. | Yes | Yes | Yes |
+| Guide working store holds the **same lesson ids** as the ledger when Guide is live (`context parity`) | **Yes** as engineering when Guide is on (parity + Guide e2e). Replication **must not** require Guide. Embeddings **unmeasured**. | Same | Same | Same |
 | Some CLI gates exist (`gate_check`) | **Yes** (describe what they actually check) | Yes | Describe *semantic* gates after FEAT-014/016 | Yes |
-| SDLC-SPDD **fixes** drift | **No** | **No** | **No** | Only if TEST-002 reports C-DRIFT comparison; still n-limited |
+| SDLC-SPDD **fixes** drift | **No** | **No** | **No** | **No** for this academic review. TEST-002 remains instrumentation. A later **separate** paper may ask RQ1. |
 | The canvas **governs** execution (causal, non-bypassable) | **No** — say *advised process + optional CLI gates* | Same | Stronger *observable* compliance (C-COMPLY) | Same; still bypassable via `--force`/ignoring chat |
 | Three assistants run the **same method** | **Only adapter-text parity** | Same | Same | Behavioral C-PORT if ≥2 assistants recorded |
-| Ledger retrieval improves later work | **No** | Protocol exists | Metrics queryable | Only if RQ4 protocol ran |
+| Ledger retrieval improves later work | **No** (RQ4 / C-MEMORY) | Protocol exists | Metrics queryable | Only if RQ4 protocol ran |
 | DICE / hybrid graph retrieval is a result | **No** (SPIKE-001 shelved; retrieve was keyword-list filter) | **No** | **No** — FEAT-017 measured **lexical** title-body vs keyword-list only; Guide embeddings unmeasured | Still **non-claim** unless a later ID measures DICE |
+| Deterministic Intent Folding / `embabel-dif` is a result of this review | **No** — later / other-repo. Optional present-or-skip attach is not a finding. | **No** | **No** | **No** |
 | Engineering tests prove the method works | **No** — they prove the *tool* | TEST-001 says how we will test the method | Instruments exist | One slice exists; not a journal N |
 
 ---
 
-## 5. README / compliance rewrite guidance (apply in T02)
+## 6. README / compliance rewrite guidance (apply in T02)
 
 Do **not** apply these edits in T01.
 
@@ -182,7 +217,7 @@ After T02, a grep for `fixes that` in `README.md` should not remain as an unqual
 
 ---
 
-## 6. Mapping to Milestone 2 Work IDs
+## 7. Mapping to Milestone 2 Work IDs
 
 | Construct / RQ | Must implement or measure |
 |----------------|---------------------------|
@@ -193,6 +228,7 @@ After T02, a grep for `fixes that` in `README.md` should not remain as an unqual
 | C-REWORK / C-CONTEXT structured capture | FEAT-015 |
 | C-DRIFT mapping; review minima | FEAT-016 |
 | C-CONTEXT relevance; retrieve algorithm | FEAT-017 |
+| C-RETRIEVE (ledger + Guide projection round-trip) | FEAT-017, CHORE-003, storage v3 parity, Guide e2e |
 | RQ1/RQ2/RQ5 slice | TEST-002 |
 | RQ4 precondition (memory exists) | CHORE-003 |
 | Which engine is the SUT | REF-001 Complete ([engine-sut.md](engine-sut.md)) |
@@ -202,16 +238,18 @@ Child canvases for FEAT-014–017 **must cite construct IDs** in Requirements.
 
 ---
 
-## 7. What TEST-002 should and should not claim
+## 8. What TEST-002 should and should not claim
 
 **Should:** one gold task with real source; unstructured vs full method; C-DRIFT and existence vs semantic C-COMPLY; assistant and model version written next to numbers.
 
-**Should not:** significance tests on n=1; C-PORT if only one assistant ran; DICE results; “we fixed drift.”
+**Should not:** significance tests on n=1; C-PORT if only one assistant ran; DICE results; “we fixed drift”; `embabel-dif` / fold results.
 
-RQ4 is **out of the first TEST-002 slice** unless TEST-001 explicitly includes a two-session task.
+RQ4 is **out of the first TEST-002 slice** unless TEST-001 explicitly includes a two-session protocol.
+
+A protocol-complete TEST-002 still does **not** change §1. It does not make reduced drift the academic-review object.
 
 ---
 
-## 8. Freeze rule
+## 9. Freeze rule
 
-Changing RQ text, adding RQ6, or renaming construct IDs is a **behavior change** of this spec: update the DOC-001 canvas with `/sdlc-spdd-prompt-update` before editing this file’s numbered RQs or IDs. Clarifying examples and instrument paths may be synced after review.
+Changing RQ text, adding RQ6, renaming construct IDs, or changing the academic-review object / contribution sentence is a **behavior change** of this spec: update the DOC-001 canvas with `/sdlc-spdd-prompt-update` before editing those parts. Clarifying examples and instrument paths may be synced after review.

@@ -60,6 +60,7 @@ Freeze 3–5 research questions and a construct table (drift, governance/complia
 - [x] Every construct has: definition, measure, instrument (file/command), known proxy weakness
 - [x] A short 'claims allowed today vs after Milestone 2' table is committed
 - [x] README/compliance hedges applied (DOC-001 canvas T02)
+- [x] T03 academic-review-goal freeze (stores + retrievability; DIF later)
 
 ## Non-Goals
 

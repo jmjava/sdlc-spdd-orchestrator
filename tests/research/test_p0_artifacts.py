@@ -142,6 +142,52 @@ fixes drift
         issues = issues_for_constructs_spec(stub)
         self.assertTrue(any("C-DRIFT missing field" in i for i in issues), issues)
 
+    def test_missing_review_goal_fails(self) -> None:
+        stub = """# Spec
+## RQ1 — Drift
+## RQ2
+## RQ3
+## RQ4
+## RQ5
+### C-DRIFT
+Definition
+Measure
+Instrument today
+Target instrument
+Proxy weakness
+### C-COMPLY
+Definition
+Measure
+Instrument today
+Target instrument
+Proxy weakness
+### C-CONTEXT
+Definition
+Measure
+Instrument today
+Target instrument
+Proxy weakness
+### C-MEMORY
+Definition
+Measure
+Instrument today
+Target instrument
+Proxy weakness
+### C-PORT
+Definition
+Measure
+Instrument today
+Target instrument
+Proxy weakness
+## Claims allowed today
+fixes drift
+"""
+        issues = issues_for_constructs_spec(stub)
+        self.assertTrue(
+            any("academic review goal" in i for i in issues),
+            f"expected missing review-goal failure, got {issues}",
+        )
+
 
 class EvaluationProtocolCheckerTests(unittest.TestCase):
     def test_valid_fixture_has_no_issues(self) -> None:

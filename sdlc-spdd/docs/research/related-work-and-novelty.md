@@ -29,15 +29,17 @@ Each row is a system a 2026 referee will ask about. Columns are DOC-001 construc
 
 ## Novelty
 
-DOC-001’s provisional contribution sentence may be tightened here. It must not be contradicted. Until TEST-002 records a comparison, any “with evidence” clause remains an **aim**, not a finding.
+DOC-001’s provisional contribution sentence may be tightened here. It must not be contradicted.
+
+The academic-review novelty is **observability of stores plus retrievability** (intent canvas; advice ledger as system of record; Guide working-store projection when live), not evidence that the hybrid reduces drift, and not Deterministic Intent Folding. `embabel-dif` is **later / other-repo**; this matrix does not treat DIF attach as a finding. Optional present-or-skip attach is not a result of this review.
 
 > SDLC-SPDD is a **repository-native process model** for AI-assisted delivery that hybridizes a versioned REASONS intent contract with assistant-lifecycle governance so that intent (C-DRIFT), process compliance (C-COMPLY), and context load (C-CONTEXT) are **observable and comparable** across process conditions.
 
-That sentence is the claim we would defend in rebuttal. It does **not** assert that the hybrid has already reduced drift.
+That sentence is the claim we would defend in rebuttal. It does **not** assert that the hybrid has already reduced drift. Do **not** append “with evidence that…” as this review’s aim.
 
-Parents (Fowler SPDD / OpenSPDD, SDLC Agents) supply the canvas and the phase lifecycle. Spec-driven kits (Spec Kit, OpenSpec, BMAD) supply neighboring “spec as artifact” practice. Coding agents and multi-agent runtimes supply a different research object (agent competence, not process observability). Native assistant memory and classical process/rationale methods supply further neighbors. The delta is the **hybrid + named constructs + (planned) comparative protocol**, not a new model family.
+Parents (Fowler SPDD / OpenSPDD, SDLC Agents) supply the canvas and the phase lifecycle. Spec-driven kits (Spec Kit, OpenSpec, BMAD) supply neighboring “spec as artifact” practice. Coding agents and multi-agent runtimes supply a different research object (agent competence, not process observability). Native assistant memory and classical process/rationale methods supply further neighbors. The delta is the **hybrid + named constructs + retrievable stores** (ledger + optional Guide projection), not a new model family and not a fold.
 
----
+What **is** claimed today: the hybrid is **implemented** and **observable** (FEAT-014 canvas semantics, FEAT-016 review minima, FEAT-015 metrics, FEAT-017 lexical retrieve as IR, REF-001 Python `gate_check` as named SUT, CHORE-003 seeded ledger). See DOC-001 §1 and §5.
 
 ## Claim × system matrix
 
@@ -80,7 +82,9 @@ Parents (Fowler SPDD / OpenSPDD, SDLC Agents) supply the canvas and the phase li
 - A new **LLM** or decoding algorithm.
 - A new **RAG** or GraphRAG theory (retrieve today is an exact keyword-list filter; DICE remains conditional on FEAT-017).
 - A compiled **multi-agent** runtime (AutoGen/CrewAI class).
-- That the hybrid already **fixes drift**. TEST-002 recorded an n=1 protocol-incomplete slice; that is not a journal finding.
+- That the hybrid already **fixes drift**. TEST-002 recorded an n=1 protocol-incomplete slice; that is not a journal finding. Reduced-drift evidence is not this review’s object (DOC-001 §1).
+- That retrieve **improves later work** (RQ4). Retrievability of stored records is a different, in-scope claim (DOC-001 C-RETRIEVE).
+- Deterministic Intent Folding / `embabel-dif` as a result of this orchestrator review. Optional attach is present-or-skip. That pairing is later / other-repo; this work is foundational to it.
 - An upstream contribution to Embabel. Guide remains **fork-only**.
 
 ---

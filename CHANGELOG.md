@@ -23,6 +23,12 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- DOC-001 T03: freeze the academic-review object as git-backed intent/advice
+  stores plus **retrievability** (ledger `context retrieve`, Guide `context
+  parity` when live). Reduced-drift evidence and `embabel-dif` are out of
+  scope for this review (DIF later / other-repo). RQ4 usefulness remains
+  unmeasured.
+
 - REF-001: workflow `gate` delegates to Python whenever `sdlc_engine` is
   importable, even if `SDLC_ENGINE=shell`. `SDLC_GATE_ENGINE=shell` is the
   labeled pre-FEAT-014 substring fallback and is **not** an evaluation

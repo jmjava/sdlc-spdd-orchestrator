@@ -11,7 +11,7 @@
 
 Not a new LLM, not a new RAG theory, not a compiled multi-agent runtime.
 
-Guide is **fork-only**.
+Guide is **fork-only**. `embabel-dif` is later / other-repo, not this review.
 
 ## Claim × system matrix
 
