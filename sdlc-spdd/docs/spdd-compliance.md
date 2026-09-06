@@ -4,6 +4,8 @@
 
 This project follows Structured Prompt-Driven Development (SPDD) as described in Martin Fowler's article, [Structured-Prompt-Driven Development](https://martinfowler.com/articles/structured-prompt-driven/), inside a hybrid lifecycle influenced by [SDLC Agents](https://github.com/dsilahcilar/sdlc-agents).
 
+This page is a **mapping** of those expectations onto this scaffold. It is not evidence that the method reduces drift (C-DRIFT) or that sessions are process-compliant (C-COMPLY). Empirical claims are allow-listed in [research questions and constructs](research/research-questions-and-constructs.md).
+
 SPDD treats prompts as first-class delivery artifacts that are version controlled, reviewed, reused, and improved over time. This scaffold implements that contract with REASONS Canvas files, lifecycle prompt templates, assistant command prompts, progress logs, review reports, sync logs, and reusable project memory.
 
 For the SDLC Agents command mapping, see [SDLC Agents and the framework](sdlc-agents-and-the-framework.md). For copy-paste SPDD prompts, see [SPDD prompt standard](spdd-prompt-standard.md). For planning-layer prompts, see [Planning prompt standard](planning-prompt-standard.md).

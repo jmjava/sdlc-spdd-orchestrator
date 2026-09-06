@@ -19,8 +19,8 @@ artifacts, handoffs, and gates every session.
 ## Why it exists
 
 Unstructured chat with an AI coding assistant produces drift: scope expands, decisions
-vanish, the next session starts from zero. SDLC-SPDD fixes that with three durable
-layers that stay in the repo:
+vanish, the next session starts from zero. SDLC-SPDD is **designed to make that drift
+reviewable** with three durable layers that stay in the repo:
 
 | Layer | Question | You commit |
 | ----- | -------- | ---------- |
@@ -28,8 +28,13 @@ layers that stay in the repo:
 | **SPDD** | *What* exactly ships (and what does not)? | `spdd/canvas/<WORK-ID>.md` — the REASONS Canvas |
 | **SDLC** | *Who acts when*, and how does the next session resume? | Phase commands, hot session briefs, lean memory |
 
-The canvas **governs** execution. Planning informs it. SDLC runs the lifecycle around it.
-Assistants do not invent a parallel process each turn.
+The canvas is the **contract** for execution; CLI gates can refuse some phase
+advances when artifacts are missing. Planning informs the canvas. SDLC runs the
+lifecycle around it. Assistants do not invent a parallel process each turn.
+
+Claim language is allow-listed in
+[DOC-001](sdlc-spdd/docs/research/research-questions-and-constructs.md#4-claims-allowed-today-vs-after-milestone-2):
+this repo is an operating model with optional gates, not a measured fix for drift.
 
 ---
 
@@ -95,8 +100,8 @@ Program detail: [Storage v3](docs/storage-v3.md)
 **Research program (Milestone 2):** raise this repo from hobby/engineering
 research to referee-safe claims — [journal-style review](sdlc-spdd/spdd/analysis/SPIKE-004-academic-contribution-bar-analysis.md)
 and [iteration task list](sdlc-spdd/spdd/tasks/milestone-2-academic-hardening.md).
-Does not block the product slice; do not treat README “fixes drift” language as
-an evaluated result until DOC-001/TEST-001 land.
+Does not block the product slice. Public causal claims follow
+[DOC-001](sdlc-spdd/docs/research/research-questions-and-constructs.md#4-claims-allowed-today-vs-after-milestone-2).
 
 | Doc | Branch / PR |
 | --- | ----------- |
@@ -276,7 +281,7 @@ your-app/
     requirements/            Requirements (often → Jira)
     session-notes/           Daily human/agent narrative
     spdd/
-      canvas/<WORK-ID>.md    REASONS Canvas (governs execution)
+      canvas/<WORK-ID>.md    REASONS Canvas (contract for execution)
       analysis/ reviews/ sync/  Governance siblings
       memory/
         lessons.jsonl        Committed lessons ledger (source of truth)

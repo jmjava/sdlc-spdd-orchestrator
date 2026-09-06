@@ -7,6 +7,7 @@ This folder is **not** a paper. It holds investigation notes that support either
 | [Academic contribution bar (SPIKE-004 analysis)](../../sdlc-spdd/spdd/analysis/SPIKE-004-academic-contribution-bar-analysis.md) | Journal-style review of *this* repo as a research project | Raising claims from engineering/hobby to referee-safe |
 | [Program plan (SPIKE-004 canvas)](../../sdlc-spdd/spdd/canvas/SPIKE-004-academic-contribution-bar.md) | REASONS canvas for Milestone 2 sequence | What to iterate, in what order |
 | [Research questions and constructs (DOC-001)](../../sdlc-spdd/docs/research/research-questions-and-constructs.md) | Frozen RQs + construct spec | Citing C-DRIFT / C-COMPLY / … in later Work IDs |
+| [P0 proof script](../../sdlc-spdd/docs/research/prove-p0.sh) | Machine gate per Work ID | Run before merging the next P0 item |
 | [Milestone 2 task list](../../sdlc-spdd/spdd/tasks/milestone-2-academic-hardening.md) | Iteration backlog | Picking the next Work ID |
 | [Jira ADF and requirements sync](jira-adf-and-requirements-sync.md) | Product/integration research | Jira Cloud description payloads |
 
