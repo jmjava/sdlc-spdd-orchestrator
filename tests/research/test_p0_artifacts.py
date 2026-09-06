@@ -142,6 +142,56 @@ fixes drift
         issues = issues_for_constructs_spec(stub)
         self.assertTrue(any("C-DRIFT missing field" in i for i in issues), issues)
 
+    def test_missing_review_goal_fails(self) -> None:
+        stub = """# Spec
+## RQ1 — Drift
+## RQ2
+## RQ3
+## RQ4
+## RQ5
+### C-DRIFT
+Definition
+Measure
+Instrument today
+Target instrument
+Proxy weakness
+### C-COMPLY
+Definition
+Measure
+Instrument today
+Target instrument
+Proxy weakness
+### C-CONTEXT
+Definition
+Measure
+Instrument today
+Target instrument
+Proxy weakness
+### C-MEMORY
+Definition
+Measure
+Instrument today
+Target instrument
+Proxy weakness
+### C-PORT
+Definition
+Measure
+Instrument today
+Target instrument
+Proxy weakness
+## Claims allowed today
+fixes drift
+"""
+        issues = issues_for_constructs_spec(stub)
+    def test_missing_sqlite_store_fails(self) -> None:
+        spec = ROOT / "sdlc-spdd" / "docs" / "research" / "research-questions-and-constructs.md"
+        text = spec.read_text(encoding="utf-8")
+        issues = issues_for_constructs_spec(text.replace("SQLite", "XXXX").replace("sqlite", "xxxx"))
+        self.assertTrue(
+            any("SQLite" in i for i in issues),
+            f"expected missing SQLite store failure, got {issues}",
+        )
+
 
 class EvaluationProtocolCheckerTests(unittest.TestCase):
     def test_valid_fixture_has_no_issues(self) -> None:

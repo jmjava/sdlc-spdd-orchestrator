@@ -240,11 +240,10 @@ def issues_for_related_work(text: str) -> list[str]:
         if "c-context" not in ns and "context" not in ns:
             issues.append("novelty sentence missing C-CONTEXT or context")
         if re.search(r"with evidence that", novelty_sentence, re.IGNORECASE):
-            if not re.search(r"\baim\b", novelty_sentence, re.IGNORECASE):
-                issues.append(
-                    "novelty sentence claims 'with evidence that' as a finding; "
-                    "DOC-001 requires that clause to remain an aim until TEST-002"
-                )
+            issues.append(
+                "novelty sentence must not use 'with evidence that' "
+                "(DOC-001 T03: reduced-drift evidence is not this review's aim)"
+            )
         if CAUSAL_FINDING.search(novelty_sentence):
             issues.append("novelty sentence uses causal-finding language")
 
@@ -267,6 +266,8 @@ def issues_for_related_work(text: str) -> list[str]:
         for token in ("llm", "rag", "multi-agent"):
             if token not in nc:
                 issues.append(f"not-claiming section missing {token}")
+        if "embabel-dif" not in nc and "deterministic intent folding" not in nc:
+            issues.append("not-claiming section must name embabel-dif as out of this review")
 
     if not re.search(r"fork-only", text, re.IGNORECASE):
         issues.append("related-work must state Guide is fork-only")
@@ -340,6 +341,30 @@ def issues_for_constructs_spec(text: str) -> list[str]:
         issues.append("constructs spec missing claims-allowed table heading")
     if not re.search(r"fixes.*drift", text, re.IGNORECASE):
         issues.append("claims table must mention the forbidden 'fixes drift' claim")
+    if "## 1. Academic review goal" not in text:
+        issues.append("constructs spec must freeze the academic review goal (DOC-001 §1)")
+    blob = _norm(text)
+    if "advice store" not in blob or "lessons.jsonl" not in text:
+        issues.append("constructs spec must name the advice store (lessons.jsonl)")
+    quotes = re.findall(r"^>\s*(.+)$", text, re.MULTILINE)
+    contribution = " ".join(quotes)
+    if re.search(r"with evidence that", contribution, re.IGNORECASE):
+        issues.append(
+            "contribution sentence must not use 'with evidence that' "
+            "(reduced-drift evidence is not this review's object)"
+        )
+    if "embabel-dif" not in blob:
+        issues.append("constructs spec must name embabel-dif as later/out of scope")
+    if "retriev" not in blob:
+        issues.append("constructs spec must name retrievability as the in-scope empirical claim")
+    if "context retrieve" not in blob:
+        issues.append("constructs spec must name context retrieve")
+    if "guide" not in blob:
+        issues.append("constructs spec must name the Guide store")
+    if "sqlite" not in blob:
+        issues.append("constructs spec must name the SQLite store")
+    if "c-retrieve" not in blob:
+        issues.append("constructs spec must name supporting measure C-RETRIEVE")
     return issues
 
 

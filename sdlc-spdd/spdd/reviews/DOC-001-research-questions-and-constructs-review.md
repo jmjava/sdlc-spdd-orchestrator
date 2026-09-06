@@ -42,4 +42,32 @@ None for this Work ID.
 
 ## Recommendation
 
-Mark DOC-001 Complete. Next Work ID: DOC-002 (related-work matrix). Do not start FEAT-014.
+Mark DOC-001 Complete after T02. Next Work ID at that time: DOC-002.
+
+---
+
+## T03 addendum (2026-09-06)
+
+**Result:** Approved  
+**Readiness at coding:** Ready For Coding after prompt-update (no process finding)
+
+T03 freezes the academic-review object: git-backed intent (canvas) and advice (ledger + SQLite local index + optional Guide working-store projection), with a **retrievability** bar (`context retrieve`, `context parity`). RQ1 reduced-drift evidence is not the pass bar. `embabel-dif` is later / other-repo. No new SPIKE. No engine changes. DOC-002 novelty/not-claiming synced so they cannot contradict the freeze.
+
+### Proof (T03)
+
+| Check | Result |
+|-------|--------|
+| `python3 -m unittest tests.research.test_p0_artifacts -v` | 21 passed |
+| `prove-p0.sh DOC-001` | pass |
+| `prove-p0.sh DOC-002` | pass |
+| Spec §1 names ledger + SQLite + Guide + retrievability | pass |
+| Claims table: “fixes drift” remains No after P2 | pass |
+| Engine/runtime files unchanged | pass (docs + P0 checker only) |
+
+### Required changes
+
+None for this Work ID.
+
+### Recommendation
+
+DOC-001 remains Complete. Do not open SPIKE-005. RQ1 leftovers stay on TEST-002. DIF work stays in `jmjava/embabel-dif`.

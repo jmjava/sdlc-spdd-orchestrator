@@ -44,7 +44,7 @@ Make the novelty sentence rebuttal-ready and consistent with DOC-001. Stop “we
 
 - DOC-001 construct IDs are the matrix columns
 - OpenSPDD is the CLI that implements Fowler SPDD, not a third independent method family
-- “With evidence that…” in DOC-001 remains an aim until TEST-002
+- “With evidence that…” is **not** this review’s aim (DOC-001 T03). `embabel-dif` is later / other-repo.
 
 ## E - Entities
 
@@ -136,6 +136,8 @@ Do not start TEST-001 in this operation. Do not modify engine code.
 ## Sync Notes
 
 Created 2026-09-06 after DOC-001 merge (`1d1c866`). Structured tests replace grep-only `prove-p0.sh` token checks.
+
+2026-09-06 — Novelty/not-claiming synced to DOC-001 T03: stores observability is the claim; reduced-drift evidence and `embabel-dif` are not this review.
 
 ## Final Status
 

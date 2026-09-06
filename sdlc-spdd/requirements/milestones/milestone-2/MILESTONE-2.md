@@ -4,6 +4,8 @@
 
 Make SDLC-SPDD *claim-safe* as a research project: stated research questions, a related-work position, operationalized constructs (drift, governance, context, memory), and an evaluation protocol a journal referee would accept — then harden the implementation so those constructs are observable.
 
+**Academic review of this repo** (DOC-001 §1) is the **intent/advice stores** and a **retrievability** bar: stored lessons can be read back from the git ledger and, when enabled, from the SQLite local index and the Guide working-store projection. It is not a finding that the method reduces drift. Deterministic Intent Folding (`embabel-dif`) is later / other-repo; this milestone is foundational to that attach and does not include it.
+
 This is **make it right** for the research argument. It is not prompt optimization and not a new assistant runtime.
 
 Analysis that opened this milestone: `spdd/analysis/SPIKE-004-academic-contribution-bar-analysis.md`.
@@ -43,7 +45,7 @@ P2 — strengthen the contribution:
 | Work ID | Canvas | Requirement | Status | Notes |
 |---------|--------|-------------|--------|-------|
 | SPIKE-004-academic-contribution-bar | [canvas](../../../spdd/canvas/SPIKE-004-academic-contribution-bar.md) | [requirement](SPIKE-004-academic-contribution-bar.md) | Complete (T01–T04) | Program plan |
-| DOC-001-research-questions-and-constructs | [canvas](../../../spdd/canvas/DOC-001-research-questions-and-constructs.md) | [requirement](DOC-001-research-questions-and-constructs.md) | Complete | T01 spec + T02 hedges; review Approved With Notes |
+| DOC-001-research-questions-and-constructs | [canvas](../../../spdd/canvas/DOC-001-research-questions-and-constructs.md) | [requirement](DOC-001-research-questions-and-constructs.md) | Complete | T01 spec + T02 hedges + T03 review-goal freeze (stores + retrievability; DIF later) |
 | DOC-002-related-work-map | [canvas](../../../spdd/canvas/DOC-002-related-work-map.md) | [requirement](DOC-002-related-work-map.md) | Complete | Matrix + structured tests; PR #221 |
 | TEST-001-evaluation-protocol | [canvas](../../../spdd/canvas/TEST-001-evaluation-protocol.md) | [requirement](TEST-001-evaluation-protocol.md) | Complete | Protocol + live tests; PR #222 |
 | FEAT-014-semantic-canvas-validation | [canvas](../../../spdd/canvas/FEAT-014-semantic-canvas-validation.md) | [requirement](FEAT-014-semantic-canvas-validation.md) | Complete | Structured readiness + semantic minima |
@@ -79,6 +81,7 @@ For each work item:
 
 ## Session Updates
 
+2026-09-06 — DOC-001 T03: academic review goal frozen as stores + retrievability (ledger + Guide); reduced-drift and `embabel-dif` out of scope.
 2026-09-06 — REF-001 names Python `gate_check` as the SUT; default `SDLC_ENGINE=auto`. Milestone 2 P2 complete.
 2026-09-06 — CHORE-003 seeded the dogfood ledger; archive never truncates it. Next: REF-001.
 2026-09-06 — TEST-002 first slice recorded (hello gold, n=1, protocol incomplete). Next: CHORE-003, then REF-001.
