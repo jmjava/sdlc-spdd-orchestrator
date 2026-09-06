@@ -117,7 +117,8 @@ Also useful day to day:
 | [MCP Guide for agents](mcp-guide-for-agents.md) | You query Guide from CLI or delegate `spdd_*` MCP tools during analysis/code phases |
 | [DICE projection runbook](dice-projection-runbook.md) | You run the local Guide + Neo4j stack for dogfood or retrieval tests |
 | [Local SQLite index](local-sqlite-index.md) | Zero-install `.sdlc/index.sqlite` query cache; opt-in, fully regenerable from the ledger |
-| [Jira ADF + requirements sync (research)](research/jira-adf-and-requirements-sync.md) | Exact Cloud ADF / Server wiki payloads; requirements as source of truth for Jira + REASONS |
+| [Jira ADF + requirements sync](research/jira-adf-and-requirements-sync.md) | Exact Cloud ADF / Server wiki payloads; requirements as source of truth for Jira + REASONS |
+| [Research notes index](research/README.md) | Academic program (SPIKE-004) vs product/integration research |
 | [SDLC Engine — commit-message](engine-v2.md#commit-message-diff-report) | Python engine diff report for `/sdlc-spdd-commit-message` |
 | [SDLC Engine — sunset](engine-v2.md#feature-sunset-snapshot) | Close-out snapshot of GitHub PR, GitHub issue, commits, and Jira into the ledger |
 | [Guide flow](guide-flow.md) | End-to-end Guide working store: ledger + canvas ingest, runtime resolution, per-phase tools, persist loop |

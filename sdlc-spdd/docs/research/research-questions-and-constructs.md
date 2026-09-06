@@ -1,0 +1,217 @@
+# Research questions and operationalized constructs
+
+**Work ID:** DOC-001-research-questions-and-constructs  
+**Status:** Frozen for Milestone 2 unless `/sdlc-spdd-prompt-update` on the DOC-001 canvas  
+**Date:** 2026-09-06  
+**Parent plan:** [SPIKE-004 canvas](../../spdd/canvas/SPIKE-004-academic-contribution-bar.md)  
+**Referee source:** [SPIKE-004 analysis](../../spdd/analysis/SPIKE-004-academic-contribution-bar-analysis.md) (M1)
+
+This is the **construct spec** later Work IDs must implement. It is not a paper and not an evaluation result.
+
+---
+
+## 1. Provisional contribution sentence
+
+DOC-002 may tighten wording. It must not contradict this sentence:
+
+> A **repository-native process model** for AI-assisted delivery that makes (a) intent, (b) process compliance, and (c) context load **observable and comparable**, with evidence that the hybrid reduces a defined drift measure versus unstructured chat and versus parent methods used in isolation.
+
+Until TEST-002 records a comparison, the last clause (“with evidence that…”) is an **aim**, not a finding.
+
+---
+
+## 2. Research questions
+
+Each RQ names an independent variable (IV) and dependent construct(s). “SDLC-SPDD” means Planning artifacts + REASONS Canvas + phase commands/gates + ledger retrieval, as specified in this repo — **not** “any structured prompt.”
+
+### RQ1 — Drift (C-DRIFT)
+
+**Does a versioned REASONS Canvas plus phase gates reduce scope deviations versus unstructured assistant chat on the same gold tasks?**
+
+| | |
+|--|--|
+| **IV** | Process condition: unstructured chat vs full SDLC-SPDD (TEST-001 may also include canvas-only) |
+| **DV** | C-DRIFT (`ScopeDeviationRate`) |
+| **H1 (directional)** | `ScopeDeviationRate` is lower under full SDLC-SPDD than under unstructured chat |
+| **Needed to answer** | TEST-001 protocol, FEAT-016 mapping, TEST-002 slice |
+
+### RQ2 — Compliance (C-COMPLY)
+
+**What fraction of sessions are process-compliant (required artifacts present *and* semantically adequate), and can that fraction be measured without trusting the agent’s self-report?**
+
+| | |
+|--|--|
+| **IV** | Measurement method: file-existence proxies vs semantic instruments (FEAT-014/016) |
+| **DV** | C-COMPLY (`ProcessComplianceRate`) |
+| **H2** | Existence-only `ProcessComplianceRate` overestimates semantic compliance |
+| **Needed to answer** | FEAT-014, FEAT-016, TEST-001 rater protocol |
+
+### RQ3 — Context (C-CONTEXT)
+
+**Do per-phase retrieval budgets reduce context load and increase relevance of loaded files versus bulk-read, without lowering task success?**
+
+| | |
+|--|--|
+| **IV** | Context policy: bulk-read vs per-phase retrieve (ledger/filter today; IR later) |
+| **DV** | C-CONTEXT (`ContextLoad`, `ContextRelevance`); task success as a **guardrail**, not the primary DV |
+| **H3** | `ContextLoad` is lower and `ContextRelevance` is not worse under per-phase retrieve |
+| **Needed to answer** | FEAT-015 (load), FEAT-017 (relevance), TEST-001/002 (success guardrail) |
+
+### RQ4 — Memory (C-MEMORY)
+
+**Does ledger retrieval change subsequent-session rework versus no memory and versus dumping the whole ledger?**
+
+| | |
+|--|--|
+| **IV** | Memory policy: none vs full-ledger dump vs `context retrieve` |
+| **DV** | C-MEMORY (`MemoryUsefulness`) via C-REWORK on a follow-on task |
+| **H4** | Retrieve beats none and is not worse than dump on rework, at lower C-CONTEXT |
+| **Needed to answer** | FEAT-015/017, TEST-001 two-session protocol — **not** in TEST-002’s first slice unless specified |
+
+### RQ5 — Portability (C-PORT)
+
+**Do Cursor, Copilot, and Claude Code produce comparable compliance and outcome profiles when adapters are held in spec parity?**
+
+| | |
+|--|--|
+| **IV** | Assistant (Cursor / Copilot / Claude Code) with spec-generated adapters |
+| **DV** | C-PORT (`PortabilityGap`) on C-COMPLY and C-DRIFT |
+| **H5** | Adapter-text parity does **not** imply behavioral parity (`PortabilityGap` > 0 is expected) |
+| **Needed to answer** | TEST-002 (at least two assistants if APIs allow; else document single-assistant limitation) |
+
+**No RQ6.** Additions require prompt-update on DOC-001.
+
+---
+
+## 3. Constructs
+
+Every row: **definition**, **measure**, **instrument** (what exists *today* vs **target Work ID**), **proxy weakness**.
+
+### C-DRIFT — Scope deviation
+
+| Field | Spec |
+|-------|------|
+| **Definition** | A **scope deviation** is either (a) an implemented change that does not map to an approved canvas operation, or (b) an approved operation with no corresponding implementation evidence in the diff. |
+| **Measure** | `ScopeDeviationRate = (N_unmapped_hunks + N_unimplemented_ops) / (N_hunks + N_ops)` on a gold task. Report numerator parts separately. |
+| **Instrument today** | None. Human can eyeball canvas vs diff. |
+| **Target instrument** | **FEAT-016** (operation↔path mapping + automated remainder). TEST-002 records the rate on one gold task. |
+| **Proxy weakness** | File-touch heuristics miss hunks in “allowed” files that implement extra behavior; humans miss silent non-goals. |
+
+### C-COMPLY — Process compliance
+
+| Field | Spec |
+|-------|------|
+| **Definition** | A session is **process-compliant** iff required artifacts for the claimed phase exist **and** meet semantic minima (non-empty required canvas sections; structured readiness for `code`; review states result + safeguards explicitly). |
+| **Measure** | `ProcessComplianceRate = N_compliant_sessions / N_sessions`. Always publish **existence-only** and **semantic** rates as a pair (H2). |
+| **Instrument today** | `gate_check` (file existence, `/ready for coding/i` anywhere in canvas, review file exists). `validate-reasons-canvas.sh` (heading grep). |
+| **Target instrument** | **FEAT-014** (structured readiness, non-empty sections) + **FEAT-016** (review minima; no auto-pass safeguards). |
+| **Proxy weakness** | Today’s rate can be 1.0 for an empty review and a canvas that mentions “ready for coding” in Sync Notes. That is **not** C-COMPLY. |
+
+### C-CONTEXT — Context load and relevance
+
+| Field | Spec |
+|-------|------|
+| **Definition** | **Load:** how much context the process caused to be loaded (files or tokens). **Relevance:** whether loaded items were used for the gold task (qrels / rater). |
+| **Measure** | `ContextLoad` = count of distinct files listed as loaded (or token estimate if available). `ContextRelevance@k` = precision of retrieved lesson ids vs a qrel set (FEAT-017). |
+| **Instrument today** | Optional capture `--context-files` stuffed into **session.body**. `LessonsLedger.records()` filters exact keyword-list membership; not ranked. SQLite FTS is a *different* CLI (`db query --search`). |
+| **Target instrument** | **FEAT-015** (structured `context_files` / token fields) + **FEAT-017** (algorithm + precision@k fixture). |
+| **Proxy weakness** | `--context-files` is self-reported and optional; it does not prove what the model actually attended to. |
+
+### C-MEMORY — Memory usefulness
+
+| Field | Spec |
+|-------|------|
+| **Definition** | Whether retrieved lessons improve a **follow-on** task versus no memory / dump, after controlling for C-CONTEXT. |
+| **Measure** | Primary: C-REWORK on session 2 (`ReworkCount` or cycles). Secondary: C-DRIFT on session 2. |
+| **Instrument today** | Ledger kinds `decision|pitfall|pattern`; retrieve by work_id/area/kind/keyword. No eval harness. Committed dogfood ledger is **empty** after archive (CHORE-003). |
+| **Target instrument** | TEST-001 two-session protocol; FEAT-015 rework field; CHORE-003 so memory exists to retrieve. |
+| **Proxy weakness** | Counting retrieve *calls* is not usefulness. Empty ledger makes RQ4 untestable in this repo until CHORE-003. |
+
+### C-PORT — Portability (assistant)
+
+| Field | Spec |
+|-------|------|
+| **Definition** | Difference in C-COMPLY and C-DRIFT across assistants when **command specs are in parity**. |
+| **Measure** | `PortabilityGap = max_a(rate_a) - min_a(rate_a)` for C-COMPLY and for C-DRIFT separately. |
+| **Instrument today** | `validate-command-adapters.sh` — **text** parity, not behavior. Live consumer matrix is Cursor-oriented. |
+| **Target instrument** | **TEST-002** recorded runs. If only one assistant API is available, C-PORT is **not reported as a result**; the limitation is written beside the slice. |
+| **Proxy weakness** | Adapter markdown equality is not behavioral equality (H5). |
+
+### Supporting measure (not a sixth RQ)
+
+| ID | Definition | Measure | Today | Target | Weakness |
+|----|------------|---------|-------|--------|----------|
+| **C-REWORK** | Repeated repair on the same gold-task acceptance criterion | `--rework` count / `--review-cycles` / `--validate-cycles` | Optional flags in session **body** | **FEAT-015** queryable fields | Self-reported; undefined if flags omitted |
+
+---
+
+## 4. Claims allowed today vs after Milestone 2
+
+Use this table when editing README, compliance, or talks. **If a cell says no, do not say it as a finding.**
+
+| Claim | Today | After P0 (DOC-001/002, TEST-001) | After P1 (instruments) | After P2 (TEST-002 slice) |
+|-------|-------|----------------------------------|------------------------|---------------------------|
+| Unstructured chat often produces drift, lost decisions, session amnesia | **Allowed as motivation** (practitioner claim, unmeasured here) | Same | Same | Same unless you cite TEST-002 |
+| This repo is an installable operating model (Planning + SPDD + SDLC) | **Yes** | Yes | Yes | Yes |
+| Prompts/canvases are version-controlled artifacts | **Yes** | Yes | Yes | Yes |
+| Some CLI gates exist (`gate_check`) | **Yes** (describe what they actually check) | Yes | Describe *semantic* gates after FEAT-014/016 | Yes |
+| SDLC-SPDD **fixes** drift | **No** | **No** | **No** | Only if TEST-002 reports C-DRIFT comparison; still n-limited |
+| The canvas **governs** execution (causal, non-bypassable) | **No** — say *advised process + optional CLI gates* | Same | Stronger *observable* compliance (C-COMPLY) | Same; still bypassable via `--force`/ignoring chat |
+| Three assistants run the **same method** | **Only adapter-text parity** | Same | Same | Behavioral C-PORT if ≥2 assistants recorded |
+| Ledger retrieval improves later work | **No** | Protocol exists | Metrics queryable | Only if RQ4 protocol ran |
+| DICE / hybrid graph retrieval is a result | **No** (SPIKE-001 shelved; retrieve is keyword-list filter) | **No** | **No** unless FEAT-017 shows gain | Conditional on FEAT-017 |
+| Engineering tests prove the method works | **No** — they prove the *tool* | TEST-001 says how we will test the method | Instruments exist | One slice exists; not a journal N |
+
+---
+
+## 5. README / compliance rewrite guidance (apply in T02)
+
+Do **not** apply these edits in T01.
+
+**README “Why it exists”** currently: “SDLC-SPDD **fixes that** with three durable layers…”
+
+Replace the causal verb with design intent, for example:
+
+- “SDLC-SPDD is **designed to make that drift reviewable** with three durable layers…”
+- Keep the three-layer table.
+- Change “The canvas **governs** execution” → “The canvas is the **contract** for execution; CLI gates can refuse some phase advances when artifacts are missing.”
+
+**Compliance docs** (`sdlc-spdd/docs/spdd-compliance.md`): keep the mapping table (how the scaffold *attempts* to satisfy Fowler SPDD) but do not imply empirical satisfaction.
+
+After T02, a grep for `fixes that` in `README.md` should not remain as an unqualified result.
+
+---
+
+## 6. Mapping to Milestone 2 Work IDs
+
+| Construct / RQ | Must implement or measure |
+|----------------|---------------------------|
+| Freeze (this file) | DOC-001 |
+| Novelty sentence vs literature | DOC-002 |
+| Protocol procedures per RQ | TEST-001 |
+| C-COMPLY semantic minima | FEAT-014 |
+| C-REWORK / C-CONTEXT structured capture | FEAT-015 |
+| C-DRIFT mapping; review minima | FEAT-016 |
+| C-CONTEXT relevance; retrieve algorithm | FEAT-017 |
+| RQ1/RQ2/RQ5 slice | TEST-002 |
+| RQ4 precondition (memory exists) | CHORE-003 |
+| Which engine is the SUT | REF-001 |
+| Threats using these constructs | DOC-003 |
+
+Child canvases for FEAT-014–017 **must cite construct IDs** in Requirements.
+
+---
+
+## 7. What TEST-002 should and should not claim
+
+**Should:** one gold task with real source; unstructured vs full method; C-DRIFT and existence vs semantic C-COMPLY; assistant and model version written next to numbers.
+
+**Should not:** significance tests on n=1; C-PORT if only one assistant ran; DICE results; “we fixed drift.”
+
+RQ4 is **out of the first TEST-002 slice** unless TEST-001 explicitly includes a two-session task.
+
+---
+
+## 8. Freeze rule
+
+Changing RQ text, adding RQ6, or renaming construct IDs is a **behavior change** of this spec: update the DOC-001 canvas with `/sdlc-spdd-prompt-update` before editing this file’s numbered RQs or IDs. Clarifying examples and instrument paths may be synced after review.

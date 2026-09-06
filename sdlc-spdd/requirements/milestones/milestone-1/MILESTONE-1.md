@@ -13,6 +13,7 @@ prompt-optimization measurement, and Guide upstream intake (FEAT-013).
 
 ## Active planning
 
-Current framework work is **storage v3** (`docs/storage-v3.md`): ledger-first
-memory, `harness/skills`, `.sdlc/` runtime, and test-suite restructure. Add new
-Work IDs under `requirements/milestones/milestone-2/`.
+Engineering baseline remains **storage v3** (`docs/storage-v3.md`).
+**Milestone 2** (academic contribution bar) is opened under
+`requirements/milestones/milestone-2/` — see
+[MILESTONE-2.md](../milestone-2/MILESTONE-2.md).

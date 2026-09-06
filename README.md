@@ -90,15 +90,18 @@ Program detail: [Storage v3](docs/storage-v3.md)
 
 ## Current focus
 
-**ADF template library + Vue3 ops console**
+**Product:** ADF template library + Vue3 ops console (unchanged).
 
-Planning iterations already produce requirements, analysis, and canvas decisions.
-The next product slice turns those into **templated Jira ADF** (composable
-header / body / footer libraries) and replaces the Flask dogfood console with **Vue3**.
+**Research program (Milestone 2):** raise this repo from hobby/engineering
+research to referee-safe claims — [journal-style review](sdlc-spdd/spdd/analysis/SPIKE-004-academic-contribution-bar-analysis.md)
+and [iteration task list](sdlc-spdd/spdd/tasks/milestone-2-academic-hardening.md).
+Does not block the product slice; do not treat README “fixes drift” language as
+an evaluated result until DOC-001/TEST-001 land.
 
 | Doc | Branch / PR |
 | --- | ----------- |
 | [ADF templates + Vue3 plan](docs/adf-template-library-and-vue3-console.md) | [`cursor/adf-templates-vue3-console-decf`](https://github.com/jmjava/sdlc-spdd-orchestrator/tree/cursor/adf-templates-vue3-console-decf) · [#114](https://github.com/jmjava/sdlc-spdd-orchestrator/pull/114) |
+| [Academic contribution bar](sdlc-spdd/requirements/milestones/milestone-2/MILESTONE-2.md) | this track |
 
 ---
 

@@ -70,9 +70,22 @@ come last.
 
 See [requirements/milestones/milestone-1/MILESTONE-1.md](requirements/milestones/milestone-1/MILESTONE-1.md).
 Milestone 1 requirement stubs and canvases were removed from the working tree;
-use git history. **Current focus:** storage v3 (`docs/storage-v3.md`).
-`harness/skills`, `.sdlc/` runtime, test-suite restructure. Add new Work IDs under
-`requirements/milestones/milestone-2/` when formalized.
+use git history. Storage v3 (`docs/storage-v3.md`), `harness/skills`, `.sdlc/`
+runtime, and test-suite restructure remain the engineering baseline.
+
+## Milestone 2 — Academic contribution bar (planned)
+
+See [requirements/milestones/milestone-2/MILESTONE-2.md](requirements/milestones/milestone-2/MILESTONE-2.md)
+and the [iteration task list](spdd/tasks/milestone-2-academic-hardening.md).
+
+Journal-style review: [SPIKE-004 analysis](spdd/analysis/SPIKE-004-academic-contribution-bar-analysis.md).
+
+**Stage:** make it right (research argument and observability — not prompt
+optimization, not a new product surface). Product work (ADF / Vue3) can continue
+in parallel; research *claims* must not ride on unfinished product UI.
+
+P0 (do first): DOC-001 constructs/RQs, DOC-002 related work, TEST-001 evaluation
+protocol. Do not implement P1 validators until those claims are frozen.
 
 ## Post-MVP backlog
 
@@ -159,14 +172,27 @@ Milestone 1 feature track is Complete on the integration branch.
 | FEAT-013-guide-git-incremental-upstream | make it fast (fork slice) | Complete — fork-only |
 | CHORE-001-docgen-initial-documentation | make it right (docs) | Complete (git history) |
 | CHORE-002-docgen-video-generation | make it right (docs) | Complete (git history) |
+| SPIKE-004-academic-contribution-bar | make it right (research argument) | Complete (program plan + DOC-001 T01) |
+| DOC-001-research-questions-and-constructs | make it right | In Progress (T01 spec; T02 README hedges) |
+| DOC-002-related-work-map | make it right | Planned (P0) |
+| TEST-001-evaluation-protocol | make it right | Planned (P0) |
+| FEAT-014-semantic-canvas-validation | make it right | Planned (P1) |
+| FEAT-015-first-class-metrics | make it right | Planned (P1) |
+| FEAT-016-intent-code-traceability | make it right | Planned (P1) |
+| DOC-003-replication-package | make it right | Planned (P1) |
+| FEAT-017-retrieval-ir-eval | make it right | Planned (P2) |
+| TEST-002-assistant-behavior-eval | make it right | Planned (P2) |
+| CHORE-003-dogfood-ledger | make it right | Planned (P2) |
+| REF-001-engine-single-source | make it right | Planned (P2) |
 
 Deferred / residual (not Work IDs yet):
 
 | Item | Notes |
 |------|-------|
 | Readability pass | Consistent structure/naming across code/docs (milestone residual) |
-| `spdd --metrics` query surface | Explicit FEAT-004 non-goal; later make-it-fast |
 | Dual milestone root stub | Root `milestone-1.md` + subdirectory both exist; prefer subdir |
+
+`spdd --metrics` is no longer a nameless residual — it is **FEAT-015-first-class-metrics** under Milestone 2.
 
 Refresh the generated summary table from canvases with:
 

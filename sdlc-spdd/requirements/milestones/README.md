@@ -10,10 +10,11 @@ requirements/milestones/
   milestone-1/
     _milestone.yml
     MILESTONE-1.md            # milestone complete — see git history for FEAT-001…013
-  milestone-2/                # next planning tranche
+  milestone-2/                # academic contribution bar (opened 2026-09-06)
     _milestone.yml
     MILESTONE-2.md
-    <WORK-ID>.md
+    SPIKE-004-academic-contribution-bar.md
+    DOC-001-….md … REF-001-….md
 ```
 
 Flat stubs (`requirements/milestones/<WORK-ID>.md`) remain supported for legacy
