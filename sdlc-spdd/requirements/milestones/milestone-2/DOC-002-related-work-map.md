@@ -52,9 +52,9 @@ Position SDLC-SPDD against parent methods and 2024–2026 AI-SE tooling so a ref
 
 ## Acceptance Criteria
 
-- [ ] Committed related-work matrix with claim × system × delta
-- [ ] Novelty sentence is consistent with DOC-001 RQs
-- [ ] Guide remains fork-only; no Embabel-upstream framing
+- [x] Committed related-work matrix with claim × system × delta
+- [x] Novelty sentence is consistent with DOC-001 RQs
+- [x] Guide remains fork-only; no Embabel-upstream framing
 
 ## Non-Goals
 
