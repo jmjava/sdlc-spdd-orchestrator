@@ -1,0 +1,7 @@
+name: "Milestone 2 — Academic contribution bar"
+number: 2
+start_date: "2026-09-06"
+end_date: ""
+status: "planned"
+related_epics: []
+notes: "Raise sdlc-spdd-orchestrator from hobby/engineering research to a defensible empirical SE / AI-assisted-process contribution. Driven by SPIKE-004 journal-style review. Does not replace product work (ADF/Vue3)."
