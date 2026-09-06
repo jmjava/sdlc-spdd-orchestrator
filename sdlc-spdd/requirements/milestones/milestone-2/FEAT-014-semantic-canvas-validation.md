@@ -53,9 +53,9 @@ Make 'valid canvas' and 'Ready For Coding' mean structured, checkable properties
 
 ## Acceptance Criteria
 
-- [ ] gate_check(code) uses canonical readiness, not substring search over the whole file
-- [ ] validate-reasons-canvas.sh (or engine equivalent) fails canvases that have headings and empty bodies
-- [ ] Unit tests cover false-Ready (phrase in the wrong section) and empty Operations
+- [x] gate_check(code) uses canonical readiness, not substring search over the whole file
+- [x] validate-reasons-canvas.sh (or engine equivalent) fails canvases that have headings and empty bodies
+- [x] Unit tests cover false-Ready (phrase in the wrong section) and empty Operations
 
 ## Non-Goals
 

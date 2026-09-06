@@ -192,11 +192,11 @@ class WorkflowEngine:
         elif phase == "code":
             require_canvas()
             if canvas.is_file():
-                text = canvas.read_text(encoding="utf-8")
-                if not re.search(r"ready\s+for\s+coding", text, re.IGNORECASE):
+                issues = canvas_mod.coding_gate_issues(canvas.read_text(encoding="utf-8"))
+                for issue in issues:
                     failures.append(
-                        f"canvas not Ready For Coding: run /sdlc-spdd-architect on "
-                        f"spdd/canvas/{work_id}.md and mark it Ready For Coding before coding"
+                        f"canvas not Ready For Coding: {issue} "
+                        f"(run /sdlc-spdd-architect on spdd/canvas/{work_id}.md)"
                     )
             require_requirement()
         elif phase in {"api-test", "review"}:
@@ -252,7 +252,7 @@ class WorkflowEngine:
         if canvas.is_file():
             inferred = "architect"
             text = canvas.read_text(encoding="utf-8")
-            if re.search(r"ready\s+for\s+coding", text, re.IGNORECASE):
+            if canvas_mod.canvas_allows_coding(text):
                 inferred = "code"
         ledger = LessonsLedger(self.project)
         progress_records = ledger.records(work_id=work_id, include_staged=True)

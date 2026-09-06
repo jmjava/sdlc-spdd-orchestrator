@@ -53,7 +53,18 @@ extract_readiness_raw() {
     ' "${file}")"
   fi
   if [[ -z "${raw}" ]]; then
-    raw="$(grep -m1 -E '^-[[:space:]]*[Rr]eadiness:[[:space:]]*' "${file}" 2>/dev/null | sed -E 's/^-[[:space:]]*[Rr]eadiness:[[:space:]]*//' || true)"
+    # Metadata section only — a Readiness bullet in Architecture Notes / Sync Notes
+    # must not count (FEAT-014 / C-COMPLY).
+    raw="$(awk '
+      BEGIN { in_meta=0 }
+      /^## Metadata([[:space:]]|$)/ { in_meta=1; next }
+      in_meta && /^## / { exit }
+      in_meta && /^-[[:space:]]*[Rr]eadiness:[[:space:]]*/ {
+        sub(/^-[[:space:]]*[Rr]eadiness:[[:space:]]*/, "")
+        print
+        exit
+      }
+    ' "${file}")"
   fi
   printf '%s' "${raw}"
 }

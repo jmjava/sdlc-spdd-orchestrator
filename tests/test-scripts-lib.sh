@@ -436,6 +436,15 @@ assert_eq "$(extract_readiness_raw "${rtmp}/none.md")" "" "extract absent readin
 assert_eq "$(canvas_readiness "${rtmp}/none.md")" "" "canvas_readiness absent"
 assert_eq "$(canvas_readiness "${rtmp}/missing.md")" "" "canvas_readiness missing file"
 
+cat > "${rtmp}/arch-notes.md" <<'EOF'
+# Canvas
+## Metadata
+- Work ID: FEAT-N
+## Architecture Notes
+- Readiness: Ready For Coding
+EOF
+assert_eq "$(extract_readiness_raw "${rtmp}/arch-notes.md")" "" "Architecture Notes readiness does not count"
+
 cat > "${rtmp}/unknown.md" <<'EOF'
 # Canvas
 ## Metadata

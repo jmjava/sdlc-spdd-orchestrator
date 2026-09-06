@@ -103,9 +103,9 @@ Every row: **definition**, **measure**, **instrument** (what exists *today* vs *
 |-------|------|
 | **Definition** | A session is **process-compliant** iff required artifacts for the claimed phase exist **and** meet semantic minima (non-empty required canvas sections; structured readiness for `code`; review states result + safeguards explicitly). |
 | **Measure** | `ProcessComplianceRate = N_compliant_sessions / N_sessions`. Always publish **existence-only** and **semantic** rates as a pair (H2). |
-| **Instrument today** | `gate_check` (file existence, `/ready for coding/i` anywhere in canvas, review file exists). `validate-reasons-canvas.sh` (heading grep). |
-| **Target instrument** | **FEAT-014** (structured readiness, non-empty sections) + **FEAT-016** (review minima; no auto-pass safeguards). |
-| **Proxy weakness** | Today’s rate can be 1.0 for an empty review and a canvas that mentions “ready for coding” in Sync Notes. That is **not** C-COMPLY. |
+| **Instrument today** | `gate_check(code)` uses Metadata/frontmatter readiness plus non-empty Requirements and a T## operation with Status (**FEAT-014**). Review-file existence is still a later-phase proxy. `validate-reasons-canvas.sh` fails headings-only canvases; `--strict-readiness` fails unrecognized tokens. |
+| **Target instrument** | **FEAT-016** (review minima; no auto-pass safeguards). Canvas semantic minima for `code` are in place. |
+| **Proxy weakness** | Empty review can still pass `review`/`sync`. Phrase-in-Sync-Notes no longer fools the **code** gate. |
 
 ### C-CONTEXT — Context load and relevance
 
