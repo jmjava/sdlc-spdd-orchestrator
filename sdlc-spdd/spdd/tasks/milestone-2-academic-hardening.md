@@ -57,10 +57,4 @@ Beck stage for the whole list: **make it right** (research argument and observab
 
 ## First next action
 
-DOC-001 is **Complete**. DOC-002 is the active P0 item (matrix + structured tests). After DOC-002 merges:
-
-```text
-/sdlc-spdd-analysis @sdlc-spdd/requirements/milestones/milestone-2/TEST-001-evaluation-protocol.md
-```
-
-Do not start FEAT-014 until DOC-002 and TEST-001 are proven (`python3 -m unittest tests.research.test_p0_artifacts -v` and `prove-p0.sh`).
+DOC-001 and DOC-002 are **Complete**. TEST-001 is the active P0 item (evaluation protocol + live tests). After TEST-001 merges, P0 desk-reject items are done. Do not start FEAT-014 until `prove-p0.sh TEST-001` and `python3 -m unittest tests.research.test_p0_artifacts -v` pass on `main`.
