@@ -9,4 +9,4 @@ the previous PR is merged to `main` and `prove-p0.sh` passed for that ID.
 | 2 | DOC-002-related-work-map | `cursor/doc-002-related-work-fdf7` | `python3 -m unittest tests.research.test_p0_artifacts -v` and `prove-p0.sh DOC-002` | merged (#221, `9a6b00a`) |
 | 3 | TEST-001-evaluation-protocol | `cursor/test-001-eval-protocol-fdf7` | unittest live TEST-001 checks + `prove-p0.sh TEST-001` | merged (#222, `2529d06`) |
 
-P0 is complete. P1 continues on `cursor/feat-014-semantic-canvas-fdf7` (FEAT-014) with engine unit tests + `tests/test-canvas-readiness.sh`. After FEAT-014, next is FEAT-016. Do not start FEAT-017/TEST-002 in this queue.
+P0 and P1 (through DOC-003) are **Complete**. Next is P2: FEAT-017, TEST-002, CHORE-003, REF-001. Do not start those in the P0 unattended queue.

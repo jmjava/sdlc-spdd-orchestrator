@@ -9,6 +9,8 @@ All notable changes to this project will be documented in this file.
 - FEAT-015: structured capture metrics (`record.metrics`) and
   `sdlc-engine context metrics` construct queries (C-COMPLY, C-CONTEXT,
   C-REWORK, C-MEMORY). Body tags are no longer the query source.
+- DOC-003: threats-to-validity and replication notes with a freeze
+  checklist; structured checker rejects token stubs.
 
 ### Changed
 

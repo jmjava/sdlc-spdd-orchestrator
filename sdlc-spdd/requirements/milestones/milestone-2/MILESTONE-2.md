@@ -29,7 +29,7 @@ P1 — major-revision items (observability of the method):
 - [x] FEAT-014-semantic-canvas-validation — contracts beyond heading grep
 - [x] FEAT-015-first-class-metrics — metrics as queryable data, not session-body prose
 - [x] FEAT-016-intent-code-traceability — "code maps to ops" and review quality as checks
-- [ ] DOC-003-replication-package — threats to validity + frozen eval notes
+- [x] DOC-003-replication-package — threats to validity + frozen eval notes
 
 P2 — strengthen the contribution:
 
@@ -49,7 +49,7 @@ P2 — strengthen the contribution:
 | FEAT-014-semantic-canvas-validation | [canvas](../../../spdd/canvas/FEAT-014-semantic-canvas-validation.md) | [requirement](FEAT-014-semantic-canvas-validation.md) | Complete | Structured readiness + semantic minima |
 | FEAT-015-first-class-metrics | [canvas](../../../spdd/canvas/FEAT-015-first-class-metrics.md) | [requirement](FEAT-015-first-class-metrics.md) | Complete | Structured `metrics` object + `context metrics` CLI |
 | FEAT-016-intent-code-traceability | [canvas](../../../spdd/canvas/FEAT-016-intent-code-traceability.md) | [requirement](FEAT-016-intent-code-traceability.md) | Complete | Empty review ≠ safeguards; Files: mapping; advisory labels |
-| DOC-003-replication-package | — | [requirement](DOC-003-replication-package.md) | Planned | P1 |
+| DOC-003-replication-package | [canvas](../../../spdd/canvas/DOC-003-replication-package.md) | [requirement](DOC-003-replication-package.md) | Complete | Threats + freeze checklist; live-consumer is not method evidence |
 | FEAT-017-retrieval-ir-eval | — | [requirement](FEAT-017-retrieval-ir-eval.md) | Planned | P2 |
 | TEST-002-assistant-behavior-eval | — | [requirement](TEST-002-assistant-behavior-eval.md) | Planned | P2 |
 | CHORE-003-dogfood-ledger | — | [requirement](CHORE-003-dogfood-ledger.md) | Planned | P2 |

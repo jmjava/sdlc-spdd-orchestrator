@@ -53,8 +53,8 @@ Beck stage for the whole list: **make it right** (research argument and observab
 | M6 Retrieve is exact keyword filter; DICE unmeasured | FEAT-017 |
 | M7 Stale ROADMAP/design-decisions; empty dogfood ledger | CHORE-003 (+ hygiene in each ID) |
 | Metrics kind dropped; `spdd --metrics` deferred | FEAT-015 Complete (`context metrics`, no `kind=metric`) |
-| No threats to validity / replication pack | DOC-003 |
+| No threats to validity / replication pack | DOC-003 Complete |
 
 ## First next action
 
-P0 and P1 observability items through FEAT-015 are **Complete**. Next is DOC-003 (threats / replication), then P2.
+P0 and P1 (through DOC-003) are **Complete**. Next is P2: FEAT-017, TEST-002, CHORE-003, REF-001.

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Machine proof gate for Milestone 2 P0 Work IDs.
-# Usage: prove-p0.sh [DOC-001|DOC-002|TEST-001|all]
+# Usage: prove-p0.sh [DOC-001|DOC-002|TEST-001|DOC-003|all]
 # Exit 0 only if the named Work ID (or all completed ones requested) passes.
 set -euo pipefail
 
@@ -59,17 +59,28 @@ prove_test001() {
   run_checker TEST-001
 }
 
+prove_doc003() {
+  echo "== Prove DOC-003 =="
+  need_file "sdlc-spdd/docs/research/threats-to-validity-and-replication.md"
+  need_file "sdlc-spdd/docs/research/check_p0_artifacts.py"
+  need_file "sdlc-spdd/spdd/canvas/DOC-003-replication-package.md"
+  need_file "sdlc-spdd/spdd/reviews/DOC-003-replication-package-review.md"
+  run_checker DOC-003
+}
+
 case "${TARGET}" in
   DOC-001) prove_doc001 ;;
   DOC-002) prove_doc002 ;;
   TEST-001) prove_test001 ;;
+  DOC-003) prove_doc003 ;;
   all)
     prove_doc001
     prove_doc002
     prove_test001
+    prove_doc003
     ;;
   *)
-    echo "Usage: $0 [DOC-001|DOC-002|TEST-001|all]" >&2
+    echo "Usage: $0 [DOC-001|DOC-002|TEST-001|DOC-003|all]" >&2
     exit 2
     ;;
 esac

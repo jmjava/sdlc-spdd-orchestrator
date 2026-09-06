@@ -7,7 +7,7 @@ not enough. Exit 0 only when the named Work ID's live files satisfy the
 checks.
 
 Usage:
-  python3 check_p0_artifacts.py --work-id DOC-001|DOC-002|TEST-001
+    python3 check_p0_artifacts.py --work-id DOC-001|DOC-002|TEST-001|DOC-003
 """
 
 from __future__ import annotations
@@ -105,6 +105,16 @@ TEST001_BASELINES = (
     "lifecycle-only",
     "full sdlc-spdd",
 )
+
+THREAT_CATEGORIES = (
+    "construct",
+    "internal",
+    "external",
+    "conclusion",
+    "reliability",
+)
+
+REPLICATION_GOLD = "tests/live-consumer/seed/src/hello.py"
 
 
 def _norm(text: str) -> str:
@@ -384,6 +394,95 @@ def issues_for_evaluation_protocol(text: str) -> list[str]:
     return issues
 
 
+def _heading_body(blocks: dict[str, str], *needles: str) -> str | None:
+    for heading, body in blocks.items():
+        if all(needle in heading for needle in needles):
+            return body
+    return None
+
+
+def find_replication_table(text: str) -> list[list[str]] | None:
+    for table in parse_markdown_tables(text):
+        if not table:
+            continue
+        header = _norm(" ".join(table[0]))
+        has_loc = "command" in header or "location" in header
+        has_freeze = "freeze" in header or "version" in header
+        if has_loc and has_freeze:
+            return table
+    return None
+
+
+def issues_for_threats_replication(text: str) -> list[str]:
+    """Structured checks for DOC-003. Token name-drops are not enough."""
+    issues: list[str] = []
+    if not text.strip():
+        return ["threats/replication pack is empty"]
+    blob = _norm(text)
+    blocks = heading_blocks(text)
+
+    for category in THREAT_CATEGORIES:
+        if _heading_body(blocks, category) is None:
+            issues.append(f"missing {category} validity heading")
+
+    construct_body = _heading_body(blocks, "construct") or ""
+    construct_blob = _norm(construct_body)
+    for construct in DOC001_CONSTRUCTS:
+        if construct.lower() not in construct_blob:
+            issues.append(f"construct-validity section missing {construct}")
+
+    table = find_replication_table(text)
+    if table is None or len(table) < 2:
+        issues.append(
+            "missing replication checklist table with Freeze and Location/command columns"
+        )
+    else:
+        data_rows = table[1:]
+        if len(data_rows) < 4:
+            issues.append("replication checklist has fewer than 4 freeze rows")
+        for row in data_rows:
+            joined = _norm(" ".join(row))
+            if joined in {"", "-", "n/a", "todo", "tbd"} or len(joined) < 12:
+                issues.append(f"replication checklist row is a stub: {row!r}")
+
+    if REPLICATION_GOLD not in text:
+        issues.append(f"replication pack must name gold path {REPLICATION_GOLD}")
+    if "evaluation-protocol.md" not in text:
+        issues.append("replication pack must cite evaluation-protocol.md")
+    if _heading_body(blocks, "nondetermin") is None:
+        issues.append("missing nondeterminism heading")
+    if "test-001" not in blob and "test 001" not in blob:
+        issues.append("nondeterminism handling must cite TEST-001")
+    if not re.search(r"n\s*≥\s*3|n\s*>=\s*3|n\s*>?=\s*3", text, re.IGNORECASE):
+        issues.append("must restate TEST-001 n≥3 rule")
+    if "protocol incomplete" not in blob:
+        issues.append("must restate TEST-001 protocol-incomplete rule for n=1")
+    if "live-consumer" not in blob:
+        issues.append("must discuss the live-consumer harness")
+    if not re.search(
+        r"does not prove|do not (cite|treat|use).{0,80}live-consumer.{0,40}(as a )?(test-002|result|c-drift)",
+        text,
+        re.IGNORECASE | re.DOTALL,
+    ):
+        issues.append("must state that live-consumer does not prove the method / C-DRIFT")
+    if "cannot be automated" not in blob and "not be automated" not in blob:
+        issues.append("must state what cannot be automated")
+    if "git rev-parse" not in blob and "commit sha" not in blob and "git sha" not in blob:
+        issues.append("must say how to freeze the engine commit (git SHA)")
+    if "sdlc_engine" not in blob and "__version__" not in blob and "engine version" not in blob:
+        issues.append("must say how to freeze the engine version")
+    if "model" not in blob:
+        issues.append("must say how to freeze the model id")
+    if "sampling" not in blob and "temperature" not in blob:
+        issues.append("must name assistant sampling (or temperature) as a nondeterminism source")
+    if FORBIDDEN_UPSTREAM.search(text):
+        issues.append("replication pack frames an Embabel/guide upstream PR (forbidden)")
+    if CAUSAL_FINDING.search(text) and "must not" not in blob and "do not" not in blob:
+        if re.search(r"\b(we found|n\s*=\s*\d+\s+showed)", text, re.IGNORECASE):
+            issues.append("replication pack contains study-result language")
+    return issues
+
+
 def _run_canvas_validator(path: Path) -> list[str]:
     if not path.is_file():
         return [f"missing canvas {path.relative_to(REPO_ROOT)}"]
@@ -478,10 +577,32 @@ def check_test001() -> list[str]:
     return issues
 
 
+def check_doc003() -> list[str]:
+    doc = RESEARCH / "threats-to-validity-and-replication.md"
+    if not doc.is_file():
+        return ["missing sdlc-spdd/docs/research/threats-to-validity-and-replication.md"]
+    text = doc.read_text(encoding="utf-8")
+    issues = issues_for_threats_replication(text)
+    issues.extend(_run_canvas_validator(CANVAS_DIR / "DOC-003-replication-package.md"))
+    issues.extend(
+        _review_issues(REVIEW_DIR / "DOC-003-replication-package-review.md", "DOC-003")
+    )
+    seed = REPO_ROOT / "tests" / "live-consumer" / "seed" / "src" / "hello.py"
+    if REPLICATION_GOLD in text and not seed.is_file():
+        issues.append(f"replication pack names {REPLICATION_GOLD} but the file is missing")
+    protocol = RESEARCH / "evaluation-protocol.md"
+    if "evaluation-protocol.md" in text and not protocol.is_file():
+        issues.append("replication pack cites evaluation-protocol.md but the file is missing")
+    if FORBIDDEN_UPSTREAM.search(text):
+        issues.append("DOC-003 frames an Embabel/guide upstream PR (forbidden)")
+    return issues
+
+
 CHECKERS = {
     "DOC-001": check_doc001,
     "DOC-002": check_doc002,
     "TEST-001": check_test001,
+    "DOC-003": check_doc003,
 }
 
 

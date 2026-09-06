@@ -9,6 +9,8 @@ This folder is **not** a paper. It holds investigation notes that support either
 | [Research questions and constructs (DOC-001)](../../sdlc-spdd/docs/research/research-questions-and-constructs.md) | Frozen RQs + construct spec | Citing C-DRIFT / C-COMPLY / … in later Work IDs |
 | [Related-work and novelty (DOC-002)](../../sdlc-spdd/docs/research/related-work-and-novelty.md) | Claim × system matrix | Positioning vs Fowler, SDLC Agents, Spec Kit, agents, classics |
 | [Evaluation protocol (TEST-001)](../../sdlc-spdd/docs/research/evaluation-protocol.md) | Method eval protocol (no study data) | TEST-002 slice: gold, raters, baselines, stop rules |
+| [Threats and replication (DOC-003)](../../sdlc-spdd/docs/research/threats-to-validity-and-replication.md) | Threats + freeze checklist | Referee appendix; what live-consumer does not prove |
+| [Capture metrics queries (FEAT-015)](../../sdlc-spdd/docs/research/capture-metrics-queries.md) | `context metrics` construct queries | C-COMPLY / C-CONTEXT / C-REWORK / C-MEMORY |
 | [code_maps_to_ops rule (FEAT-016)](../../sdlc-spdd/docs/research/code-maps-to-ops.md) | Automated Files: mapping + human C-DRIFT remainder | What gate_check enforces vs raters |
 | [P0 structured checker](../../sdlc-spdd/docs/research/check_p0_artifacts.py) | Parser-based gate (not token grep) | `python3 -m unittest tests.research.test_p0_artifacts -v` |
 | [P0 proof script](../../sdlc-spdd/docs/research/prove-p0.sh) | Machine gate per Work ID | Run before merging the next P0 item |

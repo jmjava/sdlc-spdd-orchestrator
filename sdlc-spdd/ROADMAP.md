@@ -179,7 +179,7 @@ Milestone 1 feature track is Complete on the integration branch.
 | FEAT-014-semantic-canvas-validation | make it right | Complete (P1) |
 | FEAT-015-first-class-metrics | make it right | Complete (P1) |
 | FEAT-016-intent-code-traceability | make it right | Complete (P1) |
-| DOC-003-replication-package | make it right | Planned (P1) |
+| DOC-003-replication-package | make it right | Complete (P1) |
 | FEAT-017-retrieval-ir-eval | make it right | Planned (P2) |
 | TEST-002-assistant-behavior-eval | make it right | Planned (P2) |
 | CHORE-003-dogfood-ledger | make it right | Planned (P2) |
