@@ -4,7 +4,7 @@ jira_key: ""
 github_number: ""
 jira_epic: ""
 jira_type: "Chore"
-jira_status: "To Do"
+jira_status: "Complete"
 jira_assignee: ""
 jira_due_date: ""
 jira_sprint: ""
@@ -20,7 +20,7 @@ related:
 
 **Work ID:** CHORE-003-dogfood-ledger  
 **Milestone:** Milestone 2 — Academic contribution bar  
-**Status:** To Do  
+**Status:** Complete  
 **Date:** 2026-09-06  
 **Beck stage:** make it right (research argument / observability)
 
@@ -29,8 +29,8 @@ related:
 | Relationship | Work ID | Status | Notes |
 |--------------|---------|--------|-------|
 | Blocks | (none) | — | — |
-| Depends On | `SPIKE-004-academic-contribution-bar` | Planned | See milestone-2 |
-| Related | `FEAT-015-first-class-metrics` | Planned | See milestone-2 |
+| Depends On | `SPIKE-004-academic-contribution-bar` | Complete | See milestone-2 |
+| Related | `FEAT-015-first-class-metrics` | Complete | See milestone-2 |
 
 ## User / Business Goal
 
@@ -51,9 +51,9 @@ Archive must not leave the orchestrator's lessons ledger empty. A methods projec
 
 ## Acceptance Criteria
 
-- [ ] Working tree has a non-empty lessons.jsonl with at least decision/pitfall/pattern records, or a documented exception
-- [ ] Archive procedure no longer implies 'no memory left'
-- [ ] A test or check fails CI if dogfood ledger is accidentally deleted without policy
+- [x] Working tree has a non-empty lessons.jsonl with at least decision/pitfall/pattern records, or a documented exception
+- [x] Archive procedure no longer implies 'no memory left'
+- [x] A test or check fails CI if dogfood ledger is accidentally deleted without policy
 
 ## Non-Goals
 
@@ -93,4 +93,4 @@ See this requirement and `spdd/analysis/SPIKE-004-academic-contribution-bar-anal
 
 ## Next Step
 
-    /sdlc-spdd-analysis @sdlc-spdd/requirements/milestones/milestone-2/CHORE-003-dogfood-ledger.md
+Complete. Next Work ID: REF-001-engine-single-source.

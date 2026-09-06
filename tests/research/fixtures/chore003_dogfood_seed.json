@@ -1,0 +1,68 @@
+[
+  {
+    "kind": "decision",
+    "work_id": "FEAT-013-guide-git-incremental-upstream",
+    "area": "guide",
+    "phase": "retro",
+    "title": "Guide is fork-only; never open an Embabel PR",
+    "body": "Layer B stays on jmjava/guide (or orch-guide). Opening, drafting, or offering an Embabel/guide pull request is forbidden. The orchestrator rule no-embabel-guide-upstream.mdc is the standing policy.",
+    "source": "chore-003-restore",
+    "keywords": ["guide", "embabel", "fork-only"],
+    "schema": 1
+  },
+  {
+    "kind": "pitfall",
+    "work_id": "FEAT-014-semantic-canvas-validation",
+    "area": "engine",
+    "phase": "review",
+    "title": "Headings-only canvas is not a contract",
+    "body": "grep for ## headings is not C-COMPLY. gate_check(code) requires Metadata or frontmatter readiness that allows coding, a non-empty Requirements section, a T## operation with Status, and a Files mapping. A headings-only canvas must fail.",
+    "source": "chore-003-restore",
+    "keywords": ["canvas", "compliance", "semantic"],
+    "schema": 1
+  },
+  {
+    "kind": "pattern",
+    "work_id": "FEAT-015-first-class-metrics",
+    "area": "engine",
+    "phase": "code",
+    "title": "Query capture metrics from record.metrics, not session.body",
+    "body": "FEAT-015 stores readiness, review_result, rework, context_files, validate_cycles, and review_cycles on record.metrics. sdlc-engine context metrics --construct does not parse session.body. kind=metric was not restored. Body tags remain a human copy for live-consumer greps.",
+    "source": "chore-003-restore",
+    "keywords": ["metrics", "c-rework", "c-context"],
+    "schema": 1
+  },
+  {
+    "kind": "pitfall",
+    "work_id": "TEST-002-assistant-behavior-eval",
+    "area": "eval",
+    "phase": "review",
+    "title": "Spring Boot example has no Java; first eval slice used hello gold",
+    "body": "examples/spring-boot-order-api has no *.java sources. TEST-001 stop rule forbids scoring C-DRIFT against a missing implementation. The first slice gold is tests/eval/test-002-hello/. Do not mutate tests/live-consumer/seed/.",
+    "source": "chore-003-restore",
+    "keywords": ["gold", "c-drift", "eval"],
+    "schema": 1
+  },
+  {
+    "kind": "decision",
+    "work_id": "SPIKE-004-academic-contribution-bar",
+    "area": "engine",
+    "phase": "architect",
+    "title": "Until REF-001, Python gate_check is the research SUT",
+    "body": "Shell sdlc.sh and Python gate_check can disagree. Milestone 2 evaluation uses SDLC_ENGINE=python. Shell-without-Python is not a second experimental condition. REF-001 still owns a single gate semantics.",
+    "source": "chore-003-restore",
+    "keywords": ["gate_check", "engine", "validity"],
+    "schema": 1
+  },
+  {
+    "kind": "pattern",
+    "work_id": "CHORE-003-dogfood-ledger",
+    "area": "memory",
+    "phase": "retro",
+    "title": "Archive contracts, not the lessons ledger",
+    "body": "sdlc.sh archive may move or delete canvas, analysis, review, sync, and matching session briefs. It must not truncate, filter, or delete spdd/memory/lessons.jsonl. Decision, pitfall, and pattern records are the dogfood memory that survives Complete work leaving the working tree.",
+    "source": "chore-003-restore",
+    "keywords": ["archive", "ledger", "c-memory"],
+    "schema": 1
+  }
+]

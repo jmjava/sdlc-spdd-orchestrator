@@ -16,6 +16,8 @@ All notable changes to this project will be documented in this file.
   unmeasured.
 - TEST-002: first hello-gold slice (n=1, protocol incomplete); C-PORT not
   reported. Symbol-proxy C-DRIFT only.
+- CHORE-003: seeded dogfood `lessons.jsonl` (decision/pitfall/pattern);
+  archive never truncates the ledger. RQ4 usefulness still unmeasured.
 
 ### Changed
 

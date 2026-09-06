@@ -197,6 +197,14 @@ they cannot drift by design. Verify or repair at any time:
     sdlc-engine context parity            # diff accepted ledger ids vs sqlite + Guide
     sdlc-engine context parity --repair   # rebuild sqlite + re-project Guide from the ledger
 
+## Archive vs the lessons ledger (CHORE-003)
+
+Archive removes **contracts** (canvas, analysis, review, sync, matching session briefs) for Complete or Cancelled work. Git history retains those files. Requirements stay in the working tree.
+
+Archive **never truncates**, filters, or deletes `spdd/memory/lessons.jsonl`. Decision, pitfall, pattern, session, and analysis records are the dogfood memory that survives Complete work leaving the working tree. The work registry stays append-only (an `archived` event is added).
+
+Policy: `sdlc-spdd/docs/research/dogfood-ledger-policy.md`.
+
 ## Migrating a legacy install
 
 ```bash

@@ -198,7 +198,7 @@ Do not pool runs across model versions.
 | `examples/spring-boot-order-api/` has **no Java** sources | Intended gold cannot score C-DRIFT vs implementation | TEST-002 |
 | Live consumer matrix is **Cursor-oriented** | RQ5/C-PORT cannot be claimed from that harness | TEST-002 / live-consumer |
 | Dual engine (shell vs Python `gate_check`) | Confound for “the method” | REF-001 |
-| Committed `lessons.jsonl` empty after Milestone 1 archive | RQ4 dogfood retrieve is vacuous in this repo | CHORE-003 |
+| Committed `lessons.jsonl` was empty after Milestone 1 archive | RQ4 dogfood retrieve was vacuous until seeded | CHORE-003 Complete (seed + archive leave-ledger; usefulness still unmeasured) |
 | Existence-only gates | RQ2 semantic arm needs raters until FEAT-014/016 | FEAT-014, FEAT-016 |
 | Retrieve is exact keyword-list filter | RQ3 relevance is rater-only until FEAT-017 | FEAT-017 (lexical title-body vs keyword-list; DICE still unmeasured) |
 

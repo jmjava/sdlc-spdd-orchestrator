@@ -214,6 +214,20 @@ else
   bad "--force archive failed"
 fi
 
+echo "== Test 12: archive leaves lessons.jsonl in place =="
+T="${WORK}/ledger"
+setup_work "${T}" "FEAT-111-mem" "Complete"
+mkdir -p "${T}/spdd/memory"
+printf '%s\n' '{"id":"pitfall:FEAT-111-mem:engine:test","kind":"pitfall","work_id":"FEAT-111-mem","area":"engine","title":"keep me","body":"archive must not drop this dogfood record from lessons.jsonl.","source":"test","keywords":[],"schema":1}' > "${T}/spdd/memory/lessons.jsonl"
+before="$(cat "${T}/spdd/memory/lessons.jsonl")"
+out="$(SDLC_ROOT="${T}" wf "${T}" archive FEAT-111-mem)"
+after="$(cat "${T}/spdd/memory/lessons.jsonl")"
+if [[ "${before}" == "${after}" ]] && grep -Fq 'lessons.jsonl' <<< "${out}"; then
+  ok "archive leaves lessons.jsonl unchanged and says so"
+else
+  bad "archive mutated lessons.jsonl or omitted leave-ledger message"
+fi
+
 echo "== Test 11: re-archive is a no-op for --all =="
 T="${WORK}/rearchive"
 setup_work "${T}" "FEAT-110-once" "Complete"

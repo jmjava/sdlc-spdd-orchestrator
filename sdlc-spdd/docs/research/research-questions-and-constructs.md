@@ -123,9 +123,9 @@ Every row: **definition**, **measure**, **instrument** (what exists *today* vs *
 |-------|------|
 | **Definition** | Whether retrieved lessons improve a **follow-on** task versus no memory / dump, after controlling for C-CONTEXT. |
 | **Measure** | Primary: C-REWORK on session 2 (`ReworkCount` or cycles). Secondary: C-DRIFT on session 2. |
-| **Instrument today** | Ledger kinds `decision|pitfall|pattern`; retrieve by work_id/area/kind/keyword. Capture rework/cycles queryable via `context metrics --construct C-MEMORY` (**FEAT-015**). No eval harness. Committed dogfood ledger is **empty** after archive (CHORE-003). |
+| **Instrument today** | Ledger kinds `decision|pitfall|pattern`; retrieve by work_id/area/kind/keyword and `--query` title-body (**FEAT-017**). Capture rework/cycles queryable via `context metrics --construct C-MEMORY` (**FEAT-015**). Committed dogfood ledger is **seeded** (CHORE-003); archive must not truncate it. |
 | **Target instrument** | TEST-001 two-session protocol; FEAT-015 `context metrics --construct C-MEMORY`; CHORE-003 so memory exists to retrieve. |
-| **Proxy weakness** | Counting retrieve *calls* is not usefulness. Empty ledger makes RQ4 untestable in this repo until CHORE-003. |
+| **Proxy weakness** | Counting retrieve *calls* is not usefulness. A seeded ledger makes retrieve non-vacuous; RQ4 usefulness is still unmeasured until the two-session protocol runs. |
 
 ### C-PORT — Portability (assistant)
 
