@@ -32,8 +32,8 @@ A referee can run one command and see ledger, SQLite, and Guide (mocked) round-t
 
 ### Non-Goals
 
-- RQ1 / TEST-002 remainder (out of this review bar)
-- RQ4 usefulness (out of this review bar)
+- RQ1 / TEST-002 remainder (this review's **scope removed** drift)
+- RQ4 usefulness (this review's **scope removed** usefulness)
 - Re-implementing live Guide+Neo4j (already exists)
 - Engine behavior change except tests/docs
 - Embabel upstream

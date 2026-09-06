@@ -59,4 +59,4 @@ Beck stage for the whole list: **make it right** (research argument and observab
 
 ## First next action
 
-P0, P1, P2, and the TEST-003 C-RETRIEVE suite are **Complete**. Live Guide+Neo4j e2e already exists (`test-guide-stack-experimental`). RQ1, RQ4, embeddings, and `embabel-dif` are **out of this academic-review bar** — not leftover Milestone 2 work.
+P0, P1, P2, and the TEST-003 C-RETRIEVE suite are **Complete**. Live Guide+Neo4j e2e already exists (`test-guide-stack-experimental`). This review's **scope removed** drift (RQ1) and usefulness (RQ4). `embabel-dif` is out of this review.

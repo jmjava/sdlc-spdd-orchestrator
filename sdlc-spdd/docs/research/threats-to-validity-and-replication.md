@@ -133,4 +133,4 @@ Human-subject / IRB packaging is out of scope (requirement non-goal).
 
 ## 10. Claims this pack still forbids
 
-Until TEST-002 records a comparison under TEST-001 stop rules: do not say the method **fixes drift**, do not report C-PORT from one assistant, do not treat DICE/Guide retrieval as a result, and do not treat engine unit tests as method evaluation. TEST-003 is the engineering retrievability gate, not RQ4 usefulness. See DOC-001 claims-allowed table.
+This review's **scope removed** reduced-**drift** (RQ1) and retrieve-**usefulness** (RQ4). Do not say the method **fixes drift**. Do not report C-PORT from one assistant as a finding of this review. Do not treat DICE/Guide embeddings as a result. TEST-003 is the engineering retrievability gate. See DOC-001 claims-allowed table.

@@ -145,7 +145,7 @@ That module is the hermetic C-RETRIEVE gate (ledger + SQLite + mocked Guide).
 Live Guide+Neo4j round-trips already run in
 `engine/tests_e2e/test_guide_projection_roundtrip.py` via
 `test-guide-stack-experimental.yml` / `./tests/test-guide-stack-live.sh`.
-RQ1, RQ4, and Guide embeddings are **out of this academic-review bar**.
+This review's **scope removed** drift (RQ1) and usefulness (RQ4).
 `embabel-dif` was **removed** from this review. Protocol:
 [cretrieve-suite.md](sdlc-spdd/docs/research/cretrieve-suite.md).
 

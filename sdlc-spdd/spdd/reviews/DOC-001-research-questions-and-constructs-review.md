@@ -51,7 +51,7 @@ Mark DOC-001 Complete after T02. Next Work ID at that time: DOC-002.
 **Result:** Approved  
 **Readiness at coding:** Ready For Coding after prompt-update (no process finding)
 
-T03 freezes the academic-review object: git-backed intent (canvas) and advice (ledger + SQLite local index + optional Guide working-store projection), with a **retrievability** bar (`context retrieve`, `context parity`). RQ1 reduced-drift evidence is not the pass bar. `embabel-dif` is later / other-repo. No new SPIKE. No engine changes. DOC-002 novelty/not-claiming synced so they cannot contradict the freeze.
+T03 freezes the academic-review object: git-backed intent (canvas) and advice (ledger + SQLite local index + optional Guide working-store projection), with a **retrievability** bar (`context retrieve`, `context parity`). This review's **scope removed** drift (RQ1) and usefulness (RQ4). `embabel-dif` is later / other-repo. No new SPIKE. No engine changes. DOC-002 novelty/not-claiming synced so they cannot contradict the freeze.
 
 ### Proof (T03)
 
@@ -70,4 +70,4 @@ None for this Work ID.
 
 ### Recommendation
 
-DOC-001 remains Complete. Do not open SPIKE-005. RQ1 leftovers stay on TEST-002. DIF work stays in `jmjava/embabel-dif`.
+DOC-001 remains Complete. Do not open SPIKE-005. Drift and usefulness stay **removed from this review's scope**. DIF work stays in `jmjava/embabel-dif`.

@@ -26,16 +26,18 @@ The method under review **stores**, then must be able to **read back**:
 
 **In-scope empirical claim:** stored advice is **retrievable** — persist/accept then find the same id on the ledger, and when each projection is enabled find the same ids in **SQLite** and **Guide**. Cite existing tests; do not invent a new SPIKE.
 
-**Not in-scope for this bar:** that retrieve **improves later work** (RQ4 / C-MEMORY usefulness); that Guide **embeddings** are an IR result (unmeasured); that SQLite FTS is the same algorithm as `context retrieve`; that the hybrid **reduces drift** (RQ1).
+**This review's scope removed** reduced-**drift** (RQ1) and retrieve-**usefulness** (RQ4 / C-MEMORY follow-on rework). Those are not leftover holes in this freeze. RQ1 and RQ4 headings in §3 stay so a later, separate paper has measures; they are **not** this review.
+
+**Also not this review:** Guide **embeddings** as an IR result; SQLite FTS (`db query --search`) as the same algorithm as `context retrieve`; Deterministic Intent Folding (`embabel-dif`, already removed — later / other-repo).
 
 **Pass for this review bar:** a referee can find (1) what is stored, (2) that stored advice can be retrieved from the **ledger** and, when enabled, from the **SQLite index** and the **Guide store**, (3) what `gate_check` actually checks, and (4) an allow-list of public sentences. Closest venue fit: ICSE NIER / AIware / LLM4Code, or SEIP with explicit limitations.
 
 **Fail / out of scope for this bar:**
 
-- “SDLC-SPDD reduces drift.” That sentence came from README marketing (`fixes that`). It is **not** Fowler SPDD’s job and **not** the criterion for accepting this artifact. RQ1 remains a possible later empirical paper. TEST-002 slices are **instrumentation demos**, not evidence the method works.
+- “SDLC-SPDD reduces drift.” That sentence came from README marketing (`fixes that`). Drift was **removed from this review's scope**. It is **not** Fowler SPDD’s job and **not** the criterion for accepting this artifact. TEST-002 slices are **instrumentation demos**, not this review.
 - Deterministic Intent Folding (`jmjava/embabel-dif`), Embabel GOAP, or a JVM fold as a result of *this* review. Optional present-or-skip CLI attach already exists when the sibling is present; absence is skip. That pairing is **later / other-repo**. This freeze is **foundational** to it (a versioned canvas and retrievable advice ledger a fold can read) and **does not require it**.
 
-Do **not** open a new SPIKE to re-plan this. This file is the freeze. Remaining RQ1 empirical work, if any, stays on TEST-002. Retrievability’s named suite is **TEST-003** (`tests/research/test_cretrieve.py`; [cretrieve-suite.md](cretrieve-suite.md)).
+Do **not** open a new SPIKE to re-plan this. This file is the freeze. Retrievability’s named suite is **TEST-003** (`tests/research/test_cretrieve.py`; [cretrieve-suite.md](cretrieve-suite.md)).
 
 ---
 
@@ -45,7 +47,7 @@ DOC-002 may tighten wording. It must not contradict this sentence:
 
 > A **repository-native process model** for AI-assisted delivery that **stores intent** (REASONS canvas) and **stores agent/human advice** in a git ledger with regenerable **SQLite** and **Guide** projections, and makes stored records **retrievable** so that (a) intent, (b) process compliance, and (c) retrievable memory are **observable and comparable**.
 
-Do **not** append “with evidence that the hybrid reduces drift.” That clause is not the review goal. It is a future RQ1 study, if someone runs one. Do **not** treat RQ4 usefulness or Guide embeddings as this review’s pass bar.
+Do **not** append “with evidence that the hybrid reduces drift.” Drift and usefulness were **removed from this review's scope**. Do **not** treat RQ4 usefulness or Guide embeddings as this review’s pass bar.
 
 ---
 
@@ -57,7 +59,7 @@ Each RQ names an independent variable (IV) and dependent construct(s). “SDLC-S
 
 **Does a versioned REASONS Canvas plus phase gates reduce scope deviations versus unstructured assistant chat on the same gold tasks?**
 
-This question is **not** the academic-review success criterion (see §1). It exists so that *if* someone later runs a comparison, the measure is defined. A slice that only shows the scorer can run is instrumentation, not an answer to RQ1. Academic review of this repo **fails** if the paper is framed as an RQ1 finding.
+This review's **scope removed** RQ1. The heading remains so a later paper has a measure. A slice that only shows the scorer can run is instrumentation, not an answer to RQ1. Academic review of this repo **fails** if the paper is framed as an RQ1 finding.
 
 | | |
 |--|--|
@@ -91,6 +93,8 @@ This question is **not** the academic-review success criterion (see §1). It exi
 ### RQ4 — Memory (C-MEMORY)
 
 **Does ledger retrieval change subsequent-session rework versus no memory and versus dumping the whole ledger?**
+
+This review's **scope removed** RQ4 (retrieve usefulness). The heading remains so a later paper has a measure. It is **not** this review.
 
 | | |
 |--|--|
@@ -156,7 +160,7 @@ Every row: **definition**, **measure**, **instrument** (what exists *today* vs *
 | **Measure** | Primary: C-REWORK on session 2 (`ReworkCount` or cycles). Secondary: C-DRIFT on session 2. |
 | **Instrument today** | Ledger kinds `decision|pitfall|pattern`; retrieve by work_id/area/kind/keyword and `--query` title-body (**FEAT-017**). Capture rework/cycles queryable via `context metrics --construct C-MEMORY` (**FEAT-015**). Committed dogfood ledger is **seeded** (CHORE-003); archive must not truncate it. |
 | **Target instrument** | TEST-001 two-session protocol; FEAT-015 `context metrics --construct C-MEMORY`; CHORE-003 so memory exists to retrieve. |
-| **Proxy weakness** | Counting retrieve *calls* is not usefulness. A seeded ledger makes retrieve non-vacuous; RQ4 usefulness is still unmeasured until the two-session protocol runs. Retrievability (C-RETRIEVE) is a **different** claim and is in scope for this review. |
+| **Proxy weakness** | Counting retrieve *calls* is not usefulness. A seeded ledger makes retrieve non-vacuous. Usefulness was **removed from this review's scope**. Retrievability (C-RETRIEVE) is the in-scope claim. |
 
 ### C-PORT — Portability (assistant)
 
@@ -173,7 +177,7 @@ Every row: **definition**, **measure**, **instrument** (what exists *today* vs *
 | ID | Definition | Measure | Today | Target | Weakness |
 |----|------------|---------|-------|--------|----------|
 | **C-REWORK** | Repeated repair on the same gold-task acceptance criterion | `--rework` count / `--review-cycles` / `--validate-cycles` | `record.metrics` via `context metrics --construct C-REWORK` (**FEAT-015**) | Same query in TEST-002 session 2 | Self-reported; undefined if flags omitted |
-| **C-RETRIEVE** | A stored lesson can be found again | Ledger: persist/accept then `context retrieve` returns the id. SQLite (when enabled): `context parity` missing/extra empty. Guide (when enabled): parity missing empty. | **TEST-003** `tests.research.test_cretrieve` ([cretrieve-suite.md](cretrieve-suite.md)) for hermetic CI. Live Guide+Neo4j: `engine/tests_e2e/test_guide_projection_roundtrip.py` (`test-guide-stack-experimental`). FEAT-017 + CHORE-003 supporting. | Same; SQLite and Guide remain optional for replication | Not RQ4 usefulness. Guide **embeddings** are out of this review bar. Mocked Guide is HTTP parity, not DICE. `db query --search` is a different CLI. |
+| **C-RETRIEVE** | A stored lesson can be found again | Ledger: persist/accept then `context retrieve` returns the id. SQLite (when enabled): `context parity` missing/extra empty. Guide (when enabled): parity missing empty. | **TEST-003** `tests.research.test_cretrieve` ([cretrieve-suite.md](cretrieve-suite.md)) for hermetic CI. Live Guide+Neo4j: `engine/tests_e2e/test_guide_projection_roundtrip.py` (`test-guide-stack-experimental`). FEAT-017 + CHORE-003 supporting. | Same; SQLite and Guide remain optional for replication | Drift and usefulness were **removed from this review's scope**. Guide **embeddings** are not this bar. Mocked Guide is HTTP parity, not DICE. `db query --search` is a different CLI. |
 
 ---
 
@@ -187,14 +191,14 @@ Use this table when editing README, compliance, or talks. **If a cell says no, d
 | This repo is an installable operating model (Planning + SPDD + SDLC) | **Yes** | Yes | Yes | Yes |
 | Prompts/canvases are version-controlled artifacts | **Yes** | Yes | Yes | Yes |
 | Intent and advice are **stored in git** and queryable | **Yes** — canvas + `lessons.jsonl` + FEAT-015 metrics. | Yes | Yes | Yes |
-| Stored advice is **retrievable** from the ledger (`context retrieve`) | **Yes** — TEST-003 persist→same id. Not RQ4 usefulness. | Yes | Yes | Yes |
+| Stored advice is **retrievable** from the ledger (`context retrieve`) | **Yes** — TEST-003 persist→same id. | Yes | Yes | Yes |
 | SQLite local index holds the **same lesson ids** as the ledger when sqlite is enabled (`context parity`) | **Yes** — TEST-003. Opt-in. `db query --search` is a different CLI. | Same | Same | Same |
 | Guide working store holds the **same lesson ids** as the ledger when Guide is enabled (`context parity`) | **Yes** — TEST-003 mocked HTTP on default CI; live Guide+Neo4j in `test_guide_projection_roundtrip`. Unreachable skip is **not** a pass. Embeddings are **out of this bar**. | Same | Same | Same |
 | Some CLI gates exist (`gate_check`) | **Yes** (describe what they actually check) | Yes | Describe *semantic* gates after FEAT-014/016 | Yes |
-| SDLC-SPDD **fixes** drift | **No** | **No** | **No** | **No** for this academic review. TEST-002 remains instrumentation. A later **separate** paper may ask RQ1. |
+| SDLC-SPDD **fixes** drift | **No** — drift **removed from this review's scope** | **No** | **No** | **No** |
 | The canvas **governs** execution (causal, non-bypassable) | **No** — say *advised process + optional CLI gates* | Same | Stronger *observable* compliance (C-COMPLY) | Same; still bypassable via `--force`/ignoring chat |
 | Three assistants run the **same method** | **Only adapter-text parity** | Same | Same | Behavioral C-PORT if ≥2 assistants recorded |
-| Ledger retrieval improves later work | **No** (RQ4 / C-MEMORY) | Protocol exists | Metrics queryable | Only if RQ4 protocol ran |
+| Ledger retrieval improves later work | **No** — usefulness **removed from this review's scope** | **No** | **No** | **No** |
 | DICE / hybrid graph retrieval is a result | **No** (SPIKE-001 shelved; retrieve was keyword-list filter) | **No** | **No** — FEAT-017 measured **lexical** title-body vs keyword-list only; Guide embeddings unmeasured | Still **non-claim** unless a later ID measures DICE |
 | Deterministic Intent Folding / `embabel-dif` is a result of this review | **No** — later / other-repo. Optional present-or-skip attach is not a finding. | **No** | **No** | **No** |
 | Engineering tests prove the method works | **No** — they prove the *tool* | TEST-001 says how we will test the method | Instruments exist | One slice exists; not a journal N |

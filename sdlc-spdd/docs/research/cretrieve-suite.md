@@ -4,9 +4,11 @@
 **Construct:** C-RETRIEVE (DOC-001 §1 academic-review claim)
 
 This is the **named hermetic test pack** for “stored advice is retrievable” on
-default CI. Live Guide+Neo4j round-trips already exist (see below). RQ1, RQ4,
-and Guide embeddings are **out of scope** for this academic-review bar.
-`embabel-dif` was **removed** from this review (later / other-repo).
+default CI. Live Guide+Neo4j round-trips already exist (see below).
+
+This review's **scope removed** reduced-**drift** (RQ1) and retrieve-**usefulness**
+(RQ4). Those are not leftover TEST-003 work. Guide embeddings were never this
+bar. `embabel-dif` was **removed** from this review (later / other-repo).
 
 ## Command
 
@@ -27,9 +29,9 @@ Research CI (`test-research-p0.yml`) runs the same module.
 
 TEST-003 mocks Guide so research P0 does not need a JVM+Neo4j stack. That is a CI split, **not** a missing live test. Unreachable Guide is a skip in `parity()`, **not** a C-RETRIEVE pass — the mocked path is what default CI uses.
 
-## Out of this academic-review bar
+## Removed from this review's scope
 
-- RQ1 drift (TEST-002 remains instrumentation, not this review’s pass bar)
-- RQ4 usefulness / C-MEMORY follow-on rework
-- Guide **embeddings** / DICE IR (`dice_measured` stays false on FEAT-017)
-- `db query --search` (work_items FTS) is the same as `context retrieve`
+- reduced-**drift** (RQ1)
+- retrieve-**usefulness** (RQ4 / C-MEMORY follow-on rework)
+- Guide **embeddings** / DICE IR (never this bar; `dice_measured` stays false on FEAT-017)
+- treating `db query --search` (work_items FTS) as `context retrieve`

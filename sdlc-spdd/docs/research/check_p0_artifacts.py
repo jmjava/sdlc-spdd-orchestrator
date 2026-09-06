@@ -365,6 +365,10 @@ def issues_for_constructs_spec(text: str) -> list[str]:
         issues.append("constructs spec must name the SQLite store")
     if "c-retrieve" not in blob:
         issues.append("constructs spec must name supporting measure C-RETRIEVE")
+    if "scope removed" not in blob:
+        issues.append(
+            "constructs spec must state that this review's scope removed drift and usefulness"
+        )
     return issues
 
 

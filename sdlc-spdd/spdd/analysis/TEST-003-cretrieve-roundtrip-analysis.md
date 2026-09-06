@@ -19,7 +19,7 @@ DOC-001 §1 claims stored advice is retrievable. Existing tests do not add up to
 
 ### NOT in Scope
 
-RQ1, RQ4, and embeddings (out of this academic-review bar). Re-implementing live Guide+Neo4j. `embabel-dif` (removed from this review). A new SPIKE.
+RQ1, RQ4, and embeddings (this review's **scope removed** drift and usefulness). Re-implementing live Guide+Neo4j. `embabel-dif` (removed from this review). A new SPIKE.
 
 ## Recommendation
 
