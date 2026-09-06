@@ -84,8 +84,9 @@ Journal-style review: [SPIKE-004 analysis](spdd/analysis/SPIKE-004-academic-cont
 optimization, not a new product surface). Product work (ADF / Vue3) can continue
 in parallel; research *claims* must not ride on unfinished product UI.
 
-P0 (do first): DOC-001 constructs/RQs, DOC-002 related work, TEST-001 evaluation
-protocol. Do not implement P1 validators until those claims are frozen.
+P0 and P1 Complete. P2: FEAT-017 Complete; TEST-002 Complete (protocol
+incomplete n=1 — not a journal result). Remaining: CHORE-003 (dogfood
+ledger), REF-001 (engine single-source).
 
 ## Post-MVP backlog
 
@@ -181,7 +182,7 @@ Milestone 1 feature track is Complete on the integration branch.
 | FEAT-016-intent-code-traceability | make it right | Complete (P1) |
 | DOC-003-replication-package | make it right | Complete (P1) |
 | FEAT-017-retrieval-ir-eval | make it right | Complete (P2) |
-| TEST-002-assistant-behavior-eval | make it right | Planned (P2) |
+| TEST-002-assistant-behavior-eval | make it right | Complete (P2, protocol incomplete n=1) |
 | CHORE-003-dogfood-ledger | make it right | Planned (P2) |
 | REF-001-engine-single-source | make it right | Planned (P2) |
 

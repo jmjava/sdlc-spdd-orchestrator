@@ -46,7 +46,7 @@ SPIKE-004’s earlier “file/regex/exact-keyword proxies” row is **partially 
 | Threat | What a replicator must write beside numbers |
 |--------|-----------------------------------------------|
 | n = this repository | One lab, one orchestrator. Do not generalize to “AI-assisted delivery.” |
-| Gold task | First TEST-002 slice gold is `tests/live-consumer/seed/src/hello.py`, not a production service. |
+| Gold task | First TEST-002 slice gold is a copy of `tests/live-consumer/seed/src/hello.py` frozen at `tests/eval/test-002-hello/src/hello.py`, not a production service. |
 | Intended journal gold blocked | `examples/spring-boot-order-api/` still has **no Java** sources — TEST-001 stop rule. |
 | Assistant mix | Live-consumer matrix is Cursor-oriented. Copilot/Claude adapter-text jobs are not an equivalent behavioral harness. |
 | Guide / Neo4j | Optional projection. Replication must not require Guide. Fork-only; never an Embabel PR. |

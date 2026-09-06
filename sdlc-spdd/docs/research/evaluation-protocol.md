@@ -63,6 +63,8 @@ Do not invent a fifth “prompt file dump” condition in TEST-002’s first sli
 
 TEST-002 must freeze a **single new acceptance criterion** on that canvas before runs (prompt-update the seed canvas or copy it into a dated eval fixture). The gold is the pair (canvas operation, expected source/test change), not “make hello.py nicer.”
 
+**Executed freeze location:** `tests/eval/test-002-hello/` is the dated eval fixture copied from this seed. Do not mutate `tests/live-consumer/seed/`. Slice logs and scores live next to that fixture, not in this protocol.
+
 ### 3.3 Gold-task completeness checklist (raters)
 
 A gold is usable only if all are true:

@@ -80,7 +80,7 @@ Parents (Fowler SPDD / OpenSPDD, SDLC Agents) supply the canvas and the phase li
 - A new **LLM** or decoding algorithm.
 - A new **RAG** or GraphRAG theory (retrieve today is an exact keyword-list filter; DICE remains conditional on FEAT-017).
 - A compiled **multi-agent** runtime (AutoGen/CrewAI class).
-- That the hybrid already **fixes drift** or that TEST-002 has been run.
+- That the hybrid already **fixes drift**. TEST-002 recorded an n=1 protocol-incomplete slice; that is not a journal finding.
 - An upstream contribution to Embabel. Guide remains **fork-only**.
 
 ---

@@ -4,7 +4,7 @@ jira_key: ""
 github_number: ""
 jira_epic: ""
 jira_type: "Test"
-jira_status: "To Do"
+jira_status: "Complete"
 jira_assignee: ""
 jira_due_date: ""
 jira_sprint: ""
@@ -21,7 +21,7 @@ related:
 
 **Work ID:** TEST-002-assistant-behavior-eval  
 **Milestone:** Milestone 2 — Academic contribution bar  
-**Status:** To Do  
+**Status:** Complete (protocol incomplete; n=1)  
 **Date:** 2026-09-06  
 **Beck stage:** make it right (research argument / observability)
 
@@ -30,9 +30,9 @@ related:
 | Relationship | Work ID | Status | Notes |
 |--------------|---------|--------|-------|
 | Blocks | (none) | — | — |
-| Depends On | `TEST-001-evaluation-protocol` | Planned | See milestone-2 |
-| Depends On | `FEAT-016-intent-code-traceability` | Planned | See milestone-2 |
-| Related | `DOC-003-replication-package` | Planned | See milestone-2 |
+| Depends On | `TEST-001-evaluation-protocol` | Complete | See milestone-2 |
+| Depends On | `FEAT-016-intent-code-traceability` | Complete | See milestone-2 |
+| Related | `DOC-003-replication-package` | Complete | See milestone-2 |
 
 ## User / Business Goal
 
@@ -53,9 +53,9 @@ Execute one small protocol slice across assistants so 'parity' means behavior, n
 
 ## Acceptance Criteria
 
-- [ ] Gold task has source + canvas + expected operations
-- [ ] A recorded run (logs or review artifacts) for the method vs unstructured baseline
-- [ ] Limitations of n and model version are written next to any numbers
+- [x] Gold task has source + canvas + expected operations
+- [x] A recorded run (logs or review artifacts) for the method vs unstructured baseline
+- [x] Limitations of n and model version are written next to any numbers
 
 ## Non-Goals
 
@@ -95,4 +95,4 @@ See this requirement and `spdd/analysis/SPIKE-004-academic-contribution-bar-anal
 
 ## Next Step
 
-    /sdlc-spdd-analysis @sdlc-spdd/requirements/milestones/milestone-2/TEST-002-assistant-behavior-eval.md
+Complete as a protocol-incomplete n=1 slice. Next Work ID: CHORE-003-dogfood-ledger.

@@ -34,7 +34,7 @@ P1 — major-revision items (observability of the method):
 P2 — strengthen the contribution:
 
 - [x] FEAT-017-retrieval-ir-eval — retrieval as IR (rank, qrels, baselines)
-- [ ] TEST-002-assistant-behavior-eval — three-assistant *behavior*, not adapter text parity
+- [x] TEST-002-assistant-behavior-eval — three-assistant *behavior*, not adapter text parity
 - [ ] CHORE-003-dogfood-ledger — committed lessons survive archive so dogfood memory exists
 - [ ] REF-001-engine-single-source — one gate semantics (shell vs Python) as a validity fix
 
@@ -51,7 +51,7 @@ P2 — strengthen the contribution:
 | FEAT-016-intent-code-traceability | [canvas](../../../spdd/canvas/FEAT-016-intent-code-traceability.md) | [requirement](FEAT-016-intent-code-traceability.md) | Complete | Empty review ≠ safeguards; Files: mapping; advisory labels |
 | DOC-003-replication-package | [canvas](../../../spdd/canvas/DOC-003-replication-package.md) | [requirement](DOC-003-replication-package.md) | Complete | Threats + freeze checklist; live-consumer is not method evidence |
 | FEAT-017-retrieval-ir-eval | [canvas](../../../spdd/canvas/FEAT-017-retrieval-ir-eval.md) | [requirement](FEAT-017-retrieval-ir-eval.md) | Complete | Lexical title-body vs keyword-list; DICE unmeasured |
-| TEST-002-assistant-behavior-eval | — | [requirement](TEST-002-assistant-behavior-eval.md) | Planned | P2 |
+| TEST-002-assistant-behavior-eval | [canvas](../../../spdd/canvas/TEST-002-assistant-behavior-eval.md) | [requirement](TEST-002-assistant-behavior-eval.md) | Complete (protocol incomplete; n=1) | Hello gold + farewell AC; C-DRIFT 0 vs 0.333; C-PORT not reported |
 | CHORE-003-dogfood-ledger | — | [requirement](CHORE-003-dogfood-ledger.md) | Planned | P2 |
 | REF-001-engine-single-source | — | [requirement](REF-001-engine-single-source.md) | Planned | P2 |
 
@@ -79,4 +79,5 @@ For each work item:
 
 ## Session Updates
 
+2026-09-06 — TEST-002 first slice recorded (hello gold, n=1, protocol incomplete). Next: CHORE-003, then REF-001.
 2026-09-06 — SPIKE-004 analysis recorded. Milestone 2 opened. Local session `LOCAL-001-academic-hardening-review`.
