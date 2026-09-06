@@ -52,6 +52,28 @@ def test_archive_complete_keeps_milestone(tmp_path: Path, monkeypatch) -> None:
     assert rows[work_id].status == "archived"
 
 
+def test_archive_does_not_touch_lessons_ledger(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setenv("SDLC_USER", "archiver")
+    work_id = "FEAT-024-ledger"
+    _seed(tmp_path, work_id, "Complete")
+    ledger = tmp_path / "spdd" / "memory" / "lessons.jsonl"
+    ledger.parent.mkdir(parents=True, exist_ok=True)
+    payload = (
+        '{"id":"pitfall:FEAT-024-ledger:engine:test","kind":"pitfall",'
+        '"work_id":"FEAT-024-ledger","area":"engine","title":"keep me",'
+        '"body":"archive must not drop this record from the dogfood ledger.",'
+        '"source":"test","keywords":[],"schema":1}\n'
+    )
+    ledger.write_text(payload, encoding="utf-8")
+    before = ledger.read_text(encoding="utf-8")
+    reg = TeamRegistry(Project(tmp_path))
+    reg.claim(work_id)
+    svc = ArchiveService(Project(tmp_path), reg)
+    svc.archive_work(work_id)
+    assert not (tmp_path / "spdd" / "canvas" / f"{work_id}.md").exists()
+    assert ledger.read_text(encoding="utf-8") == before
+
+
 def test_archive_refuses_in_progress(tmp_path: Path) -> None:
     work_id = "FEAT-022-active"
     _seed(tmp_path, work_id, "In Progress")

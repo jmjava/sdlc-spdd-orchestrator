@@ -110,6 +110,7 @@ class ArchiveService:
         else:
             print(f"Archived {work_id} ({kind}). Commit moved paths + spdd/memory/registry.jsonl.")
         print(f"Left in place: requirements/milestones/{work_id}.md (if present).")
+        print("Left in place: spdd/memory/lessons.jsonl (archive never truncates the lessons ledger).")
 
     def archive_eligible(self, *, dry_run: bool = False) -> int:
         count = 0

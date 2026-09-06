@@ -85,8 +85,8 @@ optimization, not a new product surface). Product work (ADF / Vue3) can continue
 in parallel; research *claims* must not ride on unfinished product UI.
 
 P0 and P1 Complete. P2: FEAT-017 Complete; TEST-002 Complete (protocol
-incomplete n=1 — not a journal result). Remaining: CHORE-003 (dogfood
-ledger), REF-001 (engine single-source).
+incomplete n=1 — not a journal result); CHORE-003 Complete (dogfood ledger
+seeded). Remaining: REF-001 (engine single-source).
 
 ## Post-MVP backlog
 
@@ -183,7 +183,7 @@ Milestone 1 feature track is Complete on the integration branch.
 | DOC-003-replication-package | make it right | Complete (P1) |
 | FEAT-017-retrieval-ir-eval | make it right | Complete (P2) |
 | TEST-002-assistant-behavior-eval | make it right | Complete (P2, protocol incomplete n=1) |
-| CHORE-003-dogfood-ledger | make it right | Planned (P2) |
+| CHORE-003-dogfood-ledger | make it right | Complete (P2) |
 | REF-001-engine-single-source | make it right | Planned (P2) |
 
 Deferred / residual (not Work IDs yet):

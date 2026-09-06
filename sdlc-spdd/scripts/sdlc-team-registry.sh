@@ -708,6 +708,7 @@ sdlc_team_archive_work() {
     echo "Archived ${work_id} (${kind}). Commit deletions + spdd/memory/registry.jsonl."
   fi
   echo "Left in place: requirements/milestones/${work_id}.md (if present)."
+  echo "Left in place: spdd/memory/lessons.jsonl (archive never truncates the lessons ledger)."
 }
 
 # Archive every Work ID whose canvas Final Status is Complete or Cancelled.

@@ -57,4 +57,4 @@ Beck stage for the whole list: **make it right** (research argument and observab
 
 ## First next action
 
-P0 and P1 (through DOC-003) are **Complete**. FEAT-017 and TEST-002 (n=1 protocol incomplete) are done. **Next action:** CHORE-003 (dogfood ledger). Then REF-001 (engine single-source).
+P0 and P1 (through DOC-003) are **Complete**. FEAT-017, TEST-002 (n=1 protocol incomplete), and CHORE-003 are done. **Next action:** REF-001 (engine single-source).

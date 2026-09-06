@@ -47,6 +47,10 @@ default 20); `current-session.md` is never archived.
 `{kind}:{workId}:{area}:{source}`, schema 1. It is written only by
 `./scripts/sdlc.sh accept`; never edit it by hand.
 
+Archive **never truncates** `spdd/memory/lessons.jsonl`. Contracts may leave the
+working tree; decision, pitfall, and pattern records stay. Policy:
+`sdlc-spdd/docs/research/dogfood-ledger-policy.md`.
+
 `spdd/memory/registry.jsonl` records team claims as append-only events via
 `./scripts/sdlc.sh claim` / `release`; current state is the latest event per
 Work ID.
