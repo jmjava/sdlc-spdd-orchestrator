@@ -59,6 +59,7 @@ One operation.
 ### T01 - Do the thing
 
 - Status: Not Started
+- Files: src/app.py
 
 ## N - Norms
 
@@ -84,10 +85,15 @@ One operation.
     )
 
 
-def _seed_review(root: Path, wid: str) -> None:
+def _seed_review(root: Path, wid: str, *, body: str | None = None) -> None:
     d = root / "spdd" / "reviews"
     d.mkdir(parents=True, exist_ok=True)
-    (d / f"{wid}-review.md").write_text(f"# Review: {wid}\n", encoding="utf-8")
+    text = body or (
+        f"# Review: {wid}\n\n"
+        f"**Result:** Approved With Notes\n\n"
+        f"Safeguards checked: no scope expansion; tests added.\n"
+    )
+    (d / f"{wid}-review.md").write_text(text, encoding="utf-8")
 
 
 def _stage_record(root: Path, wid: str, kind: str = "session") -> None:
@@ -240,3 +246,39 @@ def test_gate_sync_requires_retro_lesson(proj: tuple[Project, WorkflowEngine]) -
     _stage_record(p.root, wid, kind="decision")
     ok, failures = eng.gate_check(wid, "sync")
     assert ok and not failures
+
+
+def test_gate_retro_rejects_empty_review(proj: tuple[Project, WorkflowEngine]) -> None:
+    p, eng = proj
+    wid = "FEAT-016-empty-review"
+    _seed_review(p.root, wid, body="# Review: empty\n")
+    ok, failures = eng.gate_check(wid, "retro")
+    assert not ok
+    assert any("minima" in f or "Result" in f or "empty" in f.lower() for f in failures)
+    _seed_review(p.root, wid)
+    ok, failures = eng.gate_check(wid, "retro")
+    assert ok and not failures
+
+
+def test_sync_does_not_pass_safeguards_on_empty_review(
+    proj: tuple[Project, WorkflowEngine],
+) -> None:
+    p, eng = proj
+    wid = "FEAT-016-sync-empty"
+    _seed_review(p.root, wid, body="# Review: empty\n")
+    state = eng.sync(wid)
+    assert state.gates.get("safeguards_checked") != "passed"
+    _seed_review(p.root, wid)
+    state = eng.sync(wid)
+    assert state.gates["safeguards_checked"] == "passed"
+    assert state.gates["review_completed"] == "passed"
+
+
+def test_advertised_gates_are_enforced_or_labeled_advisory() -> None:
+    from sdlc_engine.phases import ADVISORY_GATES, ENFORCED_GATES, GATE_LABELS
+
+    assert set(GATE_LABELS) == ADVISORY_GATES | ENFORCED_GATES
+    for name in ADVISORY_GATES:
+        assert "(advisory)" in GATE_LABELS[name].lower(), name
+    for name in ENFORCED_GATES:
+        assert "(advisory)" not in GATE_LABELS[name].lower(), name

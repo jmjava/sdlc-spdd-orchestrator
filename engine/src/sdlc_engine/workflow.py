@@ -192,7 +192,9 @@ class WorkflowEngine:
         elif phase == "code":
             require_canvas()
             if canvas.is_file():
-                issues = canvas_mod.coding_gate_issues(canvas.read_text(encoding="utf-8"))
+                text = canvas.read_text(encoding="utf-8")
+                issues = canvas_mod.coding_gate_issues(text)
+                issues.extend(canvas_mod.operation_mapping_issues(text))
                 for issue in issues:
                     failures.append(
                         f"canvas not Ready For Coding: {issue} "
@@ -218,6 +220,10 @@ class WorkflowEngine:
                     "/sdlc-spdd-review (or record an explicit skip: "
                     "./scripts/sdlc.sh skip review --reason \"...\")"
                 )
+            elif self.project.review_path(work_id).is_file():
+                review_text = self.project.review_path(work_id).read_text(encoding="utf-8")
+                for issue in canvas_mod.review_minima_issues(review_text):
+                    failures.append(f"review minima failed: {issue}")
         elif phase == "sync":
             retro_kinds = {"decision", "pitfall", "pattern"}
             if (
@@ -295,8 +301,14 @@ class WorkflowEngine:
         if self.project.analysis_path(wid).is_file() or self.project.milestone_path(wid).is_file():
             state.gates["requirement_documented"] = "passed"
         if self.project.review_path(wid).is_file():
-            state.gates["review_completed"] = "passed"
-            state.gates["safeguards_checked"] = "passed"
+            review_text = self.project.review_path(wid).read_text(encoding="utf-8")
+            review_issues = canvas_mod.review_minima_issues(review_text)
+            if not review_issues:
+                state.gates["review_completed"] = "passed"
+                state.gates["safeguards_checked"] = "passed"
+            else:
+                state.gates["review_completed"] = "pending"
+                state.gates["safeguards_checked"] = "pending"
         ledger = LessonsLedger(self.project)
         retro_kinds = {"decision", "pitfall", "pattern"}
         if any(r.kind in retro_kinds for r in ledger.records(work_id=wid, include_staged=True)):

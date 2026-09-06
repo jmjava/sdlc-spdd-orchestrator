@@ -18,17 +18,30 @@ PHASE_ORDER: tuple[str, ...] = (
 GATE_LABELS: dict[str, str] = {
     "requirement_documented": "Requirement documented",
     "canvas_exists": "REASONS Canvas exists",
-    "architect_review": "Architect review completed",
-    "operations_task_sized": "Operations are task-sized",
+    "architect_review": "Architect review completed (advisory)",
+    "operations_task_sized": "Operations are task-sized (advisory)",
     "code_maps_to_ops": "Code changes map to approved operations",
-    "tests_updated": "Tests added or updated",
+    "tests_updated": "Tests added or updated (advisory)",
     "review_completed": "Review completed",
     "safeguards_checked": "Safeguards checked",
     "retro_completed": "Retro completed",
-    "canvas_synced": "Canvas synced with implementation",
+    "canvas_synced": "Canvas synced with implementation (advisory)",
 }
 
 GATE_NAMES: tuple[str, ...] = tuple(GATE_LABELS.keys())
+
+# Gates whose labels must include "(advisory)" because gate_check does not
+# enforce them. Keep in sync with GATE_LABELS and workflow.gate_check.
+ADVISORY_GATES: frozenset[str] = frozenset(
+    {
+        "architect_review",
+        "operations_task_sized",
+        "tests_updated",
+        "canvas_synced",
+    }
+)
+
+ENFORCED_GATES: frozenset[str] = frozenset(GATE_NAMES) - ADVISORY_GATES
 
 
 def phase_index(phase: str) -> int:

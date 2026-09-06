@@ -203,6 +203,62 @@ def canvas_allows_coding(text: str) -> bool:
     return not coding_gate_issues(text)
 
 
+_FILES_LINE = re.compile(r"^- Files:\s*\S", re.IGNORECASE)
+
+
+def operation_mapping_issues(text: str) -> list[str]:
+    """Automated remainder of code_maps_to_ops: each T## must name Files.
+
+    Hunk-level mapping to those paths is still a human/TEST-002 remainder.
+    """
+    in_ops = False
+    current: str | None = None
+    saw_files = False
+    missing: list[str] = []
+    ops = 0
+    for line in text.splitlines():
+        if line.startswith("## O") or line.startswith("## Operations"):
+            in_ops = True
+            continue
+        if in_ops and line.startswith("## ") and not line.startswith("## O"):
+            if current and not saw_files:
+                missing.append(current)
+            break
+        if not in_ops:
+            continue
+        header = _OP_HEADER.match(line.strip()) or re.match(r"^###\s+(T\d+)\b", line.strip())
+        if header:
+            if current and not saw_files:
+                missing.append(current)
+            current = header.group(1)
+            saw_files = False
+            ops += 1
+            continue
+        if current and _FILES_LINE.match(line.strip()):
+            saw_files = True
+    if current and not saw_files:
+        missing.append(current)
+    if ops == 0:
+        return ["no T## operation with a Files: mapping"]
+    if missing:
+        return [f"operation {op} missing Files: mapping" for op in missing]
+    return []
+
+
+def review_minima_issues(text: str) -> list[str]:
+    """C-COMPLY review minima: not empty, Result stated, safeguards explicit."""
+    issues: list[str] = []
+    stripped = text.strip()
+    if len(stripped) < 40:
+        issues.append("review is empty or too short to be a review")
+    if not re.search(r"(?im)^\s*(?:#+\s*)?(?:\*\*)?result(?:\*\*)?\s*:", text):
+        issues.append("review missing Result line")
+    if not re.search(r"(?i)safeguard", text):
+        issues.append("review does not mention safeguards")
+    return issues
+
+
+
 def next_operation(canvas_path: Path) -> tuple[str, str]:
     """Return (operation_id, title) for the first incomplete Operation, else ('', '')."""
     if not canvas_path.is_file():
