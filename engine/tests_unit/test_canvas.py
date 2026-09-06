@@ -111,5 +111,34 @@ Search orders by email.
 ## O - Operations
 ### T01 - Add endpoint
 - Status: Not Started
+- Files: src/OrderController.java
 """
     assert coding_gate_issues(text) == []
+    from sdlc_engine.canvas import operation_mapping_issues
+
+    assert operation_mapping_issues(text) == []
+
+
+def test_empty_review_fails_minima() -> None:
+    from sdlc_engine.canvas import review_minima_issues
+
+    assert review_minima_issues("# Review: x\n")
+    assert review_minima_issues("# Review: x\n\n**Result:** Approved\n")
+    ok = """# Review: x
+
+**Result:** Approved With Notes
+
+Safeguards: no extra endpoints.
+"""
+    assert review_minima_issues(ok) == []
+
+
+def test_operation_without_files_fails_mapping() -> None:
+    from sdlc_engine.canvas import operation_mapping_issues
+
+    text = """## O - Operations
+### T01 - Add endpoint
+- Status: Not Started
+"""
+    issues = operation_mapping_issues(text)
+    assert any("Files" in i for i in issues)

@@ -57,4 +57,4 @@ Beck stage for the whole list: **make it right** (research argument and observab
 
 ## First next action
 
-P0 desk-reject items are **Complete** (DOC-001, DOC-002, TEST-001). FEAT-014 is the first P1 item (semantic canvas / C-COMPLY for `code`). After FEAT-014 merges, next is FEAT-016 (traceability) then FEAT-015 (metrics) per Milestone 2 order.
+P0 desk-reject items are **Complete**. FEAT-014 and FEAT-016 are the first P1 observability items. After FEAT-016 merges, next is FEAT-015 (queryable metrics), then DOC-003.

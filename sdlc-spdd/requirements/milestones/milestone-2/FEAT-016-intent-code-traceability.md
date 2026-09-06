@@ -53,9 +53,9 @@ Close the gap where GATE_LABELS list code_maps_to_ops, tests_updated, and safegu
 
 ## Acceptance Criteria
 
-- [ ] An empty review file does not pass safeguards_checked
-- [ ] Documented rule for code_maps_to_ops with at least one automated check and one documented remainder for humans
-- [ ] phases.py and workflow.gate_check no longer advertise unenforced gates without labeling them advisory
+- [x] An empty review file does not pass safeguards_checked
+- [x] Documented rule for code_maps_to_ops with at least one automated check and one documented remainder for humans
+- [x] phases.py and workflow.gate_check no longer advertise unenforced gates without labeling them advisory
 
 ## Non-Goals
 

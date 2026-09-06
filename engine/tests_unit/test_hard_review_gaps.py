@@ -49,6 +49,7 @@ Hard-review seed requirement for {work_id}.
 ### T01 - Seed operation
 
 - Status: Not Started
+- Files: src/app.py
 """,
         encoding="utf-8",
     )
