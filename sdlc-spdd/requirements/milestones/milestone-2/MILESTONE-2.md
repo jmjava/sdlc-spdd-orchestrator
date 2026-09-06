@@ -40,6 +40,10 @@ P2 — strengthen the contribution:
 - [x] CHORE-003-dogfood-ledger — committed lessons survive archive so dogfood memory exists
 - [x] REF-001-engine-single-source — one gate semantics (shell vs Python) as a validity fix
 
+Claim test after DOC-001 T03 freeze (the retrievability bar needs a named suite):
+
+- [x] TEST-003-cretrieve-roundtrip — persist→retrieve same id on ledger, SQLite, mocked Guide
+
 ## Linked Work
 
 | Work ID | Canvas | Requirement | Status | Notes |
@@ -56,6 +60,7 @@ P2 — strengthen the contribution:
 | TEST-002-assistant-behavior-eval | [canvas](../../../spdd/canvas/TEST-002-assistant-behavior-eval.md) | [requirement](TEST-002-assistant-behavior-eval.md) | Complete (protocol incomplete; n=1) | Hello gold + farewell AC; C-DRIFT 0 vs 0.333; C-PORT not reported |
 | CHORE-003-dogfood-ledger | [canvas](../../../spdd/canvas/CHORE-003-dogfood-ledger.md) | [requirement](CHORE-003-dogfood-ledger.md) | Complete | Seeded decision/pitfall/pattern; archive never truncates ledger |
 | REF-001-engine-single-source | [canvas](../../../spdd/canvas/REF-001-engine-single-source.md) | [requirement](REF-001-engine-single-source.md) | Complete | Python `gate_check` is SUT; `SDLC_GATE_ENGINE=shell` is not an eval condition |
+| TEST-003-cretrieve-roundtrip | [canvas](../../../spdd/canvas/TEST-003-cretrieve-roundtrip.md) | [requirement](TEST-003-cretrieve-roundtrip.md) | Complete | Named C-RETRIEVE suite; mocked Guide in default CI; live Neo4j extra |
 
 ## Iteration order
 
@@ -68,6 +73,7 @@ Do **not** start P1 coding until DOC-001 and DOC-002 exist. Otherwise we will ha
 5. DOC-003 (write threats using the real instruments)
 6. FEAT-017, TEST-002 (empirical slices)
 7. CHORE-003, REF-001 (method integrity; can be parallel once P0 is frozen)
+8. TEST-003 (named C-RETRIEVE suite after the stores+retrievability freeze)
 
 ## SDLC-SPDD Flow
 
@@ -81,6 +87,7 @@ For each work item:
 
 ## Session Updates
 
+2026-09-06 — TEST-003 named C-RETRIEVE suite (ledger + SQLite + mocked Guide). Live Guide e2e remains extra.
 2026-09-06 — DOC-001 T03: academic review goal frozen as stores + retrievability (ledger + Guide); reduced-drift and `embabel-dif` out of scope.
 2026-09-06 — REF-001 names Python `gate_check` as the SUT; default `SDLC_ENGINE=auto`. Milestone 2 P2 complete.
 2026-09-06 — CHORE-003 seeded the dogfood ledger; archive never truncates it. Next: REF-001.
