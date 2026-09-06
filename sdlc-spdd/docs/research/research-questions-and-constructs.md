@@ -195,7 +195,7 @@ After T02, a grep for `fixes that` in `README.md` should not remain as an unqual
 | C-CONTEXT relevance; retrieve algorithm | FEAT-017 |
 | RQ1/RQ2/RQ5 slice | TEST-002 |
 | RQ4 precondition (memory exists) | CHORE-003 |
-| Which engine is the SUT | REF-001 |
+| Which engine is the SUT | REF-001 Complete ([engine-sut.md](engine-sut.md)) |
 | Threats using these constructs | DOC-003 |
 
 Child canvases for FEAT-014–017 **must cite construct IDs** in Requirements.

@@ -28,14 +28,14 @@ class ArchiveService:
         if not src.exists():
             return False
         if dry_run:
-            print(f"[dry-run] would move {src.relative_to(self.project.root)} -> {dest.relative_to(self.project.root)}")
+            print(f"[dry-run] would move {self.project.rel(src)} -> {self.project.rel(dest)}")
             return True
         dest.parent.mkdir(parents=True, exist_ok=True)
         if dest.exists():
-            print(f"archive: destination already exists, skipping {dest.relative_to(self.project.root)}")
+            print(f"archive: destination already exists, skipping {self.project.rel(dest)}")
             return False
         shutil.move(str(src), str(dest))
-        print(f"Moved {src.relative_to(self.project.root)} -> {dest.relative_to(self.project.root)}")
+        print(f"Moved {self.project.rel(src)} -> {self.project.rel(dest)}")
         return True
 
     def archive_work(self, work_id: str, *, dry_run: bool = False, force: bool = False) -> None:
@@ -56,27 +56,36 @@ class ArchiveService:
                 self.workflow.pointer.reset()
                 print(f"Cleared local pointer (was {work_id})")
 
-        root = self.project.root
+        home = self.project.home
         moved = False
         for src, dest in [
-            (root / "spdd" / "canvas" / f"{work_id}.md", root / "spdd" / "canvas" / "archive" / f"{work_id}.md"),
             (
-                root / "spdd" / "analysis" / f"{work_id}-analysis.md",
-                root / "spdd" / "analysis" / "archive" / f"{work_id}-analysis.md",
+                self.project.canvas_path(work_id),
+                self.project.spdd_dir / "canvas" / "archive" / f"{work_id}.md",
             ),
             (
-                root / "spdd" / "reviews" / f"{work_id}-review.md",
-                root / "spdd" / "reviews" / "archive" / f"{work_id}-review.md",
+                self.project.analysis_path(work_id),
+                self.project.spdd_dir / "analysis" / "archive" / f"{work_id}-analysis.md",
             ),
             (
-                root / "spdd" / "sync" / f"{work_id}-sync.md",
-                root / "spdd" / "sync" / "archive" / f"{work_id}-sync.md",
+                self.project.review_path(work_id),
+                self.project.spdd_dir / "reviews" / "archive" / f"{work_id}-review.md",
+            ),
+            (
+                self.project.sync_path(work_id),
+                self.project.spdd_dir / "sync" / "archive" / f"{work_id}-sync.md",
             ),
         ]:
             moved |= self._move(src, dest, dry_run)
 
-        sessions = root / "agent-context" / "sessions"
-        if sessions.is_dir():
+        session_dirs = [self.project.hot_session_dir(), home / "agent-context" / "sessions"]
+        if home != self.project.root:
+            session_dirs.append(self.project.root / "agent-context" / "sessions")
+        seen_sessions: set[Path] = set()
+        for sessions in session_dirs:
+            if not sessions.is_dir() or sessions in seen_sessions:
+                continue
+            seen_sessions.add(sessions)
             for sess in sessions.iterdir():
                 if not sess.is_file() or sess.name == "current-session.md":
                     continue

@@ -18,9 +18,16 @@ All notable changes to this project will be documented in this file.
   reported. Symbol-proxy C-DRIFT only.
 - CHORE-003: seeded dogfood `lessons.jsonl` (decision/pitfall/pattern);
   archive never truncates the ledger. RQ4 usefulness still unmeasured.
+- REF-001: named Python `WorkflowEngine.gate_check` as the Milestone 2
+  SUT (`sdlc-spdd/docs/research/engine-sut.md`). Default `SDLC_ENGINE=auto`.
 
 ### Changed
 
+- REF-001: workflow `gate` delegates to Python whenever `sdlc_engine` is
+  importable, even if `SDLC_ENGINE=shell`. `SDLC_GATE_ENGINE=shell` is the
+  labeled pre-FEAT-014 substring fallback and is **not** an evaluation
+  condition (`tests/test-sdlc-workflow.sh` uses it for hermetic bash CLI).
+  Python `archive` moves contracts under `project.home` (storage v3).
 - Ops console `/` defaults to the Vue3 build (`console-ui/dist`); `sdlc.sh console` builds dist when needed. The Flask HTML template (`installer/pages.py`) is removed — Flask remains the `/api/*` BFF and the ADF Viewer
 - `sdlc.sh console --playground` seeds a disposable SPDD tree under `.sdlc/console-playground` so Vue tabs can be clicked without installing into an app
 - Playground Guide / Jira / GitHub are in-process fakes (`installer/playground_fakes.py`) so those tabs show live UP/sync mocks without Docker, JVM, or tracker APIs

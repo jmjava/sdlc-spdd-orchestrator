@@ -6,8 +6,13 @@ stage-then-accept, projections), issue sync, local sessions, and the ops console
 
 ![Engine components](diagrams/03-component-engine.svg)
 
-Shell scripts remain the default entry point (`SDLC_ENGINE=shell`). Opt into Python
-with `SDLC_ENGINE=python` or `auto`. On-disk formats are shared: `.sdlc/`,
+Shell scripts remain an install/upgrade entry point. **REF-001:** the default
+`sdlc.sh` engine is `auto` (Python when importable). Python
+`WorkflowEngine.gate_check` is the Milestone 2 system under test. Opt into
+legacy bash workflow CLI with `SDLC_ENGINE=shell`; gates still call Python
+unless `SDLC_GATE_ENGINE=shell`. `sdlc.sh capture`/`start`/`accept` stay on
+the shell path (Python has `local capture` / `context accept`). On-disk
+formats are shared: `.sdlc/`,
 `spdd/memory/lessons.jsonl`, `spdd/memory/registry.jsonl`, canvas paths.
 
 ## Layout

@@ -11,6 +11,7 @@ This folder is **not** a paper. It holds investigation notes that support either
 | [Evaluation protocol (TEST-001)](../../sdlc-spdd/docs/research/evaluation-protocol.md) | Method eval protocol (no study data) | How to run slices: gold, raters, baselines, stop rules |
 | [TEST-002 first slice log](../../tests/eval/test-002-hello/SLICE-LOG.md) | n=1 hello gold, protocol incomplete | C-DRIFT symbol-proxy 0 vs 0.333; C-PORT not reported; do not treat as evidence the method works |
 | [Dogfood ledger policy (CHORE-003)](../../sdlc-spdd/docs/research/dogfood-ledger-policy.md) | Archive vs lessons.jsonl | Seeded decision/pitfall/pattern; retrieve is non-vacuous; not RQ4 usefulness |
+| [Engine SUT (REF-001)](../../sdlc-spdd/docs/research/engine-sut.md) | Named gate semantics | Python `WorkflowEngine.gate_check`; `SDLC_GATE_ENGINE=shell` is not an eval condition |
 | [Threats and replication (DOC-003)](../../sdlc-spdd/docs/research/threats-to-validity-and-replication.md) | Threats + freeze checklist | Referee appendix; what live-consumer does not prove |
 | [Retrieve algorithm (FEAT-017)](../../sdlc-spdd/docs/research/retrieve-algorithm.md) | Lexical keyword-list vs title-body | C-CONTEXT relevance proxy; DICE still unmeasured |
 | [Capture metrics queries (FEAT-015)](../../sdlc-spdd/docs/research/capture-metrics-queries.md) | `context metrics` construct queries | C-COMPLY / C-CONTEXT / C-REWORK / C-MEMORY |

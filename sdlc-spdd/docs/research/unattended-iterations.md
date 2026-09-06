@@ -9,4 +9,4 @@ the previous PR is merged to `main` and `prove-p0.sh` passed for that ID.
 | 2 | DOC-002-related-work-map | `cursor/doc-002-related-work-fdf7` | `python3 -m unittest tests.research.test_p0_artifacts -v` and `prove-p0.sh DOC-002` | merged (#221, `9a6b00a`) |
 | 3 | TEST-001-evaluation-protocol | `cursor/test-001-eval-protocol-fdf7` | unittest live TEST-001 checks + `prove-p0.sh TEST-001` | merged (#222, `2529d06`) |
 
-P0 and P1 (through DOC-003) are **Complete**. FEAT-017, TEST-002 (n=1 protocol incomplete), and CHORE-003 (dogfood ledger) are done. **Next action:** REF-001 (engine single-source).
+P0, P1, and P2 (through REF-001) are **Complete**. Milestone 2 program list has no further Work IDs. Journal n≥3 remains TEST-001's stop rule, not a new ID.

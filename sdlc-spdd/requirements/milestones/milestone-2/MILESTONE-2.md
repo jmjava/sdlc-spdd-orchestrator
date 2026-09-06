@@ -36,7 +36,7 @@ P2 — strengthen the contribution:
 - [x] FEAT-017-retrieval-ir-eval — retrieval as IR (rank, qrels, baselines)
 - [x] TEST-002-assistant-behavior-eval — three-assistant *behavior*, not adapter text parity
 - [x] CHORE-003-dogfood-ledger — committed lessons survive archive so dogfood memory exists
-- [ ] REF-001-engine-single-source — one gate semantics (shell vs Python) as a validity fix
+- [x] REF-001-engine-single-source — one gate semantics (shell vs Python) as a validity fix
 
 ## Linked Work
 
@@ -53,7 +53,7 @@ P2 — strengthen the contribution:
 | FEAT-017-retrieval-ir-eval | [canvas](../../../spdd/canvas/FEAT-017-retrieval-ir-eval.md) | [requirement](FEAT-017-retrieval-ir-eval.md) | Complete | Lexical title-body vs keyword-list; DICE unmeasured |
 | TEST-002-assistant-behavior-eval | [canvas](../../../spdd/canvas/TEST-002-assistant-behavior-eval.md) | [requirement](TEST-002-assistant-behavior-eval.md) | Complete (protocol incomplete; n=1) | Hello gold + farewell AC; C-DRIFT 0 vs 0.333; C-PORT not reported |
 | CHORE-003-dogfood-ledger | [canvas](../../../spdd/canvas/CHORE-003-dogfood-ledger.md) | [requirement](CHORE-003-dogfood-ledger.md) | Complete | Seeded decision/pitfall/pattern; archive never truncates ledger |
-| REF-001-engine-single-source | — | [requirement](REF-001-engine-single-source.md) | Planned | P2 |
+| REF-001-engine-single-source | [canvas](../../../spdd/canvas/REF-001-engine-single-source.md) | [requirement](REF-001-engine-single-source.md) | Complete | Python `gate_check` is SUT; `SDLC_GATE_ENGINE=shell` is not an eval condition |
 
 ## Iteration order
 
@@ -79,6 +79,7 @@ For each work item:
 
 ## Session Updates
 
+2026-09-06 — REF-001 names Python `gate_check` as the SUT; default `SDLC_ENGINE=auto`. Milestone 2 P2 complete.
 2026-09-06 — CHORE-003 seeded the dogfood ledger; archive never truncates it. Next: REF-001.
 2026-09-06 — TEST-002 first slice recorded (hello gold, n=1, protocol incomplete). Next: CHORE-003, then REF-001.
 2026-09-06 — SPIKE-004 analysis recorded. Milestone 2 opened. Local session `LOCAL-001-academic-hardening-review`.

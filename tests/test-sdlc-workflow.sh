@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Hermetic: this harness tests the bash workflow CLI, not the Milestone 2 SUT.
+# Python gate_check is the SUT (REF-001); do not let a local pip install hijack gates.
+export SDLC_GATE_ENGINE=shell
+
 # Regression harness for templates/agent-context/sdlc-workflow.sh
 #
 # Usage: ./tests/test-sdlc-workflow.sh

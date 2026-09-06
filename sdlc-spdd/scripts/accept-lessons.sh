@@ -106,7 +106,7 @@ PY
   exit 0
 fi
 
-engine_mode="${SDLC_ENGINE:-shell}"
+engine_mode="${SDLC_ENGINE:-auto}"
 if [[ "${engine_mode}" == "python" ]] || { [[ "${engine_mode}" == "auto" ]] && _python_engine_available; }; then
   result="$(_run_python_accept 2>&1)" || { echo "${result}" >&2; exit 1; }
   echo "${result}"

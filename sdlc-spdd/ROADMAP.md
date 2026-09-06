@@ -84,9 +84,10 @@ Journal-style review: [SPIKE-004 analysis](spdd/analysis/SPIKE-004-academic-cont
 optimization, not a new product surface). Product work (ADF / Vue3) can continue
 in parallel; research *claims* must not ride on unfinished product UI.
 
-P0 and P1 Complete. P2: FEAT-017 Complete; TEST-002 Complete (protocol
+P0, P1, and P2 Complete. FEAT-017 Complete; TEST-002 Complete (protocol
 incomplete n=1 — not a journal result); CHORE-003 Complete (dogfood ledger
-seeded). Remaining: REF-001 (engine single-source).
+seeded); REF-001 Complete (Python `gate_check` is the named SUT).
+Journal n≥3 remains TEST-001's stop rule, not a new Milestone 2 Work ID.
 
 ## Post-MVP backlog
 
@@ -184,7 +185,7 @@ Milestone 1 feature track is Complete on the integration branch.
 | FEAT-017-retrieval-ir-eval | make it right | Complete (P2) |
 | TEST-002-assistant-behavior-eval | make it right | Complete (P2, protocol incomplete n=1) |
 | CHORE-003-dogfood-ledger | make it right | Complete (P2) |
-| REF-001-engine-single-source | make it right | Planned (P2) |
+| REF-001-engine-single-source | make it right | Complete (P2) |
 
 Deferred / residual (not Work IDs yet):
 
