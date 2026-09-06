@@ -4,7 +4,7 @@ jira_key: ""
 github_number: ""
 jira_epic: ""
 jira_type: "Feature"
-jira_status: "To Do"
+jira_status: "Complete"
 jira_assignee: ""
 jira_due_date: ""
 jira_sprint: ""
@@ -22,7 +22,7 @@ related:
 
 **Work ID:** FEAT-015-first-class-metrics  
 **Milestone:** Milestone 2 — Academic contribution bar  
-**Status:** To Do  
+**Status:** Complete  
 **Date:** 2026-09-06  
 **Beck stage:** make it right (research argument / observability)
 
@@ -54,9 +54,9 @@ Restore FEAT-004's intent: process metrics are structured, queryable records —
 
 ## Acceptance Criteria
 
-- [ ] Metrics are not solely free-text in session.body
-- [ ] At least one documented query per DOC-001 construct that is supposed to use capture metrics
-- [ ] Tests: capture flags round-trip into the query surface
+- [x] Metrics are not solely free-text in session.body
+- [x] At least one documented query per DOC-001 construct that is supposed to use capture metrics
+- [x] Tests: capture flags round-trip into the query surface
 
 ## Non-Goals
 

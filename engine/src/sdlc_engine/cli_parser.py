@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import argparse
 
+from .metrics import CAPTURE_CONSTRUCTS, NON_CAPTURE_CONSTRUCTS
+
 from .cli_commands import (
     cmd_next,
     cmd_status,
@@ -40,6 +42,15 @@ from .cli_commands import (
     cmd_installer,
     cmd_template,
 )
+
+
+def _optional_nonneg_int(value: str) -> int:
+    from .metrics import parse_nonneg_int
+
+    try:
+        return parse_nonneg_int(value, name="value")
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(str(exc)) from exc
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -424,6 +435,39 @@ def build_parser() -> argparse.ArgumentParser:
     cpl.add_argument("--keywords", default="", help="Comma-separated keywords")
     cpl.add_argument("--accept", action="store_true", help="Land directly in committed ledger")
     cpl.add_argument("--no-guide", action="store_true", help="Skip Guide projection fan-out")
+    cpl.add_argument("--readiness", default="", help="Capture metric: canvas readiness")
+    cpl.add_argument(
+        "--review-result",
+        default="",
+        help="Capture metric: pass|fail|mixed|blocked",
+    )
+    cpl.add_argument(
+        "--rework",
+        type=_optional_nonneg_int,
+        default=None,
+        help="Capture metric: repair count (C-REWORK)",
+    )
+    cpl.add_argument(
+        "--context-files",
+        type=_optional_nonneg_int,
+        default=None,
+        dest="context_files",
+        help="Capture metric: distinct files loaded (C-CONTEXT)",
+    )
+    cpl.add_argument(
+        "--validate-cycles",
+        type=_optional_nonneg_int,
+        default=None,
+        dest="validate_cycles",
+        help="Capture metric: validate-cycle count",
+    )
+    cpl.add_argument(
+        "--review-cycles",
+        type=_optional_nonneg_int,
+        default=None,
+        dest="review_cycles",
+        help="Capture metric: review-cycle count",
+    )
     cpl.set_defaults(func=cmd_context)
     cpe = ctx_sub.add_parser(
         "persist-entry",
@@ -463,6 +507,23 @@ def build_parser() -> argparse.ArgumentParser:
     cre.add_argument("--limit", type=int, default=50)
     cre.add_argument("--no-staged", action="store_true")
     cre.set_defaults(func=cmd_context)
+    cmet = ctx_sub.add_parser(
+        "metrics",
+        help="Query structured capture metrics (FEAT-015; does not parse session.body)",
+    )
+    cmet.add_argument("--work-id", default="")
+    cmet.add_argument("--phase", default="")
+    cmet.add_argument(
+        "--construct",
+        default="",
+        help=(
+            "DOC-001 construct: "
+            + "|".join(CAPTURE_CONSTRUCTS + NON_CAPTURE_CONSTRUCTS)
+            + " (omit for all capture constructs)"
+        ),
+    )
+    cmet.add_argument("--no-staged", action="store_true")
+    cmet.set_defaults(func=cmd_context)
     ctx_sub.add_parser(
         "coverage", help="Report CONTEXT_KINDS capability coverage in SQLite"
     ).set_defaults(func=cmd_context)

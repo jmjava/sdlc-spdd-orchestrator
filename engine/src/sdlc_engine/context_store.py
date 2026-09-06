@@ -18,6 +18,7 @@ from typing import Any
 
 from .db import SCHEMA_VERSION, LocalIndex
 from .lessons_ledger import LEDGER_KINDS, LessonRecord, LessonsLedger
+from .metrics import ProcessMetrics
 from .persistence import (
     BACKEND_GUIDE,
     BACKEND_SQLITE,
@@ -89,9 +90,28 @@ class ContextStore:
         keywords: list[str] | None = None,
         accept: bool = False,
         project_guide: bool = True,
+        metrics: ProcessMetrics | dict[str, Any] | None = None,
+        readiness: str | None = None,
+        review_result: str | None = None,
+        rework: int | None = None,
+        context_files: int | None = None,
+        validate_cycles: int | None = None,
+        review_cycles: int | None = None,
     ) -> PersistResult:
         """Write one lesson record. Staged by default; ``accept=True`` lands
         it in the committed ledger immediately (retro/sync accept points)."""
+        if metrics is None:
+            metrics = ProcessMetrics.from_capture(
+                readiness=readiness,
+                review_result=review_result,
+                rework=rework,
+                context_files=context_files,
+                validate_cycles=validate_cycles,
+                review_cycles=review_cycles,
+                strict=True,
+            )
+        elif isinstance(metrics, dict):
+            metrics = ProcessMetrics.from_json(metrics)
         record = LessonRecord(
             id="",
             kind=kind,
@@ -102,6 +122,7 @@ class ContextStore:
             body=(body or "").strip(),
             source=source,
             keywords=list(keywords or []),
+            metrics=metrics,
         )
         result = PersistResult(ok=True)
         want_sqlite = backend_enabled(self.project, BACKEND_SQLITE)
@@ -310,6 +331,21 @@ class ContextStore:
         data = rec.to_json()
         data["staged"] = record_id in self.ledger.staged_ids()
         return data
+
+    def metrics_query(
+        self,
+        *,
+        construct: str = "",
+        work_id: str = "",
+        phase: str = "",
+        include_staged: bool = True,
+    ) -> dict[str, Any]:
+        return self.ledger.metrics_query(
+            construct=construct,
+            work_id=work_id,
+            phase=phase,
+            include_staged=include_staged,
+        )
 
     # --- parity ---
 

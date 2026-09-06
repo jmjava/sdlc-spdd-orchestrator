@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- FEAT-015: structured capture metrics (`record.metrics`) and
+  `sdlc-engine context metrics` construct queries (C-COMPLY, C-CONTEXT,
+  C-REWORK, C-MEMORY). Body tags are no longer the query source.
+
 ### Changed
 
 - Ops console `/` defaults to the Vue3 build (`console-ui/dist`); `sdlc.sh console` builds dist when needed. The Flask HTML template (`installer/pages.py`) is removed — Flask remains the `/api/*` BFF and the ADF Viewer

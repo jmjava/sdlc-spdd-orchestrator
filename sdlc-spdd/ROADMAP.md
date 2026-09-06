@@ -113,7 +113,7 @@ Each item names the Beck stage it serves (see [Delivery posture](#delivery-postu
 | Item | Concern |
 |------|---------|
 | Prompt-optimization ledger (`spdd/memory/lessons.jsonl`, kind=metric) | Measurement — **FEAT-004 Complete** |
-| Capture metric flags (`--readiness`, `--review-result`, `--rework`, `--context-files`) → indexed rows (Kind: `metric`) | Measurement — **FEAT-004 Complete** |
+| Capture metric flags (`--readiness`, `--review-result`, `--rework`, `--context-files`) → indexed rows (Kind: `metric`) | Measurement — **FEAT-004 Complete**; query surface restored without `kind=metric` by **FEAT-015** |
 | Canvas `readiness:` / Metadata readiness + leading indicators (validate/review counts) | Measurement — **FEAT-005 Complete** |
 | `spdd --metrics` surface over the ledger and indexes | Optimization |
 | Act on metrics: prompt + context optimization | Optimization |
@@ -174,11 +174,11 @@ Milestone 1 feature track is Complete on the integration branch.
 | CHORE-002-docgen-video-generation | make it right (docs) | Complete (git history) |
 | SPIKE-004-academic-contribution-bar | make it right (research argument) | Complete (program plan + DOC-001 T01) |
 | DOC-001-research-questions-and-constructs | make it right | Complete (T01 spec + T02 hedges) |
-| DOC-002-related-work-map | make it right | Planned (P0) |
-| TEST-001-evaluation-protocol | make it right | Planned (P0) |
-| FEAT-014-semantic-canvas-validation | make it right | Planned (P1) |
-| FEAT-015-first-class-metrics | make it right | Planned (P1) |
-| FEAT-016-intent-code-traceability | make it right | Planned (P1) |
+| DOC-002-related-work-map | make it right | Complete (P0) |
+| TEST-001-evaluation-protocol | make it right | Complete (P0) |
+| FEAT-014-semantic-canvas-validation | make it right | Complete (P1) |
+| FEAT-015-first-class-metrics | make it right | Complete (P1) |
+| FEAT-016-intent-code-traceability | make it right | Complete (P1) |
 | DOC-003-replication-package | make it right | Planned (P1) |
 | FEAT-017-retrieval-ir-eval | make it right | Planned (P2) |
 | TEST-002-assistant-behavior-eval | make it right | Planned (P2) |

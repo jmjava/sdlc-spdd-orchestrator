@@ -179,6 +179,13 @@ if [[ -f "${stage}" ]] \
 else
   bad "missing staged session in ${stage}"
 fi
+if grep -q '"validate_cycles": 2' "${stage}" \
+  && grep -q '"review_cycles": 1' "${stage}" \
+  && grep -q '"metrics"' "${stage}"; then
+  ok "capture writes structured metrics object"
+else
+  bad "missing structured metrics in ${stage}: $(cat "${stage}" 2>/dev/null || true)"
+fi
 
 echo "== Test 7: directory validate reports readiness per file =="
 T="${WORK}/dir"; mkdir -p "${T}"

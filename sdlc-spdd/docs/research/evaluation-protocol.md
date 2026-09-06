@@ -112,7 +112,7 @@ A gold is usable only if all are true:
 3. Relevance: two raters mark each loaded file used / unused for the gold operation (qrels). Precision is secondary until FEAT-017.
 4. Guardrail: if (b) fails the gold acceptance criterion where (a) succeeds, report that; do not hide it.
 
-Until FEAT-015, ContextLoad may live in session body; still record it in the TEST-002 log table.
+Record ContextLoad on `record.metrics.context_files` (`sdlc-engine context metrics --construct C-CONTEXT`) and still copy it into the TEST-002 log table.
 
 ### RQ4 procedure — C-MEMORY via follow-on rework
 

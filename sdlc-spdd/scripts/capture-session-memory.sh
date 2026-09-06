@@ -261,12 +261,37 @@ if ((${#areas[@]} > 0)); then
   fi
 fi
 
-# Metrics in session body
+# Metrics: structured object (query source) plus optional body tags (human copy)
+if [[ -n "${METRIC_REVIEW_RESULT}" ]]; then
+  case "${METRIC_REVIEW_RESULT}" in
+    pass|fail|mixed|blocked) ;;
+    *)
+      echo "warning: --review-result must be pass|fail|mixed|blocked; skipping" >&2
+      METRIC_REVIEW_RESULT=""
+      ;;
+  esac
+fi
+_skip_nonneg() {
+  local flag="$1" val="$2"
+  [[ -z "${val}" ]] && return 1
+  if [[ "${val}" =~ ^[0-9]+$ ]]; then
+    return 0
+  fi
+  echo "warning: --${flag} must be a non-negative integer; skipping" >&2
+  return 1
+}
+_skip_nonneg "rework" "${METRIC_REWORK}" || METRIC_REWORK=""
+_skip_nonneg "context-files" "${METRIC_CONTEXT_FILES}" || METRIC_CONTEXT_FILES=""
+_skip_nonneg "validate-cycles" "${METRIC_VALIDATE_CYCLES}" || METRIC_VALIDATE_CYCLES=""
+_skip_nonneg "review-cycles" "${METRIC_REVIEW_CYCLES}" || METRIC_REVIEW_CYCLES=""
+
 METRIC_PARTS=()
 [[ -n "${METRIC_READINESS}" ]] && METRIC_PARTS+=("readiness=$(sdlc_oneline "${METRIC_READINESS}" 80)")
 [[ -n "${METRIC_REVIEW_RESULT}" ]] && METRIC_PARTS+=("review-result=${METRIC_REVIEW_RESULT}")
 [[ -n "${METRIC_REWORK}" ]] && METRIC_PARTS+=("rework=${METRIC_REWORK}")
 [[ -n "${METRIC_CONTEXT_FILES}" ]] && METRIC_PARTS+=("context-files=${METRIC_CONTEXT_FILES}")
+[[ -n "${METRIC_VALIDATE_CYCLES}" ]] && METRIC_PARTS+=("validate-cycles=${METRIC_VALIDATE_CYCLES}")
+[[ -n "${METRIC_REVIEW_CYCLES}" ]] && METRIC_PARTS+=("review-cycles=${METRIC_REVIEW_CYCLES}")
 METRIC_ENTRY=""
 if ((${#METRIC_PARTS[@]} > 0)); then
   local_ifs="${IFS}"
@@ -274,6 +299,36 @@ if ((${#METRIC_PARTS[@]} > 0)); then
   METRIC_ENTRY="${METRIC_PARTS[*]}"
   IFS="${local_ifs}"
 fi
+
+METRICS_JSON="$(
+  METRIC_READINESS="${METRIC_READINESS}" \
+  METRIC_REVIEW_RESULT="${METRIC_REVIEW_RESULT}" \
+  METRIC_REWORK="${METRIC_REWORK}" \
+  METRIC_CONTEXT_FILES="${METRIC_CONTEXT_FILES}" \
+  METRIC_VALIDATE_CYCLES="${METRIC_VALIDATE_CYCLES}" \
+  METRIC_REVIEW_CYCLES="${METRIC_REVIEW_CYCLES}" \
+  python3 - <<'PY'
+import json, os
+m = {}
+r = os.environ.get("METRIC_READINESS", "").strip()
+if r:
+    m["readiness"] = r
+rr = os.environ.get("METRIC_REVIEW_RESULT", "").strip()
+if rr:
+    m["review_result"] = rr
+for env_name, key in (
+    ("METRIC_REWORK", "rework"),
+    ("METRIC_CONTEXT_FILES", "context_files"),
+    ("METRIC_VALIDATE_CYCLES", "validate_cycles"),
+    ("METRIC_REVIEW_CYCLES", "review_cycles"),
+):
+    raw = os.environ.get(env_name, "").strip()
+    if raw == "":
+        continue
+    m[key] = int(raw)
+print(json.dumps(m) if m else "")
+PY
+)"
 
 session_body="$(cat <<EOF
 Phase: ${PHASE}
@@ -293,7 +348,9 @@ stage_record() {
 }
 
 staged_records=()
+export METRICS_JSON
 staged_records+=("$(stage_record session "${SUMMARY}" "${session_body}" "capture")")
+unset METRICS_JSON
 [[ -n "${DECISIONS}" ]] && staged_records+=("$(stage_record decision "Decision: ${WORK_ID}" "${DECISIONS}" "capture")")
 [[ -n "${PITFALLS}" ]] && staged_records+=("$(stage_record pitfall "Pitfall: ${WORK_ID}" "${PITFALLS}" "capture")")
 [[ -n "${PATTERNS}" ]] && staged_records+=("$(stage_record pattern "Pattern: ${WORK_ID}" "${PATTERNS}" "capture")")

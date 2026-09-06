@@ -223,18 +223,28 @@ def cmd_context(args: argparse.Namespace) -> int:
             print("persist-lesson: --work-id or --area is required", file=sys.stderr)
             return 2
         keywords = [k.strip() for k in (args.keywords or "").split(",") if k.strip()]
-        result = store.persist_lesson(
-            kind=args.kind,
-            work_id=work_id,
-            body=body,
-            title=getattr(args, "title", "") or "",
-            area=area,
-            source=args.source or "cli",
-            phase=args.phase or "",
-            keywords=keywords or None,
-            accept=bool(getattr(args, "accept", False)),
-            project_guide=not args.no_guide,
-        )
+        try:
+            result = store.persist_lesson(
+                kind=args.kind,
+                work_id=work_id,
+                body=body,
+                title=getattr(args, "title", "") or "",
+                area=area,
+                source=args.source or "cli",
+                phase=args.phase or "",
+                keywords=keywords or None,
+                accept=bool(getattr(args, "accept", False)),
+                project_guide=not args.no_guide,
+                readiness=getattr(args, "readiness", "") or None,
+                review_result=getattr(args, "review_result", "") or None,
+                rework=getattr(args, "rework", None),
+                context_files=getattr(args, "context_files", None),
+                validate_cycles=getattr(args, "validate_cycles", None),
+                review_cycles=getattr(args, "review_cycles", None),
+            )
+        except ValueError as exc:
+            print(f"persist-lesson: {exc}", file=sys.stderr)
+            return 2
         print(json.dumps(result.as_dict(), indent=2))
         return 0 if result.git.get("ok") else 1
     if action == "persist-entry":
@@ -306,6 +316,19 @@ def cmd_context(args: argparse.Namespace) -> int:
                 indent=2,
             )
         )
+        return 0
+    if action == "metrics":
+        try:
+            payload = store.metrics_query(
+                construct=getattr(args, "construct", "") or "",
+                work_id=getattr(args, "work_id", "") or "",
+                phase=getattr(args, "phase", "") or "",
+                include_staged=not bool(getattr(args, "no_staged", False)),
+            )
+        except ValueError as exc:
+            print(f"metrics: {exc}", file=sys.stderr)
+            return 2
+        print(json.dumps(payload, indent=2))
         return 0
     if action == "coverage":
         from .db import LocalIndex
