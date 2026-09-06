@@ -1,0 +1,28 @@
+name: Test Research P0 Artifacts
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  test-research-p0:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Syntax-check checker and tests
+        run: python3 -m py_compile sdlc-spdd/docs/research/check_p0_artifacts.py tests/research/test_p0_artifacts.py
+
+      - name: Run structured research artifact tests
+        run: python3 -m unittest tests.research.test_p0_artifacts -v
+
+      - name: prove-p0.sh DOC-001 (delegates to structured checker)
+        run: ./sdlc-spdd/docs/research/prove-p0.sh DOC-001
+
+      - name: prove-p0.sh DOC-002 (delegates to structured checker)
+        run: ./sdlc-spdd/docs/research/prove-p0.sh DOC-002
