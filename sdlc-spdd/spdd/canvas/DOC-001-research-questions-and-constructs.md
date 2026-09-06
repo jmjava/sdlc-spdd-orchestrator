@@ -28,7 +28,7 @@ Freeze research questions and operationalized constructs so later Milestone 2 wo
 
 Make public claims allow-listed. Stop README causal language until evidence exists.
 
-Academic review of `sdlc-spdd-orchestrator` is a **methods/tools artifact review**: git-backed **intent** (REASONS canvas) and **advice** stores (committed `lessons.jsonl` ledger plus optional Guide working-store projection), with a **retrievability** bar — stored records can be read back. It is **not** a finding that the hybrid reduces drift, and **not** that retrieve improves later work (RQ4). Deterministic Intent Folding (`jmjava/embabel-dif`) is **out of scope** here and **later / other-repo**; this freeze is foundational to that attach and does not require it.
+Academic review of `sdlc-spdd-orchestrator` is a **methods/tools artifact review**: git-backed **intent** (REASONS canvas) and **advice** stores (committed `lessons.jsonl` ledger plus regenerable **SQLite** and **Guide** projections), with a **retrievability** bar — stored records can be read back. It is **not** a finding that the hybrid reduces drift, and **not** that retrieve improves later work (RQ4). Deterministic Intent Folding (`jmjava/embabel-dif`) is **out of scope** here and **later / other-repo**; this freeze is foundational to that attach and does not require it.
 
 ### Acceptance Criteria
 
@@ -36,7 +36,7 @@ Academic review of `sdlc-spdd-orchestrator` is a **methods/tools artifact review
 - [x] Every construct has: definition, measure, instrument, known proxy weakness
 - [x] Claims-allowed-today vs after Milestone 2 table is committed
 - [x] Rewrite guidance for README/compliance is in the same document (T01); applying README edits is T02
-- [x] T03: spec §1 names the review object (stores), the retrievability bar (ledger + Guide projection), pass/fail, venue band, and that reduced-drift + `embabel-dif` are not this review
+- [x] T03: spec §1 names the review object (stores), the retrievability bar (ledger + SQLite + Guide), pass/fail, venue band, and that reduced-drift + `embabel-dif` are not this review
 
 ### Non-Goals
 
@@ -58,7 +58,7 @@ Academic review of `sdlc-spdd-orchestrator` is a **methods/tools artifact review
 - Instrument (current proxy vs target Work ID)
 - Claim allow-list row
 - Academic review goal (object, retrievability bar, later DIF pointer)
-- C-RETRIEVE (supporting measure: stored record readable from ledger / Guide)
+- C-RETRIEVE (supporting measure: stored record readable from ledger / SQLite / Guide)
 
 ### Files likely affected
 
@@ -73,7 +73,7 @@ Write one canonical markdown spec. Machine proxies must be things this repo alre
 
 Do not expand to a sixth RQ. Do not implement FEAT-014 “to make the table look better.”
 
-T03 does not add RQ6. It restates the contribution so academic review cannot be read as “prove we reduce drift” or “this is the DIF paper.” The in-scope empirical claim is **retrievability**: a stored lesson can be found again from the git ledger (`context retrieve`) and, when Guide is live, from the Guide working-store projection (`context parity`). That is not RQ4 usefulness. Sync DOC-002’s novelty preamble if it still treats “with evidence” as this review’s aim.
+T03 does not add RQ6. It restates the contribution so academic review cannot be read as “prove we reduce drift” or “this is the DIF paper.” The in-scope empirical claim is **retrievability**: a stored lesson can be found again from the git ledger (`context retrieve`) and, when enabled, from the SQLite local index and the Guide working-store projection (`context parity`). That is not RQ4 usefulness. Sync DOC-002’s novelty preamble if it still treats “with evidence” as this review’s aim.
 
 ### Alternatives
 
@@ -123,10 +123,10 @@ T03 does not add RQ6. It restates the contribution so academic review cannot be 
 ### T03 — Freeze academic-review goal (stores, not drift; DIF later)
 
 - Status: Complete
-- Description: Prompt-update then edit the construct spec so academic review of this repo is the git-backed intent/advice stores (ledger + Guide projection) and a retrievability bar. Reduced-drift evidence is not the success criterion (RQ1 stays defined, not the pass bar). RQ4 usefulness stays unmeasured. Name `embabel-dif` as later/other-repo and out of scope, while stating this freeze is foundational to that attach. Tighten the claims-allowed table so “fixes drift” stays forbidden for this review even after a TEST-002 slice. Sync DOC-002 novelty/not-claiming so “with evidence” is not this review’s aim.
+- Description: Prompt-update then edit the construct spec so academic review of this repo is the git-backed intent/advice stores (ledger + SQLite index + Guide projection) and a retrievability bar. Reduced-drift evidence is not the success criterion (RQ1 stays defined, not the pass bar). RQ4 usefulness stays unmeasured. Name `embabel-dif` as later/other-repo and out of scope, while stating this freeze is foundational to that attach. Tighten the claims-allowed table so “fixes drift” stays forbidden for this review even after a TEST-002 slice. Sync DOC-002 novelty/not-claiming so “with evidence” is not this review’s aim.
 - Files: `sdlc-spdd/docs/research/research-questions-and-constructs.md`, `sdlc-spdd/docs/research/related-work-and-novelty.md`, `sdlc-spdd/docs/research/check_p0_artifacts.py`, `tests/research/test_p0_artifacts.py`, `docs/research/README.md`, CHANGELOG, milestone pointer
 - Tests: `python3 -m unittest tests.research.test_p0_artifacts -v`; `./sdlc-spdd/docs/research/prove-p0.sh DOC-001`; `prove-p0.sh DOC-002`
-- Validation: spec §1 present; contribution omits reduced-drift evidence; claims table keeps “fixes drift” as No after P2; retrievability named for ledger + Guide; `embabel-dif` named as later/out of scope
+- Validation: spec §1 present; contribution omits reduced-drift evidence; claims table keeps “fixes drift” as No after P2; retrievability named for ledger + SQLite + Guide; `embabel-dif` named as later/out of scope
 
 ## N - Norms
 
@@ -158,7 +158,7 @@ T03 does not add RQ6. It restates the contribution so academic review cannot be 
 
 Created 2026-09-06 from SPIKE-004 T04 handoff.
 
-2026-09-06 — T03 prompt-update: academic review of this repo is the stores (intent + advice ledger + Guide projection) with a retrievability bar, not reduced-drift evidence and not `embabel-dif`. Source: stakeholder (firm the review goal; DIF out of scope; stored info should be retrievable; ledger + Guide store).
+2026-09-06 — T03 prompt-update: academic review of this repo is the stores (intent + advice ledger + SQLite index + Guide projection) with a retrievability bar, not reduced-drift evidence and not `embabel-dif`. Source: stakeholder (firm the review goal; DIF out of scope; stored info should be retrievable; ledger + Guide store; do not forget SQLite).
 
 ## Final Status
 
@@ -171,6 +171,6 @@ Created 2026-09-06 from SPIKE-004 T04 handoff.
 - T01–T03 documentation only (no engine)
 - Risk: `docs/three-part-operating-path.md` still says “governs execution” (out of T02 file list)
 - Decision: contribution omits “with evidence that the hybrid reduces drift”; RQ1 remains defined; TEST-002 stays instrumentation
-- Decision: in-scope empirical claim is retrievability (ledger `context retrieve` + Guide `context parity` when live), not RQ4 usefulness
+- Decision: in-scope empirical claim is retrievability (ledger `context retrieve` + SQLite and Guide `context parity` when enabled), not RQ4 usefulness
 - Decision: `embabel-dif` is later/other-repo; optional present-or-skip attach is not this review’s object
 - Next: none for DOC-001; leftover RQ1 slices stay on TEST-002; DIF stays in `embabel-dif`

@@ -183,9 +183,13 @@ Proxy weakness
 fixes drift
 """
         issues = issues_for_constructs_spec(stub)
+    def test_missing_sqlite_store_fails(self) -> None:
+        spec = ROOT / "sdlc-spdd" / "docs" / "research" / "research-questions-and-constructs.md"
+        text = spec.read_text(encoding="utf-8")
+        issues = issues_for_constructs_spec(text.replace("SQLite", "XXXX").replace("sqlite", "xxxx"))
         self.assertTrue(
-            any("academic review goal" in i for i in issues),
-            f"expected missing review-goal failure, got {issues}",
+            any("SQLite" in i for i in issues),
+            f"expected missing SQLite store failure, got {issues}",
         )
 
 

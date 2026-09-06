@@ -4,7 +4,7 @@
 
 Make SDLC-SPDD *claim-safe* as a research project: stated research questions, a related-work position, operationalized constructs (drift, governance, context, memory), and an evaluation protocol a journal referee would accept — then harden the implementation so those constructs are observable.
 
-**Academic review of this repo** (DOC-001 §1) is the **intent/advice stores** and a **retrievability** bar: stored lessons can be read back from the git ledger and, when enabled, from the Guide working-store projection. It is not a finding that the method reduces drift. Deterministic Intent Folding (`embabel-dif`) is later / other-repo; this milestone is foundational to that attach and does not include it.
+**Academic review of this repo** (DOC-001 §1) is the **intent/advice stores** and a **retrievability** bar: stored lessons can be read back from the git ledger and, when enabled, from the SQLite local index and the Guide working-store projection. It is not a finding that the method reduces drift. Deterministic Intent Folding (`embabel-dif`) is later / other-repo; this milestone is foundational to that attach and does not include it.
 
 This is **make it right** for the research argument. It is not prompt optimization and not a new assistant runtime.
 

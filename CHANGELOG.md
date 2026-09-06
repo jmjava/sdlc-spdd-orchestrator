@@ -24,9 +24,9 @@ All notable changes to this project will be documented in this file.
 ### Changed
 
 - DOC-001 T03: freeze the academic-review object as git-backed intent/advice
-  stores plus **retrievability** (ledger `context retrieve`, Guide `context
-  parity` when live). Reduced-drift evidence and `embabel-dif` are out of
-  scope for this review (DIF later / other-repo). RQ4 usefulness remains
+  stores plus **retrievability** (ledger `context retrieve`; SQLite and Guide
+  `context parity` when enabled). Reduced-drift evidence and `embabel-dif` are
+  out of scope for this review (DIF later / other-repo). RQ4 usefulness remains
   unmeasured.
 
 - REF-001: workflow `gate` delegates to Python whenever `sdlc_engine` is

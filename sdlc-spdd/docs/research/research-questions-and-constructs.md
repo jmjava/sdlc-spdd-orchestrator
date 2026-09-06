@@ -12,7 +12,7 @@ This is the **construct spec** later Work IDs must implement. It is not a paper 
 
 ## 1. Academic review goal
 
-**Object of review:** this repository (`sdlc-spdd-orchestrator`) as a methods/tools artifact — process + **stores** + **retrievability**. Not a completed causal study. Not a Deterministic Intent Folding paper. The **intent store** is the REASONS canvas. The **advice store** is two legs of storage v3: the committed git **ledger** (`spdd/memory/lessons.jsonl`, system of record) and the optional **Guide** working-store projection (Neo4j via Guide DICE). SQLite is an opt-in cache, not the review object.
+**Object of review:** this repository (`sdlc-spdd-orchestrator`) as a methods/tools artifact — process + **stores** + **retrievability**. Not a completed causal study. Not a Deterministic Intent Folding paper. The **intent store** is the REASONS canvas. The **advice store** is storage v3’s three paths: the committed git **ledger** (`spdd/memory/lessons.jsonl`, system of record), the optional **SQLite** local index (`.sdlc/index.sqlite`, regenerable projection / FTS), and the optional **Guide** working-store projection (Neo4j via Guide DICE). Ledger writes; SQLite and Guide are projections. Parity is `sdlc-engine context parity`.
 
 The method under review **stores**, then must be able to **read back**:
 
@@ -20,21 +20,22 @@ The method under review **stores**, then must be able to **read back**:
 |-------|------------|--------|----------------------|
 | Intent | REASONS canvas — what ships and what does not | `spdd/canvas/<WORK-ID>.md` | Human + `gate_check` / canvas validator |
 | Advice (ledger) | Reviewed lessons (`decision`, `pitfall`, `pattern`) | `spdd/memory/lessons.jsonl` | `sdlc-engine context retrieve` (keyword-list + lexical title-body, FEAT-017); CHORE-003 seeded dogfood |
-| Advice (Guide) | Regenerable projection of the same ledger ids | Guide DICE graph | `sdlc-engine context parity`; live e2e `engine/tests_e2e/test_guide_projection_roundtrip.py`. Guide is **optional** for replication. |
+| Advice (SQLite) | Regenerable local index of the same ledger ids | `.sdlc/index.sqlite` (schema v5) | `context parity` when sqlite is enabled; `sdlc-engine db query --search` (FTS5/LIKE — a **different CLI** from `context retrieve`). Opt-in; used in CI/offline. See `test_persist_accept_and_parity`. |
+| Advice (Guide) | Regenerable working-store projection of the same ledger ids | Guide DICE graph | `context parity`; live e2e `engine/tests_e2e/test_guide_projection_roundtrip.py`. Guide is **optional** for replication. |
 | Process traces | Phase pointer, gates, claim/release | `.sdlc/` + `spdd/memory/registry.jsonl` | `sdlc.sh next` / registry |
 
-**In-scope empirical claim:** stored advice is **retrievable** — persist/accept then find the same id on the ledger, and when Guide is live find the same ids in the Guide projection. Cite existing tests; do not invent a new SPIKE.
+**In-scope empirical claim:** stored advice is **retrievable** — persist/accept then find the same id on the ledger, and when each projection is enabled find the same ids in **SQLite** and **Guide**. Cite existing tests; do not invent a new SPIKE.
 
-**Not in-scope for this bar:** that retrieve **improves later work** (RQ4 / C-MEMORY usefulness); that Guide **embeddings** are an IR result (unmeasured); that the hybrid **reduces drift** (RQ1).
+**Not in-scope for this bar:** that retrieve **improves later work** (RQ4 / C-MEMORY usefulness); that Guide **embeddings** are an IR result (unmeasured); that SQLite FTS is the same algorithm as `context retrieve`; that the hybrid **reduces drift** (RQ1).
 
-**Pass for this review bar:** a referee can find (1) what is stored, (2) that stored advice can be retrieved from the **ledger** and, when enabled, from the **Guide store**, (3) what `gate_check` actually checks, and (4) an allow-list of public sentences. Closest venue fit: ICSE NIER / AIware / LLM4Code, or SEIP with explicit limitations.
+**Pass for this review bar:** a referee can find (1) what is stored, (2) that stored advice can be retrieved from the **ledger** and, when enabled, from the **SQLite index** and the **Guide store**, (3) what `gate_check` actually checks, and (4) an allow-list of public sentences. Closest venue fit: ICSE NIER / AIware / LLM4Code, or SEIP with explicit limitations.
 
 **Fail / out of scope for this bar:**
 
 - “SDLC-SPDD reduces drift.” That sentence came from README marketing (`fixes that`). It is **not** Fowler SPDD’s job and **not** the criterion for accepting this artifact. RQ1 remains a possible later empirical paper. TEST-002 slices are **instrumentation demos**, not evidence the method works.
 - Deterministic Intent Folding (`jmjava/embabel-dif`), Embabel GOAP, or a JVM fold as a result of *this* review. Optional present-or-skip CLI attach already exists when the sibling is present; absence is skip. That pairing is **later / other-repo**. This freeze is **foundational** to it (a versioned canvas and retrievable advice ledger a fold can read) and **does not require it**.
 
-Do **not** open a new SPIKE to re-plan this. This file is the freeze. Remaining RQ1 empirical work, if any, stays on TEST-002. Retrievability uses the instruments already in this repo (FEAT-017, CHORE-003, storage-v3 parity, Guide e2e).
+Do **not** open a new SPIKE to re-plan this. This file is the freeze. Remaining RQ1 empirical work, if any, stays on TEST-002. Retrievability uses the instruments already in this repo (FEAT-017, CHORE-003, storage-v3 parity including SQLite, Guide e2e).
 
 ---
 
@@ -42,7 +43,7 @@ Do **not** open a new SPIKE to re-plan this. This file is the freeze. Remaining 
 
 DOC-002 may tighten wording. It must not contradict this sentence:
 
-> A **repository-native process model** for AI-assisted delivery that **stores intent** (REASONS canvas) and **stores agent/human advice** in a git ledger with an optional Guide working-store projection, and makes stored records **retrievable** so that (a) intent, (b) process compliance, and (c) retrievable memory are **observable and comparable**.
+> A **repository-native process model** for AI-assisted delivery that **stores intent** (REASONS canvas) and **stores agent/human advice** in a git ledger with regenerable **SQLite** and **Guide** projections, and makes stored records **retrievable** so that (a) intent, (b) process compliance, and (c) retrievable memory are **observable and comparable**.
 
 Do **not** append “with evidence that the hybrid reduces drift.” That clause is not the review goal. It is a future RQ1 study, if someone runs one. Do **not** treat RQ4 usefulness or Guide embeddings as this review’s pass bar.
 
@@ -172,7 +173,7 @@ Every row: **definition**, **measure**, **instrument** (what exists *today* vs *
 | ID | Definition | Measure | Today | Target | Weakness |
 |----|------------|---------|-------|--------|----------|
 | **C-REWORK** | Repeated repair on the same gold-task acceptance criterion | `--rework` count / `--review-cycles` / `--validate-cycles` | `record.metrics` via `context metrics --construct C-REWORK` (**FEAT-015**) | Same query in TEST-002 session 2 | Self-reported; undefined if flags omitted |
-| **C-RETRIEVE** | A stored lesson can be found again | Ledger: persist/accept then `context retrieve` returns the id. Guide (when live): `context parity` shows ledger ids in the projection. | FEAT-017 `eval-retrieve` + `context retrieve`; CHORE-003 seeded ledger; `context parity`; e2e `test_guide_projection_roundtrip.py` | Same; Guide remains optional for replication | Not RQ4 usefulness. Guide **embeddings** unmeasured. SQLite `db query --search` is a different CLI. |
+| **C-RETRIEVE** | A stored lesson can be found again | Ledger: persist/accept then `context retrieve` returns the id. SQLite (when enabled): `context parity` shows ledger ids in `.sdlc/index.sqlite`; `db query --search` is FTS on that index. Guide (when live): `context parity` shows ledger ids in the projection. | FEAT-017 `eval-retrieve` + `context retrieve`; CHORE-003 seeded ledger; `context parity`; `test_persist_accept_and_parity`; e2e `test_guide_projection_roundtrip.py` | Same; SQLite and Guide remain optional for replication | Not RQ4 usefulness. Guide **embeddings** unmeasured. SQLite FTS is a **different CLI** from `context retrieve`. |
 
 ---
 
@@ -187,6 +188,7 @@ Use this table when editing README, compliance, or talks. **If a cell says no, d
 | Prompts/canvases are version-controlled artifacts | **Yes** | Yes | Yes | Yes |
 | Intent and advice are **stored in git** and queryable | **Yes** — canvas + `lessons.jsonl` + FEAT-015 metrics. | Yes | Yes | Yes |
 | Stored advice is **retrievable** from the ledger (`context retrieve`) | **Yes** as an engineering round-trip (FEAT-017 + CHORE-003). Not RQ4 usefulness. | Yes | Yes | Yes |
+| SQLite local index holds the **same lesson ids** as the ledger when sqlite is enabled (`context parity`) | **Yes** as engineering when sqlite is on (`test_persist_accept_and_parity`). Opt-in. FTS (`db query --search`) is a different CLI, not `context retrieve`. | Same | Same | Same |
 | Guide working store holds the **same lesson ids** as the ledger when Guide is live (`context parity`) | **Yes** as engineering when Guide is on (parity + Guide e2e). Replication **must not** require Guide. Embeddings **unmeasured**. | Same | Same | Same |
 | Some CLI gates exist (`gate_check`) | **Yes** (describe what they actually check) | Yes | Describe *semantic* gates after FEAT-014/016 | Yes |
 | SDLC-SPDD **fixes** drift | **No** | **No** | **No** | **No** for this academic review. TEST-002 remains instrumentation. A later **separate** paper may ask RQ1. |
@@ -228,7 +230,7 @@ After T02, a grep for `fixes that` in `README.md` should not remain as an unqual
 | C-REWORK / C-CONTEXT structured capture | FEAT-015 |
 | C-DRIFT mapping; review minima | FEAT-016 |
 | C-CONTEXT relevance; retrieve algorithm | FEAT-017 |
-| C-RETRIEVE (ledger + Guide projection round-trip) | FEAT-017, CHORE-003, storage v3 parity, Guide e2e |
+| C-RETRIEVE (ledger + SQLite + Guide projection round-trip) | FEAT-017, CHORE-003, storage v3 parity (sqlite + Guide), Guide e2e |
 | RQ1/RQ2/RQ5 slice | TEST-002 |
 | RQ4 precondition (memory exists) | CHORE-003 |
 | Which engine is the SUT | REF-001 Complete ([engine-sut.md](engine-sut.md)) |

@@ -51,7 +51,7 @@ Mark DOC-001 Complete after T02. Next Work ID at that time: DOC-002.
 **Result:** Approved  
 **Readiness at coding:** Ready For Coding after prompt-update (no process finding)
 
-T03 freezes the academic-review object: git-backed intent (canvas) and advice (ledger + optional Guide working-store projection), with a **retrievability** bar (`context retrieve`, `context parity`). RQ1 reduced-drift evidence is not the pass bar. `embabel-dif` is later / other-repo. No new SPIKE. No engine changes. DOC-002 novelty/not-claiming synced so they cannot contradict the freeze.
+T03 freezes the academic-review object: git-backed intent (canvas) and advice (ledger + SQLite local index + optional Guide working-store projection), with a **retrievability** bar (`context retrieve`, `context parity`). RQ1 reduced-drift evidence is not the pass bar. `embabel-dif` is later / other-repo. No new SPIKE. No engine changes. DOC-002 novelty/not-claiming synced so they cannot contradict the freeze.
 
 ### Proof (T03)
 
@@ -60,7 +60,7 @@ T03 freezes the academic-review object: git-backed intent (canvas) and advice (l
 | `python3 -m unittest tests.research.test_p0_artifacts -v` | 20 passed |
 | `prove-p0.sh DOC-001` | pass |
 | `prove-p0.sh DOC-002` | pass |
-| Spec §1 names ledger + Guide + retrievability | pass |
+| Spec §1 names ledger + SQLite + Guide + retrievability | pass |
 | Claims table: “fixes drift” remains No after P2 | pass |
 | Engine/runtime files unchanged | pass (docs + P0 checker only) |
 
