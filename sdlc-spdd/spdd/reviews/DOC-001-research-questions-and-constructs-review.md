@@ -57,7 +57,7 @@ T03 freezes the academic-review object: git-backed intent (canvas) and advice (l
 
 | Check | Result |
 |-------|--------|
-| `python3 -m unittest tests.research.test_p0_artifacts -v` | 20 passed |
+| `python3 -m unittest tests.research.test_p0_artifacts -v` | 21 passed |
 | `prove-p0.sh DOC-001` | pass |
 | `prove-p0.sh DOC-002` | pass |
 | Spec §1 names ledger + SQLite + Guide + retrievability | pass |
