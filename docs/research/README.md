@@ -7,6 +7,7 @@ This folder is **not** a paper. It holds investigation notes that support either
 | [Academic contribution bar (SPIKE-004 analysis)](../../sdlc-spdd/spdd/analysis/SPIKE-004-academic-contribution-bar-analysis.md) | Journal-style review of *this* repo as a research project | Raising claims from engineering/hobby to referee-safe |
 | [Program plan (SPIKE-004 canvas)](../../sdlc-spdd/spdd/canvas/SPIKE-004-academic-contribution-bar.md) | REASONS canvas for Milestone 2 sequence | What to iterate, in what order |
 | [Research questions and constructs (DOC-001)](../../sdlc-spdd/docs/research/research-questions-and-constructs.md) | Frozen RQs + construct spec + **academic review goal** | Stores (canvas, ledger, SQLite index, Guide projection); retrievability bar; not reduced-drift; `embabel-dif` later |
+| [C-RETRIEVE suite (TEST-003)](../../sdlc-spdd/docs/research/cretrieve-suite.md) | Persist→retrieve same id | Ledger + SQLite + mocked Guide; not RQ1/RQ4/embeddings |
 | [Related-work and novelty (DOC-002)](../../sdlc-spdd/docs/research/related-work-and-novelty.md) | Claim × system matrix | Positioning vs Fowler, SDLC Agents, Spec Kit, agents, classics |
 | [Evaluation protocol (TEST-001)](../../sdlc-spdd/docs/research/evaluation-protocol.md) | Method eval protocol (no study data) | How to run slices: gold, raters, baselines, stop rules |
 | [TEST-002 first slice log](../../tests/eval/test-002-hello/SLICE-LOG.md) | n=1 hello gold, protocol incomplete | C-DRIFT symbol-proxy 0 vs 0.333; C-PORT not reported; do not treat as evidence the method works |

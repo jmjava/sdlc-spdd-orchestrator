@@ -130,6 +130,21 @@ In orchestrator repo:
 - `test-resolve-agent-context` (`.github/workflows/test-resolve-agent-context.yml`)
 - `validate-canvas` (`.github/workflows/validate-canvas.yml`)
 - `validate-diagrams` (`.github/workflows/validate-diagrams.yml`)
+- `test-research-p0` (`.github/workflows/test-research-p0.yml`) — DOC-001/002/003/TEST-001 structured artifacts plus TEST-002 / CHORE-003 / REF-001 / TEST-003 research suites
+
+### Research claim tests (not method evaluation)
+
+Academic-review freeze (DOC-001 §1) is stores + retrievability. Run the named
+C-RETRIEVE suite with:
+
+```bash
+PYTHONPATH=engine/src python3 -m unittest tests.research.test_cretrieve -v
+```
+
+That module proves persist→same-id on the git ledger, SQLite parity when
+enabled, and mocked Guide parity in default CI. It does **not** prove RQ1
+drift, RQ4 usefulness, Guide embeddings, or live Neo4j. Protocol:
+[cretrieve-suite.md](sdlc-spdd/docs/research/cretrieve-suite.md).
 
 ### Adapter install regression harness
 

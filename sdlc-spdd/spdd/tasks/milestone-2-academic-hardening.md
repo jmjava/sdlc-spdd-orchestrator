@@ -40,6 +40,7 @@ Beck stage for the whole list: **make it right** (research argument and observab
 | 9 | `TEST-002-assistant-behavior-eval` | One gold task, method vs unstructured, ≥1 assistant run recorded | Example has real source; n and model version written beside numbers |
 | 10 | `CHORE-003-dogfood-ledger` | Archive must not leave `lessons.jsonl` empty | Policy + non-empty dogfood ledger or documented exception + CI |
 | 11 | `REF-001-engine-single-source` | One gate semantics (shell default vs Python) | Named system-under-test for Milestone 2 eval |
+| 12 | `TEST-003-cretrieve-roundtrip` | Named C-RETRIEVE persist→retrieve suite | Ledger + SQLite + mocked Guide in `test-research-p0`; non-claims documented |
 
 ## Referee findings → Work IDs
 
@@ -51,10 +52,11 @@ Beck stage for the whole list: **make it right** (research argument and observab
 | M4 Governance is heading/regex/file-existence | FEAT-014, FEAT-016 |
 | M5 Dual engine confounds "the method" | REF-001 Complete (Python `gate_check` is SUT) |
 | M6 Retrieve is exact keyword filter; DICE unmeasured | FEAT-017 Complete (lexical IR; DICE still non-claim) |
+| Stored advice not shown retrievable as a named claim | TEST-003 Complete (C-RETRIEVE round-trip; embeddings still non-claim) |
 | M7 Stale ROADMAP/design-decisions; empty dogfood ledger | CHORE-003 (+ hygiene in each ID) |
 | Metrics kind dropped; `spdd --metrics` deferred | FEAT-015 Complete (`context metrics`, no `kind=metric`) |
 | No threats to validity / replication pack | DOC-003 Complete |
 
 ## First next action
 
-P0, P1, and P2 (through REF-001) are **Complete**. Milestone 2 program list has no further Work IDs. Journal n≥3 remains TEST-001's stop rule, not a new ID.
+P0, P1, P2, and the TEST-003 C-RETRIEVE suite are **Complete**. Remaining RQ1 n≥3 stays on TEST-002 (TEST-001 stop rule), not a new SPIKE. Live Guide e2e and RQ4 usefulness remain extra / unmeasured.

@@ -23,6 +23,7 @@ Each DOC-001 construct is only as valid as its current instrument. Do not treat 
 | **C-COMPLY** | FEAT-014 semantic minima on `gate_check(code)`; FEAT-016 review Result + safeguards; existence vs semantic rates must still be published as a pair. | `--force` / ignoring chat still bypasses the method. Empty headings no longer count, but phrase quality beyond the minima is rater-only. |
 | **C-CONTEXT** | FEAT-015 `record.metrics.context_files` via `sdlc-engine context metrics --construct C-CONTEXT`. | Self-reported load. Does not prove attention. Relevance is rater/qrel until FEAT-017. |
 | **C-MEMORY** | FEAT-015 `context metrics --construct C-MEMORY` (C-REWORK fields on a follow-on). Retrieve `--keyword` is exact list membership; `--query` ranks title/body (**FEAT-017**). CHORE-003 seeded the dogfood ledger; archive never truncates it. | Usefulness is C-REWORK on session 2 (TEST-001 RQ4), not retrieve-call counts. Guide DICE embeddings are unmeasured. |
+| **C-RETRIEVE** | **TEST-003** persist→same id (`tests.research.test_cretrieve`; [cretrieve-suite.md](cretrieve-suite.md)). Ledger retrieve, SQLite parity, mocked Guide `by-label` in default CI. | Mocked Guide is HTTP parity, not DICE. Unreachable Guide is skip, not a pass. Live Neo4j e2e is extra. |
 | **C-PORT** | `validate-command-adapters.sh` is **text** parity. | Adapter markdown equality is not behavioral equality. Live-consumer is Cursor-oriented. If only one assistant ran, C-PORT is not a result. |
 
 SPIKE-004’s earlier “file/regex/exact-keyword proxies” row is **partially retired** for C-COMPLY (code + retro/sync minima exist) and **not retired** for C-DRIFT hunks or C-CONTEXT relevance.
@@ -104,6 +105,7 @@ Freeze these **before** any TEST-002 session. Copy the filled row into the slice
 | Model | vendor model id string | record beside every number |
 | Assistant | product name | Cursor / Copilot / Claude Code |
 | P0/P1 proof | checker | `./sdlc-spdd/docs/research/prove-p0.sh all` then `python3 -m unittest tests.research.test_p0_artifacts -v` |
+| C-RETRIEVE suite | unittest exit 0 | `PYTHONPATH=engine/src python3 -m unittest tests.research.test_cretrieve -v` |
 
 Rater sheet path for TEST-002 (when collected): store next to the slice artifacts as `session_id | condition | hunk_or_op | label | notes` (TEST-001 §5). This pack does not invent a filled sheet.
 
@@ -131,4 +133,4 @@ Human-subject / IRB packaging is out of scope (requirement non-goal).
 
 ## 10. Claims this pack still forbids
 
-Until TEST-002 records a comparison under TEST-001 stop rules: do not say the method **fixes drift**, do not report C-PORT from one assistant, do not treat DICE/Guide retrieval as a result, and do not treat engine unit tests as method evaluation. See DOC-001 claims-allowed table.
+Until TEST-002 records a comparison under TEST-001 stop rules: do not say the method **fixes drift**, do not report C-PORT from one assistant, do not treat DICE/Guide retrieval as a result, and do not treat engine unit tests as method evaluation. TEST-003 is the engineering retrievability gate, not RQ4 usefulness. See DOC-001 claims-allowed table.

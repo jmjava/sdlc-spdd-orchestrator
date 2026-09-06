@@ -16,7 +16,7 @@ jobs:
           python-version: '3.12'
 
       - name: Syntax-check checker and tests
-        run: python3 -m py_compile sdlc-spdd/docs/research/check_p0_artifacts.py sdlc-spdd/docs/research/check_dogfood_ledger.py tests/research/test_p0_artifacts.py tests/research/test_test002_slice.py tests/research/test_chore003_ledger.py tests/research/test_ref001_sut.py tests/eval/test-002-hello/score_slice.py
+        run: python3 -m py_compile sdlc-spdd/docs/research/check_p0_artifacts.py sdlc-spdd/docs/research/check_dogfood_ledger.py tests/research/test_p0_artifacts.py tests/research/test_test002_slice.py tests/research/test_chore003_ledger.py tests/research/test_ref001_sut.py tests/research/test_cretrieve.py tests/eval/test-002-hello/score_slice.py
 
       - name: Run structured research artifact tests
         run: python3 -m unittest tests.research.test_p0_artifacts -v
@@ -41,3 +41,6 @@ jobs:
 
       - name: REF-001 engine SUT
         run: PYTHONPATH=engine/src python3 -m unittest tests.research.test_ref001_sut -v
+
+      - name: TEST-003 C-RETRIEVE round-trip suite
+        run: PYTHONPATH=engine/src python3 -m unittest tests.research.test_cretrieve -v
