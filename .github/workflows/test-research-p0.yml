@@ -26,3 +26,6 @@ jobs:
 
       - name: prove-p0.sh DOC-002 (delegates to structured checker)
         run: ./sdlc-spdd/docs/research/prove-p0.sh DOC-002
+
+      - name: prove-p0.sh TEST-001 (delegates to structured checker)
+        run: ./sdlc-spdd/docs/research/prove-p0.sh TEST-001

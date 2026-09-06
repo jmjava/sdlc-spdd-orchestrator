@@ -56,9 +56,9 @@ Write a replicable protocol that evaluates the *method* (outcomes vs baselines),
 
 ## Acceptance Criteria
 
-- [ ] Protocol document names tasks, gold files, raters, metrics, stop rules
-- [ ] Each RQ in DOC-001 maps to at least one protocol procedure
-- [ ] Live-consumer / example gaps (no Java source, Cursor-only) are listed as current blockers with owners
+- [x] Protocol document names tasks, gold files, raters, metrics, stop rules
+- [x] Each RQ in DOC-001 maps to at least one protocol procedure
+- [x] Live-consumer / example gaps (no Java source, Cursor-only) are listed as current blockers with owners
 
 ## Non-Goals
 

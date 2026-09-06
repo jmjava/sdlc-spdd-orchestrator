@@ -456,11 +456,25 @@ def check_test001() -> list[str]:
     doc = RESEARCH / "evaluation-protocol.md"
     if not doc.is_file():
         return ["missing sdlc-spdd/docs/research/evaluation-protocol.md"]
-    issues = issues_for_evaluation_protocol(doc.read_text(encoding="utf-8"))
+    text = doc.read_text(encoding="utf-8")
+    issues = issues_for_evaluation_protocol(text)
     issues.extend(_run_canvas_validator(CANVAS_DIR / "TEST-001-evaluation-protocol.md"))
     issues.extend(
         _review_issues(REVIEW_DIR / "TEST-001-evaluation-protocol-review.md", "TEST-001")
     )
+    example = REPO_ROOT / "examples" / "spring-boot-order-api"
+    java_sources = list(example.rglob("*.java")) if example.is_dir() else []
+    if not java_sources and not re.search(r"no java", text, re.IGNORECASE):
+        issues.append(
+            "protocol must record that examples/spring-boot-order-api currently has no Java sources"
+        )
+    if java_sources and re.search(r"no java sources", text, re.IGNORECASE):
+        issues.append(
+            "protocol claims no Java sources but .java files exist under examples/spring-boot-order-api"
+        )
+    seed = REPO_ROOT / "tests" / "live-consumer" / "seed" / "src" / "hello.py"
+    if re.search(r"live-consumer/seed", text) and not seed.is_file():
+        issues.append("protocol names live-consumer seed but tests/live-consumer/seed/src/hello.py is missing")
     return issues
 
 

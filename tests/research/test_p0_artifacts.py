@@ -17,6 +17,7 @@ sys.path.insert(0, str(ROOT / "sdlc-spdd" / "docs" / "research"))
 from check_p0_artifacts import (  # noqa: E402
     check_doc001,
     check_doc002,
+    check_test001,
     issues_for_constructs_spec,
     issues_for_evaluation_protocol,
     issues_for_related_work,
@@ -146,6 +147,14 @@ class EvaluationProtocolCheckerTests(unittest.TestCase):
         )
 
 
+    def test_rq_name_drop_without_procedure_headings_fails(self) -> None:
+        issues = issues_for_evaluation_protocol(_read("eval_protocol_rq_namedrop.md"))
+        self.assertTrue(
+            any("procedure" in issue for issue in issues),
+            f"expected missing procedure headings, got {issues}",
+        )
+
+
 class LiveArtifactTests(unittest.TestCase):
     def test_doc001_live_files_pass(self) -> None:
         issues = check_doc001()
@@ -153,6 +162,10 @@ class LiveArtifactTests(unittest.TestCase):
 
     def test_doc002_live_files_pass(self) -> None:
         issues = check_doc002()
+        self.assertEqual(issues, [], msg=issues)
+
+    def test_test001_live_files_pass(self) -> None:
+        issues = check_test001()
         self.assertEqual(issues, [], msg=issues)
 
 
