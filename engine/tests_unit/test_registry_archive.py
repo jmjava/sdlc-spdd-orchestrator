@@ -74,6 +74,29 @@ def test_archive_does_not_touch_lessons_ledger(tmp_path: Path, monkeypatch) -> N
     assert ledger.read_text(encoding="utf-8") == before
 
 
+def test_archive_v3_home_moves_canvas_under_sdlc_spdd(tmp_path: Path, monkeypatch) -> None:
+    """Default auto (REF-001) routes archive to Python; storage v3 lives under sdlc-spdd/."""
+    monkeypatch.setenv("SDLC_USER", "archiver")
+    work_id = "FEAT-002-done-live"
+    home = tmp_path / "sdlc-spdd"
+    canvas = home / "spdd" / "canvas" / f"{work_id}.md"
+    canvas.parent.mkdir(parents=True, exist_ok=True)
+    canvas.write_text(
+        f"# {work_id}\n\n## Final Status\n\n- Status: Complete\n",
+        encoding="utf-8",
+    )
+    req = home / "requirements" / "milestones"
+    req.mkdir(parents=True, exist_ok=True)
+    (req / f"{work_id}.md").write_text("# req\n", encoding="utf-8")
+    proj = Project(tmp_path)
+    assert proj.home == home
+    svc = ArchiveService(proj)
+    svc.archive_work(work_id)
+    assert not canvas.exists()
+    assert (home / "spdd" / "canvas" / "archive" / f"{work_id}.md").is_file()
+    assert (req / f"{work_id}.md").is_file()
+
+
 def test_archive_refuses_in_progress(tmp_path: Path) -> None:
     work_id = "FEAT-022-active"
     _seed(tmp_path, work_id, "In Progress")

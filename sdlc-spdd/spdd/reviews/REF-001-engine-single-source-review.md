@@ -21,6 +21,7 @@ T01 names Python `WorkflowEngine.gate_check` as the Milestone 2 SUT, defaults `S
 
 1. **Note:** Install and upgrade remain shell. That is out of scope.
 2. **Safeguard:** `SDLC_GATE_ENGINE=shell` is not an evaluation condition.
+3. **Note:** Default `auto` routes `archive` to Python. `ArchiveService` now moves contracts under `project.home` (storage v3 `sdlc-spdd/`), matching the live-consumer install layout.
 
 ## Required changes
 
