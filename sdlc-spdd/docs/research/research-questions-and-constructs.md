@@ -21,7 +21,7 @@ The method under review **stores**, then must be able to **read back**:
 | Intent | REASONS canvas — what ships and what does not | `spdd/canvas/<WORK-ID>.md` | Human + `gate_check` / canvas validator |
 | Advice (ledger) | Reviewed lessons (`decision`, `pitfall`, `pattern`) | `spdd/memory/lessons.jsonl` | **TEST-003** persist→`context retrieve` same id; FEAT-017 lexical; CHORE-003 seeded dogfood |
 | Advice (SQLite) | Regenerable local index of the same ledger ids | `.sdlc/index.sqlite` (schema v5) | **TEST-003** `context parity` missing/extra empty. Opt-in. `db query --search` is work_items FTS — a **different CLI**. |
-| Advice (Guide) | Regenerable working-store projection of the same ledger ids | Guide DICE graph | **TEST-003** mocked `by-label` parity success in default CI. Live e2e extra. Unreachable Guide is skip, not a pass. |
+| Advice (Guide) | Regenerable working-store projection of the same ledger ids | Guide DICE graph | **TEST-003** mocked `by-label` parity on default CI. Live Guide+Neo4j already in `test_guide_projection_roundtrip` / `test-guide-stack-experimental`. Unreachable Guide is skip, not a pass. |
 | Process traces | Phase pointer, gates, claim/release | `.sdlc/` + `spdd/memory/registry.jsonl` | `sdlc.sh next` / registry |
 
 **In-scope empirical claim:** stored advice is **retrievable** — persist/accept then find the same id on the ledger, and when each projection is enabled find the same ids in **SQLite** and **Guide**. Cite existing tests; do not invent a new SPIKE.
@@ -173,7 +173,7 @@ Every row: **definition**, **measure**, **instrument** (what exists *today* vs *
 | ID | Definition | Measure | Today | Target | Weakness |
 |----|------------|---------|-------|--------|----------|
 | **C-REWORK** | Repeated repair on the same gold-task acceptance criterion | `--rework` count / `--review-cycles` / `--validate-cycles` | `record.metrics` via `context metrics --construct C-REWORK` (**FEAT-015**) | Same query in TEST-002 session 2 | Self-reported; undefined if flags omitted |
-| **C-RETRIEVE** | A stored lesson can be found again | Ledger: persist/accept then `context retrieve` returns the id. SQLite (when enabled): `context parity` missing/extra empty. Guide (when enabled): parity missing empty. | **TEST-003** `tests.research.test_cretrieve` ([cretrieve-suite.md](cretrieve-suite.md)). FEAT-017 + CHORE-003 remain supporting. Live Guide e2e is extra. | Same; SQLite and Guide remain optional for replication | Not RQ4 usefulness. Guide **embeddings** unmeasured. Mocked Guide is HTTP parity, not DICE. `db query --search` is a different CLI. |
+| **C-RETRIEVE** | A stored lesson can be found again | Ledger: persist/accept then `context retrieve` returns the id. SQLite (when enabled): `context parity` missing/extra empty. Guide (when enabled): parity missing empty. | **TEST-003** `tests.research.test_cretrieve` ([cretrieve-suite.md](cretrieve-suite.md)) for hermetic CI. Live Guide+Neo4j: `engine/tests_e2e/test_guide_projection_roundtrip.py` (`test-guide-stack-experimental`). FEAT-017 + CHORE-003 supporting. | Same; SQLite and Guide remain optional for replication | Not RQ4 usefulness. Guide **embeddings** are out of this review bar. Mocked Guide is HTTP parity, not DICE. `db query --search` is a different CLI. |
 
 ---
 
@@ -189,7 +189,7 @@ Use this table when editing README, compliance, or talks. **If a cell says no, d
 | Intent and advice are **stored in git** and queryable | **Yes** — canvas + `lessons.jsonl` + FEAT-015 metrics. | Yes | Yes | Yes |
 | Stored advice is **retrievable** from the ledger (`context retrieve`) | **Yes** — TEST-003 persist→same id. Not RQ4 usefulness. | Yes | Yes | Yes |
 | SQLite local index holds the **same lesson ids** as the ledger when sqlite is enabled (`context parity`) | **Yes** — TEST-003. Opt-in. `db query --search` is a different CLI. | Same | Same | Same |
-| Guide working store holds the **same lesson ids** as the ledger when Guide is enabled (`context parity`) | **Yes** on default CI via TEST-003 **mocked** HTTP. Live e2e extra. Unreachable skip is **not** a pass. Embeddings **unmeasured**. | Same | Same | Same |
+| Guide working store holds the **same lesson ids** as the ledger when Guide is enabled (`context parity`) | **Yes** — TEST-003 mocked HTTP on default CI; live Guide+Neo4j in `test_guide_projection_roundtrip`. Unreachable skip is **not** a pass. Embeddings are **out of this bar**. | Same | Same | Same |
 | Some CLI gates exist (`gate_check`) | **Yes** (describe what they actually check) | Yes | Describe *semantic* gates after FEAT-014/016 | Yes |
 | SDLC-SPDD **fixes** drift | **No** | **No** | **No** | **No** for this academic review. TEST-002 remains instrumentation. A later **separate** paper may ask RQ1. |
 | The canvas **governs** execution (causal, non-bypassable) | **No** — say *advised process + optional CLI gates* | Same | Stronger *observable* compliance (C-COMPLY) | Same; still bypassable via `--force`/ignoring chat |

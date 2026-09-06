@@ -48,13 +48,13 @@ One CI-backed test suite a referee can run for the frozen claim: stored advice i
 - Guide enabled: mocked HTTP so CI always exercises parity success (not only unreachable-skip)
 - Document what this suite does **not** prove
 
-### NOT IN SCOPE
+### NOT IN SCOPE (out of this academic-review bar, not leftover TEST-003 work)
 
 - RQ4 usefulness / C-MEMORY follow-on rework
 - Guide embeddings / DICE IR
 - RQ1 drift / TEST-002 n≥3
-- Live Neo4j (existing e2e remains extra)
-- `embabel-dif`
+- Re-implementing live Guide+Neo4j (already in `test_guide_projection_roundtrip.py` / `test-guide-stack-experimental`)
+- `embabel-dif` (removed from this review; later / other-repo)
 
 ## Acceptance Criteria
 
@@ -71,4 +71,4 @@ One CI-backed test suite a referee can run for the frozen claim: stored advice i
 
 ## Next Step
 
-None. T01 Complete. Live Guide e2e and RQ4 remain extra / unmeasured.
+None. T01 Complete. Live Guide+Neo4j e2e already exists. RQ1 / RQ4 / embeddings / `embabel-dif` are out of this review bar.

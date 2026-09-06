@@ -59,4 +59,4 @@ Beck stage for the whole list: **make it right** (research argument and observab
 
 ## First next action
 
-P0, P1, P2, and the TEST-003 C-RETRIEVE suite are **Complete**. Remaining RQ1 n≥3 stays on TEST-002 (TEST-001 stop rule), not a new SPIKE. Live Guide e2e and RQ4 usefulness remain extra / unmeasured.
+P0, P1, P2, and the TEST-003 C-RETRIEVE suite are **Complete**. Live Guide+Neo4j e2e already exists (`test-guide-stack-experimental`). RQ1, RQ4, embeddings, and `embabel-dif` are **out of this academic-review bar** — not leftover Milestone 2 work.

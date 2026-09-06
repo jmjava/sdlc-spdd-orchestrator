@@ -87,7 +87,7 @@ For each work item:
 
 ## Session Updates
 
-2026-09-06 — TEST-003 named C-RETRIEVE suite (ledger + SQLite + mocked Guide). Live Guide e2e remains extra.
+2026-09-06 — TEST-003 named C-RETRIEVE suite (ledger + SQLite + mocked Guide). Live Guide+Neo4j e2e already exists (`test-guide-stack-experimental`).
 2026-09-06 — DOC-001 T03: academic review goal frozen as stores + retrievability (ledger + Guide); reduced-drift and `embabel-dif` out of scope.
 2026-09-06 — REF-001 names Python `gate_check` as the SUT; default `SDLC_ENGINE=auto`. Milestone 2 P2 complete.
 2026-09-06 — CHORE-003 seeded the dogfood ledger; archive never truncates it. Next: REF-001.
