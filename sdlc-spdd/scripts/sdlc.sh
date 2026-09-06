@@ -3,10 +3,11 @@
 # Installed to sdlc-spdd/scripts/sdlc.sh in target projects (storage v3);
 # lives at scripts/sdlc.sh in the orchestrator repo.
 #
-# Engine selection (v2):
-#   SDLC_ENGINE=shell   Legacy bash workflow scripts (default — stable)
+# Engine selection (REF-001):
+#   SDLC_ENGINE=auto    Default. Prefer Python when importable (Milestone 2 SUT)
 #   SDLC_ENGINE=python  Require Python engine
-#   SDLC_ENGINE=auto    Prefer Python engine when importable
+#   SDLC_ENGINE=shell   Legacy bash workflow CLI; gates still use Python when importable
+#                       unless SDLC_GATE_ENGINE=shell
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -81,7 +82,7 @@ else
 fi
 
 export SDLC_ROOT="${ROOT}"
-ENGINE_MODE="${SDLC_ENGINE:-shell}"
+ENGINE_MODE="${SDLC_ENGINE:-auto}"
 
 if [[ -f "${SCRIPT_DIR}/lib/python.sh" ]]; then
   # shellcheck source=scripts/lib/python.sh
@@ -92,6 +93,8 @@ elif [[ -f "${ROOT}/scripts/lib/python.sh" ]]; then
 fi
 
 _python_engine_available() {
+  # python.sh may be absent in hermetic wrapper copies of this script.
+  declare -F resolve_engine_python >/dev/null 2>&1 || return 1
   resolve_engine_python || return 1
   if [[ -d "${ROOT}/engine/src/sdlc_engine" ]]; then
     PYTHONPATH="${ROOT}/engine/src${PYTHONPATH:+:${PYTHONPATH}}" \
@@ -99,6 +102,17 @@ _python_engine_available() {
     return $?
   fi
   "${SDLC_PY}" -c 'import sdlc_engine' 2>/dev/null
+}
+
+# Shell-only verbs. Python has `local capture` / `context accept`, not these.
+# Routing them under SDLC_ENGINE=auto would collide with the staging CLI.
+_python_engine_handles() {
+  case "$1" in
+    capture|start|accept|help|-h|--help)
+      return 1
+      ;;
+  esac
+  return 0
 }
 
 _run_python_engine() {
@@ -187,7 +201,7 @@ case "${ENGINE_MODE}" in
     _run_python_engine "${cmd}" "$@"
     ;;
   auto)
-    if _python_engine_available; then
+    if _python_engine_handles "${cmd}" && _python_engine_available; then
       _run_python_engine "${cmd}" "$@"
     fi
     ;;

@@ -4,7 +4,7 @@ jira_key: ""
 github_number: ""
 jira_epic: ""
 jira_type: "Refactor"
-jira_status: "To Do"
+jira_status: "Complete"
 jira_assignee: ""
 jira_due_date: ""
 jira_sprint: ""
@@ -20,7 +20,7 @@ related:
 
 **Work ID:** REF-001-engine-single-source  
 **Milestone:** Milestone 2 — Academic contribution bar  
-**Status:** To Do  
+**Status:** Complete  
 **Date:** 2026-09-06  
 **Beck stage:** make it right (research argument / observability)
 
@@ -29,8 +29,8 @@ related:
 | Relationship | Work ID | Status | Notes |
 |--------------|---------|--------|-------|
 | Blocks | (none) | — | — |
-| Depends On | `SPIKE-004-academic-contribution-bar` | Planned | See milestone-2 |
-| Related | `FEAT-016-intent-code-traceability` | Planned | See milestone-2 |
+| Depends On | `SPIKE-004-academic-contribution-bar` | Complete | See milestone-2 |
+| Related | `FEAT-016-intent-code-traceability` | Complete | See milestone-2 |
 
 ## User / Business Goal
 
@@ -51,9 +51,9 @@ Remove the internal-validity confound of default-shell vs Python engines impleme
 
 ## Acceptance Criteria
 
-- [ ] Documented system-under-test engine for Milestone 2 evaluation
-- [ ] gate_check semantics live in one place; the other path delegates or is tested equal
-- [ ] ROADMAP/TESTING mention the chosen SUT
+- [x] Documented system-under-test engine for Milestone 2 evaluation
+- [x] gate_check semantics live in one place; the other path delegates or is tested equal
+- [x] ROADMAP/TESTING mention the chosen SUT
 
 ## Non-Goals
 
@@ -93,4 +93,4 @@ See this requirement and `spdd/analysis/SPIKE-004-academic-contribution-bar-anal
 
 ## Next Step
 
-    /sdlc-spdd-analysis @sdlc-spdd/requirements/milestones/milestone-2/REF-001-engine-single-source.md
+Complete. Milestone 2 P2 backlog is done; journal n≥3 remains TEST-001's stop rule.

@@ -49,7 +49,7 @@ Beck stage for the whole list: **make it right** (research argument and observab
 | M2 Related work is parent citations, not a position | DOC-002 |
 | M3 Evaluation tests the tool, not the method | TEST-001, TEST-002 |
 | M4 Governance is heading/regex/file-existence | FEAT-014, FEAT-016 |
-| M5 Dual engine confounds "the method" | REF-001 |
+| M5 Dual engine confounds "the method" | REF-001 Complete (Python `gate_check` is SUT) |
 | M6 Retrieve is exact keyword filter; DICE unmeasured | FEAT-017 Complete (lexical IR; DICE still non-claim) |
 | M7 Stale ROADMAP/design-decisions; empty dogfood ledger | CHORE-003 (+ hygiene in each ID) |
 | Metrics kind dropped; `spdd --metrics` deferred | FEAT-015 Complete (`context metrics`, no `kind=metric`) |
@@ -57,4 +57,4 @@ Beck stage for the whole list: **make it right** (research argument and observab
 
 ## First next action
 
-P0 and P1 (through DOC-003) are **Complete**. FEAT-017, TEST-002 (n=1 protocol incomplete), and CHORE-003 are done. **Next action:** REF-001 (engine single-source).
+P0, P1, and P2 (through REF-001) are **Complete**. Milestone 2 program list has no further Work IDs. Journal n≥3 remains TEST-001's stop rule, not a new ID.

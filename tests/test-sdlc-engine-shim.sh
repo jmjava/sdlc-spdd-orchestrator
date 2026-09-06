@@ -30,7 +30,15 @@ else
   bad "python next output unexpected"
 fi
 
-echo "== default remains shell =="
+echo "== default SDLC_ENGINE=auto uses python when importable =="
+out="$( "${REPO_ROOT}/scripts/sdlc.sh" version )"
+if [[ "${out}" == 2.0.0a* ]]; then
+  ok "default auto routes version to python engine (${out})"
+else
+  bad "default auto unexpected version: ${out}"
+fi
+
+echo "== explicit SDLC_ENGINE=shell still works =="
 out="$(SDLC_ENGINE=shell "${REPO_ROOT}/scripts/sdlc.sh" next)"
 if grep -Fq 'No active Work ID' <<< "${out}" || grep -Fq 'SDLC:' <<< "${out}" || grep -Fq 'resume' <<< "${out}"; then
   ok "shell engine still works"

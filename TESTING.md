@@ -16,6 +16,11 @@ what can be proven automatically, then run a short manual smoke for the rest.
 
 ## Engine test suites (3 packages)
 
+**Milestone 2 system under test:** Python `WorkflowEngine.gate_check`
+(`SDLC_ENGINE=auto` or `python`). See
+[engine-sut.md](sdlc-spdd/docs/research/engine-sut.md). `SDLC_GATE_ENGINE=shell`
+is a labeled fallback, not an evaluation condition.
+
 | Suite | Path | Command | CI |
 |-------|------|---------|-----|
 | **1 — Unit** | `engine/tests_unit/` | `./scripts/run-test-suites.sh unit` | `test-sdlc-engine.yml` job `suite-1-unit` |

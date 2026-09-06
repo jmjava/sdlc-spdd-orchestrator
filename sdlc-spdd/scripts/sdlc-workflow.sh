@@ -825,8 +825,9 @@ _wf_has_retro_evidence() {
 # --- phase gates (requirements-first enforcement) ---
 
 _wf_python_gate_available() {
-  # SDLC_ENGINE=shell forces the shell fallback; otherwise prefer the engine.
-  if [[ "${SDLC_ENGINE:-}" == "shell" ]]; then
+  # Gate SUT is Python when importable (REF-001). SDLC_ENGINE=shell no longer
+  # skips that path. SDLC_GATE_ENGINE=shell is the explicit non-SUT fallback.
+  if [[ "${SDLC_GATE_ENGINE:-}" == "shell" ]]; then
     return 1
   fi
   if [[ -d "${SDLC_ROOT}/engine/src/sdlc_engine" ]]; then
@@ -914,7 +915,8 @@ sdlc_workflow_gate() {
     return $?
   fi
 
-  # Shell fallback — same checks as WorkflowEngine.gate_check.
+  # Shell fallback — not the Milestone 2 SUT (REF-001). Used when Python is
+  # unavailable or SDLC_GATE_ENGINE=shell. Do not treat a pass here as C-COMPLY.
   local home req canvas
   local -a failures=()
   home="$(_wf_home_path)"
