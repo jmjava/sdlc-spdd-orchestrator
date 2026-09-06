@@ -185,12 +185,14 @@ hot brief. Optional committed planning updates still happen when requested:
 `--milestone` appends milestone progress, `--roadmap-note` appends to
 `ROADMAP.md`, `--session-note` writes `session-notes/YYYY-MM-DD.md`.
 
-Optional capture metrics are recorded in the session record body:
-`--readiness`, `--review-result` (`pass|fail|mixed|blocked`), `--rework`,
-`--context-files`, `--validate-cycles`, `--review-cycles`. When `--readiness`
-is omitted, capture auto-fills from the canvas Metadata `- Readiness:` or YAML
-`readiness:` value when present. Use `--areas` only to override or supplement
-parsed areas, and `--dry-run` to preview the staged records.
+Optional capture metrics (`--readiness`, `--review-result` (`pass|fail|mixed|blocked`),
+`--rework`, `--context-files`, `--validate-cycles`, `--review-cycles`) are written
+as a structured `metrics` object on the session record. Query them with
+`sdlc-engine context metrics` (see
+`sdlc-spdd/docs/research/capture-metrics-queries.md`). Body
+`Metrics: …` tags remain a human-readable copy, not the query source. Use
+`--areas` only to override or supplement parsed areas, and `--dry-run` to
+preview the staged records.
 
 ### Accept at the gate
 

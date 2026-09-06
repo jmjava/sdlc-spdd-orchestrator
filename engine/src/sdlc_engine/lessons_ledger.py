@@ -15,6 +15,9 @@ capture is ``kind + area + body``, not a invented ``FEAT-ADHOC-*``.
      "ts": "2026-08-08T12:00:00Z", "title": "one-line summary",
      "body": "detail", "source": "retro", "keywords": ["sqlite"],
      "commit": "abc1234", "schema": 1}
+
+Optional capture metrics (FEAT-015) are a ``metrics`` object, not body
+tags. Schema 2 when that object is present. ``kind=metric`` is not restored.
 """
 
 from __future__ import annotations
@@ -27,6 +30,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterable
 
+from .metrics import ProcessMetrics, SCHEMA_WITH_METRICS, query_metrics
 from .project import Project
 from .timeutil import utc_now as _utc_now
 
@@ -60,6 +64,7 @@ class LessonRecord:
     keywords: list[str] = field(default_factory=list)
     commit: str = ""
     schema: int = SCHEMA
+    metrics: ProcessMetrics = field(default_factory=ProcessMetrics)
 
     def __post_init__(self) -> None:
         self.kind = (self.kind or "").strip().lower()
@@ -71,6 +76,10 @@ class LessonRecord:
             self.id = lesson_id(self.kind, self.work_id, self.area, self.source)
         if not self.title and self.body:
             self.title = self.body.strip().splitlines()[0][:120]
+        if isinstance(self.metrics, dict):
+            self.metrics = ProcessMetrics.from_json(self.metrics)
+        elif self.metrics is None:
+            self.metrics = ProcessMetrics()
 
     def validate(self) -> None:
         if self.kind not in LEDGER_KINDS:
@@ -81,7 +90,7 @@ class LessonRecord:
             raise ValueError("body (or title) is required")
 
     def to_json(self) -> dict[str, Any]:
-        return {
+        payload: dict[str, Any] = {
             "id": self.id,
             "kind": self.kind,
             "work_id": self.work_id,
@@ -95,6 +104,11 @@ class LessonRecord:
             "commit": self.commit,
             "schema": self.schema,
         }
+        metrics_obj = self.metrics.to_json() if self.metrics else {}
+        if metrics_obj:
+            payload["metrics"] = metrics_obj
+            payload["schema"] = max(int(self.schema or SCHEMA), SCHEMA_WITH_METRICS)
+        return payload
 
     @classmethod
     def from_json(cls, data: dict[str, Any]) -> "LessonRecord":
@@ -111,6 +125,7 @@ class LessonRecord:
             keywords=[str(k) for k in (data.get("keywords") or [])],
             commit=str(data.get("commit") or ""),
             schema=int(data.get("schema") or SCHEMA),
+            metrics=ProcessMetrics.from_json(data.get("metrics")),
         )
 
 
@@ -266,6 +281,22 @@ class LessonsLedger:
             out.append(rec)
         out.sort(key=lambda r: (r.ts, r.id), reverse=True)
         return out
+
+    def metrics_query(
+        self,
+        *,
+        construct: str = "",
+        work_id: str = "",
+        phase: str = "",
+        include_staged: bool = True,
+    ) -> dict[str, Any]:
+        """Queryable capture metrics (FEAT-015). Does not parse record.body."""
+        return query_metrics(
+            self.records(work_id=work_id, include_staged=include_staged),
+            construct=construct,
+            work_id=work_id,
+            phase=phase,
+        )
 
     def staged_ids(self) -> set[str]:
         return {r.id for r in _read_jsonl(self.stage_path)}

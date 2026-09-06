@@ -103,7 +103,7 @@ Every row: **definition**, **measure**, **instrument** (what exists *today* vs *
 |-------|------|
 | **Definition** | A session is **process-compliant** iff required artifacts for the claimed phase exist **and** meet semantic minima (non-empty required canvas sections; structured readiness for `code`; review states result + safeguards explicitly). |
 | **Measure** | `ProcessComplianceRate = N_compliant_sessions / N_sessions`. Always publish **existence-only** and **semantic** rates as a pair (H2). |
-| **Instrument today** | `gate_check(code)` uses Metadata/frontmatter readiness plus non-empty Requirements and a T## operation with Status (**FEAT-014**). Review-file existence is still a later-phase proxy. `validate-reasons-canvas.sh` fails headings-only canvases; `--strict-readiness` fails unrecognized tokens. |
+| **Instrument today** | `gate_check(code)` uses Metadata/frontmatter readiness plus non-empty Requirements and a T## operation with Status (**FEAT-014**). Review minima (**FEAT-016**) apply at retro/sync. Capture `--readiness` / `--review-result` are queryable via `sdlc-engine context metrics --construct C-COMPLY` (**FEAT-015**). `validate-reasons-canvas.sh` fails headings-only canvases; `--strict-readiness` fails unrecognized tokens. |
 | **Target instrument** | **FEAT-016** (review minima; no auto-pass safeguards). Canvas semantic minima for `code` are in place. |
 | **Proxy weakness** | Empty review can still pass `review`/`sync`. Phrase-in-Sync-Notes no longer fools the **code** gate. |
 
@@ -113,8 +113,8 @@ Every row: **definition**, **measure**, **instrument** (what exists *today* vs *
 |-------|------|
 | **Definition** | **Load:** how much context the process caused to be loaded (files or tokens). **Relevance:** whether loaded items were used for the gold task (qrels / rater). |
 | **Measure** | `ContextLoad` = count of distinct files listed as loaded (or token estimate if available). `ContextRelevance@k` = precision of retrieved lesson ids vs a qrel set (FEAT-017). |
-| **Instrument today** | Optional capture `--context-files` stuffed into **session.body**. `LessonsLedger.records()` filters exact keyword-list membership; not ranked. SQLite FTS is a *different* CLI (`db query --search`). |
-| **Target instrument** | **FEAT-015** (structured `context_files` / token fields) + **FEAT-017** (algorithm + precision@k fixture). |
+| **Instrument today** | Optional capture `--context-files` stored on `record.metrics.context_files` and queried with `sdlc-engine context metrics --construct C-CONTEXT` (**FEAT-015**). Body tags remain a human copy. `LessonsLedger.records()` filters exact keyword-list membership; not ranked. SQLite FTS is a *different* CLI (`db query --search`). |
+| **Target instrument** | **FEAT-015** (structured `context_files` queried via `context metrics`) + **FEAT-017** (algorithm + precision@k fixture). |
 | **Proxy weakness** | `--context-files` is self-reported and optional; it does not prove what the model actually attended to. |
 
 ### C-MEMORY — Memory usefulness
@@ -123,8 +123,8 @@ Every row: **definition**, **measure**, **instrument** (what exists *today* vs *
 |-------|------|
 | **Definition** | Whether retrieved lessons improve a **follow-on** task versus no memory / dump, after controlling for C-CONTEXT. |
 | **Measure** | Primary: C-REWORK on session 2 (`ReworkCount` or cycles). Secondary: C-DRIFT on session 2. |
-| **Instrument today** | Ledger kinds `decision|pitfall|pattern`; retrieve by work_id/area/kind/keyword. No eval harness. Committed dogfood ledger is **empty** after archive (CHORE-003). |
-| **Target instrument** | TEST-001 two-session protocol; FEAT-015 rework field; CHORE-003 so memory exists to retrieve. |
+| **Instrument today** | Ledger kinds `decision|pitfall|pattern`; retrieve by work_id/area/kind/keyword. Capture rework/cycles queryable via `context metrics --construct C-MEMORY` (**FEAT-015**). No eval harness. Committed dogfood ledger is **empty** after archive (CHORE-003). |
+| **Target instrument** | TEST-001 two-session protocol; FEAT-015 `context metrics --construct C-MEMORY`; CHORE-003 so memory exists to retrieve. |
 | **Proxy weakness** | Counting retrieve *calls* is not usefulness. Empty ledger makes RQ4 untestable in this repo until CHORE-003. |
 
 ### C-PORT — Portability (assistant)
@@ -141,7 +141,7 @@ Every row: **definition**, **measure**, **instrument** (what exists *today* vs *
 
 | ID | Definition | Measure | Today | Target | Weakness |
 |----|------------|---------|-------|--------|----------|
-| **C-REWORK** | Repeated repair on the same gold-task acceptance criterion | `--rework` count / `--review-cycles` / `--validate-cycles` | Optional flags in session **body** | **FEAT-015** queryable fields | Self-reported; undefined if flags omitted |
+| **C-REWORK** | Repeated repair on the same gold-task acceptance criterion | `--rework` count / `--review-cycles` / `--validate-cycles` | `record.metrics` via `context metrics --construct C-REWORK` (**FEAT-015**) | Same query in TEST-002 session 2 | Self-reported; undefined if flags omitted |
 
 ---
 

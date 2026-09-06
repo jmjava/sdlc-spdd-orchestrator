@@ -52,9 +52,9 @@ Beck stage for the whole list: **make it right** (research argument and observab
 | M5 Dual engine confounds "the method" | REF-001 |
 | M6 Retrieve is exact keyword filter; DICE unmeasured | FEAT-017 |
 | M7 Stale ROADMAP/design-decisions; empty dogfood ledger | CHORE-003 (+ hygiene in each ID) |
-| Metrics kind dropped; `spdd --metrics` deferred | FEAT-015 |
+| Metrics kind dropped; `spdd --metrics` deferred | FEAT-015 Complete (`context metrics`, no `kind=metric`) |
 | No threats to validity / replication pack | DOC-003 |
 
 ## First next action
 
-P0 desk-reject items are **Complete**. FEAT-014 and FEAT-016 are the first P1 observability items. After FEAT-016 merges, next is FEAT-015 (queryable metrics), then DOC-003.
+P0 and P1 observability items through FEAT-015 are **Complete**. Next is DOC-003 (threats / replication), then P2.

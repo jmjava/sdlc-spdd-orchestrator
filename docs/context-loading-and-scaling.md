@@ -195,8 +195,9 @@ records and promotes the keepers into the committed ledger — one batched human
 commit per gate. Details: [Storage v3 — stage-then-accept](storage-v3.md#stage-then-accept).
 
 Optional capture metrics (`--readiness`, `--review-result`, `--rework`,
-`--context-files`, `--validate-cycles`, `--review-cycles`) are recorded in the
-staged session record's body.
+`--context-files`, `--validate-cycles`, `--review-cycles`) are recorded on the
+staged session record as a structured `metrics` object (query with
+`sdlc-engine context metrics`). Body tags remain a human-readable copy.
 
 ### Canvas readiness vocabulary (optional)
 

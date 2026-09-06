@@ -143,6 +143,7 @@ sdlc_lesson_id() {
 }
 
 # Build a lesson JSON object via python3 (handles escaping).
+# Optional METRICS_JSON env carries a structured metrics object (FEAT-015).
 sdlc_build_lesson_json() {
   local kind="$1" work_id="$2" area="$3" phase="$4" ts="$5" title="$6" body="$7" source="$8"
   local keywords_csv="${9:-}"
@@ -151,6 +152,7 @@ sdlc_build_lesson_json() {
   KIND="${kind}" WORK_ID="${work_id}" AREA="${area}" PHASE="${phase}" TS="${ts}" \
   TITLE="${title}" BODY="${body}" SOURCE="${source}" KEYWORDS_CSV="${keywords_csv}" \
   COMMIT="${commit:-$(sdlc_git_head_short "${root}")}" \
+  METRICS_JSON="${METRICS_JSON:-}" \
   python3 - <<'PY'
 import json, os
 kind = os.environ["KIND"]
@@ -168,7 +170,7 @@ area_part = area or "(none)"
 rec_id = f"{kind}:{work_id}:{area_part}:{source}"
 if not title and body:
     title = body.strip().splitlines()[0][:120]
-print(json.dumps({
+payload = {
     "id": rec_id,
     "kind": kind,
     "work_id": work_id,
@@ -181,6 +183,16 @@ print(json.dumps({
     "keywords": keywords,
     "commit": commit,
     "schema": 1,
-}, ensure_ascii=False))
+}
+raw_metrics = (os.environ.get("METRICS_JSON") or "").strip()
+if raw_metrics:
+    try:
+        metrics = json.loads(raw_metrics)
+    except json.JSONDecodeError:
+        metrics = {}
+    if isinstance(metrics, dict) and metrics:
+        payload["metrics"] = metrics
+        payload["schema"] = 2
+print(json.dumps(payload, ensure_ascii=False))
 PY
 }
