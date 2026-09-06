@@ -209,7 +209,7 @@ def test_workflow_next_honors_quiet(tmp_path: Path, monkeypatch) -> None:
     )
     (tmp_path / "spdd" / "canvas").mkdir(parents=True)
     (tmp_path / "spdd" / "canvas" / f"{wid}.md").write_text(
-        f"# REASONS Canvas: {wid}\n\n## Metadata\n- Status: Ready For Coding\n\n## O - Operations\n\n### T01 - Do\n- Status: Not Started\n",
+        f"# REASONS Canvas: {wid}\n\n## Metadata\n- Readiness: Ready For Coding\n\n## R - Requirements\nQuiet-mode fixture requirement.\n\n## O - Operations\n\n### T01 - Do\n- Status: Not Started\n",
         encoding="utf-8",
     )
     engine = WorkflowEngine(project)

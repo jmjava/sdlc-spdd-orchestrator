@@ -28,6 +28,7 @@ def _seed_stay_set(root: Path, work_id: str, *, ready_for_coding: bool = False) 
         encoding="utf-8",
     )
     status = "Ready For Coding" if ready_for_coding else "In Progress"
+    readiness = "Ready For Coding" if ready_for_coding else "Needs Analysis"
     (root / "spdd" / "canvas").mkdir(parents=True, exist_ok=True)
     (root / "spdd" / "canvas" / f"{work_id}.md").write_text(
         f"""# REASONS Canvas: {work_id}
@@ -37,6 +38,17 @@ def _seed_stay_set(root: Path, work_id: str, *, ready_for_coding: bool = False) 
 - Work ID: {work_id}
 - Work Type: Feature
 - Status: {status}
+- Readiness: {readiness}
+
+## R - Requirements
+
+Hard-review seed requirement for {work_id}.
+
+## O - Operations
+
+### T01 - Seed operation
+
+- Status: Not Started
 """,
         encoding="utf-8",
     )

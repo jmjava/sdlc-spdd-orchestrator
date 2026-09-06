@@ -21,12 +21,12 @@ P0 — desk-reject without these:
 
 - [x] SPIKE-004-academic-contribution-bar — journal-style review + this backlog (analysis in this PR)
 - [x] DOC-001-research-questions-and-constructs — freeze RQs and measures (T01 spec + T02 README hedges)
-- [ ] DOC-002-related-work-map — literature/positioning matrix
-- [ ] TEST-001-evaluation-protocol — comparative protocol before collecting data
+- [x] DOC-002-related-work-map — literature/positioning matrix
+- [x] TEST-001-evaluation-protocol — comparative protocol before collecting data
 
 P1 — major-revision items (observability of the method):
 
-- [ ] FEAT-014-semantic-canvas-validation — contracts beyond heading grep
+- [x] FEAT-014-semantic-canvas-validation — contracts beyond heading grep
 - [ ] FEAT-015-first-class-metrics — metrics as queryable data, not session-body prose
 - [ ] FEAT-016-intent-code-traceability — "code maps to ops" and review quality as checks
 - [ ] DOC-003-replication-package — threats to validity + frozen eval notes
@@ -44,9 +44,9 @@ P2 — strengthen the contribution:
 |---------|--------|-------------|--------|-------|
 | SPIKE-004-academic-contribution-bar | [canvas](../../../spdd/canvas/SPIKE-004-academic-contribution-bar.md) | [requirement](SPIKE-004-academic-contribution-bar.md) | Complete (T01–T04) | Program plan |
 | DOC-001-research-questions-and-constructs | [canvas](../../../spdd/canvas/DOC-001-research-questions-and-constructs.md) | [requirement](DOC-001-research-questions-and-constructs.md) | Complete | T01 spec + T02 hedges; review Approved With Notes |
-| DOC-002-related-work-map | — | [requirement](DOC-002-related-work-map.md) | Planned | P0 |
-| TEST-001-evaluation-protocol | — | [requirement](TEST-001-evaluation-protocol.md) | Planned | P0 |
-| FEAT-014-semantic-canvas-validation | — | [requirement](FEAT-014-semantic-canvas-validation.md) | Planned | P1 |
+| DOC-002-related-work-map | [canvas](../../../spdd/canvas/DOC-002-related-work-map.md) | [requirement](DOC-002-related-work-map.md) | Complete | Matrix + structured tests; PR #221 |
+| TEST-001-evaluation-protocol | [canvas](../../../spdd/canvas/TEST-001-evaluation-protocol.md) | [requirement](TEST-001-evaluation-protocol.md) | Complete | Protocol + live tests; PR #222 |
+| FEAT-014-semantic-canvas-validation | [canvas](../../../spdd/canvas/FEAT-014-semantic-canvas-validation.md) | [requirement](FEAT-014-semantic-canvas-validation.md) | Complete | Structured readiness + semantic minima |
 | FEAT-015-first-class-metrics | — | [requirement](FEAT-015-first-class-metrics.md) | Planned | P1 |
 | FEAT-016-intent-code-traceability | — | [requirement](FEAT-016-intent-code-traceability.md) | Planned | P1 |
 | DOC-003-replication-package | — | [requirement](DOC-003-replication-package.md) | Planned | P1 |

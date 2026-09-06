@@ -26,12 +26,60 @@ def _seed_analysis(root: Path, wid: str) -> None:
     (d / f"{wid}-analysis.md").write_text(f"# Analysis: {wid}\n", encoding="utf-8")
 
 
-def _seed_canvas(root: Path, wid: str, *, ready: bool = False) -> None:
+def _seed_canvas(root: Path, wid: str, *, ready: bool = False, extra: str = "") -> None:
     d = root / "spdd" / "canvas"
     d.mkdir(parents=True, exist_ok=True)
-    status = "Ready For Coding" if ready else "Draft"
+    readiness = "Ready For Coding" if ready else "Needs Analysis"
     (d / f"{wid}.md").write_text(
-        f"# REASONS Canvas: {wid}\n\n## Metadata\n\n- Status: {status}\n",
+        f"""# REASONS Canvas: {wid}
+
+## Metadata
+
+- Work ID: {wid}
+- Readiness: {readiness}
+
+## R - Requirements
+
+Implement the gated operation for {wid}.
+
+## E - Entities
+
+- Example entity
+
+## A - Approach
+
+One operation.
+
+## S - Structure
+
+- src/app.py
+
+## O - Operations
+
+### T01 - Do the thing
+
+- Status: Not Started
+
+## N - Norms
+
+- One operation per session
+
+## S - Safeguards
+
+- Do not expand scope
+
+## Review Checklist
+
+- [ ] reviewed
+
+## Sync Notes
+
+{extra}
+
+## Final Status
+
+- Status: In Progress
+""",
         encoding="utf-8",
     )
 
@@ -85,6 +133,50 @@ def test_gate_code_requires_ready_canvas(proj: tuple[Project, WorkflowEngine]) -
     _seed_canvas(p.root, wid, ready=True)
     ok, failures = eng.gate_check(wid, "code")
     assert ok and not failures
+
+
+def test_gate_code_rejects_ready_phrase_outside_readiness_field(
+    proj: tuple[Project, WorkflowEngine],
+) -> None:
+    p, eng = proj
+    wid = "FEAT-014-false-ready"
+    _seed_req(p.root, wid)
+    _seed_canvas(
+        p.root,
+        wid,
+        ready=False,
+        extra="Remember: Ready For Coding is written here in Sync Notes only.",
+    )
+    ok, failures = eng.gate_check(wid, "code")
+    assert not ok
+    assert any("Ready For Coding" in f for f in failures)
+
+
+def test_gate_code_rejects_empty_operations(proj: tuple[Project, WorkflowEngine]) -> None:
+    p, eng = proj
+    wid = "FEAT-014-empty-ops"
+    _seed_req(p.root, wid)
+    canvas = p.root / "spdd" / "canvas"
+    canvas.mkdir(parents=True, exist_ok=True)
+    (canvas / f"{wid}.md").write_text(
+        """# REASONS Canvas: empty-ops
+
+## Metadata
+- Readiness: Ready For Coding
+
+## R - Requirements
+A real requirement sentence.
+
+## O - Operations
+
+## S - Safeguards
+- none
+""",
+        encoding="utf-8",
+    )
+    ok, failures = eng.gate_check(wid, "code")
+    assert not ok
+    assert any("T##" in f or "operation" in f.lower() for f in failures)
 
 
 def test_advance_blocked_without_prereqs(proj: tuple[Project, WorkflowEngine]) -> None:
