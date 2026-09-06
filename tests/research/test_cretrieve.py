@@ -80,16 +80,23 @@ class SuiteDocTests(unittest.TestCase):
     def test_suite_doc_states_non_claims(self) -> None:
         text = SUITE_DOC.read_text(encoding="utf-8").lower()
         self.assertIn("c-retrieve", text)
-        self.assertIn("does not prove", text)
+        self.assertIn("scope removed", text)
         self.assertIn("drift", text)
-        self.assertIn("rq4", text)
+        self.assertIn("usefulness", text)
         self.assertIn("embedding", text)
+        self.assertIn("test_guide_projection_roundtrip", text)
+        self.assertIn("test-guide-stack-experimental", text)
         self.assertIn("embabel-dif", text)
+        self.assertIn("later / other-repo", text)
 
     def test_doc001_names_this_suite(self) -> None:
         text = DOC001.read_text(encoding="utf-8")
         self.assertIn("TEST-003", text)
         self.assertIn("test_cretrieve", text)
+        blob = text.lower()
+        self.assertIn("scope removed", blob)
+        self.assertIn("drift", blob)
+        self.assertIn("usefulness", blob)
 
     def test_ci_runs_this_suite(self) -> None:
         text = WORKFLOW.read_text(encoding="utf-8")

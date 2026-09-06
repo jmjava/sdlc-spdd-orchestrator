@@ -4,7 +4,7 @@
 
 Make SDLC-SPDD *claim-safe* as a research project: stated research questions, a related-work position, operationalized constructs (drift, governance, context, memory), and an evaluation protocol a journal referee would accept — then harden the implementation so those constructs are observable.
 
-**Academic review of this repo** (DOC-001 §1) is the **intent/advice stores** and a **retrievability** bar: stored lessons can be read back from the git ledger and, when enabled, from the SQLite local index and the Guide working-store projection. It is not a finding that the method reduces drift. Deterministic Intent Folding (`embabel-dif`) is later / other-repo; this milestone is foundational to that attach and does not include it.
+**Academic review of this repo** (DOC-001 §1) is the **intent/advice stores** and a **retrievability** bar: stored lessons can be read back from the git ledger and, when enabled, from the SQLite local index and the Guide working-store projection. This review's **scope removed** reduced-drift (RQ1) and retrieve-usefulness (RQ4). Deterministic Intent Folding (`embabel-dif`) is later / other-repo; this milestone is foundational to that attach and does not include it.
 
 This is **make it right** for the research argument. It is not prompt optimization and not a new assistant runtime.
 
@@ -87,7 +87,7 @@ For each work item:
 
 ## Session Updates
 
-2026-09-06 — TEST-003 named C-RETRIEVE suite (ledger + SQLite + mocked Guide). Live Guide e2e remains extra.
+2026-09-06 — TEST-003 named C-RETRIEVE suite (ledger + SQLite + mocked Guide). Live Guide+Neo4j e2e already exists (`test-guide-stack-experimental`).
 2026-09-06 — DOC-001 T03: academic review goal frozen as stores + retrievability (ledger + Guide); reduced-drift and `embabel-dif` out of scope.
 2026-09-06 — REF-001 names Python `gate_check` as the SUT; default `SDLC_ENGINE=auto`. Milestone 2 P2 complete.
 2026-09-06 — CHORE-003 seeded the dogfood ledger; archive never truncates it. Next: REF-001.

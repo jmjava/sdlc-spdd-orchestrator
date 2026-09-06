@@ -28,7 +28,7 @@ Freeze research questions and operationalized constructs so later Milestone 2 wo
 
 Make public claims allow-listed. Stop README causal language until evidence exists.
 
-Academic review of `sdlc-spdd-orchestrator` is a **methods/tools artifact review**: git-backed **intent** (REASONS canvas) and **advice** stores (committed `lessons.jsonl` ledger plus regenerable **SQLite** and **Guide** projections), with a **retrievability** bar — stored records can be read back. It is **not** a finding that the hybrid reduces drift, and **not** that retrieve improves later work (RQ4). Deterministic Intent Folding (`jmjava/embabel-dif`) is **out of scope** here and **later / other-repo**; this freeze is foundational to that attach and does not require it.
+Academic review of `sdlc-spdd-orchestrator` is a **methods/tools artifact review**: git-backed **intent** (REASONS canvas) and **advice** stores (committed `lessons.jsonl` ledger plus regenerable **SQLite** and **Guide** projections), with a **retrievability** bar — stored records can be read back. This review's **scope removed** reduced-**drift** (RQ1) and retrieve-**usefulness** (RQ4). Deterministic Intent Folding (`jmjava/embabel-dif`) is **out of scope** here and **later / other-repo**; this freeze is foundational to that attach and does not require it.
 
 ### Acceptance Criteria
 
@@ -158,7 +158,9 @@ T03 does not add RQ6. It restates the contribution so academic review cannot be 
 
 Created 2026-09-06 from SPIKE-004 T04 handoff.
 
-2026-09-06 — T03 prompt-update: academic review of this repo is the stores (intent + advice ledger + SQLite index + Guide projection) with a retrievability bar, not reduced-drift evidence and not `embabel-dif`. Source: stakeholder (firm the review goal; DIF out of scope; stored info should be retrievable; ledger + Guide store; do not forget SQLite).
+2026-09-06 — T03 prompt-update: academic review of this repo is the stores (intent + advice ledger + SQLite index + Guide projection) with a retrievability bar. Source: stakeholder (firm the review goal; DIF out of scope; stored info should be retrievable; ledger + Guide store; do not forget SQLite).
+
+2026-09-06 — Stakeholder: this review's **scope removed** drift (RQ1) and usefulness (RQ4). Live Guide+Neo4j e2e already exists. `embabel-dif` remains out of this review.
 
 ## Final Status
 
@@ -170,7 +172,7 @@ Created 2026-09-06 from SPIKE-004 T04 handoff.
 - Readiness: Reviewed
 - T01–T03 documentation only (no engine)
 - Risk: `docs/three-part-operating-path.md` still says “governs execution” (out of T02 file list)
-- Decision: contribution omits “with evidence that the hybrid reduces drift”; RQ1 remains defined; TEST-002 stays instrumentation
-- Decision: in-scope empirical claim is retrievability (ledger `context retrieve` + SQLite and Guide `context parity` when enabled), not RQ4 usefulness
+- Decision: contribution omits “with evidence that the hybrid reduces drift”; this review's **scope removed** drift and usefulness
+- Decision: in-scope empirical claim is retrievability (ledger `context retrieve` + SQLite and Guide `context parity` when enabled)
 - Decision: `embabel-dif` is later/other-repo; optional present-or-skip attach is not this review’s object
-- Next: none for DOC-001; leftover RQ1 slices stay on TEST-002; DIF stays in `embabel-dif`
+- Next: none for DOC-001. Drift and usefulness stay removed from this review.

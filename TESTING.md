@@ -141,9 +141,12 @@ C-RETRIEVE suite with:
 PYTHONPATH=engine/src python3 -m unittest tests.research.test_cretrieve -v
 ```
 
-That module proves persist→same-id on the git ledger, SQLite parity when
-enabled, and mocked Guide parity in default CI. It does **not** prove RQ1
-drift, RQ4 usefulness, Guide embeddings, or live Neo4j. Protocol:
+That module is the hermetic C-RETRIEVE gate (ledger + SQLite + mocked Guide).
+Live Guide+Neo4j round-trips already run in
+`engine/tests_e2e/test_guide_projection_roundtrip.py` via
+`test-guide-stack-experimental.yml` / `./tests/test-guide-stack-live.sh`.
+This review's **scope removed** drift (RQ1) and usefulness (RQ4).
+`embabel-dif` was **removed** from this review. Protocol:
 [cretrieve-suite.md](sdlc-spdd/docs/research/cretrieve-suite.md).
 
 ### Adapter install regression harness

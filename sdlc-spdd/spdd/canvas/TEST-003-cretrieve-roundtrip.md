@@ -28,20 +28,21 @@ A referee can run one command and see ledger, SQLite, and Guide (mocked) round-t
 
 - [x] Named suite `tests.research.test_cretrieve` covers persist→retrieve same id on ledger, SQLite parity, mocked Guide parity
 - [x] Research P0 workflow runs the suite
-- [x] Research note documents non-claims (RQ1, RQ4, embeddings, live Guide, DIF)
+- [x] Research note documents out-of-bar items (RQ1, RQ4, embeddings) and cites existing live Guide+Neo4j e2e
 
 ### Non-Goals
 
-- RQ1 / TEST-002 remainder
-- RQ4 usefulness
-- Live Neo4j
+- RQ1 / TEST-002 remainder (this review's **scope removed** drift)
+- RQ4 usefulness (this review's **scope removed** usefulness)
+- Re-implementing live Guide+Neo4j (already exists)
 - Engine behavior change except tests/docs
 - Embabel upstream
+- `embabel-dif` (removed from this review)
 
 ### Assumptions
 
 - C-RETRIEVE is engineering retrievability, not method efficacy
-- Guide success path in default CI must be mocked; live e2e stays optional
+- Guide success path in default CI is mocked; live Guide+Neo4j e2e already exists on the experimental stack
 
 ## E - Entities
 
@@ -66,7 +67,7 @@ Temp project, persist/accept one pitfall, assert the same id is readable. Enable
 ### Alternatives
 
 - Only cite existing scattered tests — rejected; that is why the claim looks untested.
-- Require live Guide in default CI — rejected; replication must not require Neo4j.
+- Require live Guide in default research CI — rejected; that stack already has `test-guide-stack-experimental`. Replication of the hermetic suite must not require Neo4j.
 
 ### Risks
 
@@ -114,7 +115,8 @@ Temp project, persist/accept one pitfall, assert the same id is readable. Enable
 - Do not claim drift is fixed
 - Do not treat mocked Guide as embedding IR
 - No Embabel upstream
-- Live Guide e2e is extra, not this gate
+- Live Guide e2e already exists; this gate is the hermetic path
+- `embabel-dif` is out of this review
 
 ## Review Checklist
 
@@ -125,7 +127,7 @@ Temp project, persist/accept one pitfall, assert the same id is readable. Enable
 
 ## Sync Notes
 
-Opened after DOC-001 T03 freeze (`5e0feea` / #244). Stakeholder: claims need a complete test suite.
+Opened after DOC-001 T03 freeze (`5e0feea` / #244). Stakeholder: claims need a complete test suite. Live Guide+Neo4j e2e already exists; do not list it as leftover. `embabel-dif` is out of this review.
 
 ## Final Status
 
