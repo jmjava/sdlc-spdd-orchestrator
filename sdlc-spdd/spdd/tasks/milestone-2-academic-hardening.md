@@ -57,10 +57,10 @@ Beck stage for the whole list: **make it right** (research argument and observab
 
 ## First next action
 
-DOC-001 T01 (construct spec) is done. Next on this Work ID:
+DOC-001 is **Complete** (T01 spec + T02 hedges). After PR #219 merges:
 
 ```text
-/sdlc-spdd-code @sdlc-spdd/spdd/canvas/DOC-001-research-questions-and-constructs.md operation T02
+/sdlc-spdd-analysis @sdlc-spdd/requirements/milestones/milestone-2/DOC-002-related-work-map.md
 ```
 
-After T02, claim `DOC-002-related-work-map` (related-work matrix). Do not start FEAT-014 until DOC-002 + TEST-001 are in progress or the SPIKE-004 stop rule is explicitly waived.
+Do not start FEAT-014 until DOC-002 and TEST-001 are proven (`prove-p0.sh`).

@@ -32,7 +32,7 @@ Make public claims allow-listed. Stop README causal language until evidence exis
 - [x] RQs numbered; each names independent and dependent constructs
 - [x] Every construct has: definition, measure, instrument, known proxy weakness
 - [x] Claims-allowed-today vs after Milestone 2 table is committed
-- [ ] Rewrite guidance for README/compliance is in the same document (T01); applying README edits is T02
+- [x] Rewrite guidance for README/compliance is in the same document (T01); applying README edits is T02
 
 ### Non-Goals
 
@@ -102,7 +102,7 @@ Do not expand to a sixth RQ. Do not implement FEAT-014 “to make the table look
 
 ### T02 — Apply public-language hedges
 
-- Status: Not Started
+- Status: Complete
 - Description: Apply T01 rewrite guidance to README (and compliance if it repeats causal claims). Do not invent new product claims.
 - Files: `README.md`, possibly `sdlc-spdd/docs/spdd-compliance.md`
 - Tests: grep for “fixes that” should not remain as an unqualified causal claim
@@ -137,11 +137,12 @@ Created 2026-09-06 from SPIKE-004 T04 handoff.
 
 ## Final Status
 
-- Status: In Progress
-- Follow-Up: T02 after T01 review
+- Readiness: Reviewed
+- Status: Complete
 
 ## Architecture Notes
 
-- Readiness: Ready For Coding
-- T01 is documentation only
-- Risk: DOC-002 may want a narrower novelty DV — handle via prompt-update, do not fork a second RQ list
+- Readiness: Reviewed
+- T01–T02 documentation only
+- Risk: `docs/three-part-operating-path.md` still says “governs execution” (out of T02 file list)
+- Next: DOC-002 related-work matrix

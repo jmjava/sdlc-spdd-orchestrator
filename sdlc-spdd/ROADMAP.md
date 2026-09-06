@@ -173,7 +173,7 @@ Milestone 1 feature track is Complete on the integration branch.
 | CHORE-001-docgen-initial-documentation | make it right (docs) | Complete (git history) |
 | CHORE-002-docgen-video-generation | make it right (docs) | Complete (git history) |
 | SPIKE-004-academic-contribution-bar | make it right (research argument) | Complete (program plan + DOC-001 T01) |
-| DOC-001-research-questions-and-constructs | make it right | In Progress (T01 spec; T02 README hedges) |
+| DOC-001-research-questions-and-constructs | make it right | Complete (T01 spec + T02 hedges) |
 | DOC-002-related-work-map | make it right | Planned (P0) |
 | TEST-001-evaluation-protocol | make it right | Planned (P0) |
 | FEAT-014-semantic-canvas-validation | make it right | Planned (P1) |
