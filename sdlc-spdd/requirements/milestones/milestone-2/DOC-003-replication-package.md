@@ -4,7 +4,7 @@ jira_key: ""
 github_number: ""
 jira_epic: ""
 jira_type: "Documentation"
-jira_status: "To Do"
+jira_status: "Complete"
 jira_assignee: ""
 jira_due_date: ""
 jira_sprint: ""
@@ -21,7 +21,7 @@ related:
 
 **Work ID:** DOC-003-replication-package  
 **Milestone:** Milestone 2 — Academic contribution bar  
-**Status:** To Do  
+**Status:** Complete  
 **Date:** 2026-09-06  
 **Beck stage:** make it right (research argument / observability)
 
@@ -53,9 +53,9 @@ Give a future referee a threats-to-validity section and a replication appendix t
 
 ## Acceptance Criteria
 
-- [ ] Committed threats-to-validity doc referencing DOC-001 constructs
-- [ ] Replication checklist: commands, versions, gold-task locations
-- [ ] Explicit statement of chat nondeterminism and how TEST-001 handles it
+- [x] Committed threats-to-validity doc referencing DOC-001 constructs
+- [x] Replication checklist: commands, versions, gold-task locations
+- [x] Explicit statement of chat nondeterminism and how TEST-001 handles it
 
 ## Non-Goals
 

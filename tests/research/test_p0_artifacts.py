@@ -17,10 +17,12 @@ sys.path.insert(0, str(ROOT / "sdlc-spdd" / "docs" / "research"))
 from check_p0_artifacts import (  # noqa: E402
     check_doc001,
     check_doc002,
+    check_doc003,
     check_test001,
     issues_for_constructs_spec,
     issues_for_evaluation_protocol,
     issues_for_related_work,
+    issues_for_threats_replication,
 )
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
@@ -41,6 +43,16 @@ GREP_TOKENS_TEST001 = (
     "unstructured",
     "gold task",
     "Stop rule",
+)
+GREP_TOKENS_DOC003 = (
+    "C-DRIFT",
+    "C-COMPLY",
+    "C-CONTEXT",
+    "C-MEMORY",
+    "C-PORT",
+    "TEST-001",
+    "live-consumer",
+    "nondeterminism",
 )
 
 
@@ -155,6 +167,32 @@ class EvaluationProtocolCheckerTests(unittest.TestCase):
         )
 
 
+class ThreatsReplicationCheckerTests(unittest.TestCase):
+    def test_valid_fixture_has_no_issues(self) -> None:
+        issues = issues_for_threats_replication(_read("threats_valid.md"))
+        self.assertEqual(issues, [], msg=issues)
+
+    def test_token_stub_fails_even_if_old_grep_would_pass(self) -> None:
+        text = _read("threats_token_stub.md")
+        self.assertTrue(
+            all(token.lower() in text.lower() for token in GREP_TOKENS_DOC003),
+            "fixture must still contain the old grep tokens",
+        )
+        issues = issues_for_threats_replication(text)
+        self.assertTrue(issues, "token stub must fail the structured checker")
+        self.assertTrue(
+            any("heading" in issue or "table" in issue for issue in issues),
+            f"expected heading/table failure, got {issues}",
+        )
+
+    def test_missing_c_port_in_construct_section_fails(self) -> None:
+        issues = issues_for_threats_replication(_read("threats_missing_construct.md"))
+        self.assertTrue(
+            any("C-PORT" in issue for issue in issues),
+            f"expected missing C-PORT in construct section, got {issues}",
+        )
+
+
 class LiveArtifactTests(unittest.TestCase):
     def test_doc001_live_files_pass(self) -> None:
         issues = check_doc001()
@@ -166,6 +204,10 @@ class LiveArtifactTests(unittest.TestCase):
 
     def test_test001_live_files_pass(self) -> None:
         issues = check_test001()
+        self.assertEqual(issues, [], msg=issues)
+
+    def test_doc003_live_files_pass(self) -> None:
+        issues = check_doc003()
         self.assertEqual(issues, [], msg=issues)
 
 

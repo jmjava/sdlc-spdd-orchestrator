@@ -209,4 +209,4 @@ Do not pool runs across model versions.
 - **External:** one gold, one lab, Cursor-heavy tooling.
 - **Conclusion:** a passing TEST-002 slice shows the protocol *runs*; it does not show the method *works* at journal n.
 
-DOC-003 must expand this list after instruments exist. This Work ID does **not collect study data**.
+DOC-003 must expand this list after instruments exist. That pack is `threats-to-validity-and-replication.md`. This Work ID does **not collect study data**.
