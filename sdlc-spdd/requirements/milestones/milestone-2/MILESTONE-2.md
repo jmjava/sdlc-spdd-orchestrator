@@ -19,8 +19,8 @@ Analysis that opened this milestone: `spdd/analysis/SPIKE-004-academic-contribut
 
 P0 — desk-reject without these:
 
-- [ ] SPIKE-004-academic-contribution-bar — journal-style review + this backlog (analysis in this PR)
-- [ ] DOC-001-research-questions-and-constructs — freeze RQs and measures
+- [x] SPIKE-004-academic-contribution-bar — journal-style review + this backlog (analysis in this PR)
+- [x] DOC-001-research-questions-and-constructs — freeze RQs and measures (T01 spec; T02 README hedges open)
 - [ ] DOC-002-related-work-map — literature/positioning matrix
 - [ ] TEST-001-evaluation-protocol — comparative protocol before collecting data
 
@@ -42,8 +42,8 @@ P2 — strengthen the contribution:
 
 | Work ID | Canvas | Requirement | Status | Notes |
 |---------|--------|-------------|--------|-------|
-| SPIKE-004-academic-contribution-bar | (plan next) | [requirement](SPIKE-004-academic-contribution-bar.md) | Analysis | Journal review + milestone |
-| DOC-001-research-questions-and-constructs | — | [requirement](DOC-001-research-questions-and-constructs.md) | Planned | P0 |
+| SPIKE-004-academic-contribution-bar | [canvas](../../../spdd/canvas/SPIKE-004-academic-contribution-bar.md) | [requirement](SPIKE-004-academic-contribution-bar.md) | Complete (T01–T04) | Program plan |
+| DOC-001-research-questions-and-constructs | [canvas](../../../spdd/canvas/DOC-001-research-questions-and-constructs.md) | [requirement](DOC-001-research-questions-and-constructs.md) | In Progress | T01 spec done; T02 README hedges |
 | DOC-002-related-work-map | — | [requirement](DOC-002-related-work-map.md) | Planned | P0 |
 | TEST-001-evaluation-protocol | — | [requirement](TEST-001-evaluation-protocol.md) | Planned | P0 |
 | FEAT-014-semantic-canvas-validation | — | [requirement](FEAT-014-semantic-canvas-validation.md) | Planned | P1 |

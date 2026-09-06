@@ -5,6 +5,7 @@ Iteration list for raising `sdlc-spdd-orchestrator` from hobby/engineering resea
 **Do not start P1 coding until P0 docs exist.** Hardening the wrong proxy (heading grep, file existence, exact keywords) will not satisfy a referee.
 
 Full review: [`../analysis/SPIKE-004-academic-contribution-bar-analysis.md`](../analysis/SPIKE-004-academic-contribution-bar-analysis.md)  
+**Program plan (canvas):** [`../canvas/SPIKE-004-academic-contribution-bar.md`](../canvas/SPIKE-004-academic-contribution-bar.md)  
 Milestone: [`../../requirements/milestones/milestone-2/MILESTONE-2.md`](../../requirements/milestones/milestone-2/MILESTONE-2.md)
 
 ## How to use this list
@@ -17,7 +18,7 @@ Beck stage for the whole list: **make it right** (research argument and observab
 
 | # | Work ID | Task | Done when |
 |---|---------|------|-----------|
-| 0 | `SPIKE-004-academic-contribution-bar` | Journal review + open this backlog | Analysis + milestone + requirements (this PR) |
+| 0 | `SPIKE-004-academic-contribution-bar` | Journal review + program canvas + unblock P0 | Analysis + milestone + [canvas](../canvas/SPIKE-004-academic-contribution-bar.md) |
 | 1 | `DOC-001-research-questions-and-constructs` | Freeze RQs; operationalize drift, governance, context, memory, portability | Construct table with measure + instrument + proxy weakness |
 | 2 | `DOC-002-related-work-map` | Position vs Fowler SPDD, SDLC Agents, Spec Kit, OpenSpec, BMAD, coding agents, process-modeling | One-sentence novelty claim + matrix |
 | 3 | `TEST-001-evaluation-protocol` | Comparative protocol (unstructured vs canvas-only vs full method) | Protocol maps every RQ; no study data required yet |
@@ -54,10 +55,12 @@ Beck stage for the whole list: **make it right** (research argument and observab
 | Metrics kind dropped; `spdd --metrics` deferred | FEAT-015 |
 | No threats to validity / replication pack | DOC-003 |
 
-## First next action (after this PR)
+## First next action
+
+DOC-001 T01 (construct spec) is done. Next on this Work ID:
 
 ```text
-/sdlc-spdd-analysis @sdlc-spdd/requirements/milestones/milestone-2/DOC-001-research-questions-and-constructs.md
+/sdlc-spdd-code @sdlc-spdd/spdd/canvas/DOC-001-research-questions-and-constructs.md operation T02
 ```
 
-Claim with `./scripts/sdlc.sh claim DOC-001-research-questions-and-constructs` when a human starts that ID.
+After T02, claim `DOC-002-related-work-map` (related-work matrix). Do not start FEAT-014 until DOC-002 + TEST-001 are in progress or the SPIKE-004 stop rule is explicitly waived.

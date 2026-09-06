@@ -4,7 +4,7 @@ jira_key: ""
 github_number: ""
 jira_epic: ""
 jira_type: "Spike"
-jira_status: "Analysis"
+jira_status: "Complete"
 jira_assignee: ""
 jira_due_date: ""
 jira_sprint: ""
@@ -21,7 +21,7 @@ related: []
 
 **Work ID:** SPIKE-004-academic-contribution-bar  
 **Milestone:** Milestone 2 — Academic contribution bar  
-**Status:** Analysis  
+**Status:** Complete  
 **Date:** 2026-09-06  
 **Beck stage:** make it right (research argument / observability)
 
@@ -46,20 +46,24 @@ Review sdlc-spdd-orchestrator as a journal referee would, and open a governed Mi
 - Journal-style analysis of problem, related work, evaluation, construct validity, reproducibility
 - Milestone 2 definition, Work ID requirements, and iteration task list
 - ROADMAP pointer to the academic program
+- REASONS canvas as the **program plan** (sequence, dependencies, per-ID deliverables, stop rules)
+- Unblock and start DOC-001 (analysis, canvas, T01 RQ/constructs document only)
 
 ### NOT IN SCOPE
 
-- Implementing P1/P2 hardening features
+- Implementing P1/P2 hardening features (FEAT-014–017, REF-001, CHORE-003, TEST-002)
 - Writing the paper
-- Changing engine/runtime behavior
+- Changing engine/runtime behavior under this Work ID
 
 ## Acceptance Criteria
 
-- [ ] Analysis artifact exists at spdd/analysis/SPIKE-004-academic-contribution-bar-analysis.md
-- [ ] Milestone 2 has a definition, _milestone.yml, and Linked Work table
-- [ ] Each follow-on Work ID has a requirement stub under milestone-2/
-- [ ] Task list exists at spdd/tasks/milestone-2-academic-hardening.md
-- [ ] ROADMAP names Milestone 2 and the P0/P1/P2 Work IDs
+- [x] Analysis artifact exists at spdd/analysis/SPIKE-004-academic-contribution-bar-analysis.md
+- [x] Milestone 2 has a definition, _milestone.yml, and Linked Work table
+- [x] Each follow-on Work ID has a requirement stub under milestone-2/
+- [x] Task list exists at spdd/tasks/milestone-2-academic-hardening.md
+- [x] ROADMAP names Milestone 2 and the P0/P1/P2 Work IDs
+- [x] REASONS canvas is the program plan (`spdd/canvas/SPIKE-004-academic-contribution-bar.md`)
+- [x] DOC-001 T01 shipped (RQ + constructs + claims-allowed document)
 
 ## Non-Goals
 

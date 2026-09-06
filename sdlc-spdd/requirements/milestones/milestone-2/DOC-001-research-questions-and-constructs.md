@@ -4,7 +4,7 @@ jira_key: ""
 github_number: ""
 jira_epic: ""
 jira_type: "Documentation"
-jira_status: "To Do"
+jira_status: "In Progress"
 jira_assignee: ""
 jira_due_date: ""
 jira_sprint: ""
@@ -23,7 +23,7 @@ related:
 
 **Work ID:** DOC-001-research-questions-and-constructs  
 **Milestone:** Milestone 2 — Academic contribution bar  
-**Status:** To Do  
+**Status:** In Progress  
 **Date:** 2026-09-06  
 **Beck stage:** make it right (research argument / observability)
 
@@ -56,9 +56,10 @@ Freeze 3–5 research questions and a construct table (drift, governance/complia
 
 ## Acceptance Criteria
 
-- [ ] RQs are numbered and each names a dependent/independent construct
-- [ ] Every construct has: definition, measure, instrument (file/command), known proxy weakness
-- [ ] A short 'claims allowed today vs after Milestone 2' table is committed
+- [x] RQs are numbered and each names a dependent/independent construct
+- [x] Every construct has: definition, measure, instrument (file/command), known proxy weakness
+- [x] A short 'claims allowed today vs after Milestone 2' table is committed
+- [ ] README/compliance hedges applied (DOC-001 canvas T02)
 
 ## Non-Goals
 
