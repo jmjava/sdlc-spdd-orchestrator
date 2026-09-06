@@ -50,7 +50,7 @@ Beck stage for the whole list: **make it right** (research argument and observab
 | M3 Evaluation tests the tool, not the method | TEST-001, TEST-002 |
 | M4 Governance is heading/regex/file-existence | FEAT-014, FEAT-016 |
 | M5 Dual engine confounds "the method" | REF-001 |
-| M6 Retrieve is exact keyword filter; DICE unmeasured | FEAT-017 |
+| M6 Retrieve is exact keyword filter; DICE unmeasured | FEAT-017 Complete (lexical IR; DICE still non-claim) |
 | M7 Stale ROADMAP/design-decisions; empty dogfood ledger | CHORE-003 (+ hygiene in each ID) |
 | Metrics kind dropped; `spdd --metrics` deferred | FEAT-015 Complete (`context metrics`, no `kind=metric`) |
 | No threats to validity / replication pack | DOC-003 Complete |

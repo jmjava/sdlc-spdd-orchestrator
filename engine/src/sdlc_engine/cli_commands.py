@@ -310,12 +310,25 @@ def cmd_context(args: argparse.Namespace) -> int:
                     area=args.area or "",
                     kind=getattr(args, "kind", "") or "",
                     keyword=getattr(args, "keyword", "") or "",
+                    query=getattr(args, "query", "") or "",
+                    rank=getattr(args, "rank", "") or "",
                     include_staged=not bool(getattr(args, "no_staged", False)),
                     limit=int(getattr(args, "limit", 50) or 50),
                 ),
                 indent=2,
             )
         )
+        return 0
+    if action == "eval-retrieve":
+        from pathlib import Path
+
+        from .retrieve import load_and_evaluate
+
+        fixture = Path(args.fixture)
+        if not fixture.is_file():
+            print(f"eval-retrieve: fixture not found: {fixture}", file=sys.stderr)
+            return 2
+        print(json.dumps(load_and_evaluate(fixture), indent=2))
         return 0
     if action == "metrics":
         try:

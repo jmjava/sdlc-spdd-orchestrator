@@ -1,0 +1,32 @@
+{
+  "k": 1,
+  "query": "idempotency key",
+  "keyword": "idempotency",
+  "qrels": {
+    "pitfall:FEAT-017-fixture:notify:eval": 1
+  },
+  "records": [
+    {
+      "id": "pitfall:FEAT-017-fixture:notify:eval",
+      "kind": "pitfall",
+      "work_id": "FEAT-017-fixture",
+      "area": "notify",
+      "phase": "code",
+      "title": "Retry without an idempotency key double-posts",
+      "body": "Always send a unique idempotency key on retry.",
+      "keywords": ["notify"],
+      "source": "eval"
+    },
+    {
+      "id": "session:FEAT-017-fixture:other:eval",
+      "kind": "session",
+      "work_id": "FEAT-017-fixture",
+      "area": "other",
+      "phase": "code",
+      "title": "Unrelated planning notes",
+      "body": "Milestone hygiene only.",
+      "keywords": ["idempotency"],
+      "source": "eval"
+    }
+  ]
+}

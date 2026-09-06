@@ -4,7 +4,7 @@ jira_key: ""
 github_number: ""
 jira_epic: ""
 jira_type: "Feature"
-jira_status: "To Do"
+jira_status: "Complete"
 jira_assignee: ""
 jira_due_date: ""
 jira_sprint: ""
@@ -20,7 +20,7 @@ related:
 
 **Work ID:** FEAT-017-retrieval-ir-eval  
 **Milestone:** Milestone 2 — Academic contribution bar  
-**Status:** To Do  
+**Status:** Complete  
 **Date:** 2026-09-06  
 **Beck stage:** make it right (research argument / observability)
 
@@ -52,9 +52,9 @@ Replace 'retrieve = exact keyword filter' as the scientific story. Either evalua
 
 ## Acceptance Criteria
 
-- [ ] Written algorithm for context retrieve (what matches, sort key, limits)
-- [ ] At least one eval fixture where exact keyword-list miss is a ranked title/body hit
-- [ ] Contribution language for DICE is conditional on measured gain or marked non-claim
+- [x] Written algorithm for context retrieve (what matches, sort key, limits)
+- [x] At least one eval fixture where exact keyword-list miss is a ranked title/body hit
+- [x] Contribution language for DICE is conditional on measured gain or marked non-claim
 
 ## Non-Goals
 

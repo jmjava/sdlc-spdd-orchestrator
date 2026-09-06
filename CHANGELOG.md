@@ -11,6 +11,9 @@ All notable changes to this project will be documented in this file.
   C-REWORK, C-MEMORY). Body tags are no longer the query source.
 - DOC-003: threats-to-validity and replication notes with a freeze
   checklist; structured checker rejects token stubs.
+- FEAT-017: lexical `context retrieve --query` title-body ranking vs
+  keyword-list; qrel fixture with precision@k. DICE/Guide embeddings remain
+  unmeasured.
 
 ### Changed
 

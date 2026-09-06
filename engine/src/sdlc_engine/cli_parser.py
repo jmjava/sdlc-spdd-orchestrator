@@ -504,6 +504,17 @@ def build_parser() -> argparse.ArgumentParser:
     cre.add_argument("--area", default="")
     cre.add_argument("--kind", default="")
     cre.add_argument("--keyword", default="")
+    cre.add_argument(
+        "--query",
+        default="",
+        help="Free-text query for title-body ranking (FEAT-017)",
+    )
+    cre.add_argument(
+        "--rank",
+        default="",
+        choices=["", "keyword-list", "title-body"],
+        help="Retrieve algorithm (default: title-body if --query, else keyword-list if --keyword)",
+    )
     cre.add_argument("--limit", type=int, default=50)
     cre.add_argument("--no-staged", action="store_true")
     cre.set_defaults(func=cmd_context)
@@ -524,6 +535,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     cmet.add_argument("--no-staged", action="store_true")
     cmet.set_defaults(func=cmd_context)
+    cev = ctx_sub.add_parser(
+        "eval-retrieve",
+        help="Run keyword-list vs title-body IR eval on a qrel fixture (FEAT-017)",
+    )
+    cev.add_argument("--fixture", required=True, help="JSON qrel fixture path")
+    cev.set_defaults(func=cmd_context)
     ctx_sub.add_parser(
         "coverage", help="Report CONTEXT_KINDS capability coverage in SQLite"
     ).set_defaults(func=cmd_context)

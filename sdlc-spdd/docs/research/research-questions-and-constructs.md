@@ -113,8 +113,8 @@ Every row: **definition**, **measure**, **instrument** (what exists *today* vs *
 |-------|------|
 | **Definition** | **Load:** how much context the process caused to be loaded (files or tokens). **Relevance:** whether loaded items were used for the gold task (qrels / rater). |
 | **Measure** | `ContextLoad` = count of distinct files listed as loaded (or token estimate if available). `ContextRelevance@k` = precision of retrieved lesson ids vs a qrel set (FEAT-017). |
-| **Instrument today** | Optional capture `--context-files` stored on `record.metrics.context_files` and queried with `sdlc-engine context metrics --construct C-CONTEXT` (**FEAT-015**). Body tags remain a human copy. `LessonsLedger.records()` filters exact keyword-list membership; not ranked. SQLite FTS is a *different* CLI (`db query --search`). |
-| **Target instrument** | **FEAT-015** (structured `context_files` queried via `context metrics`) + **FEAT-017** (algorithm + precision@k fixture). |
+| **Instrument today** | Optional capture `--context-files` stored on `record.metrics.context_files` and queried with `sdlc-engine context metrics --construct C-CONTEXT` (**FEAT-015**). Body tags remain a human copy. `context retrieve --keyword` is still exact keyword-list membership. `context retrieve --query` ranks title/body lexically (**FEAT-017**). SQLite FTS is a *different* CLI (`db query --search`). Guide DICE embeddings are **unmeasured**. |
+| **Target instrument** | **FEAT-015** (structured `context_files`) + **FEAT-017** (lexical title-body vs keyword-list; DICE still unmeasured). |
 | **Proxy weakness** | `--context-files` is self-reported and optional; it does not prove what the model actually attended to. |
 
 ### C-MEMORY — Memory usefulness
@@ -159,7 +159,7 @@ Use this table when editing README, compliance, or talks. **If a cell says no, d
 | The canvas **governs** execution (causal, non-bypassable) | **No** — say *advised process + optional CLI gates* | Same | Stronger *observable* compliance (C-COMPLY) | Same; still bypassable via `--force`/ignoring chat |
 | Three assistants run the **same method** | **Only adapter-text parity** | Same | Same | Behavioral C-PORT if ≥2 assistants recorded |
 | Ledger retrieval improves later work | **No** | Protocol exists | Metrics queryable | Only if RQ4 protocol ran |
-| DICE / hybrid graph retrieval is a result | **No** (SPIKE-001 shelved; retrieve is keyword-list filter) | **No** | **No** unless FEAT-017 shows gain | Conditional on FEAT-017 |
+| DICE / hybrid graph retrieval is a result | **No** (SPIKE-001 shelved; retrieve was keyword-list filter) | **No** | **No** — FEAT-017 measured **lexical** title-body vs keyword-list only; Guide embeddings unmeasured | Still **non-claim** unless a later ID measures DICE |
 | Engineering tests prove the method works | **No** — they prove the *tool* | TEST-001 says how we will test the method | Instruments exist | One slice exists; not a journal N |
 
 ---

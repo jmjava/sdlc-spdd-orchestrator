@@ -33,7 +33,7 @@ P1 — major-revision items (observability of the method):
 
 P2 — strengthen the contribution:
 
-- [ ] FEAT-017-retrieval-ir-eval — retrieval as IR (rank, qrels, baselines)
+- [x] FEAT-017-retrieval-ir-eval — retrieval as IR (rank, qrels, baselines)
 - [ ] TEST-002-assistant-behavior-eval — three-assistant *behavior*, not adapter text parity
 - [ ] CHORE-003-dogfood-ledger — committed lessons survive archive so dogfood memory exists
 - [ ] REF-001-engine-single-source — one gate semantics (shell vs Python) as a validity fix
@@ -50,7 +50,7 @@ P2 — strengthen the contribution:
 | FEAT-015-first-class-metrics | [canvas](../../../spdd/canvas/FEAT-015-first-class-metrics.md) | [requirement](FEAT-015-first-class-metrics.md) | Complete | Structured `metrics` object + `context metrics` CLI |
 | FEAT-016-intent-code-traceability | [canvas](../../../spdd/canvas/FEAT-016-intent-code-traceability.md) | [requirement](FEAT-016-intent-code-traceability.md) | Complete | Empty review ≠ safeguards; Files: mapping; advisory labels |
 | DOC-003-replication-package | [canvas](../../../spdd/canvas/DOC-003-replication-package.md) | [requirement](DOC-003-replication-package.md) | Complete | Threats + freeze checklist; live-consumer is not method evidence |
-| FEAT-017-retrieval-ir-eval | — | [requirement](FEAT-017-retrieval-ir-eval.md) | Planned | P2 |
+| FEAT-017-retrieval-ir-eval | [canvas](../../../spdd/canvas/FEAT-017-retrieval-ir-eval.md) | [requirement](FEAT-017-retrieval-ir-eval.md) | Complete | Lexical title-body vs keyword-list; DICE unmeasured |
 | TEST-002-assistant-behavior-eval | — | [requirement](TEST-002-assistant-behavior-eval.md) | Planned | P2 |
 | CHORE-003-dogfood-ledger | — | [requirement](CHORE-003-dogfood-ledger.md) | Planned | P2 |
 | REF-001-engine-single-source | — | [requirement](REF-001-engine-single-source.md) | Planned | P2 |
