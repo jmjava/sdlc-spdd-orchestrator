@@ -278,15 +278,38 @@ class ContextStore:
         area: str = "",
         kind: str = "",
         keyword: str = "",
+        query: str = "",
+        rank: str = "",
         include_staged: bool = True,
         limit: int = 50,
     ) -> dict[str, Any]:
+        from .retrieve import (
+            ALG_KEYWORD_LIST,
+            ALG_TITLE_BODY,
+            ALG_UNFILTERED_TS,
+            keyword_list_filter,
+            rank_title_body,
+        )
+
         want_sqlite = backend_enabled(self.project, BACKEND_SQLITE)
         want_guide = backend_enabled(self.project, BACKEND_GUIDE)
+        algorithm = (rank or "").strip().lower()
+        query = (query or "").strip()
+        keyword = (keyword or "").strip()
+        if not algorithm:
+            if query:
+                algorithm = ALG_TITLE_BODY
+            elif keyword:
+                algorithm = ALG_KEYWORD_LIST
+            else:
+                algorithm = ALG_UNFILTERED_TS
         out: dict[str, Any] = {
             "work_id": work_id,
             "area": area,
             "kind": kind,
+            "algorithm": algorithm,
+            "query": query,
+            "keyword": keyword,
             "backends": self._backends(),
             "ledger": [],
             "sqlite_graph": None,
@@ -295,16 +318,26 @@ class ContextStore:
         }
         try:
             staged = self.ledger.staged_ids()
-            records = self.ledger.records(
+            candidates = self.ledger.records(
                 work_id=work_id,
                 area=area,
                 kind=kind,
-                keyword=keyword,
+                keyword="" if algorithm == ALG_TITLE_BODY else keyword,
                 include_staged=include_staged,
-            )[: max(1, limit)]
-            out["ledger"] = [
-                {**r.to_json(), "staged": r.id in staged} for r in records
-            ]
+            )
+            if algorithm == ALG_TITLE_BODY:
+                ranked = rank_title_body(candidates, query)[: max(1, limit)]
+                out["ledger"] = [
+                    {**r.to_json(), "score": score, "staged": r.id in staged}
+                    for score, r in ranked
+                ]
+            else:
+                if algorithm == ALG_KEYWORD_LIST:
+                    candidates = keyword_list_filter(candidates, keyword)
+                records = candidates[: max(1, limit)]
+                out["ledger"] = [
+                    {**r.to_json(), "staged": r.id in staged} for r in records
+                ]
         except Exception as exc:  # noqa: BLE001
             out["errors"].append(f"ledger: {exc}")
         if want_sqlite and work_id:

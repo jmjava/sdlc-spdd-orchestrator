@@ -198,7 +198,7 @@ Do not pool runs across model versions.
 | Dual engine (shell vs Python `gate_check`) | Confound for “the method” | REF-001 |
 | Committed `lessons.jsonl` empty after Milestone 1 archive | RQ4 dogfood retrieve is vacuous in this repo | CHORE-003 |
 | Existence-only gates | RQ2 semantic arm needs raters until FEAT-014/016 | FEAT-014, FEAT-016 |
-| Retrieve is exact keyword-list filter | RQ3 relevance is rater-only until FEAT-017 | FEAT-017 |
+| Retrieve is exact keyword-list filter | RQ3 relevance is rater-only until FEAT-017 | FEAT-017 (lexical title-body vs keyword-list; DICE still unmeasured) |
 
 ---
 
