@@ -42,7 +42,7 @@ P2 — strengthen the contribution:
 
 Claim test after DOC-001 T03 freeze (the retrievability bar needs a named suite):
 
-- [x] TEST-003-cretrieve-roundtrip — persist→retrieve same id on ledger, SQLite, mocked Guide
+- [x] TEST-003-cretrieve-roundtrip — three modes persist→read; context-select; unreachable Guide fails parity
 
 ## Linked Work
 
@@ -60,7 +60,7 @@ Claim test after DOC-001 T03 freeze (the retrievability bar needs a named suite)
 | TEST-002-assistant-behavior-eval | [canvas](../../../spdd/canvas/TEST-002-assistant-behavior-eval.md) | [requirement](TEST-002-assistant-behavior-eval.md) | Complete (protocol incomplete; n=1) | Hello gold + farewell AC; C-DRIFT 0 vs 0.333; C-PORT not reported |
 | CHORE-003-dogfood-ledger | [canvas](../../../spdd/canvas/CHORE-003-dogfood-ledger.md) | [requirement](CHORE-003-dogfood-ledger.md) | Complete | Seeded decision/pitfall/pattern; archive never truncates ledger |
 | REF-001-engine-single-source | [canvas](../../../spdd/canvas/REF-001-engine-single-source.md) | [requirement](REF-001-engine-single-source.md) | Complete | Python `gate_check` is SUT; `SDLC_GATE_ENGINE=shell` is not an eval condition |
-| TEST-003-cretrieve-roundtrip | [canvas](../../../spdd/canvas/TEST-003-cretrieve-roundtrip.md) | [requirement](TEST-003-cretrieve-roundtrip.md) | Complete | Named C-RETRIEVE suite; mocked Guide in default CI; live Neo4j extra |
+| TEST-003-cretrieve-roundtrip | [canvas](../../../spdd/canvas/TEST-003-cretrieve-roundtrip.md) | [requirement](TEST-003-cretrieve-roundtrip.md) | Complete | T01–T05: three modes + context-select; mocked client on default CI; live graph required; unreachable fails parity |
 
 ## Iteration order
 
@@ -87,6 +87,7 @@ For each work item:
 
 ## Session Updates
 
+2026-09-07 — TEST-003 T01–T05 closed (#259). Remaining freeze-honesty gaps: `spdd/reviews/academic-freeze-system-review.md`.
 2026-09-07 — DOC-001 T05: three storage modes; live Guide+Neo4j required for the graph (`test-guide-stack-experimental`).
 2026-09-06 — TEST-003 named C-RETRIEVE suite (ledger + SQLite + mocked Guide). Live Guide+Neo4j e2e already exists (`test-guide-stack-experimental`).
 2026-09-06 — DOC-001 T03: academic review goal frozen as stores + retrievability (ledger + Guide); reduced-drift and `embabel-dif` out of scope.

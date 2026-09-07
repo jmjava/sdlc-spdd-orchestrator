@@ -27,6 +27,10 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- TEST-003 T05 close-out: canvas, requirement, and review match `main`
+  (`e716100` / #259). System review
+  `sdlc-spdd/spdd/reviews/academic-freeze-system-review.md` lists remaining
+  freeze-honesty gaps (operator docs still call live Guide optional).
 - DOC-001 T05: **three storage modes** (git ledger, SQLite, live Guide/Neo4j
   graph) must each persist→read. Live Guide+Neo4j is **required evidence** for
   the graph mode; mocked HTTP is the client contract, not the graph-store proof.

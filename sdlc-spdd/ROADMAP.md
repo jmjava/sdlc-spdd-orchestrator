@@ -87,8 +87,8 @@ in parallel; research *claims* must not ride on unfinished product UI.
 P0, P1, and P2 Complete. FEAT-017 Complete; TEST-002 Complete (protocol
 incomplete n=1 — not a journal result); CHORE-003 Complete (dogfood ledger
 seeded); REF-001 Complete (Python `gate_check` is the named SUT);
-TEST-003 Complete (C-RETRIEVE persist→retrieve suite; mocked Guide in
-default CI). Journal n≥3 remains TEST-001's stop rule, not a new SPIKE.
+TEST-003 Complete (T01–T05: three storage modes, context-select,
+unreachable Guide fails `context parity`; mocked Guide in default CI). Journal n≥3 remains TEST-001's stop rule, not a new SPIKE.
 
 ## Post-MVP backlog
 
@@ -187,7 +187,7 @@ Milestone 1 feature track is Complete on the integration branch.
 | TEST-002-assistant-behavior-eval | make it right | Complete (P2, protocol incomplete n=1) |
 | CHORE-003-dogfood-ledger | make it right | Complete (P2) |
 | REF-001-engine-single-source | make it right | Complete (P2) |
-| TEST-003-cretrieve-roundtrip | make it right | Complete (C-RETRIEVE suite) |
+| TEST-003-cretrieve-roundtrip | make it right | Complete (T01–T05) |
 
 Deferred / residual (not Work IDs yet):
 
