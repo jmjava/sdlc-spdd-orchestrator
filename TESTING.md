@@ -11,7 +11,7 @@ what can be proven automatically, then run a short manual smoke for the rest.
 | Level | Goal | Fully automatable? | How |
 |------|------|---------------------|-----|
 | 1. Deterministic CI | Prevent adapter/config drift | Yes | GitHub Actions + validator scripts |
-| 2. Post-invocation effects | Prove command side-effects happened | Mostly | `verify-agent-command-effects.sh` |
+| 2. Post-invocation effects | Prove command side-effects happened | Mostly | `verify-agent-command-effects.sh` (unreachable Guide fails `context parity` but is not a command-effects fail) |
 | 3. Manual chat smoke | Validate real chat invocation path | No | Short guided run in Cursor/Copilot/Claude Code |
 
 ## Engine test suites (3 packages)

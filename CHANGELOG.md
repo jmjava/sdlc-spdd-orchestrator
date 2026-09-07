@@ -37,6 +37,8 @@ All notable changes to this project will be documented in this file.
   return the ledger id also fails. Global ``by-label`` is not the C-RETRIEVE
   instrument (list cap 100). Guide v2 ingest is a ledger-derived
   ``context-index.md``. Live CI fails if ``repo.embabel.com`` is down.
+  Slash-command `verify-agent-command-effects.sh` does not treat that
+  unreachable-Guide fail as command-effects drift.
 - TEST-003 T04: C-RETRIEVE context-select — two Work IDs, three areas, three
   kinds. Retrieve-by-work / area / kind / query returns the matching subset
   and excludes sibling records (ledger, SQLite, live ``work_subgraph`` /

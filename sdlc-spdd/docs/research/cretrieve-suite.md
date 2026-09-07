@@ -52,6 +52,11 @@ Unreachable Guide with ``guide-dice`` enabled **fails** ``context parity``
 backends is ``enabled: false``, not a skip-pass. Live CI must not exit 0
 when ``repo.embabel.com`` is down.
 
+Slash-command effect verification (``verify-agent-command-effects.sh``) does
+**not** treat that unreachable-Guide ``context parity`` fail as a
+command-effects fail. Ledger/SQLite drift, or a reachable Guide missing ids,
+still fails the verifier. ``sdlc-engine context parity`` itself still exits 1.
+
 ## From trivial to non-trivial (T04)
 
 Writing one pitfall and reading that id back is a smoke test. The graph store

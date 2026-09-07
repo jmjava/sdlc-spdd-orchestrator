@@ -131,10 +131,10 @@ Temp project, persist/accept one pitfall, assert the same id is readable. Enable
 ### T05 — Unreachable Guide fails parity (not a skip-pass)
 
 - Status: In Progress
-- Description: When `guide-dice` is enabled, Guide down sets `parity.guide.ok=false` and overall `ok=false` (CLI exit 1). Live stack script and experimental CI fail if Embabel/Guide cannot boot. Slash commands still must not block the lifecycle when Guide is absent.
-- Files: `engine/src/sdlc_engine/context_store.py`, `tests/test-guide-stack-live.sh`, `.github/workflows/test-guide-stack-experimental.yml`, TEST-003 tests/docs
-- Tests: `test_parity_fails_when_guide_unreachable`, `test_cli_parity_exits_nonzero_when_guide_unreachable`, `test_unreachable_guide_fails_parity`
-- Validation: no `ok: true` + `skipped`/`unreachable` pair; CI does not exit 0 on Embabel down
+- Description: When `guide-dice` is enabled, Guide down sets `parity.guide.ok=false` and overall `ok=false` (CLI exit 1). Live stack script and experimental CI fail if Embabel/Guide cannot boot. Slash commands still must not block the lifecycle when Guide is absent: `verify-agent-command-effects.sh` does not treat unreachable-Guide parity as a command-effects fail.
+- Files: `engine/src/sdlc_engine/context_store.py`, `scripts/verify-agent-command-effects.sh`, `tests/test-guide-stack-live.sh`, `.github/workflows/test-guide-stack-experimental.yml`, TEST-003 tests/docs
+- Tests: `test_parity_fails_when_guide_unreachable`, `test_cli_parity_exits_nonzero_when_guide_unreachable`, `test_unreachable_guide_fails_parity`, `test_verify_effects_passes_when_guide_unreachable`, `test_verify_effects_fails_on_sqlite_drift`
+- Validation: no `ok: true` + `skipped`/`unreachable` pair; CI does not exit 0 on Embabel down; live-consumer effects still pass without Guide
 
 ## N - Norms
 
@@ -172,7 +172,7 @@ Opened after DOC-001 T03 freeze (`5e0feea` / #244). Stakeholder: claims need a c
 
 2026-09-07 — T04: non-trivial C-RETRIEVE is context-select (work/area/kind/query), not another single-id write.
 
-2026-09-07 — T05: guide-dice enabled + Guide down fails `context parity`; live CI fails if Embabel cannot boot.
+2026-09-07 — T05: guide-dice enabled + Guide down fails `context parity`; live CI fails if Embabel cannot boot. `verify-agent-command-effects.sh` reports a note, not a command-effects fail, when that is the only parity failure.
 
 ## Final Status
 

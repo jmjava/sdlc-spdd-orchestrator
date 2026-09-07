@@ -13,6 +13,9 @@ Does not prove RQ1 drift, RQ4 usefulness, or Guide embeddings.
 
 from __future__ import annotations
 
+import json
+import os
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -39,6 +42,7 @@ SUITE_DOC = ROOT / "sdlc-spdd" / "docs" / "research" / "cretrieve-suite.md"
 DOC001 = ROOT / "sdlc-spdd" / "docs" / "research" / "research-questions-and-constructs.md"
 WORKFLOW = ROOT / ".github" / "workflows" / "test-research-p0.yml"
 PROVE = ROOT / "sdlc-spdd" / "docs" / "research" / "prove-academic-review.sh"
+VERIFY_EFFECTS = ROOT / "scripts" / "verify-agent-command-effects.sh"
 
 WID = "TEST-003-cretrieve-roundtrip"
 AREA = "engine/retrieve"
@@ -86,6 +90,37 @@ def _persist_accept(store: ContextStore) -> str:
     assert lesson_id, result.as_dict()
     store.accept(work_id=WID, project_guide=False)
     return lesson_id
+
+
+def _seed_plan(root: Path) -> None:
+    _seed(root)
+    canvas = root / "spdd" / "canvas" / f"{WID}.md"
+    canvas.write_text(
+        canvas.read_text(encoding="utf-8")
+        + "\n## O - Operations\n\n### T01\n\n- Status: Complete\n\n"
+        "## S - Safeguards\n\n- Do not treat unreachable Guide as a pass\n",
+        encoding="utf-8",
+    )
+
+
+def _verify_env() -> dict[str, str]:
+    env = os.environ.copy()
+    src = str(ROOT / "engine" / "src")
+    existing = env.get("PYTHONPATH", "")
+    env["PYTHONPATH"] = src if not existing else src + os.pathsep + existing
+    env["GUIDE_BASE_URL"] = "http://127.0.0.1:9"
+    return env
+
+
+def _run_verify(root: Path, step: str = "plan") -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [str(VERIFY_EFFECTS), "--target", str(root), "--work-id", WID, "--step", step],
+        cwd=str(root),
+        env=_verify_env(),
+        text=True,
+        capture_output=True,
+        check=False,
+    )
 
 
 class SuiteDocTests(unittest.TestCase):
@@ -243,6 +278,60 @@ class GuideRoundTripTests(unittest.TestCase):
             self.assertFalse(guide.get("ok"), guide)
             self.assertFalse(parity.get("ok"), parity)
             self.assertFalse(bool(guide.get("skipped")), guide)
+
+
+class CommandEffectsParityTests(unittest.TestCase):
+    """Slash-command effects must not fail solely because Guide is down."""
+
+    def test_verify_effects_passes_when_guide_unreachable(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _seed_plan(root)
+            store = _store(root, ["git-pointers", "guide-dice"])
+            _persist_accept(store)
+            result = _run_verify(root)
+            self.assertEqual(
+                result.returncode,
+                0,
+                result.stdout + result.stderr,
+            )
+            self.assertIn("not a command-effects fail", result.stdout + result.stderr)
+            engine = subprocess.run(
+                [sys.executable, "-m", "sdlc_engine", "context", "parity"],
+                cwd=str(root),
+                env=_verify_env(),
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(engine.returncode, 1, engine.stdout + engine.stderr)
+            self.assertIn("unreachable", engine.stdout)
+
+    def test_verify_effects_fails_on_sqlite_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _seed_plan(root)
+            store = _store(root, ["git-pointers", "sqlite"])
+            _persist_accept(store)
+            extra = {
+                "id": f"pitfall:{WID}:{AREA}:ghost",
+                "kind": "pitfall",
+                "work_id": WID,
+                "area": AREA,
+                "phase": "code",
+                "ts": "2026-09-07T00:00:00Z",
+                "title": "ghost",
+                "body": "ledger-only; sqlite must miss this",
+                "source": "ghost",
+                "keywords": [],
+                "schema": 1,
+            }
+            ledger = root / "spdd" / "memory" / "lessons.jsonl"
+            with ledger.open("a", encoding="utf-8") as handle:
+                handle.write(json.dumps(extra) + "\n")
+            result = _run_verify(root)
+            self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn("reported drift", result.stderr + result.stdout)
 
 
 class ContextualSelectTests(unittest.TestCase):
