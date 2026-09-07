@@ -50,7 +50,7 @@ A referee can see **three storage modes** persist→read: ledger and SQLite on t
 - Lesson record id
 - Ledger retrieve hit
 - SQLite accepted id set
-- Guide by-label id set (mocked)
+- Guide work_subgraph id set (mocked client; live graph uses the same retrieve API)
 - Non-claim
 
 ### Files likely affected
@@ -63,7 +63,7 @@ A referee can see **three storage modes** persist→read: ledger and SQLite on t
 
 ## A - Approach
 
-Temp project, persist/accept one pitfall, assert the same id is readable. Enable sqlite in that project. Mock `urlopen` for Guide `by-label` so parity `missing` is empty. Do not call a real JVM.
+Temp project, persist/accept one pitfall, assert the same id is readable. Enable sqlite in that project. Mock Guide ``work_subgraph`` so parity ``missing`` is empty. Do not call a real JVM.
 
 ### Alternatives
 
