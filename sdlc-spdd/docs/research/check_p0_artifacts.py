@@ -268,13 +268,19 @@ def issues_for_related_work(text: str) -> list[str]:
                 issues.append(f"not-claiming section missing {token}")
         if "embabel-dif" not in nc and "deterministic intent folding" not in nc:
             issues.append("not-claiming section must name embabel-dif as out of this review")
-        if "python 3" not in nc and "python3" not in nc:
-            issues.append("not-claiming section must state Python 3-only replication")
-        if "optional" not in nc or "neo4j" not in nc:
-            issues.append("not-claiming section must state live Guide/Neo4j is optional")
+        if "neo4j" not in nc:
+            issues.append("not-claiming section must name Neo4j")
+        if "mocked" not in nc:
+            issues.append("not-claiming section must say mocked HTTP is not the graph-store proof")
+        if re.search(r"graph store stays optional|python 3 only", nc):
+            issues.append(
+                "not-claiming must not treat the live graph as optional / Python-3-only freeze"
+            )
 
     if not re.search(r"fork-only", text, re.IGNORECASE):
         issues.append("related-work must state Guide is fork-only")
+    if "three storage" not in _norm(text):
+        issues.append("related-work must name three storage modes")
 
     table = find_matrix_table(text)
     if table is None or len(table) < 2:
@@ -373,10 +379,29 @@ def issues_for_constructs_spec(text: str) -> list[str]:
         issues.append(
             "constructs spec must state that this review's scope removed drift and usefulness"
         )
-    if "python 3" not in blob and "python3" not in blob:
-        issues.append("constructs spec must state Python 3-only replication")
-    if "optional" not in blob or "neo4j" not in blob:
-        issues.append("constructs spec must state live Guide/Neo4j is optional")
+    if "three storage" not in blob and "three storage modes" not in blob:
+        issues.append("constructs spec must name three storage modes (ledger, SQLite, Guide/Neo4j)")
+    if "neo4j" not in blob:
+        issues.append("constructs spec must name the Neo4j graph store")
+    if "required evidence" not in blob and "required live" not in blob:
+        issues.append("constructs spec must state live Guide/Neo4j is required evidence for the graph mode")
+    if "mocked" not in blob:
+        issues.append("constructs spec must distinguish mocked Guide HTTP from the live graph")
+    if re.search(
+        r"requiring a jvm graph store.{0,80}fails",
+        blob,
+    ):
+        issues.append(
+            "constructs spec must not say requiring a JVM graph store fails the bar"
+        )
+    if re.search(
+        r"live guide\+neo4j stays\s+\*\*optional\*\*|live\s+guide\+neo4j.{0,30}optional",
+        text,
+        re.IGNORECASE,
+    ):
+        issues.append(
+            "constructs spec must not treat live Guide+Neo4j as optional for the freeze"
+        )
     return issues
 
 
@@ -508,10 +533,14 @@ def issues_for_threats_replication(text: str) -> list[str]:
         issues.append("must say how to freeze the engine commit (git SHA)")
     if "sdlc_engine" not in blob and "__version__" not in blob and "engine version" not in blob:
         issues.append("must say how to freeze the engine version")
-    if "python 3" not in blob and "python3" not in blob:
-        issues.append("replication pack must state Python 3-only replication")
-    if "optional" not in blob or "neo4j" not in blob:
-        issues.append("replication pack must state live Guide/Neo4j is optional")
+    if "three storage" not in blob and "three storage modes" not in blob:
+        issues.append("replication pack must name three storage modes")
+    if "neo4j" not in blob:
+        issues.append("replication pack must name Neo4j")
+    if "required" not in blob or "live" not in blob:
+        issues.append("replication pack must state live Guide/Neo4j is required for the graph mode")
+    if re.search(r"live guide\+neo4j stays\s+\*\*optional\*\*|must stay optional", text, re.I):
+        issues.append("replication pack must not treat live Guide+Neo4j as optional")
     if "model" not in blob:
         issues.append("must say how to freeze the model id")
     if "sampling" not in blob and "temperature" not in blob:

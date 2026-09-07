@@ -1,16 +1,21 @@
 #!/usr/bin/env bash
-# Referee replication gate for the academic-review freeze (DOC-001 §1).
+# Referee hermetic gate for the academic-review freeze (DOC-001 §1).
 #
-# Required path: Python 3 + this repo. No Docker, no JVM, no Neo4j, no
-# orch-guide clone. That is the paper claim (stores + retrievability).
+# This script proves storage modes 1–2 (git ledger + SQLite) and the Guide
+# *client* contract (mocked HTTP). It does NOT prove the Neo4j graph store.
+#
+# Complete freeze (three storage modes) also requires live Guide+Neo4j:
+#
+#   SDLC_GUIDE_STACK_LIVE=1 ./tests/test-guide-stack-live.sh
+#
+# CI job: .github/workflows/test-guide-stack-experimental.yml (guide-neo4j-live).
+#
+# Hermetic path:
 #
 #   git clone https://github.com/jmjava/sdlc-spdd-orchestrator.git
 #   cd sdlc-spdd-orchestrator
 #   git checkout <commit>   # record `git rev-parse HEAD` beside the result
 #   ./sdlc-spdd/docs/research/prove-academic-review.sh
-#
-# Optional live Guide+Neo4j is NOT this script. See
-# tests/test-guide-stack-live.sh (Docker + Java 21 + jmjava/orch-guide).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
@@ -45,7 +50,7 @@ else
   err "test_p0_artifacts"
 fi
 
-step "TEST-003 C-RETRIEVE (ledger + SQLite + mocked Guide)"
+step "TEST-003 C-RETRIEVE hermetic (ledger + SQLite + mocked Guide client)"
 if python3 -m unittest tests.research.test_cretrieve -v; then
   ok "test_cretrieve"
 else
@@ -68,10 +73,12 @@ fi
 
 echo
 if (( fail > 0 )); then
-  echo "Academic-review proof FAILED"
+  echo "Academic-review hermetic proof FAILED"
   echo "Record: git rev-parse HEAD = $(git rev-parse HEAD 2>/dev/null || echo unknown)"
   exit 1
 fi
-echo "Academic-review proof PASSED"
+echo "Academic-review hermetic proof PASSED (ledger + SQLite + Guide client)"
+echo "Graph mode is NOT proven by this script. Required live:"
+echo "  SDLC_GUIDE_STACK_LIVE=1 ./tests/test-guide-stack-live.sh"
 echo "Record: git rev-parse HEAD = $(git rev-parse HEAD)"
 exit 0

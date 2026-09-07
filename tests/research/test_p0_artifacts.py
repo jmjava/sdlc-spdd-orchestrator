@@ -107,18 +107,27 @@ class RelatedWorkCheckerTests(unittest.TestCase):
             f"expected evidence-as-finding failure, got {issues}",
         )
 
-    def test_missing_python3_replication_fails(self) -> None:
+    def test_missing_three_storage_modes_fails(self) -> None:
         text = _read("related_work_valid.md")
-        stripped = (
-            text.replace("Python 3", "XXXX")
-            .replace("python 3", "xxxx")
-            .replace("Python3", "XXXX")
-            .replace("python3", "xxxx")
+        stripped = text.replace("three storage modes", "XXXX").replace(
+            "Neo4j", "XXXX"
         )
         issues = issues_for_related_work(stripped)
         self.assertTrue(
-            any("Python 3" in i for i in issues),
-            f"expected missing Python 3-only replication failure, got {issues}",
+            any("Neo4j" in i or "graph" in i.lower() for i in issues),
+            f"expected missing graph/Neo4j failure, got {issues}",
+        )
+
+    def test_python3_only_freeze_framing_fails(self) -> None:
+        text = _read("related_work_valid.md")
+        poisoned = text.replace(
+            "Mocked HTTP is not the Neo4j graph-store proof.",
+            "The graph store stays optional. Replication is Python 3 only.",
+        )
+        issues = issues_for_related_work(poisoned)
+        self.assertTrue(
+            any("optional" in i.lower() or "Python-3" in i for i in issues),
+            f"expected optional/Python-3 freeze framing failure, got {issues}",
         )
 
 
@@ -202,19 +211,26 @@ fixes drift
             f"expected missing review-goal failure, got {issues}",
         )
 
-    def test_missing_python3_replication_fails(self) -> None:
+    def test_missing_three_storage_modes_fails(self) -> None:
         spec = ROOT / "sdlc-spdd" / "docs" / "research" / "research-questions-and-constructs.md"
         text = spec.read_text(encoding="utf-8")
-        stripped = (
-            text.replace("Python 3", "XXXX")
-            .replace("python 3", "xxxx")
-            .replace("Python3", "XXXX")
-            .replace("python3", "xxxx")
+        stripped = text.replace("three storage modes", "XXXX").replace(
+            "Three storage modes", "XXXX"
         )
         issues = issues_for_constructs_spec(stripped)
         self.assertTrue(
-            any("Python 3" in i for i in issues),
-            f"expected missing Python 3-only replication failure, got {issues}",
+            any("three storage" in i for i in issues),
+            f"expected missing three storage modes failure, got {issues}",
+        )
+
+    def test_optional_live_guide_framing_fails(self) -> None:
+        spec = ROOT / "sdlc-spdd" / "docs" / "research" / "research-questions-and-constructs.md"
+        text = spec.read_text(encoding="utf-8")
+        poisoned = text + "\n\nLive Guide+Neo4j stays **optional**.\n"
+        issues = issues_for_constructs_spec(poisoned)
+        self.assertTrue(
+            any("optional" in i.lower() for i in issues),
+            f"expected optional live Guide framing failure, got {issues}",
         )
 
     def test_missing_sqlite_store_fails(self) -> None:
@@ -276,18 +292,22 @@ class ThreatsReplicationCheckerTests(unittest.TestCase):
             f"expected missing C-PORT in construct section, got {issues}",
         )
 
-    def test_missing_python3_replication_fails(self) -> None:
+    def test_missing_three_storage_modes_fails(self) -> None:
         text = _read("threats_valid.md")
-        stripped = (
-            text.replace("Python 3", "XXXX")
-            .replace("python 3", "xxxx")
-            .replace("Python3", "XXXX")
-            .replace("python3", "xxxx")
-        )
+        stripped = text.replace("three storage modes", "XXXX")
         issues = issues_for_threats_replication(stripped)
         self.assertTrue(
-            any("Python 3" in i for i in issues),
-            f"expected missing Python 3-only replication failure, got {issues}",
+            any("three storage" in i for i in issues),
+            f"expected missing three storage modes failure, got {issues}",
+        )
+
+    def test_optional_live_guide_framing_fails(self) -> None:
+        text = _read("threats_valid.md")
+        poisoned = text + "\n\nLive Guide+Neo4j stays **optional**.\n"
+        issues = issues_for_threats_replication(poisoned)
+        self.assertTrue(
+            any("optional" in i.lower() for i in issues),
+            f"expected optional live Guide framing failure, got {issues}",
         )
 
 

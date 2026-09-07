@@ -27,9 +27,14 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- DOC-001 T05: **three storage modes** (git ledger, SQLite, live Guide/Neo4j
+  graph) must each persist→read. Live Guide+Neo4j is **required evidence** for
+  the graph mode; mocked HTTP is the client contract, not the graph-store proof.
+  Hermetic `prove-academic-review.sh` remains modes 1–2 + client.
 - DOC-001: **Python 3-only replication** is a first-class freeze claim
   (pass bar item 5, contribution sentence, claims-allowed table). Live
   Guide+Neo4j stays **optional**; requiring a JVM graph store fails the bar.
+  **Superseded by T05** (three modes; live graph required).
 - DOC-001 T03: freeze the academic-review object as git-backed intent/advice
   stores plus **retrievability** (ledger `context retrieve`; SQLite and Guide
   `context parity` when enabled). Reduced-drift evidence and `embabel-dif` are

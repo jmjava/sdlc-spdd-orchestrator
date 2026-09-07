@@ -7,7 +7,7 @@
 - Status: Complete
 - Readiness: Reviewed
 - Created: 2026-09-06
-- Updated: 2026-09-06
+- Updated: 2026-09-07
 - Milestone: milestone-2
 - Depends on: DOC-001-research-questions-and-constructs, CHORE-003-dogfood-ledger, FEAT-017-retrieval-ir-eval
 - Requirement: `sdlc-spdd/requirements/milestones/milestone-2/TEST-003-cretrieve-roundtrip.md`
@@ -22,13 +22,14 @@ Give the frozen academic-review claim one complete, CI-backed test suite.
 
 ### Business / Product Goal
 
-A referee can run one command and see ledger, SQLite, and Guide (mocked) round-trips, plus an explicit non-claim list.
+A referee can see **three storage modes** persist→read: ledger and SQLite on the hermetic suite, live Guide/Neo4j on the graph stack. Mocked Guide is the client contract, not the graph.
 
 ### Acceptance Criteria
 
-- [x] Named suite `tests.research.test_cretrieve` covers persist→retrieve same id on ledger, SQLite parity, mocked Guide parity
-- [x] Research P0 workflow runs the suite
-- [x] Research note documents out-of-bar items (RQ1, RQ4, embeddings) and cites existing live Guide+Neo4j e2e
+- [x] Named suite `tests.research.test_cretrieve` covers persist→retrieve same id on ledger, SQLite parity, mocked Guide **client**
+- [x] Research P0 workflow runs the hermetic suite
+- [x] Research note documents out-of-bar items (RQ1, RQ4, embeddings)
+- [x] T02: live Guide+Neo4j is **required evidence** for the graph mode; `test_context_store_guide_live` asserts all three backends
 
 ### Non-Goals
 
@@ -42,7 +43,7 @@ A referee can run one command and see ledger, SQLite, and Guide (mocked) round-t
 ### Assumptions
 
 - C-RETRIEVE is engineering retrievability, not method efficacy
-- Guide success path in default CI is mocked; live Guide+Neo4j e2e already exists on the experimental stack
+- Guide success path in default CI is mocked **client**; live Guide+Neo4j is the graph-mode proof (`test-guide-stack-experimental`)
 
 ## E - Entities
 
@@ -67,7 +68,7 @@ Temp project, persist/accept one pitfall, assert the same id is readable. Enable
 ### Alternatives
 
 - Only cite existing scattered tests — rejected; that is why the claim looks untested.
-- Require live Guide in default research CI — rejected; that stack already has `test-guide-stack-experimental`. Replication of the hermetic suite must not require Neo4j.
+- Treat mocked Guide HTTP as the graph store — rejected (DOC-001 T05). Live stack remains `test-guide-stack-experimental`; hermetic research P0 stays Python 3.
 
 ### Risks
 
@@ -103,6 +104,14 @@ Temp project, persist/accept one pitfall, assert the same id is readable. Enable
 - Tests: `PYTHONPATH=engine/src python3 -m unittest tests.research.test_cretrieve -v`
 - Validation: missing stored id fails; suite doc forbids RQ1/RQ4/embeddings as results
 
+### T02 — Live graph is required evidence (three modes)
+
+- Status: Complete
+- Description: Align TEST-003 with DOC-001 T05. Hermetic suite stays ledger+SQLite+mocked client. Live `test_context_store_guide_live` must assert git + sqlite + Guide ok and parity/subgraph contains the id. `test-guide-stack-experimental` is the graph-mode CI job, not an optional extra.
+- Files: `engine/tests_e2e/test_context_store_guide_live.py`, `sdlc-spdd/docs/research/cretrieve-suite.md`, `prove-academic-review.sh`, `.github/workflows/test-guide-stack-experimental.yml`
+- Tests: hermetic unittest; live stack on CI when e2e/research paths change
+- Validation: suite doc says mocked is not the graph; live test asserts `result.guide` ok
+
 ## N - Norms
 
 - Cite C-RETRIEVE
@@ -115,7 +124,7 @@ Temp project, persist/accept one pitfall, assert the same id is readable. Enable
 - Do not claim drift is fixed
 - Do not treat mocked Guide as embedding IR
 - No Embabel upstream
-- Live Guide e2e already exists; this gate is the hermetic path
+- Live Guide e2e is the graph-mode proof; hermetic TEST-003 is not a substitute
 - `embabel-dif` is out of this review
 
 ## Review Checklist
@@ -128,6 +137,8 @@ Temp project, persist/accept one pitfall, assert the same id is readable. Enable
 ## Sync Notes
 
 Opened after DOC-001 T03 freeze (`5e0feea` / #244). Stakeholder: claims need a complete test suite. Live Guide+Neo4j e2e already exists; do not list it as leftover. `embabel-dif` is out of this review.
+
+2026-09-07 — T02 / DOC-001 T05: live graph is required evidence for mode 3; hermetic suite is not a substitute.
 
 ## Final Status
 

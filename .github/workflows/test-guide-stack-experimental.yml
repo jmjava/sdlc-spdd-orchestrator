@@ -1,7 +1,9 @@
 name: Test Guide Stack (Experimental)
 
-# EXPERIMENTAL — full Guide + Neo4j live stack. Not required for consumer installs.
-# Runs on workflow_dispatch and when ops-console / guide-test paths change on PRs.
+# Academic-review graph mode (DOC-001 C-RETRIEVE): live Guide + Neo4j is required
+# evidence for the third storage mode. Not required for a consumer *install*,
+# but required to accept the freeze. Runs on workflow_dispatch and when
+# ops-console / guide / research-freeze paths change on PRs.
 # Live Guide+Neo4j (and Vue guide_live) skip with a warning when repo.embabel.com
 # is unreachable; Gradle wrapper prefetch and ADF viewer live still run.
 
@@ -10,18 +12,27 @@ on:
   pull_request:
     paths:
       - 'engine/src/sdlc_engine/installer/**'
+      - 'engine/src/sdlc_engine/context_store.py'
+      - 'engine/src/sdlc_engine/guide_client.py'
       - 'engine/tests_integration/**'
       - 'engine/tests_e2e/**'
       - 'console-ui/**'
       - 'tests/test-guide-stack-live.sh'
+      - 'tests/research/test_cretrieve.py'
+      - 'sdlc-spdd/docs/research/**'
       - '.github/workflows/test-guide-stack-experimental.yml'
   push:
     branches: [main]
     paths:
       - 'engine/src/sdlc_engine/installer/**'
+      - 'engine/src/sdlc_engine/context_store.py'
+      - 'engine/src/sdlc_engine/guide_client.py'
+      - 'engine/tests_e2e/**'
       - 'engine/tests_e2e/test_vue3_console_live_playwright.py'
       - 'console-ui/**'
       - 'tests/test-guide-stack-live.sh'
+      - 'tests/research/test_cretrieve.py'
+      - 'sdlc-spdd/docs/research/**'
       - '.github/workflows/test-guide-stack-experimental.yml'
 
 concurrency:

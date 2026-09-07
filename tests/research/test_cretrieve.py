@@ -81,8 +81,9 @@ class SuiteDocTests(unittest.TestCase):
     def test_suite_doc_states_non_claims(self) -> None:
         text = SUITE_DOC.read_text(encoding="utf-8").lower()
         self.assertIn("c-retrieve", text)
-        self.assertIn("python 3 only", text)
-        self.assertIn("optional", text)
+        self.assertIn("three storage modes", text)
+        self.assertIn("required evidence", text)
+        self.assertIn("mocked", text)
         self.assertIn("scope removed", text)
         self.assertIn("drift", text)
         self.assertIn("usefulness", text)
@@ -91,6 +92,7 @@ class SuiteDocTests(unittest.TestCase):
         self.assertIn("test-guide-stack-experimental", text)
         self.assertIn("embabel-dif", text)
         self.assertIn("later / other-repo", text)
+        self.assertIn("the graph-store proof", text)
 
     def test_doc001_names_this_suite(self) -> None:
         text = DOC001.read_text(encoding="utf-8")
@@ -100,10 +102,9 @@ class SuiteDocTests(unittest.TestCase):
         self.assertIn("scope removed", blob)
         self.assertIn("drift", blob)
         self.assertIn("usefulness", blob)
-        self.assertIn("python 3 only", blob)
-        self.assertIn("optional", blob)
-        self.assertIn("live guide+neo4j is **required**", blob)
-        self.assertIn("first-class", blob)
+        self.assertIn("three storage modes", blob)
+        self.assertIn("required evidence", blob)
+        self.assertIn("test_context_store_guide_live", blob)
 
     def test_ci_runs_this_suite(self) -> None:
         text = WORKFLOW.read_text(encoding="utf-8")
@@ -114,8 +115,17 @@ class SuiteDocTests(unittest.TestCase):
         self.assertTrue(PROVE.is_file(), PROVE)
         text = PROVE.read_text(encoding="utf-8")
         self.assertIn("tests.research.test_cretrieve", text)
-        self.assertIn("No Docker", text)
-        self.assertNotIn("SDLC_GUIDE_STACK_LIVE=1", text)
+        self.assertIn("SDLC_GUIDE_STACK_LIVE=1", text)
+        self.assertIn("does NOT prove the Neo4j graph", text)
+
+    def test_live_graph_tests_exist(self) -> None:
+        rt = ROOT / "engine" / "tests_e2e" / "test_guide_projection_roundtrip.py"
+        triple = ROOT / "engine" / "tests_e2e" / "test_context_store_guide_live.py"
+        self.assertTrue(rt.is_file(), rt)
+        self.assertTrue(triple.is_file(), triple)
+        blob = triple.read_text(encoding="utf-8")
+        self.assertIn("test_live_persist_enters_all_backends", blob)
+        self.assertIn("result.guide", blob)
 
 
 class LedgerRoundTripTests(unittest.TestCase):

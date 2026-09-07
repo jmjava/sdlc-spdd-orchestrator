@@ -13,7 +13,7 @@ Not a new LLM, not a new RAG theory, not a compiled multi-agent runtime.
 
 Guide is **fork-only**. `embabel-dif` is later / other-repo, not this review.
 
-Live **Guide+Neo4j** is optional. Replication is **Python 3 only**.
+Live **Guide+Neo4j** is required evidence for the graph mode. Mocked HTTP is not the Neo4j graph-store proof. Three storage modes: ledger, SQLite, Guide/Neo4j.
 
 ## Claim × system matrix
 
