@@ -44,3 +44,6 @@ jobs:
 
       - name: TEST-003 C-RETRIEVE round-trip suite
         run: PYTHONPATH=engine/src python3 -m unittest tests.research.test_cretrieve -v
+
+      - name: Referee replication (prove-academic-review.sh)
+        run: chmod +x sdlc-spdd/docs/research/prove-academic-review.sh && ./sdlc-spdd/docs/research/prove-academic-review.sh

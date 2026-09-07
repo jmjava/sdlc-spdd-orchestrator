@@ -134,20 +134,24 @@ In orchestrator repo:
 
 ### Research claim tests (not method evaluation)
 
-Academic-review freeze (DOC-001 §1) is stores + retrievability. Run the named
-C-RETRIEVE suite with:
+Academic-review freeze (DOC-001 §1) is stores + retrievability. A referee
+replicates with **one command** (no Docker, no JVM, no Neo4j):
+
+```bash
+./sdlc-spdd/docs/research/prove-academic-review.sh
+```
+
+That is the paper-claim gate. Named C-RETRIEVE module alone:
 
 ```bash
 PYTHONPATH=engine/src python3 -m unittest tests.research.test_cretrieve -v
 ```
 
-That module is the hermetic C-RETRIEVE gate (ledger + SQLite + mocked Guide).
-Live Guide+Neo4j round-trips already run in
-`engine/tests_e2e/test_guide_projection_roundtrip.py` via
-`test-guide-stack-experimental.yml` / `./tests/test-guide-stack-live.sh`.
+Live Guide+Neo4j is **optional** (`SDLC_GUIDE_STACK_LIVE=1 ./tests/test-guide-stack-live.sh`).
 This review's **scope removed** drift (RQ1) and usefulness (RQ4).
 `embabel-dif` was **removed** from this review. Protocol:
-[cretrieve-suite.md](sdlc-spdd/docs/research/cretrieve-suite.md).
+[cretrieve-suite.md](sdlc-spdd/docs/research/cretrieve-suite.md);
+replication: [threats-to-validity-and-replication.md](sdlc-spdd/docs/research/threats-to-validity-and-replication.md) §0.
 
 ### Adapter install regression harness
 

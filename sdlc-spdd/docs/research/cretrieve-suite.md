@@ -18,6 +18,12 @@ PYTHONPATH=engine/src python3 -m unittest tests.research.test_cretrieve -v
 
 Research CI (`test-research-p0.yml`) runs the same module.
 
+Referee one-shot (P0 docs + C-RETRIEVE + SUT + dogfood ledger):
+
+```bash
+./sdlc-spdd/docs/research/prove-academic-review.sh
+```
+
 ## What it proves
 
 | Store | Round-trip |
