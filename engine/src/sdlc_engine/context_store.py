@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any
 
 from .db import SCHEMA_VERSION, LocalIndex
+from .guide_client import GuideClient
 from .lessons_ledger import LEDGER_KINDS, LessonRecord, LessonsLedger
 from .metrics import ProcessMetrics
 from .persistence import (
@@ -26,6 +27,42 @@ from .persistence import (
     load_config as load_persistence_config,
 )
 from .project import Project
+
+_SUBGRAPH_LESSON_KEYS = (
+    "pitfalls",
+    "decisions",
+    "patterns",
+    "sessions",
+    "analyses",
+)
+
+# orch-guide tag sdlc-spdd-projection-v2 projects these kinds from context-index.md.
+_GUIDE_INGEST_KINDS = ("decision", "pitfall", "pattern")
+
+_GUIDE_INDEX_HEADER = (
+    "# Context Index\n"
+    "\n"
+    "> Derived from `spdd/memory/lessons.jsonl` for Guide v2 ingest. Do not hand-edit.\n"
+    "\n"
+    "| Area | Kind | Work ID | Phase | Timestamp | Source | Entry |\n"
+    "|------|------|---------|-------|-----------|--------|-------|\n"
+)
+
+
+def lesson_ids_from_subgraph(data: dict[str, Any]) -> set[str]:
+    """Collect lesson record ids from a ``spdd_workSubgraph`` payload."""
+    ids: set[str] = set()
+    for key in _SUBGRAPH_LESSON_KEYS:
+        for item in data.get(key) or []:
+            if isinstance(item, str) and item.strip():
+                ids.add(item.strip())
+                continue
+            if not isinstance(item, dict):
+                continue
+            eid = item.get("id") or item.get("entityId") or item.get("recordId") or ""
+            if eid:
+                ids.add(str(eid))
+    return ids
 
 
 @dataclass
@@ -206,8 +243,42 @@ class ContextStore:
 
     # --- Guide ---
 
+    def _guide_client(self) -> GuideClient:
+        return GuideClient(self.guide_base_url, timeout=self.guide_timeout)
+
+    def write_guide_ingest_index(self) -> Path:
+        """Rebuild Guide v2's ingest table from the accepted ledger.
+
+        ``sdlc-spdd-projection-v2`` projects canvases plus
+        ``spdd/memory/context-index.md`` — it does **not** read
+        ``lessons.jsonl``. The table is a derived projection so persist→load
+        stores the same record ids the ledger uses
+        (``{kind}:{workId}:{area}:{source}``). Hand-writing this file in a
+        test is not a C-RETRIEVE pass.
+        """
+        path = self.project.home / "spdd" / "memory" / "context-index.md"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        lines = [_GUIDE_INDEX_HEADER]
+        for rec in self.ledger.records(include_staged=False):
+            if rec.kind not in _GUIDE_INGEST_KINDS:
+                continue
+            area = (rec.area or "").strip() or "(none)"
+            wid = (rec.work_id or "").strip() or "(none)"
+            # Guide splits on `|` and drops empty cells; keep seven columns.
+            phase = (rec.phase or "").strip() or "-"
+            ts = (rec.ts or "").strip() or "-"
+            source = (rec.source or "").strip() or "capture"
+            entry = (rec.title or rec.body or rec.kind).strip().splitlines()[0]
+            entry = entry.replace("|", "/").replace("\n", " ")[:300]
+            lines.append(
+                f"| {area} | {rec.kind} | {wid} | {phase} | {ts} | {source} | {entry} |\n"
+            )
+        path.write_text("".join(lines), encoding="utf-8")
+        return path
+
     def project_to_guide(self) -> dict[str, Any]:
         """POST SPDD projection load against this project's home folder."""
+        index_path = self.write_guide_ingest_index()
         url = f"{self.guide_base_url}/api/v1/data/spdd-projection/load"
         payload = json.dumps(
             {"rootPath": str(self.project.home.resolve())}
@@ -229,6 +300,7 @@ class ContextStore:
                     "decisions": data.get("decisions"),
                     "pitfalls": data.get("pitfalls"),
                     "patterns": data.get("patterns"),
+                    "ingestIndex": self._rel(index_path),
                     "raw": data,
                 }
         except urllib.error.HTTPError as exc:
@@ -250,23 +322,32 @@ class ContextStore:
             return json.loads(resp.read().decode("utf-8"))
 
     def guide_lesson_ids(self) -> set[str]:
-        """All lesson entity ids known to Guide (for parity diff)."""
+        """Lesson record ids in the Guide/Neo4j projection.
+
+        Reads ``spdd_workSubgraph`` for each accepted ledger Work ID — the
+        retrieve API in ``docs/dice-projection-runbook.md``. Global
+        ``by-label`` is capped (max 100) and is not the C-RETRIEVE instrument.
+        """
+        client = self._guide_client()
+        work_ids = sorted(
+            {
+                rec.work_id
+                for rec in self.ledger.records(include_staged=False)
+                if (rec.work_id or "").strip()
+            }
+        )
         ids: set[str] = set()
-        for label in ("Decision", "Pitfall", "Pattern", "Session", "Analysis"):
-            url = (
-                f"{self.guide_base_url}/api/v1/data/spdd-projection/"
-                f"by-label?label={label}&limit=10000"
-            )
-            req = urllib.request.Request(url, method="GET")
-            try:
-                with urllib.request.urlopen(req, timeout=self.guide_timeout) as resp:
-                    data = json.loads(resp.read().decode("utf-8"))
-            except (urllib.error.URLError, json.JSONDecodeError):
-                raise
-            for item in data.get("items") or data.get("entities") or []:
-                eid = item.get("id") or item.get("entityId") or ""
-                if eid:
-                    ids.add(str(eid))
+        for wid in work_ids:
+            sg = client.work_subgraph(wid)
+            if not sg.get("ok"):
+                status = sg.get("status")
+                if status == 404:
+                    continue
+                raise RuntimeError(
+                    f"Guide work_subgraph {wid}: status={status} "
+                    f"error={sg.get('error')}"
+                )
+            ids |= lesson_ids_from_subgraph(sg.get("data") or {})
         return ids
 
     # --- retrieve ---
@@ -417,26 +498,34 @@ class ContextStore:
             out["sqlite"] = {"enabled": False}
 
         if backend_enabled(self.project, BACKEND_GUIDE):
-            try:
-                guide_ids = self.guide_lesson_ids()
-                missing = sorted(ledger_ids - guide_ids)
-                out["guide"] = {
-                    "enabled": True,
-                    "count": len(guide_ids),
-                    "missing": missing,
-                    "ok": not missing,
-                }
-                if missing:
-                    out["ok"] = False
-            except Exception as exc:  # noqa: BLE001
+            client = self._guide_client()
+            if not client.health_ok():
                 out["guide"] = {
                     "enabled": True,
                     "ok": True,
                     "skipped": True,
                     "unreachable": True,
-                    "error": str(exc),
                 }
-                # Guide is optional; unreachable is not committed-ledger drift.
+            else:
+                try:
+                    guide_ids = self.guide_lesson_ids()
+                    missing = sorted(ledger_ids - guide_ids)
+                    out["guide"] = {
+                        "enabled": True,
+                        "count": len(guide_ids),
+                        "missing": missing,
+                        "ok": not missing,
+                        "via": "work_subgraph",
+                    }
+                    if missing:
+                        out["ok"] = False
+                except Exception as exc:  # noqa: BLE001
+                    out["guide"] = {
+                        "enabled": True,
+                        "ok": False,
+                        "error": str(exc),
+                    }
+                    out["ok"] = False
         else:
             out["guide"] = {"enabled": False}
 
@@ -476,4 +565,9 @@ class ContextStore:
         )
 
 
-__all__ = ["ContextStore", "PersistResult", "LEDGER_KINDS"]
+__all__ = [
+    "ContextStore",
+    "PersistResult",
+    "LEDGER_KINDS",
+    "lesson_ids_from_subgraph",
+]

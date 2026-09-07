@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-from sdlc_engine.context_store import ContextStore
+from sdlc_engine.context_store import ContextStore, lesson_ids_from_subgraph
 from sdlc_engine.guide_client import GuideClient, resolve_guide_base_url
 from sdlc_engine.persistence import save_config
 from sdlc_engine.project import Project
@@ -83,18 +83,7 @@ Roundtrip canvas body for Guide projection.
         project_guide=False,
     )
     lesson_id = f"pitfall:{work_id}:{area}:roundtrip-test"
-    index_path = root / "spdd" / "memory" / "context-index.md"
-    if not index_path.is_file():
-        index_path.write_text(
-            "# Context Index\n\n"
-            "| Area | Kind | Work ID | Phase | Timestamp | Source | Entry |\n"
-            "|------|------|---------|-------|-----------|--------|-------|\n",
-            encoding="utf-8",
-        )
-    with index_path.open("a", encoding="utf-8") as fh:
-        fh.write(
-            f"| {area} | pitfall | {work_id} | test | 2026-08-08T00:00:00Z | roundtrip-test | {body} |\n"
-        )
+    store.write_guide_ingest_index()
     yield root, work_id, lesson_id, body
     shutil.rmtree(root, ignore_errors=True)
 
@@ -115,6 +104,7 @@ def test_guide_load_read_subgraph_and_lesson(seeded_project) -> None:
     pitfalls = data.get("pitfalls") or []
     pitfall_text = json.dumps(pitfalls)
     assert body in pitfall_text or MARKER in pitfall_text, pitfall_text
+    assert lesson_id in lesson_ids_from_subgraph(data), pitfall_text
 
     lesson = client.get_lesson(lesson_id)
     if lesson.get("ok"):
@@ -134,22 +124,16 @@ def test_guide_parity_ledger_ids_in_graph(seeded_project) -> None:
     client = GuideClient(resolve_guide_base_url())
     assert client.project_load(str(root))["ok"] is True
 
-    store = ContextStore(Project(root))
+    store = ContextStore(Project(root), guide_base_url=resolve_guide_base_url())
     parity = store.parity(repair=False)
-    assert parity.get("guide", {}).get("enabled") is True
     guide_block = parity.get("guide") or {}
-    if guide_block.get("ok") is False and guide_block.get("error"):
-        sg = client.work_subgraph(work_id)
-        assert sg["ok"] is True, sg
-        pitfall_ids = [
-            p.get("id") or p.get("entityId") or ""
-            for p in (sg.get("data") or {}).get("pitfalls") or []
-        ]
-        assert lesson_id in pitfall_ids, pitfall_ids
-    else:
-        missing = guide_block.get("missing") or []
-        assert lesson_id not in missing, json.dumps(parity, indent=2)
-        assert parity.get("ok") is True, json.dumps(parity, indent=2)
+    assert guide_block.get("enabled") is True
+    assert guide_block.get("via") == "work_subgraph", guide_block
+    assert not guide_block.get("skipped"), guide_block
+    assert not guide_block.get("unreachable"), guide_block
+    assert guide_block.get("ok") is True, json.dumps(parity, indent=2)
+    missing = guide_block.get("missing") or []
+    assert lesson_id not in missing, json.dumps(parity, indent=2)
 
 
 def test_cli_guide_query_work_subgraph(seeded_project, capsys) -> None:
