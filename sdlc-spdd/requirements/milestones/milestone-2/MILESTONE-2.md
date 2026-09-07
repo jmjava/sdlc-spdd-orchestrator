@@ -4,7 +4,7 @@
 
 Make SDLC-SPDD *claim-safe* as a research project: stated research questions, a related-work position, operationalized constructs (drift, governance, context, memory), and an evaluation protocol a journal referee would accept — then harden the implementation so those constructs are observable.
 
-**Academic review of this repo** (DOC-001 §1) is the **intent/advice stores** and a **retrievability** bar. Replication of that bar is **Python 3 only**; live Guide+Neo4j stays **optional**. This review's **scope removed** reduced-drift (RQ1) and retrieve-usefulness (RQ4). Deterministic Intent Folding (`embabel-dif`) is later / other-repo; this milestone is foundational to that attach and does not include it.
+**Academic review of this repo** (DOC-001 §1) is the **intent/advice stores** and a **retrievability** bar across **three storage modes** (git ledger, SQLite, live Guide/Neo4j graph). Live Guide+Neo4j is **required evidence** for the graph mode; mocked HTTP is not the graph-store proof. This review's **scope removed** reduced-drift (RQ1) and retrieve-usefulness (RQ4). Deterministic Intent Folding (`embabel-dif`) is later / other-repo; this milestone is foundational to that attach and does not include it.
 
 This is **make it right** for the research argument. It is not prompt optimization and not a new assistant runtime.
 
@@ -87,6 +87,7 @@ For each work item:
 
 ## Session Updates
 
+2026-09-07 — DOC-001 T05: three storage modes; live Guide+Neo4j required for the graph (`test-guide-stack-experimental`).
 2026-09-06 — TEST-003 named C-RETRIEVE suite (ledger + SQLite + mocked Guide). Live Guide+Neo4j e2e already exists (`test-guide-stack-experimental`).
 2026-09-06 — DOC-001 T03: academic review goal frozen as stores + retrievability (ledger + Guide); reduced-drift and `embabel-dif` out of scope.
 2026-09-06 — REF-001 names Python `gate_check` as the SUT; default `SDLC_ENGINE=auto`. Milestone 2 P2 complete.

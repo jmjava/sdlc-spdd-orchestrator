@@ -8,7 +8,7 @@
 - Readiness: Reviewed
 - Created: 2026-09-06
 - Updated: 2026-09-07
-- Prompt-update: T04 Python 3-only replication first-class (2026-09-07); T03 academic-review-goal freeze (2026-09-06)
+- Prompt-update: T05 three storage modes (2026-09-07); T04 Python 3-only replication first-class (2026-09-07, superseded); T03 academic-review-goal freeze (2026-09-06)
 - Milestone: milestone-2
 - Depends on: SPIKE-004-academic-contribution-bar
 - Blocks: TEST-001, FEAT-014, FEAT-015
@@ -28,7 +28,7 @@ Freeze research questions and operationalized constructs so later Milestone 2 wo
 
 Make public claims allow-listed. Stop README causal language until evidence exists.
 
-Academic review of `sdlc-spdd-orchestrator` is a **methods/tools artifact review**: git-backed **intent** (REASONS canvas) and **advice** stores (committed `lessons.jsonl` ledger plus regenerable **SQLite** and **Guide** projections), with a **retrievability** bar — stored records can be read back. Replication of that bar is **Python 3 only**; live Guide+Neo4j stays **optional**. This review's **scope removed** reduced-**drift** (RQ1) and retrieve-**usefulness** (RQ4). Deterministic Intent Folding (`jmjava/embabel-dif`) is **out of scope** here and **later / other-repo**; this freeze is foundational to that attach and does not require it.
+Academic review of `sdlc-spdd-orchestrator` is a **methods/tools artifact review**: git-backed **intent** (REASONS canvas) and **advice** in **three storage modes** (committed `lessons.jsonl` ledger, **SQLite** index, **Guide/Neo4j** graph), with a **retrievability** bar — stored records can be read back from all three. Live Guide+Neo4j is **required evidence** for the graph mode; mocked HTTP is not the graph-store proof. This review's **scope removed** reduced-**drift** (RQ1) and retrieve-**usefulness** (RQ4). Deterministic Intent Folding (`jmjava/embabel-dif`) is **out of scope** here and **later / other-repo**; this freeze is foundational to that attach and does not require it.
 
 ### Acceptance Criteria
 
@@ -38,6 +38,7 @@ Academic review of `sdlc-spdd-orchestrator` is a **methods/tools artifact review
 - [x] Rewrite guidance for README/compliance is in the same document (T01); applying README edits is T02
 - [x] T03: spec §1 names the review object (stores), the retrievability bar (ledger + SQLite + Guide), pass/fail, venue band, and that reduced-drift + `embabel-dif` are not this review
 - [x] T04: Python 3-only replication is a first-class freeze claim; live Guide+Neo4j stays optional
+- [x] T05: three storage modes (ledger, SQLite, live Guide/Neo4j graph) all proven; live graph is required evidence
 
 ### Non-Goals
 
@@ -137,6 +138,14 @@ T03 does not add RQ6. It restates the contribution so academic review cannot be 
 - Tests: `python3 -m unittest tests.research.test_p0_artifacts tests.research.test_cretrieve -v`; `./sdlc-spdd/docs/research/prove-academic-review.sh`
 - Validation: spec §1 names Python 3-only replication; claims table says live Guide+Neo4j is not required; checker fails if those tokens are stripped
 
+### T05 — Three storage modes proven (live graph required)
+
+- Status: Complete
+- Description: Prompt-update then reverse T04’s “live Guide optional / requiring JVM fails the bar.” The freeze is **three storage modes**: git ledger, SQLite, Guide/Neo4j graph. Mocked HTTP is the Guide client, not the graph. Live `test_guide_projection_roundtrip` + `test_context_store_guide_live` are required evidence. Hermetic `prove-academic-review.sh` remains modes 1–2 + client.
+- Files: DOC-001 spec, DOC-002, DOC-003, `check_p0_artifacts.py`, TEST-003 suite/docs, `test_context_store_guide_live.py`, `test-guide-stack-experimental.yml`
+- Tests: `python3 -m unittest tests.research.test_p0_artifacts tests.research.test_cretrieve -v`; live graph via `SDLC_GUIDE_STACK_LIVE=1 ./tests/test-guide-stack-live.sh`
+- Validation: spec §1 names three storage modes; claims table says live Guide+Neo4j is required for the graph mode; checker fails if live graph is framed as optional
+
 ## N - Norms
 
 - Cite construct IDs (`C-DRIFT`, …) in later canvases
@@ -163,6 +172,7 @@ T03 does not add RQ6. It restates the contribution so academic review cannot be 
 - [x] T02 not mixed into T01
 - [x] T03 spec §1 freeze landed; DOC-002 novelty does not contradict it
 - [x] T04 Python 3-only replication is first-class; live Guide+Neo4j optional
+- [x] T05 three storage modes; live Guide+Neo4j required for the graph mode
 
 ## Sync Notes
 
@@ -171,6 +181,8 @@ Created 2026-09-06 from SPIKE-004 T04 handoff.
 2026-09-06 — T03 prompt-update: academic review of this repo is the stores (intent + advice ledger + SQLite index + Guide projection) with a retrievability bar. Source: stakeholder (firm the review goal; DIF out of scope; stored info should be retrievable; ledger + Guide store; do not forget SQLite).
 
 2026-09-07 — Stakeholder: **Python 3 only** replication is a first-class claim; live Guide+Neo4j stays optional (not the pass bar).
+
+2026-09-07 — Stakeholder correction (T05): the graph store is the point; **three storage modes** must be proven. Live Guide+Neo4j is required evidence. T04 optional-graph language is superseded.
 
 ## Final Status
 
@@ -185,5 +197,6 @@ Created 2026-09-06 from SPIKE-004 T04 handoff.
 - Decision: contribution omits “with evidence that the hybrid reduces drift”; this review's **scope removed** drift and usefulness
 - Decision: in-scope empirical claim is retrievability (ledger `context retrieve` + SQLite and Guide `context parity` when enabled)
 - Decision: `embabel-dif` is later/other-repo; optional present-or-skip attach is not this review’s object
-- Decision: replication of this freeze is **Python 3 only**; live Guide+Neo4j is optional, not the pass bar
+- Decision (T04, superseded by T05): hermetic Python 3 suite is ledger+SQLite+client, not the whole freeze
+- Decision (T05): **three storage modes** (ledger, SQLite, Guide/Neo4j) must each persist→read; live graph is required evidence; mocked HTTP is not the graph
 - Next: none for DOC-001. Drift and usefulness stay removed from this review.

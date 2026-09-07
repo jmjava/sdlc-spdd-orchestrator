@@ -34,7 +34,6 @@ TEST-002 can copy a freeze checklist instead of inventing one. Public claims sta
 ### Non-Goals
 
 - Study data
-- Guide/Neo4j as a required replicator
 - Expanding product surface
 - Embabel upstream
 
@@ -110,6 +109,8 @@ One markdown pack. Checker parses threat headings, construct IDs in the construc
 Follows merged FEAT-015 (`1df0c2e` / PR #229).
 
 2026-09-07 — Referee replication for this freeze is `prove-academic-review.sh` (Python 3 only; no Docker/Neo4j). Live Guide remains optional. This is a **first-class** freeze claim (DOC-001 T04), not a footnote.
+
+2026-09-07 — DOC-001 T05: hermetic script is modes 1–2 + client. Live Guide+Neo4j is **required** for the graph mode (`test-guide-stack-live.sh`).
 
 ## Final Status
 

@@ -2,7 +2,7 @@
 
 This Work ID does **not collect study data**.
 
-Replication of this freeze is **Python 3 only**. Live Guide+Neo4j stays **optional**.
+Replication of this freeze requires **three storage modes**: git ledger, SQLite, and live Guide+Neo4j graph. Live Neo4j is **required evidence** for the graph mode.
 
 ## Construct validity
 

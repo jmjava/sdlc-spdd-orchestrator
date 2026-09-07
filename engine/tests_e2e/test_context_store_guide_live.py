@@ -1,4 +1,8 @@
-"""Live triple-backend persist (git + sqlite + Guide). Requires Guide stack up."""
+"""Live triple-backend persist (git + sqlite + Guide/Neo4j). Requires Guide stack up.
+
+This is the graph-mode proof for DOC-001 C-RETRIEVE: all three storage modes
+must accept the same lesson id. Mocked HTTP is not this test.
+"""
 
 from __future__ import annotations
 
@@ -13,6 +17,8 @@ from sdlc_engine.db import LocalIndex
 from sdlc_engine.guide_client import GuideClient, resolve_guide_base_url
 from sdlc_engine.persistence import save_config
 from sdlc_engine.project import Project
+
+MARKER = "LIVE-TRIPLE-PERSIST"
 
 
 def _seed_canvas(root: Path, work_id: str) -> None:
@@ -48,18 +54,59 @@ def test_live_persist_enters_all_backends() -> None:
     try:
         fixture.mkdir(parents=True, exist_ok=True)
         _seed_canvas(fixture, wid)
-        save_config(fixture, {"backends": ["git-pointers", "sqlite", "guide-dice"]})
-        store = ContextStore(Project(fixture))
+        save_config(
+            fixture,
+            {
+                "backends": ["git-pointers", "sqlite", "guide-dice"],
+                "guide_base_url": base,
+            },
+        )
+        store = ContextStore(Project(fixture), guide_base_url=base)
         result = store.persist_lesson(
             kind="pitfall",
             work_id=wid,
             area="engine",
-            body="LIVE-TRIPLE-PERSIST",
+            body=MARKER,
             source="live-test",
             accept=True,
             project_guide=True,
         )
-        assert result.ok is True
+        assert result.ok is True, result.as_dict()
+        lesson_id = str(result.git.get("id") or "")
+        assert lesson_id, result.as_dict()
+        assert result.git.get("ok") is True, result.as_dict()
+        assert result.sqlite.get("ok") is True, result.as_dict()
+        assert result.guide.get("ok") is True, result.as_dict()
+        assert not result.guide.get("skipped"), result.as_dict()
+
+        shown = store.show(lesson_id)
+        assert shown is not None
+        assert MARKER in (shown.get("body") or "")
+
         assert LocalIndex(Project(fixture)).lessons_for_work(wid)
+
+        parity = store.parity(repair=False)
+        sqlite_block = parity.get("sqlite") or {}
+        assert sqlite_block.get("enabled") is True, parity
+        assert sqlite_block.get("ok") is True, parity
+        assert lesson_id not in (sqlite_block.get("missing") or []), parity
+
+        guide_block = parity.get("guide") or {}
+        assert guide_block.get("enabled") is True, parity
+        assert not guide_block.get("skipped"), parity
+        assert not guide_block.get("unreachable"), parity
+        if guide_block.get("ok") is False and guide_block.get("error"):
+            client = GuideClient(base)
+            loaded = client.project_load(str(fixture))
+            assert loaded.get("ok") is True, loaded
+            sg = client.work_subgraph(wid)
+            assert sg.get("ok") is True, sg
+            pitfall_ids = [
+                p.get("id") or p.get("entityId") or ""
+                for p in (sg.get("data") or {}).get("pitfalls") or []
+            ]
+            assert lesson_id in pitfall_ids, pitfall_ids
+        else:
+            assert lesson_id not in (guide_block.get("missing") or []), parity
     finally:
         shutil.rmtree(fixture, ignore_errors=True)

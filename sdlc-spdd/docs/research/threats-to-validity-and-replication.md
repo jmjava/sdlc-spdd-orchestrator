@@ -15,12 +15,14 @@ Guide is **fork-only**. This pack does not depend on an Embabel upstream merge.
 
 ## 0. How a referee replicates this review
 
-This review’s object is **stores + retrievability** (DOC-001 §1). A **first-class**
-claim of this freeze: replication is **Python 3 only**. Live Guide+Neo4j stays
-**optional**. Drift and usefulness were **removed from scope**. A replicator
-does **not** need Docker, a JVM, Neo4j, or `orch-guide`.
+This review’s object is **stores + retrievability** in **three storage modes**
+(DOC-001 §1): git **ledger**, **SQLite**, and the **Guide/Neo4j graph**. Drift
+and usefulness were **removed from scope**. The graph mode is **required
+evidence**, not optional. Mocked Guide HTTP is the client contract, not the
+graph-store proof. A live-Guide skip is **not** a pass of the graph mode.
 
-**Required** (Python 3; `PYTHONPATH=engine/src` is set by the script):
+**Required — modes 1–2 + Guide client** (Python 3; `PYTHONPATH=engine/src` is
+set by the script):
 
 ```bash
 git clone https://github.com/jmjava/sdlc-spdd-orchestrator.git
@@ -30,18 +32,18 @@ git checkout <commit>    # write `git rev-parse HEAD` beside the result
 ```
 
 That script runs `prove-p0.sh all`, then `tests.research.test_p0_artifacts`,
-`test_cretrieve` (C-RETRIEVE), `test_ref001_sut` (`gate_check` SUT), and
-`test_chore003_ledger`. Exit 0 is the replication pass for this freeze.
+`test_cretrieve` (ledger + SQLite + mocked Guide **client**), `test_ref001_sut`
+(`gate_check` SUT), and `test_chore003_ledger`. Exit 0 is **not** the complete
+freeze: it does not prove the graph store.
 
-**Optional** (not required; do not treat skip as a fail of this review):
+**Required — mode 3, live graph** (Docker, Java 21, `jmjava/orch-guide`):
 
 ```bash
 SDLC_GUIDE_STACK_LIVE=1 ./tests/test-guide-stack-live.sh
 ```
 
-Needs Docker, Java 21, and a `jmjava/orch-guide` checkout
-(`GUIDE_HOME`, ref `sdlc-spdd-projection-v2`). CI job:
-`.github/workflows/test-guide-stack-experimental.yml`.
+CI job: `.github/workflows/test-guide-stack-experimental.yml` (`guide-neo4j-live`).
+Both commands are required for the freeze. `GUIDE_HOME` ref `sdlc-spdd-projection-v2`.
 
 ---
 
@@ -55,7 +57,7 @@ Each DOC-001 construct is only as valid as its current instrument. Do not treat 
 | **C-COMPLY** | FEAT-014 semantic minima on `gate_check(code)`; FEAT-016 review Result + safeguards; existence vs semantic rates must still be published as a pair. | `--force` / ignoring chat still bypasses the method. Empty headings no longer count, but phrase quality beyond the minima is rater-only. |
 | **C-CONTEXT** | FEAT-015 `record.metrics.context_files` via `sdlc-engine context metrics --construct C-CONTEXT`. | Self-reported load. Does not prove attention. Relevance is rater/qrel until FEAT-017. |
 | **C-MEMORY** | FEAT-015 `context metrics --construct C-MEMORY` (C-REWORK fields on a follow-on). Retrieve `--keyword` is exact list membership; `--query` ranks title/body (**FEAT-017**). CHORE-003 seeded the dogfood ledger; archive never truncates it. | Usefulness is C-REWORK on session 2 (TEST-001 RQ4), not retrieve-call counts. Guide DICE embeddings are unmeasured. |
-| **C-RETRIEVE** | **TEST-003** persist→same id (`tests.research.test_cretrieve`; [cretrieve-suite.md](cretrieve-suite.md)). Live Guide+Neo4j: `test_guide_projection_roundtrip.py` / `test-guide-stack-experimental.yml`. | Mocked Guide is HTTP parity, not DICE. Unreachable Guide is skip, not a pass. Live stack is existing e2e, not a missing test. |
+| **C-RETRIEVE** | **Three storage modes.** TEST-003 hermetic: ledger + SQLite + mocked Guide **client**. **Required** live graph: `test_guide_projection_roundtrip.py` + `test_context_store_guide_live.py` / `test-guide-stack-live.sh`. | Mocked Guide is HTTP client parity, **not** the Neo4j graph. Unreachable Guide is skip, **not** a graph-mode pass. |
 | **C-PORT** | `validate-command-adapters.sh` is **text** parity. | Adapter markdown equality is not behavioral equality. Live-consumer is Cursor-oriented. If only one assistant ran, C-PORT is not a result. |
 
 SPIKE-004’s earlier “file/regex/exact-keyword proxies” row is **partially retired** for C-COMPLY (code + retro/sync minima exist) and **not retired** for C-DRIFT hunks or C-CONTEXT relevance.
@@ -160,7 +162,10 @@ Rater sheet path for TEST-002 (when collected): store next to the slice artifact
 - Semantic C-COMPLY beyond Result/safeguards/Files/readiness minima
 - Assistant sampling / chat nondeterminism
 - Inter-rater agreement (requires two humans)
-- Guide/Neo4j as a required replicator dependency (must stay optional)
+
+Live Guide+Neo4j **is** a required replicator dependency for the graph mode.
+It cannot be replaced by mocked HTTP. Booting the stack is automated; the
+graph-store proof is the live pytest files named in §0.
 
 Human-subject / IRB packaging is out of scope (requirement non-goal).
 
