@@ -88,3 +88,5 @@ Guide process restarts; embeddings; n≥3 significance tests.
 - Guide **embeddings** / DICE IR (never this bar; `dice_measured` stays false on FEAT-017)
 - treating `db query --search` (work_items FTS) as `context retrieve`
 - treating mocked Guide HTTP as the Neo4j graph store
+
+TEST-003 T01–T05 are complete on `main` (`e716100` / #259). Remaining freeze-honesty gaps (operator docs still calling live Guide optional) are listed in `sdlc-spdd/spdd/reviews/academic-freeze-system-review.md`.
