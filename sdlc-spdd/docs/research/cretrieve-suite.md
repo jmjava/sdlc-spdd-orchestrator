@@ -4,7 +4,8 @@
 **Construct:** C-RETRIEVE (DOC-001 §1 academic-review claim)
 
 This is the **named hermetic test pack** for “stored advice is retrievable” on
-default CI. Live Guide+Neo4j round-trips already exist (see below).
+default CI. The paper claim is **Python 3 only**. Live Guide+Neo4j is an
+**optional** projection (see below), not a replicator requirement.
 
 This review's **scope removed** reduced-**drift** (RQ1) and retrieve-**usefulness**
 (RQ4). Those are not leftover TEST-003 work. Guide embeddings were never this

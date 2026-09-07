@@ -27,6 +27,9 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- DOC-001: **Python 3-only replication** is a first-class freeze claim
+  (pass bar item 5, contribution sentence, claims-allowed table). Live
+  Guide+Neo4j stays **optional**; requiring a JVM graph store fails the bar.
 - DOC-001 T03: freeze the academic-review object as git-backed intent/advice
   stores plus **retrievability** (ledger `context retrieve`; SQLite and Guide
   `context parity` when enabled). Reduced-drift evidence and `embabel-dif` are

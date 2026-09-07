@@ -107,6 +107,20 @@ class RelatedWorkCheckerTests(unittest.TestCase):
             f"expected evidence-as-finding failure, got {issues}",
         )
 
+    def test_missing_python3_replication_fails(self) -> None:
+        text = _read("related_work_valid.md")
+        stripped = (
+            text.replace("Python 3", "XXXX")
+            .replace("python 3", "xxxx")
+            .replace("Python3", "XXXX")
+            .replace("python3", "xxxx")
+        )
+        issues = issues_for_related_work(stripped)
+        self.assertTrue(
+            any("Python 3" in i for i in issues),
+            f"expected missing Python 3-only replication failure, got {issues}",
+        )
+
 
 class ConstructsSpecCheckerTests(unittest.TestCase):
     def test_live_doc001_spec_parses(self) -> None:
@@ -183,6 +197,26 @@ Proxy weakness
 fixes drift
 """
         issues = issues_for_constructs_spec(stub)
+        self.assertTrue(
+            any("academic review goal" in i.lower() for i in issues),
+            f"expected missing review-goal failure, got {issues}",
+        )
+
+    def test_missing_python3_replication_fails(self) -> None:
+        spec = ROOT / "sdlc-spdd" / "docs" / "research" / "research-questions-and-constructs.md"
+        text = spec.read_text(encoding="utf-8")
+        stripped = (
+            text.replace("Python 3", "XXXX")
+            .replace("python 3", "xxxx")
+            .replace("Python3", "XXXX")
+            .replace("python3", "xxxx")
+        )
+        issues = issues_for_constructs_spec(stripped)
+        self.assertTrue(
+            any("Python 3" in i for i in issues),
+            f"expected missing Python 3-only replication failure, got {issues}",
+        )
+
     def test_missing_sqlite_store_fails(self) -> None:
         spec = ROOT / "sdlc-spdd" / "docs" / "research" / "research-questions-and-constructs.md"
         text = spec.read_text(encoding="utf-8")
@@ -240,6 +274,20 @@ class ThreatsReplicationCheckerTests(unittest.TestCase):
         self.assertTrue(
             any("C-PORT" in issue for issue in issues),
             f"expected missing C-PORT in construct section, got {issues}",
+        )
+
+    def test_missing_python3_replication_fails(self) -> None:
+        text = _read("threats_valid.md")
+        stripped = (
+            text.replace("Python 3", "XXXX")
+            .replace("python 3", "xxxx")
+            .replace("Python3", "XXXX")
+            .replace("python3", "xxxx")
+        )
+        issues = issues_for_threats_replication(stripped)
+        self.assertTrue(
+            any("Python 3" in i for i in issues),
+            f"expected missing Python 3-only replication failure, got {issues}",
         )
 
 

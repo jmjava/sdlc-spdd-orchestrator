@@ -7,7 +7,7 @@
 - Status: Complete
 - Readiness: Reviewed
 - Created: 2026-09-06
-- Updated: 2026-09-06
+- Updated: 2026-09-07
 - Milestone: milestone-2
 - Depends on: TEST-001-evaluation-protocol, FEAT-015-first-class-metrics
 - Blocks: (none)
@@ -109,7 +109,7 @@ One markdown pack. Checker parses threat headings, construct IDs in the construc
 
 Follows merged FEAT-015 (`1df0c2e` / PR #229).
 
-2026-09-07 — Referee replication for this freeze is `prove-academic-review.sh` (no Docker/Neo4j). Live Guide remains optional.
+2026-09-07 — Referee replication for this freeze is `prove-academic-review.sh` (Python 3 only; no Docker/Neo4j). Live Guide remains optional. This is a **first-class** freeze claim (DOC-001 T04), not a footnote.
 
 ## Final Status
 

@@ -81,6 +81,8 @@ class SuiteDocTests(unittest.TestCase):
     def test_suite_doc_states_non_claims(self) -> None:
         text = SUITE_DOC.read_text(encoding="utf-8").lower()
         self.assertIn("c-retrieve", text)
+        self.assertIn("python 3 only", text)
+        self.assertIn("optional", text)
         self.assertIn("scope removed", text)
         self.assertIn("drift", text)
         self.assertIn("usefulness", text)
@@ -98,6 +100,10 @@ class SuiteDocTests(unittest.TestCase):
         self.assertIn("scope removed", blob)
         self.assertIn("drift", blob)
         self.assertIn("usefulness", blob)
+        self.assertIn("python 3 only", blob)
+        self.assertIn("optional", blob)
+        self.assertIn("live guide+neo4j is **required**", blob)
+        self.assertIn("first-class", blob)
 
     def test_ci_runs_this_suite(self) -> None:
         text = WORKFLOW.read_text(encoding="utf-8")
