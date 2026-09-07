@@ -31,6 +31,10 @@ All notable changes to this project will be documented in this file.
   graph) must each persist→read. Live Guide+Neo4j is **required evidence** for
   the graph mode; mocked HTTP is the client contract, not the graph-store proof.
   Hermetic `prove-academic-review.sh` remains modes 1–2 + client.
+- ContextStore Guide parity lists lesson ids via ``spdd_workSubgraph`` (the
+  retrieve API). Unreachable Guide still skips; a live Guide that cannot
+  return the ledger id **fails** instead of skip. Global ``by-label`` is not
+  the C-RETRIEVE instrument (list cap 100).
 - DOC-001: **Python 3-only replication** is a first-class freeze claim
   (pass bar item 5, contribution sentence, claims-allowed table). Live
   Guide+Neo4j stays **optional**; requiring a JVM graph store fails the bar.

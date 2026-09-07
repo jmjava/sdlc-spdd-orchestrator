@@ -42,7 +42,7 @@ CI: `.github/workflows/test-guide-stack-experimental.yml` (`guide-neo4j-live`).
 |-------|------------|------------------------|
 | Git ledger | persist/accept → `context retrieve` / `context show` returns the same id | Hermetic TEST-003 — proven |
 | SQLite | when enabled, `context parity` has empty missing/extra; retrieve `sqlite_graph` includes the id | Hermetic TEST-003 — proven |
-| Guide (client) | **mocked** `by-label` HTTP so `context parity` missing is empty on default CI | Client contract only — **not** the graph |
+| Guide (client) | **mocked** `work_subgraph` so `context parity` missing is empty on default CI | Client contract only — **not** the graph |
 | Guide (live Neo4j graph) | `engine/tests_e2e/test_guide_projection_roundtrip.py` + `test_context_store_guide_live.py` via `tests/test-guide-stack-live.sh` | **Required** graph-mode proof |
 
 Unreachable Guide is a skip in `parity()`, **not** a C-RETRIEVE pass of the graph mode.

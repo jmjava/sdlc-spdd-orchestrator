@@ -9,13 +9,11 @@ Does not prove RQ1 drift, RQ4 usefulness, or Guide embeddings.
 
 from __future__ import annotations
 
-import json
 import sys
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
-from urllib.request import Request
+from unittest.mock import MagicMock, patch
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "engine" / "src"))
@@ -126,6 +124,8 @@ class SuiteDocTests(unittest.TestCase):
         blob = triple.read_text(encoding="utf-8")
         self.assertIn("test_live_persist_enters_all_backends", blob)
         self.assertIn("result.guide", blob)
+        self.assertIn("work_subgraph", blob)
+        self.assertIn("via", blob)
 
 
 class LedgerRoundTripTests(unittest.TestCase):
@@ -198,30 +198,16 @@ class GuideRoundTripTests(unittest.TestCase):
             store = _store(root, ["git-pointers", "sqlite", "guide-dice"])
             lesson_id = _persist_accept(store)
 
-            class Resp:
-                status = 200
-
-                def __init__(self, payload: bytes) -> None:
-                    self._payload = payload
-
-                def read(self) -> bytes:
-                    return self._payload
-
-                def __enter__(self) -> Resp:
-                    return self
-
-                def __exit__(self, *a: object) -> bool:
-                    return False
-
-            def fake_urlopen(req: Request, timeout: float = 30.0) -> Resp:
-                url = getattr(req, "full_url", "") or str(req)
-                if "by-label" in url:
-                    return Resp(json.dumps({"items": [{"id": lesson_id}]}).encode())
-                return Resp(b"{}")
-
-            with patch("sdlc_engine.context_store.urllib.request.urlopen", fake_urlopen):
+            client = MagicMock()
+            client.health_ok.return_value = True
+            client.work_subgraph.return_value = {
+                "ok": True,
+                "data": {"pitfalls": [{"id": lesson_id}]},
+            }
+            with patch("sdlc_engine.context_store.GuideClient", return_value=client):
                 parity = store.parity(repair=False)
             self.assertTrue(parity.get("guide", {}).get("enabled"), parity)
+            self.assertEqual(parity.get("guide", {}).get("via"), "work_subgraph")
             self.assertNotIn("unreachable", parity.get("guide") or {})
             self.assertEqual(parity.get("guide", {}).get("missing") or [], [], parity)
             self.assertTrue(parity.get("guide", {}).get("ok"), parity)

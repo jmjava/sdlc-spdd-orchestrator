@@ -1,7 +1,8 @@
 """Live triple-backend persist (git + sqlite + Guide/Neo4j). Requires Guide stack up.
 
-This is the graph-mode proof for DOC-001 C-RETRIEVE: all three storage modes
-must accept the same lesson id. Mocked HTTP is not this test.
+C-RETRIEVE graph proof: persist one pitfall, then require the same record id
+from the ledger, SQLite, and live Guide via ``context parity`` (work_subgraph).
+Skip/unreachable is not a pass.
 """
 
 from __future__ import annotations
@@ -93,20 +94,11 @@ def test_live_persist_enters_all_backends() -> None:
 
         guide_block = parity.get("guide") or {}
         assert guide_block.get("enabled") is True, parity
-        assert not guide_block.get("skipped"), parity
-        assert not guide_block.get("unreachable"), parity
-        if guide_block.get("ok") is False and guide_block.get("error"):
-            client = GuideClient(base)
-            loaded = client.project_load(str(fixture))
-            assert loaded.get("ok") is True, loaded
-            sg = client.work_subgraph(wid)
-            assert sg.get("ok") is True, sg
-            pitfall_ids = [
-                p.get("id") or p.get("entityId") or ""
-                for p in (sg.get("data") or {}).get("pitfalls") or []
-            ]
-            assert lesson_id in pitfall_ids, pitfall_ids
-        else:
-            assert lesson_id not in (guide_block.get("missing") or []), parity
+        assert guide_block.get("via") == "work_subgraph", guide_block
+        assert not guide_block.get("skipped"), guide_block
+        assert not guide_block.get("unreachable"), guide_block
+        assert guide_block.get("ok") is True, guide_block
+        assert lesson_id not in (guide_block.get("missing") or []), guide_block
+        assert lesson_id in store.guide_lesson_ids(), guide_block
     finally:
         shutil.rmtree(fixture, ignore_errors=True)

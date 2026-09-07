@@ -134,22 +134,16 @@ def test_guide_parity_ledger_ids_in_graph(seeded_project) -> None:
     client = GuideClient(resolve_guide_base_url())
     assert client.project_load(str(root))["ok"] is True
 
-    store = ContextStore(Project(root))
+    store = ContextStore(Project(root), guide_base_url=resolve_guide_base_url())
     parity = store.parity(repair=False)
-    assert parity.get("guide", {}).get("enabled") is True
     guide_block = parity.get("guide") or {}
-    if guide_block.get("ok") is False and guide_block.get("error"):
-        sg = client.work_subgraph(work_id)
-        assert sg["ok"] is True, sg
-        pitfall_ids = [
-            p.get("id") or p.get("entityId") or ""
-            for p in (sg.get("data") or {}).get("pitfalls") or []
-        ]
-        assert lesson_id in pitfall_ids, pitfall_ids
-    else:
-        missing = guide_block.get("missing") or []
-        assert lesson_id not in missing, json.dumps(parity, indent=2)
-        assert parity.get("ok") is True, json.dumps(parity, indent=2)
+    assert guide_block.get("enabled") is True
+    assert guide_block.get("via") == "work_subgraph", guide_block
+    assert not guide_block.get("skipped"), guide_block
+    assert not guide_block.get("unreachable"), guide_block
+    assert guide_block.get("ok") is True, json.dumps(parity, indent=2)
+    missing = guide_block.get("missing") or []
+    assert lesson_id not in missing, json.dumps(parity, indent=2)
 
 
 def test_cli_guide_query_work_subgraph(seeded_project, capsys) -> None:
