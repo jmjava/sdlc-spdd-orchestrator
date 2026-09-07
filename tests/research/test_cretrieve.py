@@ -27,6 +27,7 @@ from sdlc_engine.project import Project  # noqa: E402
 SUITE_DOC = ROOT / "sdlc-spdd" / "docs" / "research" / "cretrieve-suite.md"
 DOC001 = ROOT / "sdlc-spdd" / "docs" / "research" / "research-questions-and-constructs.md"
 WORKFLOW = ROOT / ".github" / "workflows" / "test-research-p0.yml"
+PROVE = ROOT / "sdlc-spdd" / "docs" / "research" / "prove-academic-review.sh"
 
 WID = "TEST-003-cretrieve-roundtrip"
 AREA = "engine/retrieve"
@@ -102,6 +103,13 @@ class SuiteDocTests(unittest.TestCase):
         text = WORKFLOW.read_text(encoding="utf-8")
         self.assertIn("tests.research.test_cretrieve", text)
         self.assertIn("PYTHONPATH=engine/src", text)
+
+    def test_referee_prove_script_runs_this_suite(self) -> None:
+        self.assertTrue(PROVE.is_file(), PROVE)
+        text = PROVE.read_text(encoding="utf-8")
+        self.assertIn("tests.research.test_cretrieve", text)
+        self.assertIn("No Docker", text)
+        self.assertNotIn("SDLC_GUIDE_STACK_LIVE=1", text)
 
 
 class LedgerRoundTripTests(unittest.TestCase):

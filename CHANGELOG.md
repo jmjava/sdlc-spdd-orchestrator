@@ -22,6 +22,8 @@ All notable changes to this project will be documented in this file.
   SUT (`sdlc-spdd/docs/research/engine-sut.md`). Default `SDLC_ENGINE=auto`.
 - TEST-003: C-RETRIEVE persist→retrieve same-id suite (`tests.research.test_cretrieve`)
   for ledger, SQLite, and mocked Guide. Does not prove RQ1, RQ4, or embeddings.
+- DOC-003: referee one-shot `prove-academic-review.sh` (Python only; Guide/Neo4j
+  optional, not required).
 
 ### Changed
 

@@ -13,6 +13,37 @@ Guide is **fork-only**. This pack does not depend on an Embabel upstream merge.
 
 ---
 
+## 0. How a referee replicates this review
+
+This review’s object is **stores + retrievability** (DOC-001 §1). Drift and
+usefulness were **removed from scope**. A replicator does **not** need Docker,
+a JVM, Neo4j, or `orch-guide`.
+
+**Required** (Python 3; `PYTHONPATH=engine/src` is set by the script):
+
+```bash
+git clone https://github.com/jmjava/sdlc-spdd-orchestrator.git
+cd sdlc-spdd-orchestrator
+git checkout <commit>    # write `git rev-parse HEAD` beside the result
+./sdlc-spdd/docs/research/prove-academic-review.sh
+```
+
+That script runs `prove-p0.sh all`, then `tests.research.test_p0_artifacts`,
+`test_cretrieve` (C-RETRIEVE), `test_ref001_sut` (`gate_check` SUT), and
+`test_chore003_ledger`. Exit 0 is the replication pass for this freeze.
+
+**Optional** (not required; do not treat skip as a fail of this review):
+
+```bash
+SDLC_GUIDE_STACK_LIVE=1 ./tests/test-guide-stack-live.sh
+```
+
+Needs Docker, Java 21, and a `jmjava/orch-guide` checkout
+(`GUIDE_HOME`, ref `sdlc-spdd-projection-v2`). CI job:
+`.github/workflows/test-guide-stack-experimental.yml`.
+
+---
+
 ## 1. Construct validity
 
 Each DOC-001 construct is only as valid as its current instrument. Do not treat a CLI pass as the construct.
@@ -89,7 +120,10 @@ Assistant sampling **cannot be automated away**. TEST-001 §6 (Nondeterminism pl
 
 ## 7. Replication checklist
 
-Freeze these **before** any TEST-002 session. Copy the filled row into the slice log.
+**This review:** run §0 (`prove-academic-review.sh`). Record the git SHA.
+
+The table below is the extra freeze if someone later runs a TEST-002 *slice*
+(out of this review’s scope). Copy filled rows into that slice log.
 
 | Item | Freeze how | Location / command |
 |------|------------|--------------------|

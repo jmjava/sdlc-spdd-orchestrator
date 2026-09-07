@@ -13,12 +13,13 @@ This folder is **not** a paper. It holds investigation notes that support either
 | [TEST-002 first slice log](../../tests/eval/test-002-hello/SLICE-LOG.md) | n=1 hello gold, protocol incomplete | C-DRIFT symbol-proxy 0 vs 0.333; C-PORT not reported; do not treat as evidence the method works |
 | [Dogfood ledger policy (CHORE-003)](../../sdlc-spdd/docs/research/dogfood-ledger-policy.md) | Archive vs lessons.jsonl | Seeded decision/pitfall/pattern; retrieve is non-vacuous; not RQ4 usefulness |
 | [Engine SUT (REF-001)](../../sdlc-spdd/docs/research/engine-sut.md) | Named gate semantics | Python `WorkflowEngine.gate_check`; `SDLC_GATE_ENGINE=shell` is not an eval condition |
-| [Threats and replication (DOC-003)](../../sdlc-spdd/docs/research/threats-to-validity-and-replication.md) | Threats + freeze checklist | Referee appendix; what live-consumer does not prove |
+| [Threats and replication (DOC-003)](../../sdlc-spdd/docs/research/threats-to-validity-and-replication.md) | Threats + **referee one-shot** | `./sdlc-spdd/docs/research/prove-academic-review.sh` (no Docker/Neo4j) |
 | [Retrieve algorithm (FEAT-017)](../../sdlc-spdd/docs/research/retrieve-algorithm.md) | Lexical keyword-list vs title-body | C-CONTEXT relevance proxy; DICE still unmeasured |
 | [Capture metrics queries (FEAT-015)](../../sdlc-spdd/docs/research/capture-metrics-queries.md) | `context metrics` construct queries | C-COMPLY / C-CONTEXT / C-REWORK / C-MEMORY |
 | [code_maps_to_ops rule (FEAT-016)](../../sdlc-spdd/docs/research/code-maps-to-ops.md) | Automated Files: mapping + human C-DRIFT remainder | What gate_check enforces vs raters |
 | [P0 structured checker](../../sdlc-spdd/docs/research/check_p0_artifacts.py) | Parser-based gate (not token grep) | `python3 -m unittest tests.research.test_p0_artifacts -v` |
 | [P0 proof script](../../sdlc-spdd/docs/research/prove-p0.sh) | Machine gate per Work ID | Run before merging the next P0 item |
+| [Academic-review proof](../../sdlc-spdd/docs/research/prove-academic-review.sh) | Referee replication | One command: P0 + TEST-003 + REF-001 + CHORE-003 |
 | [Milestone 2 task list](../../sdlc-spdd/spdd/tasks/milestone-2-academic-hardening.md) | Iteration backlog | Picking the next Work ID |
 | [Jira ADF and requirements sync](jira-adf-and-requirements-sync.md) | Product/integration research | Jira Cloud description payloads |
 

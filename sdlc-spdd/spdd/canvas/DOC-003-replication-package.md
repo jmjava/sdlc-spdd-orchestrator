@@ -109,6 +109,8 @@ One markdown pack. Checker parses threat headings, construct IDs in the construc
 
 Follows merged FEAT-015 (`1df0c2e` / PR #229).
 
+2026-09-07 — Referee replication for this freeze is `prove-academic-review.sh` (no Docker/Neo4j). Live Guide remains optional.
+
 ## Final Status
 
 - Readiness: Reviewed
