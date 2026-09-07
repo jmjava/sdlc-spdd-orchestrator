@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-from sdlc_engine.context_store import ContextStore
+from sdlc_engine.context_store import ContextStore, lesson_ids_from_subgraph
 from sdlc_engine.guide_client import GuideClient, resolve_guide_base_url
 from sdlc_engine.persistence import save_config
 from sdlc_engine.project import Project
@@ -83,18 +83,7 @@ Roundtrip canvas body for Guide projection.
         project_guide=False,
     )
     lesson_id = f"pitfall:{work_id}:{area}:roundtrip-test"
-    index_path = root / "spdd" / "memory" / "context-index.md"
-    if not index_path.is_file():
-        index_path.write_text(
-            "# Context Index\n\n"
-            "| Area | Kind | Work ID | Phase | Timestamp | Source | Entry |\n"
-            "|------|------|---------|-------|-----------|--------|-------|\n",
-            encoding="utf-8",
-        )
-    with index_path.open("a", encoding="utf-8") as fh:
-        fh.write(
-            f"| {area} | pitfall | {work_id} | test | 2026-08-08T00:00:00Z | roundtrip-test | {body} |\n"
-        )
+    store.write_guide_ingest_index()
     yield root, work_id, lesson_id, body
     shutil.rmtree(root, ignore_errors=True)
 
@@ -115,6 +104,7 @@ def test_guide_load_read_subgraph_and_lesson(seeded_project) -> None:
     pitfalls = data.get("pitfalls") or []
     pitfall_text = json.dumps(pitfalls)
     assert body in pitfall_text or MARKER in pitfall_text, pitfall_text
+    assert lesson_id in lesson_ids_from_subgraph(data), pitfall_text
 
     lesson = client.get_lesson(lesson_id)
     if lesson.get("ok"):

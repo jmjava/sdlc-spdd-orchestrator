@@ -36,6 +36,18 @@ _SUBGRAPH_LESSON_KEYS = (
     "analyses",
 )
 
+# orch-guide tag sdlc-spdd-projection-v2 projects these kinds from context-index.md.
+_GUIDE_INGEST_KINDS = ("decision", "pitfall", "pattern")
+
+_GUIDE_INDEX_HEADER = (
+    "# Context Index\n"
+    "\n"
+    "> Derived from `spdd/memory/lessons.jsonl` for Guide v2 ingest. Do not hand-edit.\n"
+    "\n"
+    "| Area | Kind | Work ID | Phase | Timestamp | Source | Entry |\n"
+    "|------|------|---------|-------|-----------|--------|-------|\n"
+)
+
 
 def lesson_ids_from_subgraph(data: dict[str, Any]) -> set[str]:
     """Collect lesson record ids from a ``spdd_workSubgraph`` payload."""
@@ -234,8 +246,39 @@ class ContextStore:
     def _guide_client(self) -> GuideClient:
         return GuideClient(self.guide_base_url, timeout=self.guide_timeout)
 
+    def write_guide_ingest_index(self) -> Path:
+        """Rebuild Guide v2's ingest table from the accepted ledger.
+
+        ``sdlc-spdd-projection-v2`` projects canvases plus
+        ``spdd/memory/context-index.md`` — it does **not** read
+        ``lessons.jsonl``. The table is a derived projection so persist→load
+        stores the same record ids the ledger uses
+        (``{kind}:{workId}:{area}:{source}``). Hand-writing this file in a
+        test is not a C-RETRIEVE pass.
+        """
+        path = self.project.home / "spdd" / "memory" / "context-index.md"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        lines = [_GUIDE_INDEX_HEADER]
+        for rec in self.ledger.records(include_staged=False):
+            if rec.kind not in _GUIDE_INGEST_KINDS:
+                continue
+            area = (rec.area or "").strip() or "(none)"
+            wid = (rec.work_id or "").strip() or "(none)"
+            # Guide splits on `|` and drops empty cells; keep seven columns.
+            phase = (rec.phase or "").strip() or "-"
+            ts = (rec.ts or "").strip() or "-"
+            source = (rec.source or "").strip() or "capture"
+            entry = (rec.title or rec.body or rec.kind).strip().splitlines()[0]
+            entry = entry.replace("|", "/").replace("\n", " ")[:300]
+            lines.append(
+                f"| {area} | {rec.kind} | {wid} | {phase} | {ts} | {source} | {entry} |\n"
+            )
+        path.write_text("".join(lines), encoding="utf-8")
+        return path
+
     def project_to_guide(self) -> dict[str, Any]:
         """POST SPDD projection load against this project's home folder."""
+        index_path = self.write_guide_ingest_index()
         url = f"{self.guide_base_url}/api/v1/data/spdd-projection/load"
         payload = json.dumps(
             {"rootPath": str(self.project.home.resolve())}
@@ -257,6 +300,7 @@ class ContextStore:
                     "decisions": data.get("decisions"),
                     "pitfalls": data.get("pitfalls"),
                     "patterns": data.get("patterns"),
+                    "ingestIndex": self._rel(index_path),
                     "raw": data,
                 }
         except urllib.error.HTTPError as exc:
@@ -521,4 +565,9 @@ class ContextStore:
         )
 
 
-__all__ = ["ContextStore", "PersistResult", "LEDGER_KINDS", "lesson_ids_from_subgraph"]
+__all__ = [
+    "ContextStore",
+    "PersistResult",
+    "LEDGER_KINDS",
+    "lesson_ids_from_subgraph",
+]

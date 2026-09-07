@@ -79,6 +79,7 @@ def test_live_persist_enters_all_backends() -> None:
         assert result.sqlite.get("ok") is True, result.as_dict()
         assert result.guide.get("ok") is True, result.as_dict()
         assert not result.guide.get("skipped"), result.as_dict()
+        assert result.guide.get("ingestIndex"), result.as_dict()
 
         shown = store.show(lesson_id)
         assert shown is not None
@@ -93,12 +94,14 @@ def test_live_persist_enters_all_backends() -> None:
         assert lesson_id not in (sqlite_block.get("missing") or []), parity
 
         guide_block = parity.get("guide") or {}
+        subgraph = GuideClient(base).work_subgraph(wid)
+        graph_evidence = {"guide": guide_block, "subgraph": subgraph}
         assert guide_block.get("enabled") is True, parity
-        assert guide_block.get("via") == "work_subgraph", guide_block
-        assert not guide_block.get("skipped"), guide_block
-        assert not guide_block.get("unreachable"), guide_block
-        assert guide_block.get("ok") is True, guide_block
-        assert lesson_id not in (guide_block.get("missing") or []), guide_block
-        assert lesson_id in store.guide_lesson_ids(), guide_block
+        assert guide_block.get("via") == "work_subgraph", graph_evidence
+        assert not guide_block.get("skipped"), graph_evidence
+        assert not guide_block.get("unreachable"), graph_evidence
+        assert guide_block.get("ok") is True, graph_evidence
+        assert lesson_id not in (guide_block.get("missing") or []), graph_evidence
+        assert lesson_id in store.guide_lesson_ids(), graph_evidence
     finally:
         shutil.rmtree(fixture, ignore_errors=True)

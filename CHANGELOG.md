@@ -34,7 +34,9 @@ All notable changes to this project will be documented in this file.
 - ContextStore Guide parity lists lesson ids via ``spdd_workSubgraph`` (the
   retrieve API). Unreachable Guide still skips; a live Guide that cannot
   return the ledger id **fails** instead of skip. Global ``by-label`` is not
-  the C-RETRIEVE instrument (list cap 100).
+  the C-RETRIEVE instrument (list cap 100). Guide v2 ingest is a
+  ledger-derived ``context-index.md`` (the tagged projection does not read
+  ``lessons.jsonl``); writing that table only in a test is not a pass.
 - DOC-001: **Python 3-only replication** is a first-class freeze claim
   (pass bar item 5, contribution sentence, claims-allowed table). Live
   Guide+Neo4j stays **optional**; requiring a JVM graph store fails the bar.

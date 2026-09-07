@@ -112,6 +112,14 @@ Temp project, persist/accept one pitfall, assert the same id is readable. Enable
 - Tests: hermetic unittest; live stack on CI when e2e/research paths change
 - Validation: suite doc says mocked is not the graph; live test asserts `result.guide` ok
 
+### T03 — Ledger-derived Guide v2 ingest (no test-only index)
+
+- Status: In Progress
+- Description: `project_to_guide` rebuilds `context-index.md` from accepted ledger records. Live C-RETRIEVE requires the subgraph id, not a skip and not a hand-written table in the test.
+- Files: `engine/src/sdlc_engine/context_store.py`, `engine/tests_e2e/test_context_store_guide_live.py`, `engine/tests_e2e/test_guide_projection_roundtrip.py`, `engine/tests_unit/test_context_store_guide_parity.py`
+- Tests: unit ingest-id reconstruction; live stack on CI
+- Validation: live `work_subgraph` returns the ledger id; skip/unreachable is not a pass
+
 ## N - Norms
 
 - Cite C-RETRIEVE
@@ -120,25 +128,29 @@ Temp project, persist/accept one pitfall, assert the same id is readable. Enable
 
 ## S - Safeguards
 
-- Do not modify engine runtime except via tests
+- Do not modify engine runtime except via tests, except the Guide ingest
+  adapter required for ledger→graph persist (`write_guide_ingest_index`)
 - Do not claim drift is fixed
 - Do not treat mocked Guide as embedding IR
 - No Embabel upstream
 - Live Guide e2e is the graph-mode proof; hermetic TEST-003 is not a substitute
 - `embabel-dif` is out of this review
+- Do not hand-write `context-index.md` in a live test and call that retrieve
 
 ## Review Checklist
 
 - [x] Suite exists and is in CI
 - [x] Three stores covered
 - [x] Non-claims documented
-- [x] No engine product change
+- [x] Engine change is the ledger→Guide v2 ingest adapter (not a test-only table)
 
 ## Sync Notes
 
 Opened after DOC-001 T03 freeze (`5e0feea` / #244). Stakeholder: claims need a complete test suite. Live Guide+Neo4j e2e already exists; do not list it as leftover. `embabel-dif` is out of this review.
 
 2026-09-07 — T02 / DOC-001 T05: live graph is required evidence for mode 3; hermetic suite is not a substitute.
+
+2026-09-07 — T03: Guide v2 does not read `lessons.jsonl`; persist→load now derives the ingest table from the ledger so the graph stores the same id.
 
 ## Final Status
 

@@ -6,6 +6,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from sdlc_engine.context_store import ContextStore, lesson_ids_from_subgraph
+from sdlc_engine.lessons_ledger import lesson_id as make_lesson_id
 from sdlc_engine.persistence import save_config
 from sdlc_engine.project import Project
 
@@ -117,6 +118,73 @@ def test_parity_fails_when_live_guide_missing_id(tmp_path: Path) -> None:
     assert not guide.get("skipped")
     assert lesson_id in guide["missing"]
     assert parity["ok"] is False
+
+
+def test_guide_ingest_index_row_matches_ledger_id(tmp_path: Path) -> None:
+    wid = "FEAT-908-guide-ingest"
+    area = "engine"
+    source = "unit"
+    _seed(tmp_path, wid)
+    save_config(tmp_path, {"backends": ["git-pointers", "guide-dice"]})
+    store = ContextStore(Project(tmp_path), guide_base_url="http://guide.test")
+    result = store.persist_lesson(
+        kind="pitfall",
+        work_id=wid,
+        area=area,
+        body="INDEX-ID",
+        source=source,
+        accept=True,
+        project_guide=False,
+    )
+    lesson_id = result.git["id"]
+    assert lesson_id == make_lesson_id("pitfall", wid, area, source)
+    path = store.write_guide_ingest_index()
+    reconstructed = None
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line.startswith("|") or "Area | Kind" in line:
+            continue
+        cols = [c.strip() for c in line.split("|") if c.strip()]
+        if len(cols) < 7 or cols[0].replace("-", "") == "":
+            continue
+        reconstructed = f"{cols[1]}:{cols[2]}:{cols[0]}:{cols[5]}"
+        break
+    assert reconstructed == lesson_id
+
+
+def test_project_to_guide_writes_ingest_index_before_load(tmp_path: Path) -> None:
+    wid = "FEAT-909-guide-load"
+    _seed(tmp_path, wid)
+    save_config(tmp_path, {"backends": ["git-pointers", "guide-dice"]})
+    store = ContextStore(Project(tmp_path), guide_base_url="http://guide.test")
+    store.persist_lesson(
+        kind="pitfall",
+        work_id=wid,
+        area="engine",
+        body="LOAD-INDEX",
+        source="unit",
+        accept=True,
+        project_guide=False,
+    )
+
+    class Resp:
+        status = 200
+
+        def read(self):
+            return b'{"workIds":1,"pitfalls":1}'
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+    with patch("sdlc_engine.context_store.urllib.request.urlopen", return_value=Resp()):
+        out = store.project_to_guide()
+    assert out["status"] == 200
+    index = tmp_path / "spdd" / "memory" / "context-index.md"
+    assert index.is_file()
+    assert out.get("ingestIndex") == "spdd/memory/context-index.md"
+    assert wid in index.read_text(encoding="utf-8")
 
 
 def test_parity_fails_not_skip_when_live_subgraph_errors(tmp_path: Path) -> None:
