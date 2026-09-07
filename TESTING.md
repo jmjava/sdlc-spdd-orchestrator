@@ -308,8 +308,9 @@ SDLC_ENGINE=python ./scripts/sdlc.sh version
 ```
 
 GitHub workflow: `.github/workflows/test-sdlc-engine.yml`. Guide stack:
-`.github/workflows/test-guide-stack-experimental.yml` (skips live Guide+Neo4j
-when `repo.embabel.com` is unreachable; ADF viewer live still runs).
+`.github/workflows/test-guide-stack-experimental.yml` (unreachable
+`repo.embabel.com` **fails** the live Guide job; ADF viewer live still runs,
+then the job fails).
 
 Guide round-trip (ledger → projection → read + parity + MCP parity):
 

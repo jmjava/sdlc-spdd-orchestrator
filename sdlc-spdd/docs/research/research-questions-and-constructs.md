@@ -21,12 +21,12 @@ The method under review **stores**, then must be able to **read back**:
 | Intent | REASONS canvas — what ships and what does not | `spdd/canvas/<WORK-ID>.md` | Human + `gate_check` / canvas validator |
 | Advice (ledger) | Reviewed lessons (`decision`, `pitfall`, `pattern`) | `spdd/memory/lessons.jsonl` | **TEST-003** persist→`context retrieve` same id **and** T04 context-select; FEAT-017 lexical; CHORE-003 seeded dogfood |
 | Advice (SQLite) | Regenerable local index of the same ledger ids | `.sdlc/index.sqlite` (schema v5) | **TEST-003** `context parity` missing/extra empty. `db query --search` is work_items FTS — a **different CLI**. |
-| Advice (Guide/Neo4j graph) | Regenerable working-store projection of the same ledger ids | Guide DICE graph (Neo4j) | **Required** live proof: `test_guide_projection_roundtrip.py` + `test_context_store_guide_live.py` (`test_live_persist_enters_all_backends`, `test_live_context_selects_right_records`) via `test-guide-stack-live.sh` / `test-guide-stack-experimental.yml`. TEST-003 mocked client is the **client contract** only. Unreachable Guide is skip, **not** a graph-mode pass. |
+| Advice (Guide/Neo4j graph) | Regenerable working-store projection of the same ledger ids | Guide DICE graph (Neo4j) | **Required** live proof: `test_guide_projection_roundtrip.py` + `test_context_store_guide_live.py` (`test_live_persist_enters_all_backends`, `test_live_context_selects_right_records`) via `test-guide-stack-live.sh` / `test-guide-stack-experimental.yml`. TEST-003 mocked client is the **client contract** only. Guide-dice enabled + unreachable Guide **fails** `context parity`. |
 | Process traces | Phase pointer, gates, claim/release | `.sdlc/` + `spdd/memory/registry.jsonl` | `sdlc.sh next` / registry |
 
 **In-scope empirical claim:** stored advice is **retrievable** in **three storage modes** — persist/accept then find the same id on the **ledger**, in **SQLite**, and in the **Guide/Neo4j graph**. Cite existing tests; do not invent a new SPIKE.
 
-**In-scope storage claim (first-class):** the graph store is in-scope, not a footnote. A complete freeze run is (a) Python 3 hermetic `prove-academic-review.sh` (ledger + SQLite + Guide **client**) **and** (b) live **Guide+Neo4j** (`SDLC_GUIDE_STACK_LIVE=1 ./tests/test-guide-stack-live.sh`). Treating mocked HTTP as the graph proof **fails** this bar. Treating a live-Guide skip as a pass **fails** this bar.
+**In-scope storage claim (first-class):** the graph store is in-scope, not a footnote. A complete freeze run is (a) Python 3 hermetic `prove-academic-review.sh` (ledger + SQLite + Guide **client**) **and** (b) live **Guide+Neo4j** (`SDLC_GUIDE_STACK_LIVE=1 ./tests/test-guide-stack-live.sh`). Treating mocked HTTP as the graph proof **fails** this bar. Treating unreachable Guide as ``context parity`` ``ok: true``, or CI exit 0 without booting Guide+Neo4j, **fails** this bar.
 
 **This review's scope removed** reduced-**drift** (RQ1) and retrieve-**usefulness** (RQ4 / C-MEMORY follow-on rework). Those are not leftover holes in this freeze. RQ1 and RQ4 headings in §3 stay so a later, separate paper has measures; they are **not** this review.
 
@@ -38,7 +38,7 @@ The method under review **stores**, then must be able to **read back**:
 
 - “SDLC-SPDD reduces drift.” That sentence came from README marketing (`fixes that`). Drift was **removed from this review's scope**. It is **not** Fowler SPDD’s job and **not** the criterion for accepting this artifact. TEST-002 slices are **instrumentation demos**, not this review.
 - Treating **mocked** Guide HTTP as proof of the **Neo4j graph store**.
-- Treating unreachable live Guide as a C-RETRIEVE **pass**.
+- Treating unreachable live Guide as a C-RETRIEVE **pass** (`context parity` `ok: true`, or CI exit 0 without booting Guide+Neo4j).
 - Deterministic Intent Folding (`jmjava/embabel-dif`), Embabel GOAP, or a JVM fold as a result of *this* review. Optional present-or-skip CLI attach already exists when the sibling is present; absence is skip. That pairing is **later / other-repo**. This freeze is **foundational** to it (a versioned canvas and retrievable advice ledger a fold can read) and **does not require it**.
 
 Do **not** open a new SPIKE to re-plan this. This file is the freeze. Retrievability’s hermetic suite is **TEST-003** (`tests/research/test_cretrieve.py`; [cretrieve-suite.md](cretrieve-suite.md)). The graph mode’s live suite is `engine/tests_e2e/test_guide_projection_roundtrip.py` and `test_context_store_guide_live.py`.
@@ -197,7 +197,7 @@ Use this table when editing README, compliance, or talks. **If a cell says no, d
 | Intent and advice are **stored in git** and queryable | **Yes** — canvas + `lessons.jsonl` + FEAT-015 metrics. | Yes | Yes | Yes |
 | Stored advice is **retrievable** from the ledger (`context retrieve`) | **Yes** — TEST-003 persist→same id **and** context-select (work/area/kind/query excludes siblings). | Yes | Yes | Yes |
 | SQLite local index holds the **same lesson ids** as the ledger when sqlite is enabled (`context parity`) | **Yes** — TEST-003. Opt-in. `db query --search` is a different CLI. | Same | Same | Same |
-| Guide working store holds the **same lesson ids** as the ledger (`context parity`) | **Yes** — TEST-003 mocked HTTP is the **client** on default CI. Live **Guide+Neo4j graph** is **required evidence** (`test_guide_projection_roundtrip` / `test_context_store_guide_live`). Unreachable skip is **not** a pass. Embeddings are **out of this bar**. | Same | Same | Same |
+| Guide working store holds the **same lesson ids** as the ledger (`context parity`) | **Yes** — TEST-003 mocked HTTP is the **client** on default CI. Live **Guide+Neo4j graph** is **required evidence** (`test_guide_projection_roundtrip` / `test_context_store_guide_live`). Unreachable Guide **fails** parity. Embeddings are **out of this bar**. | Same | Same | Same |
 | **Three storage modes** (ledger, SQLite, Guide/Neo4j) each persist→read | **Yes** — hermetic TEST-003 for ledger+SQLite; live stack for the graph | Yes | Yes | Yes |
 | A referee can finish the freeze with **Python 3 only** (no live graph) | **No** — hermetic suite is ledger+SQLite+client, not the graph store | **No** | **No** | **No** |
 | Live Guide+Neo4j is **required** to prove the graph mode | **Yes** | **Yes** | **Yes** | **Yes** |

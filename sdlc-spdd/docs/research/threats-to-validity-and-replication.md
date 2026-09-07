@@ -19,7 +19,7 @@ This review’s object is **stores + retrievability** in **three storage modes**
 (DOC-001 §1): git **ledger**, **SQLite**, and the **Guide/Neo4j graph**. Drift
 and usefulness were **removed from scope**. The graph mode is **required
 evidence**, not optional. Mocked Guide HTTP is the client contract, not the
-graph-store proof. A live-Guide skip is **not** a pass of the graph mode.
+graph-store proof. Unreachable Guide fails `context parity`. A CI skip of live Guide+Neo4j is **not** a pass of the graph mode.
 
 **Required — modes 1–2 + Guide client** (Python 3; `PYTHONPATH=engine/src` is
 set by the script):
@@ -57,7 +57,7 @@ Each DOC-001 construct is only as valid as its current instrument. Do not treat 
 | **C-COMPLY** | FEAT-014 semantic minima on `gate_check(code)`; FEAT-016 review Result + safeguards; existence vs semantic rates must still be published as a pair. | `--force` / ignoring chat still bypasses the method. Empty headings no longer count, but phrase quality beyond the minima is rater-only. |
 | **C-CONTEXT** | FEAT-015 `record.metrics.context_files` via `sdlc-engine context metrics --construct C-CONTEXT`. | Self-reported load. Does not prove attention. Relevance is rater/qrel until FEAT-017. |
 | **C-MEMORY** | FEAT-015 `context metrics --construct C-MEMORY` (C-REWORK fields on a follow-on). Retrieve `--keyword` is exact list membership; `--query` ranks title/body (**FEAT-017**). CHORE-003 seeded the dogfood ledger; archive never truncates it. | Usefulness is C-REWORK on session 2 (TEST-001 RQ4), not retrieve-call counts. Guide DICE embeddings are unmeasured. |
-| **C-RETRIEVE** | **Three storage modes** plus **context-select**. TEST-003 hermetic: ledger + SQLite + mocked Guide **client** (smoke id + T04 subset/sibling). **Required** live graph: `test_guide_projection_roundtrip.py` + `test_context_store_guide_live.py` (`test_live_persist_enters_all_backends`, `test_live_context_selects_right_records`) / `test-guide-stack-live.sh`. | Mocked Guide is HTTP client parity, **not** the Neo4j graph. Unreachable Guide is skip, **not** a graph-mode pass. Selectivity is not RQ4 usefulness. |
+| **C-RETRIEVE** | **Three storage modes** plus **context-select**. TEST-003 hermetic: ledger + SQLite + mocked Guide **client** (smoke id + T04 subset/sibling). **Required** live graph: `test_guide_projection_roundtrip.py` + `test_context_store_guide_live.py` (`test_live_persist_enters_all_backends`, `test_live_context_selects_right_records`) / `test-guide-stack-live.sh`. | Mocked Guide is HTTP client parity, **not** the Neo4j graph. Unreachable Guide **fails** `context parity` when guide-dice is enabled. Selectivity is not RQ4 usefulness. |
 | **C-PORT** | `validate-command-adapters.sh` is **text** parity. | Adapter markdown equality is not behavioral equality. Live-consumer is Cursor-oriented. If only one assistant ran, C-PORT is not a result. |
 
 SPIKE-004’s earlier “file/regex/exact-keyword proxies” row is **partially retired** for C-COMPLY (code + retro/sync minima exist) and **not retired** for C-DRIFT hunks or C-CONTEXT relevance.

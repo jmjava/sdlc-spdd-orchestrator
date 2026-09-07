@@ -32,11 +32,11 @@ All notable changes to this project will be documented in this file.
   the graph mode; mocked HTTP is the client contract, not the graph-store proof.
   Hermetic `prove-academic-review.sh` remains modes 1–2 + client.
 - ContextStore Guide parity lists lesson ids via ``spdd_workSubgraph`` (the
-  retrieve API). Unreachable Guide still skips; a live Guide that cannot
-  return the ledger id **fails** instead of skip. Global ``by-label`` is not
-  the C-RETRIEVE instrument (list cap 100). Guide v2 ingest is a
-  ledger-derived ``context-index.md`` (the tagged projection does not read
-  ``lessons.jsonl``); writing that table only in a test is not a pass.
+  retrieve API). Guide-dice enabled + unreachable Guide **fails** parity
+  (``ok: false``, CLI exit 1) — not a skip-pass. A live Guide that cannot
+  return the ledger id also fails. Global ``by-label`` is not the C-RETRIEVE
+  instrument (list cap 100). Guide v2 ingest is a ledger-derived
+  ``context-index.md``. Live CI fails if ``repo.embabel.com`` is down.
 - TEST-003 T04: C-RETRIEVE context-select — two Work IDs, three areas, three
   kinds. Retrieve-by-work / area / kind / query returns the matching subset
   and excludes sibling records (ledger, SQLite, live ``work_subgraph`` /

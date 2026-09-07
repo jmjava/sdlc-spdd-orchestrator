@@ -122,11 +122,19 @@ Temp project, persist/accept one pitfall, assert the same id is readable. Enable
 
 ### T04 — Context-select (right data given retrieve context)
 
-- Status: In Progress
+- Status: Complete
 - Description: Four-record fixture (two Work IDs, three areas, three kinds). Ledger/SQLite retrieve and live `work_subgraph` / `area_lessons` must return the matching subset and exclude sibling records. Query inside a work must not leak the other work. Staged records stay out of accepted retrieve; last-wins overwrites the body.
 - Files: `tests/research/test_cretrieve.py`, `tests/research/cretrieve_context_select.py`, `engine/tests_e2e/test_context_store_guide_live.py`, `sdlc-spdd/docs/research/cretrieve-suite.md`, DOC-001 C-RETRIEVE row
 - Tests: `PYTHONPATH=engine/src python3 -m unittest tests.research.test_cretrieve -v`; live `test_live_context_selects_right_records`
 - Validation: exact id-set equality on hermetic; live work subgraph has no sibling-work ids; area lessons have no other-area ids. Not RQ4 usefulness.
+
+### T05 — Unreachable Guide fails parity (not a skip-pass)
+
+- Status: In Progress
+- Description: When `guide-dice` is enabled, Guide down sets `parity.guide.ok=false` and overall `ok=false` (CLI exit 1). Live stack script and experimental CI fail if Embabel/Guide cannot boot. Slash commands still must not block the lifecycle when Guide is absent.
+- Files: `engine/src/sdlc_engine/context_store.py`, `tests/test-guide-stack-live.sh`, `.github/workflows/test-guide-stack-experimental.yml`, TEST-003 tests/docs
+- Tests: `test_parity_fails_when_guide_unreachable`, `test_cli_parity_exits_nonzero_when_guide_unreachable`, `test_unreachable_guide_fails_parity`
+- Validation: no `ok: true` + `skipped`/`unreachable` pair; CI does not exit 0 on Embabel down
 
 ## N - Norms
 
@@ -151,7 +159,8 @@ Temp project, persist/accept one pitfall, assert the same id is readable. Enable
 - [x] Three stores covered
 - [x] Non-claims documented
 - [x] Engine change is the ledger→Guide v2 ingest adapter (not a test-only table)
-- [ ] T04 context-select: retrieve returns the matching subset, not sibling records
+- [x] T04 context-select: retrieve returns the matching subset, not sibling records
+- [ ] T05 unreachable Guide fails parity (not skip-pass)
 
 ## Sync Notes
 
@@ -162,6 +171,8 @@ Opened after DOC-001 T03 freeze (`5e0feea` / #244). Stakeholder: claims need a c
 2026-09-07 — T03: Guide v2 does not read `lessons.jsonl`; persist→load now derives the ingest table from the ledger so the graph stores the same id.
 
 2026-09-07 — T04: non-trivial C-RETRIEVE is context-select (work/area/kind/query), not another single-id write.
+
+2026-09-07 — T05: guide-dice enabled + Guide down fails `context parity`; live CI fails if Embabel cannot boot.
 
 ## Final Status
 

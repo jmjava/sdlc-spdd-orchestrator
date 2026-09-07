@@ -229,12 +229,8 @@ class GuideRoundTripTests(unittest.TestCase):
             self.assertEqual(parity.get("guide", {}).get("missing") or [], [], parity)
             self.assertTrue(parity.get("guide", {}).get("ok"), parity)
 
-    def test_unreachable_guide_is_skip_not_a_pass_of_the_claim(self) -> None:
-        """parity() must not report guide ok-with-missing-empty when HTTP fails.
-
-        Unreachable is skipped; that is not C-RETRIEVE evidence. This test
-        locks the skip shape so we do not mistake it for a round-trip.
-        """
+    def test_unreachable_guide_fails_parity(self) -> None:
+        """guide-dice enabled + Guide down is a failed retrieve, not a skip-pass."""
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             _seed(root)
@@ -243,11 +239,10 @@ class GuideRoundTripTests(unittest.TestCase):
             parity = store.parity(repair=False)
             guide = parity.get("guide") or {}
             self.assertTrue(guide.get("enabled"))
-            self.assertTrue(guide.get("skipped") or guide.get("unreachable") or guide.get("ok") is False)
-            self.assertTrue(
-                guide.get("unreachable") or guide.get("skipped"),
-                f"unreachable Guide must be labelled skip, got {guide}",
-            )
+            self.assertTrue(guide.get("unreachable"), guide)
+            self.assertFalse(guide.get("ok"), guide)
+            self.assertFalse(parity.get("ok"), parity)
+            self.assertFalse(bool(guide.get("skipped")), guide)
 
 
 class ContextualSelectTests(unittest.TestCase):
