@@ -47,7 +47,15 @@ CI: `.github/workflows/test-guide-stack-experimental.yml` (`guide-neo4j-live`).
 
 `sdlc-spdd-projection-v2` projects canvases + `spdd/memory/context-index.md`, not `lessons.jsonl`. `ContextStore.project_to_guide` rebuilds that table from accepted ledger records so the graph stores `{kind}:{workId}:{area}:{source}`. A test that only writes the markdown table is not a C-RETRIEVE pass.
 
-Unreachable Guide is a skip in `parity()`, **not** a C-RETRIEVE pass of the graph mode.
+Unreachable Guide with ``guide-dice`` enabled **fails** ``context parity``
+(``ok: false``, CLI exit 1). That is not a C-RETRIEVE pass. Guide not in
+backends is ``enabled: false``, not a skip-pass. Live CI must not exit 0
+when ``repo.embabel.com`` is down.
+
+Slash-command effect verification (``verify-agent-command-effects.sh``) does
+**not** treat that unreachable-Guide ``context parity`` fail as a
+command-effects fail. Ledger/SQLite drift, or a reachable Guide missing ids,
+still fails the verifier. ``sdlc-engine context parity`` itself still exits 1.
 
 ## From trivial to non-trivial (T04)
 
@@ -64,7 +72,7 @@ three areas, pitfall / decision / pattern). Exact id-set equality, not “contai
 | Kind ∩ work | ALPHA + pitfall is one id | — |
 | Query inside work | query `Vue` inside ALPHA hits the console decision; `by-label` does not leak BETA | Lexical only (FEAT-017); not DICE IR |
 | SQLite | `lessons_for_work` / `lessons_for_area` match those sets | `db query --search` is a different CLI |
-| Live graph | `work_subgraph(ALPHA)` has ALPHA ids, not BETA; pitfalls vs decisions stay typed; `area_lessons(ctx-engine)` has both engine pitfalls, not the console decision | Skip/unreachable is not a pass |
+| Live graph | `work_subgraph(ALPHA)` has ALPHA ids, not BETA; pitfalls vs decisions stay typed; `area_lessons(ctx-engine)` has both engine pitfalls, not the console decision | Unreachable Guide fails parity; it is not a pass |
 | Staged vs accepted | staged id is absent from accepted retrieve | — |
 | Last-wins | same id rewritten; retrieve finds v2 body, not v1 | — |
 

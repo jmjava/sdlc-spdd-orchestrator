@@ -11,7 +11,7 @@ what can be proven automatically, then run a short manual smoke for the rest.
 | Level | Goal | Fully automatable? | How |
 |------|------|---------------------|-----|
 | 1. Deterministic CI | Prevent adapter/config drift | Yes | GitHub Actions + validator scripts |
-| 2. Post-invocation effects | Prove command side-effects happened | Mostly | `verify-agent-command-effects.sh` |
+| 2. Post-invocation effects | Prove command side-effects happened | Mostly | `verify-agent-command-effects.sh` (unreachable Guide fails `context parity` but is not a command-effects fail) |
 | 3. Manual chat smoke | Validate real chat invocation path | No | Short guided run in Cursor/Copilot/Claude Code |
 
 ## Engine test suites (3 packages)
@@ -308,8 +308,9 @@ SDLC_ENGINE=python ./scripts/sdlc.sh version
 ```
 
 GitHub workflow: `.github/workflows/test-sdlc-engine.yml`. Guide stack:
-`.github/workflows/test-guide-stack-experimental.yml` (skips live Guide+Neo4j
-when `repo.embabel.com` is unreachable; ADF viewer live still runs).
+`.github/workflows/test-guide-stack-experimental.yml` (unreachable
+`repo.embabel.com` **fails** the live Guide job; ADF viewer live still runs,
+then the job fails).
 
 Guide round-trip (ledger → projection → read + parity + MCP parity):
 

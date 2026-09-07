@@ -468,6 +468,8 @@ class ContextStore:
 
         Scope: accepted records only (staged/hot data is runtime state).
         ``repair`` re-derives the projections (db rebuild + Guide reproject).
+        Guide enabled but unreachable is ``ok: False`` (not a skip-pass).
+        Guide disabled (not in backends) is ``enabled: False``, not a skip.
         """
         ledger_ids = self.ledger.accepted_ids()
         out: dict[str, Any] = {
@@ -502,10 +504,11 @@ class ContextStore:
             if not client.health_ok():
                 out["guide"] = {
                     "enabled": True,
-                    "ok": True,
-                    "skipped": True,
+                    "ok": False,
                     "unreachable": True,
+                    "error": "Guide health check failed",
                 }
+                out["ok"] = False
             else:
                 try:
                     guide_ids = self.guide_lesson_ids()

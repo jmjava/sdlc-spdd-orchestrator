@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+from sdlc_engine.cli import main
 from sdlc_engine.context_store import ContextStore, lesson_ids_from_subgraph
 from sdlc_engine.lessons_ledger import lesson_id as make_lesson_id
 from sdlc_engine.persistence import save_config
@@ -37,7 +39,7 @@ def test_lesson_ids_from_subgraph_collects_record_ids() -> None:
     }
 
 
-def test_parity_skips_guide_only_when_unhealthy(tmp_path: Path) -> None:
+def test_parity_fails_when_guide_unreachable(tmp_path: Path) -> None:
     wid = "FEAT-904-guide-down"
     _seed(tmp_path, wid)
     save_config(tmp_path, {"backends": ["git-pointers", "guide-dice"]})
@@ -56,9 +58,35 @@ def test_parity_skips_guide_only_when_unhealthy(tmp_path: Path) -> None:
         parity = store.parity(repair=False)
     guide = parity["guide"]
     assert guide["enabled"] is True
-    assert guide["skipped"] is True
+    assert guide["ok"] is False
     assert guide["unreachable"] is True
-    assert "missing" not in guide
+    assert not guide.get("skipped")
+    assert parity["ok"] is False
+
+
+def test_cli_parity_exits_nonzero_when_guide_unreachable(tmp_path: Path) -> None:
+    wid = "FEAT-904-cli-parity"
+    _seed(tmp_path, wid)
+    save_config(
+        tmp_path,
+        {
+            "backends": ["git-pointers", "guide-dice"],
+            "guide_base_url": "http://127.0.0.1:9",
+        },
+    )
+    store = ContextStore(Project(tmp_path), guide_base_url="http://127.0.0.1:9")
+    store.persist_lesson(
+        kind="pitfall",
+        work_id=wid,
+        area="engine",
+        body="x",
+        source="unit",
+        accept=True,
+        project_guide=False,
+    )
+    with patch.dict(os.environ, {"GUIDE_BASE_URL": "http://127.0.0.1:9"}):
+        rc = main(["--root", str(tmp_path), "context", "parity"])
+    assert rc == 1
 
 
 def test_parity_reads_guide_via_work_subgraph(tmp_path: Path) -> None:

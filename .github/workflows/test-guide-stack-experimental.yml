@@ -4,8 +4,8 @@ name: Test Guide Stack (Experimental)
 # evidence for the third storage mode. Not required for a consumer *install*,
 # but required to accept the freeze. Runs on workflow_dispatch and when
 # ops-console / guide / research-freeze paths change on PRs.
-# Live Guide+Neo4j (and Vue guide_live) skip with a warning when repo.embabel.com
-# is unreachable; Gradle wrapper prefetch and ADF viewer live still run.
+# Unreachable repo.embabel.com fails this job (not a skip-pass). ADF viewer
+# live still runs, then the job fails if the graph stack did not boot.
 
 on:
   workflow_dispatch:
@@ -121,7 +121,7 @@ jobs:
             echo "Embabel snapshot repo reachable — live Guide+Neo4j will run"
           else
             echo "reachable=false" >> "${GITHUB_OUTPUT}"
-            echo "::warning::repo.embabel.com unreachable from this runner; skipping live Guide+Neo4j (experimental). ADF viewer live still runs."
+            echo "::error::repo.embabel.com unreachable; live Guide+Neo4j did not run. That is not a C-RETRIEVE pass."
           fi
 
       - name: Prefetch Guide Maven deps
@@ -207,6 +207,13 @@ jobs:
         run: >
           PYTHONPATH=engine/src pytest -q engine/tests_e2e/test_vue3_console_live_playwright.py
           -m adf_viewer_live --run-adf-viewer-live
+
+      - name: Live Guide+Neo4j is required evidence
+        if: steps.embabel.outputs.reachable != 'true'
+        run: |
+          echo "FAIL: live Guide+Neo4j did not run (repo.embabel.com unreachable)." >&2
+          echo "That skip is not a C-RETRIEVE pass of the graph mode." >&2
+          exit 1
 
       - name: Upload Guide log on failure
         if: failure()

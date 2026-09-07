@@ -96,9 +96,9 @@ fi
 
 if [[ "${SKIP_GUIDE_BOOT:-}" != "1" && "${SDLC_GUIDE_SKIP_EMBABEL_PREFLIGHT:-}" != "1" ]]; then
   if ! test_preflight_embabel_snapshot_repo; then
-    echo "SKIP: ${EMBABEL_SNAPSHOT_REPO_URL} unreachable — Guide KSP cannot resolve embabel-agent-api SNAPSHOT"
-    echo "  Set SDLC_GUIDE_SKIP_EMBABEL_PREFLIGHT=1 to boot anyway."
-    exit 0
+    echo "FAIL: ${EMBABEL_SNAPSHOT_REPO_URL} unreachable — live Guide+Neo4j cannot boot." >&2
+    echo "  That is not a C-RETRIEVE pass. Set SDLC_GUIDE_SKIP_EMBABEL_PREFLIGHT=1 to boot anyway." >&2
+    exit 1
   fi
   echo "preflight OK: Embabel snapshot repo reachable"
 fi

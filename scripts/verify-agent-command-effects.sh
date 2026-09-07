@@ -27,7 +27,11 @@ Steps:
   capture        Verify staged session records after capture-session-memory.sh
 
 When the sdlc-engine Python CLI is importable, `sdlc-engine context parity`
-also runs as an extra consistency check (skipped otherwise).
+also runs as an extra consistency check (skipped otherwise). Guide-dice
+enabled + Guide down still fails `context parity` (C-RETRIEVE). This
+verifier does not treat that unreachable-Guide fail as a command-effects
+failure — slash commands must not block the lifecycle when Guide is absent.
+Ledger/SQLite drift, or a reachable Guide missing ids, still fails.
 
 Examples:
   ./scripts/verify-agent-command-effects.sh --target . --work-id FEAT-001-foo --step plan
@@ -164,6 +168,34 @@ check_ledger_contains_regex() {
   fi
 }
 
+# Classify `context parity` JSON: lifecycle commands must not fail solely
+# because Guide is down. The C-RETRIEVE instrument (`sdlc-engine context
+# parity`) still exits 1 in that case.
+_classify_parity_json() {
+  python3 -c '
+import json, sys
+raw = sys.stdin.read()
+try:
+    data = json.loads(raw)
+except json.JSONDecodeError:
+    print("drift")
+    raise SystemExit(0)
+sqlite = data.get("sqlite") or {}
+guide = data.get("guide") or {}
+sqlite_ok = (not sqlite.get("enabled")) or bool(sqlite.get("ok"))
+guide_unreachable = bool(guide.get("enabled") and guide.get("unreachable"))
+guide_other = bool(
+    guide.get("enabled")
+    and not guide.get("unreachable")
+    and not guide.get("ok", True)
+)
+if sqlite_ok and guide_unreachable and not guide_other:
+    print("guide-unreachable")
+else:
+    print("drift")
+'
+}
+
 run_engine_parity() {
   local engine_cmd=()
   if command -v sdlc-engine >/dev/null 2>&1; then
@@ -182,12 +214,22 @@ run_engine_parity() {
     echo "  skip engine parity: sdlc-engine not importable"
     return
   fi
-  if (cd "${TARGET}" && "${engine_cmd[@]}" context parity); then
+  local json rc kind
+  set +e
+  json="$(cd "${TARGET}" && "${engine_cmd[@]}" context parity)"
+  rc=$?
+  set -e
+  if [[ "${rc}" -eq 0 ]]; then
     echo "  ok  engine parity: sdlc-engine context parity"
-  else
-    echo "  FAIL engine parity: sdlc-engine context parity reported drift (try --repair)" >&2
-    failures=$((failures + 1))
+    return
   fi
+  kind="$(printf '%s' "${json}" | _classify_parity_json)"
+  if [[ "${kind}" == "guide-unreachable" ]]; then
+    echo "  note engine parity: Guide enabled but unreachable (context parity exit ${rc}; not a command-effects fail)"
+    return
+  fi
+  echo "  FAIL engine parity: sdlc-engine context parity reported drift (try --repair)" >&2
+  failures=$((failures + 1))
 }
 
 echo "Verifying command effects"
