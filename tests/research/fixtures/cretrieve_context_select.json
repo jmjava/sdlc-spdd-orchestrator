@@ -1,0 +1,36 @@
+{
+  "records": [
+    {
+      "key": "alpha_engine_pitfall",
+      "work_id": "FEAT-910-ctx-alpha",
+      "kind": "pitfall",
+      "area": "ctx-engine",
+      "source": "ctx-select",
+      "body": "CTX-ALPHA-ENGINE-PITFALL: never skip the live graph retrieve path"
+    },
+    {
+      "key": "alpha_console_decision",
+      "work_id": "FEAT-910-ctx-alpha",
+      "kind": "decision",
+      "area": "ctx-console",
+      "source": "ctx-select",
+      "body": "CTX-ALPHA-CONSOLE-DECISION: keep the Vue console optional for hermetic CI"
+    },
+    {
+      "key": "beta_engine_pitfall",
+      "work_id": "FEAT-911-ctx-beta",
+      "kind": "pitfall",
+      "area": "ctx-engine",
+      "source": "ctx-select",
+      "body": "CTX-BETA-ENGINE-PITFALL: by-label list cap is not C-RETRIEVE"
+    },
+    {
+      "key": "beta_docs_pattern",
+      "work_id": "FEAT-911-ctx-beta",
+      "kind": "pattern",
+      "area": "ctx-docs",
+      "source": "ctx-select",
+      "body": "CTX-BETA-DOCS-PATTERN: cite TEST-003 instead of inventing a SPIKE"
+    }
+  ]
+}

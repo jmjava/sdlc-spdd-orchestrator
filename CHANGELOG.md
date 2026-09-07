@@ -37,6 +37,10 @@ All notable changes to this project will be documented in this file.
   the C-RETRIEVE instrument (list cap 100). Guide v2 ingest is a
   ledger-derived ``context-index.md`` (the tagged projection does not read
   ``lessons.jsonl``); writing that table only in a test is not a pass.
+- TEST-003 T04: C-RETRIEVE context-select — two Work IDs, three areas, three
+  kinds. Retrieve-by-work / area / kind / query returns the matching subset
+  and excludes sibling records (ledger, SQLite, live ``work_subgraph`` /
+  ``area_lessons``). Selectivity is not RQ4 usefulness.
 - DOC-001: **Python 3-only replication** is a first-class freeze claim
   (pass bar item 5, contribution sentence, claims-allowed table). Live
   Guide+Neo4j stays **optional**; requiring a JVM graph store fails the bar.
