@@ -22,7 +22,7 @@ related:
 
 **Work ID:** TEST-003-cretrieve-roundtrip  
 **Milestone:** Milestone 2 — Academic contribution bar  
-**Status:** Complete  
+**Status:** In Progress (T04 context-select)  
 **Date:** 2026-09-06  
 **Beck stage:** make it right (research argument / observability)
 
@@ -43,10 +43,12 @@ One CI-backed test suite a referee can run for the frozen claim: stored advice i
 
 ### IN SCOPE
 
-- Persist/accept then find the same lesson id on the git ledger (`context retrieve` / `context show`)
+- [x] Persist/accept then find the same lesson id on the git ledger (`context retrieve` / `context show`)
+- [ ] T04: retrieve context (work / area / kind / query) returns the matching subset and excludes sibling records; live `work_subgraph` vs `area_lessons` agree
 - SQLite enabled: `context parity` missing/extra empty; retrieve `sqlite_graph` includes the id
 - Guide enabled: mocked HTTP so CI always exercises the **client** parity success (not only unreachable-skip). This is **not** the graph-store proof.
-- Live Guide+Neo4j persist→read (`test_guide_projection_roundtrip.py`, `test_context_store_guide_live.py`) as **required** graph-mode evidence
+- [x] Live Guide+Neo4j persist→read (`test_guide_projection_roundtrip.py`, `test_context_store_guide_live.py`) as **required** graph-mode evidence
+- [ ] T04 live `test_live_context_selects_right_records` (work vs area context)
 - Document what this suite does **not** prove
 
 ### NOT IN SCOPE (this review's scope **removed** drift and usefulness)
@@ -61,6 +63,7 @@ One CI-backed test suite a referee can run for the frozen claim: stored advice i
 
 - [x] `python3 -m unittest tests.research.test_cretrieve -v` is the named suite
 - [x] Ledger, SQLite, and mocked-Guide round-trips all fail if the stored id cannot be read back
+- [ ] T04 context-select: matching subset, not sibling records
 - [x] Research CI runs the suite
 - [x] A short research note states non-claims
 
@@ -72,4 +75,4 @@ One CI-backed test suite a referee can run for the frozen claim: stored advice i
 
 ## Next Step
 
-None. T01+T02 Complete. Live Guide+Neo4j is required graph-mode evidence. Drift and usefulness were **removed from this review's scope**.
+T04 context-select (non-trivial retrieve). Drift and usefulness remain **removed from this review's scope**.
