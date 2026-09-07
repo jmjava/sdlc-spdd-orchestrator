@@ -26,11 +26,13 @@ The method under review **stores**, then must be able to **read back**:
 
 **In-scope empirical claim:** stored advice is **retrievable** — persist/accept then find the same id on the ledger, and when each projection is enabled find the same ids in **SQLite** and **Guide**. Cite existing tests; do not invent a new SPIKE.
 
+**In-scope replication claim (first-class):** this freeze is **Python 3 only**. A referee replicates with `./sdlc-spdd/docs/research/prove-academic-review.sh`. Live **Guide+Neo4j** is an **optional** projection (experimental e2e). Requiring a JVM graph store to accept the artifact **fails** this bar.
+
 **This review's scope removed** reduced-**drift** (RQ1) and retrieve-**usefulness** (RQ4 / C-MEMORY follow-on rework). Those are not leftover holes in this freeze. RQ1 and RQ4 headings in §3 stay so a later, separate paper has measures; they are **not** this review.
 
 **Also not this review:** Guide **embeddings** as an IR result; SQLite FTS (`db query --search`) as the same algorithm as `context retrieve`; Deterministic Intent Folding (`embabel-dif`, already removed — later / other-repo).
 
-**Pass for this review bar:** a referee can find (1) what is stored, (2) that stored advice can be retrieved from the **ledger** and, when enabled, from the **SQLite index** and the **Guide store**, (3) what `gate_check` actually checks, and (4) an allow-list of public sentences. Closest venue fit: ICSE NIER / AIware / LLM4Code, or SEIP with explicit limitations.
+**Pass for this review bar:** a referee can find (1) what is stored, (2) that stored advice can be retrieved from the **ledger** and, when enabled, from the **SQLite index** and the **Guide store**, (3) what `gate_check` actually checks, (4) an allow-list of public sentences, and (5) that replication of (1)–(4) is **Python 3 only** — live Guide+Neo4j stays **optional**. Closest venue fit: ICSE NIER / AIware / LLM4Code, or SEIP with explicit limitations.
 
 **Fail / out of scope for this bar:**
 
@@ -45,7 +47,7 @@ Do **not** open a new SPIKE to re-plan this. This file is the freeze. Retrievabi
 
 DOC-002 may tighten wording. It must not contradict this sentence:
 
-> A **repository-native process model** for AI-assisted delivery that **stores intent** (REASONS canvas) and **stores agent/human advice** in a git ledger with regenerable **SQLite** and **Guide** projections, and makes stored records **retrievable** so that (a) intent, (b) process compliance, and (c) retrievable memory are **observable and comparable**.
+> A **repository-native process model** for AI-assisted delivery that **stores intent** (REASONS canvas) and **stores agent/human advice** in a git ledger with regenerable **SQLite** and **Guide** projections, and makes stored records **retrievable** so that (a) intent, (b) process compliance, and (c) retrievable memory are **observable and comparable**. The evaluation of that claim is **Python 3 only**; live Guide+Neo4j is an **optional** projection, not a replicator requirement.
 
 Do **not** append “with evidence that the hybrid reduces drift.” Drift and usefulness were **removed from this review's scope**. Do **not** treat RQ4 usefulness or Guide embeddings as this review’s pass bar.
 
@@ -193,7 +195,9 @@ Use this table when editing README, compliance, or talks. **If a cell says no, d
 | Intent and advice are **stored in git** and queryable | **Yes** — canvas + `lessons.jsonl` + FEAT-015 metrics. | Yes | Yes | Yes |
 | Stored advice is **retrievable** from the ledger (`context retrieve`) | **Yes** — TEST-003 persist→same id. | Yes | Yes | Yes |
 | SQLite local index holds the **same lesson ids** as the ledger when sqlite is enabled (`context parity`) | **Yes** — TEST-003. Opt-in. `db query --search` is a different CLI. | Same | Same | Same |
-| Guide working store holds the **same lesson ids** as the ledger when Guide is enabled (`context parity`) | **Yes** — TEST-003 mocked HTTP on default CI; live Guide+Neo4j in `test_guide_projection_roundtrip`. Unreachable skip is **not** a pass. Embeddings are **out of this bar**. | Same | Same | Same |
+| Guide working store holds the **same lesson ids** as the ledger when Guide is enabled (`context parity`) | **Yes** — TEST-003 mocked HTTP on **Python 3** default CI. Live Guide+Neo4j is **optional**. Unreachable skip is **not** a pass. Embeddings are **out of this bar**. | Same | Same | Same |
+| A referee can replicate this freeze with **Python 3 only** | **Yes** — `prove-academic-review.sh` | Yes | Yes | Yes |
+| Live Guide+Neo4j is **required** to accept the artifact | **No** — optional projection | **No** | **No** | **No** |
 | Some CLI gates exist (`gate_check`) | **Yes** (describe what they actually check) | Yes | Describe *semantic* gates after FEAT-014/016 | Yes |
 | SDLC-SPDD **fixes** drift | **No** — drift **removed from this review's scope** | **No** | **No** | **No** |
 | The canvas **governs** execution (causal, non-bypassable) | **No** — say *advised process + optional CLI gates* | Same | Stronger *observable* compliance (C-COMPLY) | Same; still bypassable via `--force`/ignoring chat |

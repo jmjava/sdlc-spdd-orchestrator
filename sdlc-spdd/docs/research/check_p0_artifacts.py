@@ -268,6 +268,10 @@ def issues_for_related_work(text: str) -> list[str]:
                 issues.append(f"not-claiming section missing {token}")
         if "embabel-dif" not in nc and "deterministic intent folding" not in nc:
             issues.append("not-claiming section must name embabel-dif as out of this review")
+        if "python 3" not in nc and "python3" not in nc:
+            issues.append("not-claiming section must state Python 3-only replication")
+        if "optional" not in nc or "neo4j" not in nc:
+            issues.append("not-claiming section must state live Guide/Neo4j is optional")
 
     if not re.search(r"fork-only", text, re.IGNORECASE):
         issues.append("related-work must state Guide is fork-only")
@@ -369,6 +373,10 @@ def issues_for_constructs_spec(text: str) -> list[str]:
         issues.append(
             "constructs spec must state that this review's scope removed drift and usefulness"
         )
+    if "python 3" not in blob and "python3" not in blob:
+        issues.append("constructs spec must state Python 3-only replication")
+    if "optional" not in blob or "neo4j" not in blob:
+        issues.append("constructs spec must state live Guide/Neo4j is optional")
     return issues
 
 
@@ -500,6 +508,10 @@ def issues_for_threats_replication(text: str) -> list[str]:
         issues.append("must say how to freeze the engine commit (git SHA)")
     if "sdlc_engine" not in blob and "__version__" not in blob and "engine version" not in blob:
         issues.append("must say how to freeze the engine version")
+    if "python 3" not in blob and "python3" not in blob:
+        issues.append("replication pack must state Python 3-only replication")
+    if "optional" not in blob or "neo4j" not in blob:
+        issues.append("replication pack must state live Guide/Neo4j is optional")
     if "model" not in blob:
         issues.append("must say how to freeze the model id")
     if "sampling" not in blob and "temperature" not in blob:

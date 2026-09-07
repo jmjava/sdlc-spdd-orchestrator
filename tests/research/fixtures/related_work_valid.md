@@ -13,6 +13,8 @@ Not a new LLM, not a new RAG theory, not a compiled multi-agent runtime.
 
 Guide is **fork-only**. `embabel-dif` is later / other-repo, not this review.
 
+Live **Guide+Neo4j** is optional. Replication is **Python 3 only**.
+
 ## Claim × system matrix
 
 | System | Intent observability (C-DRIFT) | Process compliance (C-COMPLY) | Context load (C-CONTEXT) | Evidence / eval | Delta vs SDLC-SPDD |

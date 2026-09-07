@@ -15,9 +15,10 @@ Guide is **fork-only**. This pack does not depend on an Embabel upstream merge.
 
 ## 0. How a referee replicates this review
 
-This review’s object is **stores + retrievability** (DOC-001 §1). Drift and
-usefulness were **removed from scope**. A replicator does **not** need Docker,
-a JVM, Neo4j, or `orch-guide`.
+This review’s object is **stores + retrievability** (DOC-001 §1). A **first-class**
+claim of this freeze: replication is **Python 3 only**. Live Guide+Neo4j stays
+**optional**. Drift and usefulness were **removed from scope**. A replicator
+does **not** need Docker, a JVM, Neo4j, or `orch-guide`.
 
 **Required** (Python 3; `PYTHONPATH=engine/src` is set by the script):
 

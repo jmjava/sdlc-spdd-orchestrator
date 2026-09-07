@@ -7,8 +7,8 @@
 - Status: Complete
 - Readiness: Reviewed
 - Created: 2026-09-06
-- Updated: 2026-09-06
-- Prompt-update: T03 academic-review-goal freeze (2026-09-06)
+- Updated: 2026-09-07
+- Prompt-update: T04 Python 3-only replication first-class (2026-09-07); T03 academic-review-goal freeze (2026-09-06)
 - Milestone: milestone-2
 - Depends on: SPIKE-004-academic-contribution-bar
 - Blocks: TEST-001, FEAT-014, FEAT-015
@@ -28,7 +28,7 @@ Freeze research questions and operationalized constructs so later Milestone 2 wo
 
 Make public claims allow-listed. Stop README causal language until evidence exists.
 
-Academic review of `sdlc-spdd-orchestrator` is a **methods/tools artifact review**: git-backed **intent** (REASONS canvas) and **advice** stores (committed `lessons.jsonl` ledger plus regenerable **SQLite** and **Guide** projections), with a **retrievability** bar — stored records can be read back. This review's **scope removed** reduced-**drift** (RQ1) and retrieve-**usefulness** (RQ4). Deterministic Intent Folding (`jmjava/embabel-dif`) is **out of scope** here and **later / other-repo**; this freeze is foundational to that attach and does not require it.
+Academic review of `sdlc-spdd-orchestrator` is a **methods/tools artifact review**: git-backed **intent** (REASONS canvas) and **advice** stores (committed `lessons.jsonl` ledger plus regenerable **SQLite** and **Guide** projections), with a **retrievability** bar — stored records can be read back. Replication of that bar is **Python 3 only**; live Guide+Neo4j stays **optional**. This review's **scope removed** reduced-**drift** (RQ1) and retrieve-**usefulness** (RQ4). Deterministic Intent Folding (`jmjava/embabel-dif`) is **out of scope** here and **later / other-repo**; this freeze is foundational to that attach and does not require it.
 
 ### Acceptance Criteria
 
@@ -37,6 +37,7 @@ Academic review of `sdlc-spdd-orchestrator` is a **methods/tools artifact review
 - [x] Claims-allowed-today vs after Milestone 2 table is committed
 - [x] Rewrite guidance for README/compliance is in the same document (T01); applying README edits is T02
 - [x] T03: spec §1 names the review object (stores), the retrievability bar (ledger + SQLite + Guide), pass/fail, venue band, and that reduced-drift + `embabel-dif` are not this review
+- [x] T04: Python 3-only replication is a first-class freeze claim; live Guide+Neo4j stays optional
 
 ### Non-Goals
 
@@ -128,6 +129,14 @@ T03 does not add RQ6. It restates the contribution so academic review cannot be 
 - Tests: `python3 -m unittest tests.research.test_p0_artifacts -v`; `./sdlc-spdd/docs/research/prove-p0.sh DOC-001`; `prove-p0.sh DOC-002`
 - Validation: spec §1 present; contribution omits reduced-drift evidence; claims table keeps “fixes drift” as No after P2; retrievability named for ledger + SQLite + Guide; `embabel-dif` named as later/out of scope
 
+### T04 — Python 3-only replication is first-class (live Guide optional)
+
+- Status: Complete
+- Description: Prompt-update then elevate “Python 3 only; live Guide+Neo4j stays optional” from a replication footnote into DOC-001 §1 (in-scope replication claim, pass bar item 5, contribution sentence, claims-allowed Yes/No rows). Sync DOC-002 novelty/not-claiming and DOC-003 §0. Lock with P0 checkers + TEST-003 assertions so dropping the claim fails CI.
+- Files: `sdlc-spdd/docs/research/research-questions-and-constructs.md`, `sdlc-spdd/docs/research/related-work-and-novelty.md`, `sdlc-spdd/docs/research/threats-to-validity-and-replication.md`, `sdlc-spdd/docs/research/check_p0_artifacts.py`, `tests/research/test_p0_artifacts.py`, `tests/research/test_cretrieve.py`
+- Tests: `python3 -m unittest tests.research.test_p0_artifacts tests.research.test_cretrieve -v`; `./sdlc-spdd/docs/research/prove-academic-review.sh`
+- Validation: spec §1 names Python 3-only replication; claims table says live Guide+Neo4j is not required; checker fails if those tokens are stripped
+
 ## N - Norms
 
 - Cite construct IDs (`C-DRIFT`, …) in later canvases
@@ -153,6 +162,7 @@ T03 does not add RQ6. It restates the contribution so academic review cannot be 
 - [x] Rewrite guidance present
 - [x] T02 not mixed into T01
 - [x] T03 spec §1 freeze landed; DOC-002 novelty does not contradict it
+- [x] T04 Python 3-only replication is first-class; live Guide+Neo4j optional
 
 ## Sync Notes
 
@@ -160,7 +170,7 @@ Created 2026-09-06 from SPIKE-004 T04 handoff.
 
 2026-09-06 — T03 prompt-update: academic review of this repo is the stores (intent + advice ledger + SQLite index + Guide projection) with a retrievability bar. Source: stakeholder (firm the review goal; DIF out of scope; stored info should be retrievable; ledger + Guide store; do not forget SQLite).
 
-2026-09-06 — Stakeholder: this review's **scope removed** drift (RQ1) and usefulness (RQ4). Live Guide+Neo4j e2e already exists. `embabel-dif` remains out of this review.
+2026-09-07 — Stakeholder: **Python 3 only** replication is a first-class claim; live Guide+Neo4j stays optional (not the pass bar).
 
 ## Final Status
 
@@ -175,4 +185,5 @@ Created 2026-09-06 from SPIKE-004 T04 handoff.
 - Decision: contribution omits “with evidence that the hybrid reduces drift”; this review's **scope removed** drift and usefulness
 - Decision: in-scope empirical claim is retrievability (ledger `context retrieve` + SQLite and Guide `context parity` when enabled)
 - Decision: `embabel-dif` is later/other-repo; optional present-or-skip attach is not this review’s object
+- Decision: replication of this freeze is **Python 3 only**; live Guide+Neo4j is optional, not the pass bar
 - Next: none for DOC-001. Drift and usefulness stay removed from this review.

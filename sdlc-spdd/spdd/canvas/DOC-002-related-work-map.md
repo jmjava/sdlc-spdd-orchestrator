@@ -7,7 +7,7 @@
 - Status: In Progress
 - Readiness: Ready For Coding
 - Created: 2026-09-06
-- Updated: 2026-09-06
+- Updated: 2026-09-07
 - Milestone: milestone-2
 - Depends on: SPIKE-004-academic-contribution-bar, DOC-001-research-questions-and-constructs
 - Blocks: TEST-001
@@ -25,7 +25,7 @@ Position SDLC-SPDD against parent methods and 2024–2026 AI-SE tooling so a ref
 
 ### Business / Product Goal
 
-Make the novelty sentence rebuttal-ready and consistent with DOC-001. Stop “we implemented Fowler+SDLC Agents” from being the whole related-work story.
+Make the novelty sentence rebuttal-ready and consistent with DOC-001 (stores + retrievability; **Python 3-only** evaluation; live Guide+Neo4j optional). Stop “we implemented Fowler+SDLC Agents” from being the whole related-work story.
 
 ### Acceptance Criteria
 
@@ -138,6 +138,8 @@ Do not start TEST-001 in this operation. Do not modify engine code.
 Created 2026-09-06 after DOC-001 merge (`1d1c866`). Structured tests replace grep-only `prove-p0.sh` token checks.
 
 2026-09-06 — Novelty/not-claiming synced to DOC-001 T03: stores observability is the claim; reduced-drift evidence and `embabel-dif` are not this review.
+
+2026-09-07 — Synced to DOC-001 T04: evaluation of the novelty is **Python 3 only**; live Guide+Neo4j is not a replicator requirement.
 
 ## Final Status
 

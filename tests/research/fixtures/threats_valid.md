@@ -2,6 +2,8 @@
 
 This Work ID does **not collect study data**.
 
+Replication of this freeze is **Python 3 only**. Live Guide+Neo4j stays **optional**.
+
 ## Construct validity
 
 C-DRIFT uses Files mapping plus a human hunk remainder.

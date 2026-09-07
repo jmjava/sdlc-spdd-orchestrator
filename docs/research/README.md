@@ -6,7 +6,7 @@ This folder is **not** a paper. It holds investigation notes that support either
 |----------|------|-------------|
 | [Academic contribution bar (SPIKE-004 analysis)](../../sdlc-spdd/spdd/analysis/SPIKE-004-academic-contribution-bar-analysis.md) | Journal-style review of *this* repo as a research project | Raising claims from engineering/hobby to referee-safe |
 | [Program plan (SPIKE-004 canvas)](../../sdlc-spdd/spdd/canvas/SPIKE-004-academic-contribution-bar.md) | REASONS canvas for Milestone 2 sequence | What to iterate, in what order |
-| [Research questions and constructs (DOC-001)](../../sdlc-spdd/docs/research/research-questions-and-constructs.md) | Frozen RQs + construct spec + **academic review goal** | Stores (canvas, ledger, SQLite index, Guide projection); retrievability bar; not reduced-drift; `embabel-dif` later |
+| [Research questions and constructs (DOC-001)](../../sdlc-spdd/docs/research/research-questions-and-constructs.md) | Frozen RQs + construct spec + **academic review goal** | Stores + retrievability; **Python 3 only**; live Guide+Neo4j optional; not reduced-drift; `embabel-dif` later |
 | [C-RETRIEVE suite (TEST-003)](../../sdlc-spdd/docs/research/cretrieve-suite.md) | Persist→retrieve same id | Ledger + SQLite + mocked Guide; not RQ1/RQ4/embeddings |
 | [Related-work and novelty (DOC-002)](../../sdlc-spdd/docs/research/related-work-and-novelty.md) | Claim × system matrix | Positioning vs Fowler, SDLC Agents, Spec Kit, agents, classics |
 | [Evaluation protocol (TEST-001)](../../sdlc-spdd/docs/research/evaluation-protocol.md) | Method eval protocol (no study data) | How to run slices: gold, raters, baselines, stop rules |
@@ -23,4 +23,4 @@ This folder is **not** a paper. It holds investigation notes that support either
 | [Milestone 2 task list](../../sdlc-spdd/spdd/tasks/milestone-2-academic-hardening.md) | Iteration backlog | Picking the next Work ID |
 | [Jira ADF and requirements sync](jira-adf-and-requirements-sync.md) | Product/integration research | Jira Cloud description payloads |
 
-TEST-002 recorded an n=1 protocol-incomplete comparison under `tests/eval/test-002-hello/`. Do not treat README language ("fixes" drift) as an evaluated result. Academic review of this repo is the **stores + retrievability** freeze (DOC-001 §1), not an RQ1 finding. See the [claims-allowed table](../../sdlc-spdd/docs/research/research-questions-and-constructs.md#5-claims-allowed-today-vs-after-milestone-2).
+TEST-002 recorded an n=1 protocol-incomplete comparison under `tests/eval/test-002-hello/`. Do not treat README language ("fixes" drift) as an evaluated result. Academic review of this repo is the **stores + retrievability** freeze (DOC-001 §1), **Python 3 only** — live Guide+Neo4j stays optional — not an RQ1 finding. See the [claims-allowed table](../../sdlc-spdd/docs/research/research-questions-and-constructs.md#5-claims-allowed-today-vs-after-milestone-2).
