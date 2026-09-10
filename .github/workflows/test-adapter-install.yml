@@ -7,6 +7,7 @@ on:
       - 'templates/cursor/**'
       - 'templates/copilot/**'
       - 'templates/claude/**'
+      - 'templates/agent-context/hooks/**'
       - 'templates/project-github-workflows/validate-sdlc-spdd-adapters.yml'
       - 'tests/test-adapter-install.sh'
       - '.github/workflows/test-adapter-install.yml'
@@ -17,6 +18,7 @@ on:
       - 'templates/cursor/**'
       - 'templates/copilot/**'
       - 'templates/claude/**'
+      - 'templates/agent-context/hooks/**'
       - 'templates/project-github-workflows/validate-sdlc-spdd-adapters.yml'
       - 'tests/test-adapter-install.sh'
       - '.github/workflows/test-adapter-install.yml'
@@ -28,7 +30,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Check shell syntax
-        run: bash -n scripts/*.sh tests/test-adapter-install.sh
+        run: bash -n scripts/*.sh tests/test-adapter-install.sh templates/agent-context/hooks/pre-commit.sample
 
       - name: Run adapter install/upgrade/validation regression tests
         run: ./tests/test-adapter-install.sh

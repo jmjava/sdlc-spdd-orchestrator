@@ -183,6 +183,10 @@ assert_v3_seed_files() {
   assert_file "${t}/sdlc-spdd/scripts/index-spdd-analysis.sh"
   assert_file "${t}/sdlc-spdd/spdd/analysis/.gitkeep"
   assert_file "${t}/sdlc-spdd/scripts/resolve-agent-context.sh"
+  assert_file "${t}/sdlc-spdd/scripts/hooks/pre-commit.sample"
+  assert_same "${t}/sdlc-spdd/scripts/hooks/pre-commit.sample" \
+    "${REPO_ROOT}/templates/agent-context/hooks/pre-commit.sample"
+  assert_absent "${t}/.git/hooks/pre-commit"
   assert_absent "${t}/agent-context/memory/phase-index.md"
   assert_absent "${t}/agent-context/extensions"
 }
@@ -443,6 +447,30 @@ mv "${WORK}/cursor-rule.bak" "${T}/.cursor/rules/sdlc-spdd.mdc"
 
 # 12e: confirm restored state validates again
 expect_pass "validate after grounding restore" "${VALIDATE}" --target "${T}"
+
+# ---------------------------------------------------------------------------
+echo "== Test 16: Kasana I3 optional hook recipe is shipped, never installed =="
+assert_file "${REPO_ROOT}/templates/agent-context/hooks/pre-commit.sample"
+assert_file "${REPO_ROOT}/sdlc-spdd/scripts/hooks/pre-commit.sample"
+assert_same "${REPO_ROOT}/sdlc-spdd/scripts/hooks/pre-commit.sample" \
+  "${REPO_ROOT}/templates/agent-context/hooks/pre-commit.sample"
+expect_pass "sample hook bash -n" bash -n "${REPO_ROOT}/templates/agent-context/hooks/pre-commit.sample"
+assert_contains "${REPO_ROOT}/docs/maintaining-your-project.md" \
+  "Optional local verification hooks" "I3 section in docs/"
+assert_contains "${REPO_ROOT}/sdlc-spdd/docs/maintaining-your-project.md" \
+  "Optional local verification hooks" "I3 section in sdlc-spdd/docs/"
+assert_contains "${REPO_ROOT}/docs/maintaining-your-project.md" \
+  "does **not** create or overwrite git hooks" "I3 never-write-hooks in docs/"
+assert_contains "${REPO_ROOT}/docs/research/kasana-agent-harness-2-0.md" \
+  "**Status:** done in this PR." "I3 marked done"
+T="${WORK}/i3-hook"; mkdir -p "${T}/.git/hooks"
+printf '%s\n' '#!/bin/sh' 'echo preexisting' > "${T}/.git/hooks/keep-me"
+"${INIT}" --target "${T}" --cursor >/dev/null 2>&1
+assert_file "${T}/sdlc-spdd/scripts/hooks/pre-commit.sample"
+assert_same "${T}/sdlc-spdd/scripts/hooks/pre-commit.sample" \
+  "${REPO_ROOT}/templates/agent-context/hooks/pre-commit.sample"
+assert_absent "${T}/.git/hooks/pre-commit"
+assert_content "${T}/.git/hooks/keep-me" $'#!/bin/sh\necho preexisting'
 
 # ---------------------------------------------------------------------------
 echo

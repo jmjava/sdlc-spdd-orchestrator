@@ -184,9 +184,9 @@ Five questions, five owners:
 
 | | Intent |
 |--------|--------|
-| **I1** | `/sdlc-spdd-code` exit rules: verify-before-done, show the failing rule, stop on repeated error, `Files:` vs `git diff` |
-| **I2** | Review-time check that the diff matches `Files:` |
-| **I3** | Optional target CI / hook recipe (not a forced install hook) |
+| **I1** | `/sdlc-spdd-code` exit rules: verify-before-done, show the failing rule, stop on repeated error, `Files:` vs `git diff` — **done** (#264) |
+| **I2** | Review-time check that the diff matches `Files:` — **done** (#264) |
+| **I3** | Optional target CI / hook recipe (not a forced install hook) — **done** |
 | **U2** | Repo-managed Environment so Cloud Agents always boot with `sdlc-engine` |
 
 **On Uberorchbot**
