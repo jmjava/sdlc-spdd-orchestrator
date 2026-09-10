@@ -61,6 +61,42 @@ Repo + tests + review artifacts
 
 **Adopt the ideas that tighten code-phase discipline. Do not replace SDLC-SPDD with a Python `AgentHarness` class.**
 
+## What “inside `/sdlc-spdd-code`” means
+
+That sentence is the integration rule. Two halves:
+
+1. **His loop lives inside `/sdlc-spdd-code`.** Kasana’s `Task → Context → Act → Verify → Feedback ↺` is one coding session for **one approved T##**. The host assistant (Cursor / Copilot / Claude) already is the model loop. We do not reimplement `agent.decide()` in Python. We specify **when that session may start, what it may touch, what “done” means, and when it must stop.**
+2. **We do not add `class AgentHarness`.** `sdlc_engine` is a process SUT (`gate_check`, retrieve, capture). A first-party loop that calls the model would duplicate the host, break the three-assistant adapter model, and change the research object from process observability to agent competence. That is already rejected in [design decisions](../design-decisions.md) (“templates and scripts, not a compiled CLI or agent runtime”).
+
+Who owns which layer:
+
+| Kasana layer | Who owns it here | Where it is today | Not |
+|--------------|------------------|-------------------|-----|
+| Task | Canvas Operations | One T## selected in `/sdlc-spdd-code` | A free-form “build the feature” prompt |
+| Context | Command + retrieve | Gate → read canvas → `context retrieve --kind pitfall` | Dumping the repo into the window |
+| Tools | Host IDE | Cursor/Claude tools; we constrain *scope* (`Files:`, one op), not the tool vocabulary | A Python tool registry in `sdlc_engine` |
+| Constraints | Canvas + command | Norms/Safeguards as instructions; `Files:` must be named; readiness gate | An in-engine allowlist that the model cannot see |
+| Memory | Ledger | Pitfall retrieve at start; `sdlc.sh capture` at end | `agent-memory/failures.md` beside the engine |
+| Execution | Host agent | Steps 6–12 of the code command (implement, no extras) | `WorkflowEngine.run_agent()` |
+| Verification | Split | **Enter** code: `gate_check`. **Leave** code: command says “add tests” (instruction). Later phases (api-test, review) are other commands | `verify()` inside `gate_check` (wrong layer — gate is enter-phase) |
+| Feedback / retry | Host agent | Same chat turn retries; next session sees pitfalls | `for attempt in range(3)` in Python |
+| Stop | Missing | No repeated-error cap in the command | Engine-level `MAX_ATTEMPTS` |
+
+Map onto the existing code command (`spec/commands/lifecycle-code.spec.md`):
+
+```
+gate_check(code)           → may this session start?
+read canvas + retrieve     → context (not dump)
+readiness + select T##    → task
+implement + Norms/Safeguards → act  (host tools)
+add tests + summarize      → verify  (today: instruction)
+capture                    → memory
+```
+
+The overlay is **command required-behavior**, not a new package. If we adopt further, we add steps to that spec (then regenerate adapters): run the operation’s validation commands before marking the T## complete; on failure, return the output plus the Norm/Safeguard; stop after the same verify error twice; optionally assert `git diff --name-only` ⊆ `Files:` plus tests. The host still retries. The engine still does not call a model.
+
+`gate_check` stays an **enter-phase** predicate. Putting Kasana’s `verify()` there would mean “you cannot *start* coding until the patch is green,” which is backwards. Verify-before-done belongs in the code command’s **exit** condition. Path allowlist vs `Files:` belongs in code-command exit or in `/sdlc-spdd-review`, not in a new runtime.
+
 ## Layer map: match, partial, gap
 
 Status key: **match** = we already do this as designed · **partial** = same intent, still mostly prompt/advisory · **gap** = we do not have it · **reject** = do not copy.
@@ -113,8 +149,9 @@ Ranked. Nothing below is claimed until a Work ID is promoted and a canvas exists
 ### Adopt now (docs / command text — this PR)
 
 - File this note under `docs/research/` and index it.
-- State the rule of thumb in one place: **instructions live in Norms; constraints are whatever `gate_check`, CI, or a named verify command can fail.**
-- In the integration plan (below), treat Kasana as a **code-phase overlay**, not a new lifecycle.
+- State the integration rule: Kasana’s loop is a **`/sdlc-spdd-code` overlay**; `sdlc_engine` does not grow an `AgentHarness`.
+- Rule of thumb: **instructions live in Norms; constraints are whatever `gate_check`, CI, or a named verify command can fail.**
+- `gate_check` remains enter-phase. Verify-before-done is a code-command **exit** condition if/when promoted.
 
 ### Adopt next (promote to a DOC/FEAT only if a human asks)
 
@@ -159,7 +196,8 @@ Work C is the only one that might need a DOC-001-aware canvas, because it change
 
 - Kasana’s article is a useful **coding-agent harness** checklist.
 - SDLC-SPDD already implements the process-level analogue (context, memory, plan, layered verify).
-- The remaining adopt list is **code-phase constraint enforcement**, not a new method family.
+- Integration rule: the loop overlays `/sdlc-spdd-code`; it is not a Python `AgentHarness` and not a new lifecycle.
+- The remaining adopt list is **code-phase constraint enforcement** (command exit conditions), not a new method family.
 - This note is **not** a DOC-002 matrix row, not a C-DRIFT result, and not a reason to open a PR against `embabel/guide`.
 
 ## See also
