@@ -1,7 +1,7 @@
 # Cloud Agents as the SDLC platform
 
-**Status:** intended architecture (planning draft, 10 Sep 2026)  
-**Not a shipping claim.** The process layer exists today. The code-phase overlay and the dispatcher-on-Cloud-Agents loop are the plan, not a finished product.  
+**Status:** intended architecture (planning draft, 10 Sep 2026; U1 amendment same day)  
+**Not a shipping claim.** The process layer exists today. The code-phase overlay, repo-managed Environment, and opt-in Uberorchbot SDLC skill are the plan.  
 **Audience:** engineers who already run coding agents and want a system, not a bigger prompt.
 
 ---
@@ -14,24 +14,31 @@ That failure mode is the one Sachin Kasana described in [How to Build an AI Agen
 
 We are taking a different shape.
 
-**The model already has a loop.** Cursor Cloud Agents already run that loop on a real machine, with a real checkout, and they already open pull requests. What we intend to own is everything *around* that loop: which work is allowed to start, what “done” means, and who starts the next agent.
+**The model already has a loop.** Cursor Cloud Agents already run that loop on a real machine, with a real checkout, and they already open pull requests. What we intend to own is everything *around* that loop: which work is allowed to start, what “done” means, and which **configured event** (or human) starts the next bounded run.
 
 The intended stack has four layers. None of them replaces the others.
 
 ```mermaid
 flowchart TB
   human[Human / ticket / goal]
-  uber[Uberorchbot<br/>dispatcher]
+  local[Local Agent chat<br/>interactive]
+  auto[Cursor Automations<br/>configured event loop]
   env[Cursor Environment<br/>build, secrets, toolchain]
   agent[Cloud Agent<br/>one Work ID, one phase]
+  plugin[Uberorchbot plugin<br/>opt-in SDLC skill]
   spdd[SDLC-SPDD in the repo<br/>canvas, gate, ledger]
   code["/sdlc-spdd-code<br/>Kasana inner loop"]
 
-  human --> uber
-  uber -->|"start agent + Resume Prompt"| agent
+  human --> local
+  human --> auto
+  auto -->|"fixed prompt + Environment"| agent
   agent --> env
+  local --> plugin
+  agent --> plugin
   env --> spdd
+  plugin --> spdd
   spdd -->|"analysis / plan / architect / review / …"| agent
+  spdd -->|"same commands locally"| local
   spdd -->|"code phase only"| code
 ```
 
@@ -45,11 +52,13 @@ That is the runtime we intend to use for *all* of this:
 |--------------|-----|
 | **Environment** | SDLC-ready machine: `sdlc-engine`, git, `gh`, language toolchain, tests. Secrets stay in the environment, not in git. |
 | **Build / snapshot** | Reproducible baseline. `install` once per build; `start` per boot for daemons (Guide, app servers). |
-| **Cloud Agent** | One worker. One Work ID. **One SDLC phase** (in code: one canvas operation). It commits, pushes, and opens a PR. |
+| **Local Agent chat** | Same contract on the operator checkout. Interactive; no Cloud Environment required. |
+| **Cloud Agent** | Isolated worker. One Work ID. **One SDLC phase** (in code: one canvas operation). It commits, pushes, and opens a PR. |
+| **Automations** | Event-triggered loop. Prompt, repo, model, and Environment are chosen when the Automation is saved. |
+| **Subscriptions** | Same-agent CI/review follow-up. Not a new phase agent. |
 | **Follow-up queue** | A human steers an in-flight phase without inventing a new lifecycle. |
-| **Automations** (optional) | Issue labeled, PR comment → enqueue the next spawn. |
 
-We do not intend to stand up Kubernetes coding workers, SSH boxes, or a Python class that calls the model. Those would duplicate the platform.
+We do not intend to stand up Kubernetes coding workers, SSH boxes, a Python class that calls the model, or a Cloud Agents API controller in this initiative. Those would duplicate the platform or claim unsupported Automation behavior.
 
 This planning work was itself a Cloud Agent on `sdlc-spdd-orchestrator`, on a feature branch, opening a PR. That is the pattern we want every Work ID to use.
 
@@ -97,22 +106,22 @@ Instructions live in canvas **Norms**. Constraints are whatever `gate_check`, CI
 
 We already match Kasana on retrieve-don’t-dump, ledger memory, and plan-before-code (architect + one T##). The gap is turning “please add tests” into an **exit** condition on the code command.
 
-## 4. Uberorchbot is the dispatcher, not the worker
+## 4. Uberorchbot is the plugin, not the worker
 
-The intended meta-orchestrator ([Uberorchbot](https://github.com/jmjava/Uberorchbot)) decides *what* to run and *which Cloud Agent to start*. It does not write product code. It does not own the canvas. It does not reimplement `gate_check`.
+[Uberorchbot](https://github.com/jmjava/Uberorchbot) `main` is a Cursor plugin (`jmjava-lab-automations`): skills, rules, and commands. It does not write product code. It does not own the canvas. It does not reimplement `gate_check`. It does not start Cloud Agents from a service.
+
+The **unattended loop** is Cursor Automations. The **interactive path** is local Agent chat — same plugin skill and same `sdlc.sh` when that is convenient. The **harness** is plugin rules plus the target’s lifecycle commands. Finder skills stay usable on repositories that never install SDLC-SPDD. An opt-in `sdlc-session` skill is for repositories that do.
 
 One cycle:
 
 1. Claim an existing Work ID (`sdlc.sh claim`). Do not invent a FEAT from chat.
-2. `sdlc.sh gate <phase>`. If code is not allowed, start an analysis/plan/architect agent instead — or stop for a human.
-3. Start a **Cloud Agent** on the target’s Environment. The prompt is the **Resume Prompt** from `sdlc.sh start` (Work ID, phase, `/sdlc-spdd-*` command). One agent = one phase.
-4. The agent works in the pod, captures, opens or updates a PR.
-5. When the agent is idle, Uberorchbot reads `next` again. Same verify failure twice → shelf; do not spawn a third code agent for that T##.
+2. `sdlc.sh gate <phase>`. If the phase is not allowed, stop or run the recommended earlier command. `--force` is a human decision.
+3. A Cloud Agent is already running because an Automation or a human started it. Inside the pod, `sdlc.sh start` produces the Resume Prompt. One agent = one phase.
+4. The agent works, captures, opens or updates a PR.
+5. The **next** phase is another configured Automation (PR merge, label, CI, push, schedule, webhook) or a human launch. Every run re-checks `gate`. Same verify failure twice → shelf; do not auto-retry a third time.
 6. Sunset is another Cloud Agent, when the Work ID is actually finished.
 
-If `gate` fails, Uberorchbot must not start a code agent because it is “sure.” `--force` is a human decision.
-
-*(We could not read the Uberorchbot repository from the environment that drafted this post. Treat module names inside that repo as not specified here.)*
+Cloud Agent **subscriptions** may wake the same conversation on CI/review events. That is follow-up, not a newly dispatched phase.
 
 ## 5. One picture
 
@@ -121,15 +130,20 @@ Human / ticket
         │
         ▼
 ┌─────────────────────────────┐
-│ Uberorchbot                 │  claim · gate · start Cloud Agent · watch
-│ (dispatcher only)          │
+│ Cursor Automations          │  configured trigger · fixed prompt
+│ (or an explicit human run) │
 └──────────────┬──────────────┘
-               │  repo + environment + Resume Prompt
+               │  repo + environment + phase prompt
                ▼
 ┌─────────────────────────────┐
 │ Cursor Environment          │  SDLC-ready build; secrets; egress
 └──────────────┬──────────────┘
                │  checkout
+               ▼
+┌─────────────────────────────┐
+│ Uberorchbot plugin          │  opt-in sdlc-session · harness rules
+└──────────────┬──────────────┘
+               │
                ▼
 ┌─────────────────────────────┐
 │ SDLC-SPDD                   │  requirement · canvas · ledger
@@ -143,12 +157,13 @@ Human / ticket
    (plan, review…)  verify · Files: · stop on repeat
 ```
 
-Four questions, four owners:
+Five questions, five owners:
 
 | Question | Owner |
 |----------|--------|
-| What work, and which agent, *now*? | Uberorchbot |
+| Local chat or which configured event starts a run? | Operator / Cursor Automations |
 | Where does it run? | Cursor Environment |
+| How should this agent behave? | Uberorchbot plugin (opt-in SDLC skill) |
 | May this phase start, and what is the contract? | SDLC-SPDD |
 | Is *this* patch done, and did it stay in scope? | `/sdlc-spdd-code` (Kasana overlay) |
 
@@ -157,6 +172,8 @@ Four questions, four owners:
 - A Python `AgentHarness` that is the agent loop.
 - A second `AGENTS.md` that drifts from the REASONS canvas.
 - Folding the whole SDLC into one ReAct loop.
+- A dispatcher service or a revival of Uberorchbot’s archived Spring plane.
+- Native Automation self-chaining, or a Cloud Agents API controller in this initiative.
 - Architecture AST checkers as a framework default (Prisma-in-controller). Those belong in the *target’s* Norms and in *that* repo’s tests.
 - Treating this architecture as proof that we reduced design drift. Observability is the process claim; reduced drift is a later study, not this design.
 - Pull requests against `embabel/guide`. Guide stays fork-only.
@@ -176,10 +193,10 @@ Four questions, four owners:
 
 | | Intent |
 |--------|--------|
-| **U3** | Start Cloud Agents only: Resume Prompt, one phase, correct Environment |
-| **U4** | Honor `gate` before a code spawn; map agent idle / PR back to `next` |
+| **U3** | Opt-in `sdlc-session` skill: existing Work ID, gate, Resume Prompt, one phase |
+| **U4** | Separate event-triggered Automations; re-check `gate` every run; shelf after repeat failure |
 
-I1 is command-spec work in this repository. U3 is dispatcher work. The Environment is the shared platform both depend on.
+I1 is command-spec work in this repository. U3 is plugin work. U4 is Automation configuration. The Environment is the shared platform both depend on.
 
 ## Closing
 
@@ -191,7 +208,7 @@ We want that answer to be mechanical:
 - the **Cloud Agent** is a bounded worker, not a weekend-long chat,
 - **SDLC-SPDD** refuses to start the wrong phase,
 - **`/sdlc-spdd-code`** refuses to call a failing patch “done,”
-- **Uberorchbot** refuses to start the same failing code agent forever.
+- **Automations and the plugin** refuse to retry the same failing code run forever.
 
 The model reasons. The platform supplies the machine. The process supplies the contract. The code command supplies the last mile of discipline.
 

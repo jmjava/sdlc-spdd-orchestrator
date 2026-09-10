@@ -200,6 +200,62 @@ session briefs automatically). Keep:
 Rotate timestamped briefs with `--session-limit` on `start` (default 20; older
 briefs move to `.sdlc/sessions/archive/`).
 
+## Optional local verification hooks
+
+SDLC-SPDD install does **not** create or overwrite git hooks. Targets that want
+fail-closed lint, typecheck, or tests should opt in with **their** documented
+commands — do not treat any language-specific command as a framework default.
+
+Record the authoritative commands on each canvas operation (`Validation:` /
+validation steps). After the Kasana I1 overlay, `/sdlc-spdd-code` (local Agent
+chat or Cloud Agent) must run those commands before marking a T## complete.
+If the canvas is silent, the agent should discover the project's documented
+test/lint/typecheck commands when they exist. On failure, do not mark the
+operation complete.
+
+Example pre-commit (copy and replace the placeholder with a command your repo
+already documents):
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+# Replace with this repository's documented verify command, e.g. the
+# script named in CI or the canvas Validation: line.
+"${PROJECT_VERIFY_CMD:-./scripts/test-ci-local.sh}"
+```
+
+Install only if you want it:
+
+```bash
+cp scripts/hooks/pre-commit.sample .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+```
+
+Example CI job (same rule: call the project's own verify, not a guessed
+universal command):
+
+```yaml
+# illustrative — paste into *your* workflow and keep your real command
+- name: Project verify
+  run: ./scripts/test-ci-local.sh
+```
+
+To opt out, omit the hook and leave CI as-is. That does not weaken
+`/sdlc-spdd-code`: the code command still must run named Validation when
+present. Architecture checkers (ArchUnit, import-linter, and the like)
+belong in the target's Norms and in *that* repo's tests, not as an
+orchestrator-forced hook.
+
+## Cloud Environment vs local checkout
+
+A committed `.cursor/environment.json` (U2) is the **cloud** bootstrap for
+this repository so Cloud Agents get `sdlc-engine` without a manual install.
+Local Agent chat uses your existing checkout and venv; it does not need that
+Environment. Dashboard multi-repo Environments are a different object: they
+scope Automations, not this file.
+
+Secrets stay in Cursor Environment settings, never in `environment.json`.
+
 ## Validate Before Done
 
 Canvas validation:

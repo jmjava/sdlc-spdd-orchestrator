@@ -39,6 +39,15 @@ Implement exactly one approved operation from a REASONS Canvas.
     `architect --quiet --canvas` on this Work ID. Exit 1: STOP and recommend
     `/sdlc-spdd-architect` — do not implement. If the script is missing, continue
     — that is not an error. Do not start a JVM from `sdlc.sh next` or `sdlc.sh gate`.
+16. Run Validation commands named on the selected canvas operation. If none,
+    discover the project's documented test/lint/typecheck commands when they
+    exist.
+17. On failure: do not mark the T## complete. Return the command output AND
+    the Norm/Safeguard it maps to. Host may retry in-session.
+18. If the same verify command fails twice with the same error, STOP.
+    Recommend `/sdlc-spdd-prompt-update` or shelf. Do not loop forever.
+19. After edits: `git diff --name-only` must stay within the active T##
+    `Files:` plus test paths. Extra paths: do not mark complete.
 
 If no task is selected, ask the user which operation to implement before changing code.
 

@@ -1,56 +1,59 @@
-# Vision: Uberorchbot gets work done *through* SDLC-SPDD
+# Vision: SDLC-SPDD on Cursor Cloud Agents, with Uberorchbot as plugin policy
 
-**Kind:** product / integration vision on the planning branch (not a paper, not an implementation)  
+**Kind:** product / integration vision (not a paper, not a finished product)  
 **Date:** 2026-09-10  
+**Amended:** 2026-09-10 (U1 — read `jmjava/Uberorchbot` `main`; plugin-only since 2026-08-02)  
 **Sibling plan:** [Kasana Agent Harness 2.0](kasana-agent-harness-2-0.md) (I0–I3)  
-**Platform:** **Cursor Cloud Agents + Cloud Environments** are the runtime for all of this.  
-**Decision:** Uberorchbot is a **dispatcher onto that platform**. SDLC-SPDD is the **process inside the environment**. `/sdlc-spdd-code` is the **inner loop** (Kasana I1). None of those three replaces the others.
+**Platform:** **Cursor** is the runtime — **local Agent chat** and **Cloud Agents / Environments**.  
+**Decision:** Local chat is the interactive path. Cursor Automations are the unattended event-triggered loop. Uberorchbot is an **opt-in plugin** (skills, rules, commands) for **both**. SDLC-SPDD in the **target repo** is the process and state authority. `/sdlc-spdd-code` is the **inner loop** (Kasana I1). None of those replaces the others.
 
-## Source access
+## Source access (U1)
 
-Intended repo: <https://github.com/jmjava/Uberorchbot>
+Repo: <https://github.com/jmjava/Uberorchbot> — **readable.** Active product is documented in `SWITCH.md`, `README.md`, and `docs/SETUP.md`.
 
-This environment cannot read it (`gh` + clone → repository not found / 404). The vision below is inferred from the name, this orchestrator’s CLI, Cursor Cloud Agent/Environment mechanics, and the Kasana overlay. **Correct it against the real README when the repo is readable.**
+`main` is **plugin-only**. It ships `cursor-plugin/` (`jmjava-lab-automations`): rules (`cloud-agent-contract`, `pr-quality-bar`), finder skills, and a few commands. There is **no** dispatcher service, Cloud Agent spawner, run database, or `@cursor/sdk` worker on `main`.
 
-Assumption: Uberorchbot decides *what* work to run and *which Cloud Agent to start*. It does not implement T## operations and it does not provision VMs of its own.
+The Spring control plane, dashboard, and local worktrees live only on `archive/main-lab-control-plane`. Do not revive that stack.
+
+The 2026-09-10 draft assumed Uberorchbot was a service that claims work, picks an Environment, starts Cloud Agents, watches them, and shelves failures. **That assumption is false on current `main`.** This note replaces it.
 
 ## The platform (this is the point)
 
-Cursor already gives isolated machines that can claim a repo, install a toolchain, run an agent, and open a PR. **That is the platform.** We do not build a second agent farm.
+Cursor already runs the same agent loop **locally** (Agent chat on your checkout) and **in the cloud** (isolated VM, Environment, optional Automation). **That is the platform.** We do not build a second agent farm. Prove a skill in local chat before scheduling it. Cloud Environments still matter for unattended runs; they are not required for a local SDLC session.
 
 | Cursor piece | Role in this system |
 |--------------|---------------------|
 | **Environment** | The machine image for a target (or this orchestrator): OS, `install`/`start`, secrets, egress, MCP allowlist, optional Guide/Neo4j, prebuilt **builds** so the next agent boots warm |
 | **Environment build / snapshot** | Reproducible “SDLC-SPDD ready” baseline. `install` once per build; `start` per boot for daemons |
-| **Cloud Agent** | One worker: one Work ID, **one SDLC phase** (or one T## in code), prompt = Resume Prompt from `sdlc.sh start` |
-| **PR + branch** | How work leaves the pod (`cursor/…` branches, `ManagePullRequest` / GitHub) |
-| **Automations** (optional) | Event hooks (issue labeled, PR comment) that tell Uberorchbot to enqueue a spawn |
+| **Local Agent chat** | Interactive worker on the operator’s checkout. Same Work ID, one phase, same `sdlc.sh` / `/sdlc-spdd-*` contract. First place to prove a skill |
+| **Cloud Agent** | Isolated worker: one Work ID, **one SDLC phase** (or one T## in code). Prompt is the Resume Prompt from `sdlc.sh start` plus the Uberorchbot `sdlc-session` skill when that skill is installed |
+| **PR + branch** | How work leaves the pod (`cursor/…` branches, GitHub) |
+| **Automations** | The **loop**: schedule, PR, CI, label, webhook, or other supported events start a **configured** Cloud Agent. Prompt, repo, model, and Environment are fixed at Automation save time |
+| **Subscriptions** | Same-agent follow-up on matching CI/review events. They keep conversation context. They do **not** spawn a new phase agent |
 | **Follow-up queue** | Human steers an in-flight phase without a new lifecycle |
-
-This planning run is already that pattern: a Cloud Agent on `github.com/jmjava/sdlc-spdd-orchestrator`, booted from an environment build, writing on `cursor/kasana-harness-research-e0e2`.
 
 ```
 Human / ticket / goal
         │
-        ▼
+        ├──────────────────────────────┐
+        ▼                              ▼
+┌──────────────────┐         ┌──────────────────────────┐
+│ Local Agent chat │         │ Cursor Automations       │
+│ (interactive)    │         │ (unattended cloud loop)  │
+└────────┬─────────┘         └────────────┬─────────────┘
+         │                                │ Cloud Agent + Environment
+         └────────────┬───────────────────┘
+                      ▼
 ┌──────────────────────────┐
-│ Uberorchbot              │  enqueue · claim Work ID · pick env
-│ (dispatcher only)       │  start Cloud Agent · watch · shelf
+│ Uberorchbot plugin        │  same opt-in sdlc-session skill on both paths
+│                          │  finders still work on repos without SDLC
 └────────────┬─────────────┘
-             │  Cloud Agent API / dashboard spawn
-             │  repo + environment + prompt = Resume Prompt
-             ▼
-┌──────────────────────────┐
-│ Cursor Environment        │  snapshot/build: sdlc-engine, gh, tests
-│ (platform machine)      │  secrets: GitHub, Jira, Guide (not in git)
-└────────────┬─────────────┘
-             │  checkout target revision
              ▼
 ┌──────────────────────────┐
 │ SDLC-SPDD in that repo   │  canvas, gate_check, ledger, registry
-│                          │  sdlc.sh next | gate | capture
+│                          │  sdlc.sh next | gate | start | capture
 └────────────┬─────────────┘
-             │  Cloud Agent runs exactly one /sdlc-spdd-* command
+             │  exactly one /sdlc-spdd-* command
              ▼
 ┌──────────────────────────┐
 │ Code phase only          │  Kasana I1: verify, failing rule,
@@ -58,26 +61,29 @@ Human / ticket / goal
 └──────────────────────────┘
 ```
 
-**Uberorchbot does not SSH, does not own Kubernetes workers for coding, and does not call the model to write product code.** It starts Cloud Agents against Environments that already know how to run SDLC-SPDD.
+**Uberorchbot does not SSH, does not own Kubernetes workers, does not call a model to write product code, and does not start agents from application code.** A human in local chat, or a Cursor Automation in the cloud, starts a run. The plugin shapes what the agent does *after* it starts. Local chat does not need a Cloud Environment.
 
-## Three layers (unchanged ownership)
+## Four layers (corrected ownership)
 
 | Layer | Owner | Job |
 |-------|--------|-----|
-| **What / who / when** | Uberorchbot | Queue, pick repo + Work ID, **start a Cloud Agent on the right Environment**, watch, escalate |
-| **Where it runs** | Cursor Environment | Toolchain, secrets, builds; same env for every phase of that target |
+| **When a run starts** | Local Agent chat, or Cursor Automations | Interactive prompt, or a configured event with a fixed cloud prompt / repo / Environment |
+| **Where it runs** | Local checkout, or a Cursor Environment | Local uses the operator machine. Cloud uses toolchain, secrets, builds |
+| **How the agent behaves** | Uberorchbot plugin (opt-in SDLC skill) | Gate-before-code, one phase, capture, no invented FEAT |
 | **How work is governed** | SDLC-SPDD in the **target** repo | Work ID, requirement, canvas, `gate_check`, ledger, registry |
-| **How one code session behaves** | That Cloud Agent + `/sdlc-spdd-code` | Kasana overlay (I1) |
+| **How one code session exits** | Local or cloud agent + `/sdlc-spdd-code` | Kasana overlay (I1) |
 
 ## What one cycle looks like on the platform
 
-1. **Pick work.** `sdlc.sh list-work` / registry in the target clone (or a read-only status from the last agent). Claim `sdlc.sh claim <WORK-ID>`. Do not invent a FEAT from chat.
-2. **Gate.** `sdlc.sh gate <phase> --work-id <ID>`. Fail → do not start a **code** Cloud Agent. Start analysis/plan/architect instead, or stop for a human.
-3. **Start a Cloud Agent** on the target’s Environment (or this orchestrator’s env for framework work). Prompt is the **Resume Prompt** from `sdlc.sh start` — Work ID, phase, `/sdlc-spdd-*` command. One agent = one phase (code = one T##).
-4. **The agent works in the pod.** Grounding files + retrieve + canvas. Code phase uses Kasana I1 once that overlay exists. It commits, pushes, opens/updates a PR — that is the Cloud Agent contract, not a custom Uberorchbot deployer.
-5. **Capture.** `sdlc.sh capture` in-repo. Uberorchbot does not mark T## complete.
-6. **Watch.** When the agent is idle / PR opened, Uberorchbot reads `next` again (new agent or follow-up). Same verify error twice → shelf, do not spawn a third code agent for that T##.
-7. **Sunset.** A later Cloud Agent runs `/sdlc-spdd-sunset` when the Work ID is actually finished.
+1. **Pick work.** An existing Work ID — from the canvas, issue, or Automation prompt. Claim with `sdlc.sh claim <WORK-ID>` inside the agent. Do not invent a FEAT from chat.
+2. **Gate.** `sdlc.sh gate <phase> --work-id <ID>`. Fail → stop or run the recommended earlier phase. Do not write product code. `--force` is human-only.
+3. **Start** is `sdlc.sh start` **inside** the agent (local chat or cloud). Follow the Resume Prompt. One agent = one phase (code = one T##).
+4. **The agent works.** Grounding files + retrieve + canvas. Code phase uses Kasana I1 once that overlay exists. Local may leave a branch for the human to push; a Cloud Agent typically commits, pushes, and opens a PR.
+5. **Capture.** `sdlc.sh capture` in-repo. The plugin does not mark T## complete.
+6. **Next phase.** A **separate** configured Automation (PR merge, label, CI, push, schedule, webhook) or a **human** launch. Every new run re-checks `gate`. Same verify error twice → `sdlc.sh shelf`; do not configure a third automatic code retry for that T##.
+7. **Sunset.** A later local or cloud agent runs `/sdlc-spdd-sunset` when the Work ID is actually finished.
+
+Cursor Automations do **not** dynamically pick a new prompt or Environment at runtime, and they do **not** spawn a follow-on Cloud Agent from inside a run. A future Cloud Agents API controller would be a **separate** initiative with its own Work ID. It is out of scope here.
 
 ## Environment as the SDLC-SPDD platform
 
@@ -92,58 +98,61 @@ Per **target** application (and a separate env for this orchestrator):
 | MCP (`spdd_*` only if Guide is live) | `mcpServerAllowlist` |
 | Network | egress policy on the environment |
 
-Prefer a **repo-managed** `.cursor/environment.json` on each target so branches and PRs get the same platform. Dashboard personal envs are fine for experiments; they are not the team platform.
+Prefer a **repo-managed** `.cursor/environment.json` on each target so branches and PRs get the same platform. Dashboard Environments remain the place to attach **multiple** repos to an Automation fleet. Those are different objects: committed JSON is one repo’s bootstrap; the dashboard list is Automation scope.
 
-This orchestrator today: personal/DB-managed env, no committed `environment.json`. A later U-step can add a repo-managed env so Cloud Agents always boot “SDLC-SPDD ready.”
+U2 in this orchestrator: commit `.cursor/environment.json` so Cloud Agents boot “SDLC-SPDD ready.”
 
-## Contract Uberorchbot must speak
+## Contract the plugin and Automations must speak
 
-**Cursor:** start Cloud Agent (repo URL, environment, branch or base, prompt). Watch status, PR, follow-up queue. Do not reimplement the pod.
+**Cursor Automations:** configured trigger + prompt + Environment. Watch status and PRs in Cursor / GitHub. Do not reimplement the pod.
 
 **SDLC (inside the agent):** `sdlc.sh` — `next`, `status --json`, `list-work`, `claim`, `shelf`, `resume`, `gate`, `start`, `capture`, `accept`. `--force` on gate is human-only.
 
 Do **not**:
 
-- Call a model from Uberorchbot to write application code.
-- Reimplement `gate_check` or the canvas.
+- Call a model from Uberorchbot application code (there is no such runtime on `main`).
+- Reimplement `gate_check` or the canvas in the plugin.
 - Skip phases because “the bot is sure.”
 - Open PRs against `embabel/guide`.
 - Treat mocked Guide HTTP as the graph.
-- Stand up a parallel “agent runtime” that duplicates Cloud Agents.
+- Stand up a parallel agent runtime that duplicates Cloud Agents.
+- Revive `archive/main-lab-control-plane`.
+- Claim native Automation self-chaining.
 
 ## Fit with Kasana I0–I3
 
 | Kasana | On this platform |
 |--------|------------------|
 | I0 overlay rule | Inner loop is `/sdlc-spdd-code` **inside the Cloud Agent**, not a Python class in Uberorchbot |
-| I1 verify / Files: / stop | The **code-phase Cloud Agent** obeys the command. Uberorchbot refuses to start another code agent after stop/shelf |
-| I2 review Files: vs diff | Uberorchbot starts a **review-phase** Cloud Agent |
+| I1 verify / Files: / stop | The **code-phase Cloud Agent** obeys the command. Automations / humans refuse a third code run after shelf |
+| I2 review Files: vs diff | A **review-phase** Automation or human launch, not Uberorchbot starting an agent from Java |
 | I3 optional hooks | Target Environment `install`/`start` or target CI — still not Uberorchbot |
 
-## Suggested work (planning only)
+## Suggested work
 
 | ID | What | Where |
 |----|------|--------|
-| **U0** | This vision: Cloud Agents + Environments are the platform | this file |
-| **U1** | Read Uberorchbot when accessible; map real modules; strike wrong assumptions | Uberorchbot + amendment here |
-| **U2** | **Platform env:** repo-managed environment (or documented dashboard env) per target + this orchestrator: `install` has `sdlc-engine`; builds enabled so spawns are cheap | `.cursor/environment.json` / dashboard; not application source |
-| **U3** | Uberorchbot **only** starts Cloud Agents: prompt = Resume Prompt, env = U2, one phase per agent | Uberorchbot |
-| **U4** | Dispatcher uses `gate` before starting a code agent; maps agent idle/PR → `next` | Uberorchbot |
-| **U5** | After Kasana I1: code-agent prompts include the four I1 bullets (or the regenerated `/sdlc-spdd-code` spec is enough) | this repo I1, then U3 |
+| **U0** | Cloud Agents + Environments are the platform | this file (done) |
+| **U1** | Read Uberorchbot; correct dispatcher assumptions | this file (done in the U1 amendment) |
+| **U2** | Repo-managed `.cursor/environment.json`: `install` has `sdlc-engine`; builds enabled | this orchestrator |
+| **U3** | Opt-in `sdlc-session` skill: existing Work ID, gate, Resume Prompt, one phase, capture | Uberorchbot plugin |
+| **U4** | Document and configure **separate** event-triggered Automations; re-check `gate` every run; shelf after repeat failure | Uberorchbot docs + Cursor Automations UI |
+| **U5** | Reuse regenerated `/sdlc-spdd-code` (I1); do not duplicate the four bullets in the plugin | this repo I1, then U3 |
 
-U2 is the first *platform* work in *this* repo if we want dogfood: a committed environment so Cloud Agents always have the CLI. U3–U4 live in Uberorchbot.
+U2 is the first *platform* work in *this* repo. U3–U4 are plugin + Automation configuration, not a new control plane.
 
 ## Claims allowed
 
-- We **plan** to run SDLC-SPDD and the Kasana code overlay **on Cursor Cloud Agents/Environments**, with Uberorchbot as the dispatcher.
-- Uberorchbot source was not readable here; module names inside that repo are not claimed.
-- No change to DOC-001/002, `gate_check`, or command specs in this step.
+- We **plan** to run SDLC-SPDD and the Kasana code overlay **on Cursor Cloud Agents/Environments**.
+- Uberorchbot **as of `main`** is a plugin pack. The loop is Cursor Automations.
+- Native dynamic spawn / prompt routing is **not** a shipping claim.
+- No change to DOC-001/002 or `gate_check` enter-phase semantics in this note.
 
 ## See also
 
 - [Kasana integration plan (I0–I3)](kasana-agent-harness-2-0.md)
 - [Workflow sequence](../workflow.md)
-- [Session prompt standard](../session-prompt-standard.md) — Resume Prompt is the Cloud Agent prompt
+- [Session prompt standard](../session-prompt-standard.md) — Resume Prompt is the in-agent session contract
 - [Issue sync and branching](../issue-sync-and-branching.md)
 - [Design decisions](../design-decisions.md)
-- Cursor: [Cloud Agent setup](https://cursor.com/docs/cloud-agent/setup), [environment schema](https://cursor.com/schemas/environment.schema.json)
+- Cursor: [Cloud Agent setup](https://cursor.com/docs/cloud-agent/setup), [Automations](https://cursor.com/docs/cloud-agent/automations), [environment schema](https://cursor.com/schemas/environment.schema.json)

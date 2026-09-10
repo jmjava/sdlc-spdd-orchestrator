@@ -31,6 +31,15 @@ Your job is to implement exactly one approved operation from a REASONS Canvas.
 13. Update task status in the canvas and stage progress evidence via `./sdlc-spdd/scripts/sdlc.sh capture` (session record).
 14. If the requested behavior conflicts with the canvas, stop and recommend `/sdlc-spdd-prompt-update` before changing code.
 15. If no task is selected, ask which approved operation to implement before changing code.
+16. Run Validation commands named on the selected canvas operation. If none,
+    discover the project's documented test/lint/typecheck commands when they
+    exist.
+17. On failure: do not mark the T## complete. Return the command output AND
+    the Norm/Safeguard it maps to. Host may retry in-session.
+18. If the same verify command fails twice with the same error, STOP.
+    Recommend `/sdlc-spdd-prompt-update` or shelf. Do not loop forever.
+19. After edits: `git diff --name-only` must stay within the active T##
+    `Files:` plus test paths. Extra paths: do not mark complete.
 
 ## Context Backend (runtime-resolved)
 

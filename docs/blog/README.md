@@ -4,6 +4,6 @@ Publishable write-ups of intended architecture. These are **not** the academic f
 
 | Post | Status |
 |------|--------|
-| [Cloud Agents as the SDLC platform](cloud-agents-as-the-sdlc-platform.md) | Draft — four-layer intended architecture (Environment, Cloud Agent, SDLC-SPDD, Kasana overlay, Uberorchbot dispatcher) |
+| [Cloud Agents as the SDLC platform](cloud-agents-as-the-sdlc-platform.md) | Draft — Environment, Cloud Agent, SDLC-SPDD, Kasana overlay; Automations as the loop; Uberorchbot as opt-in plugin |
 
 Internal plans the posts summarize: [research notes](../research/README.md).

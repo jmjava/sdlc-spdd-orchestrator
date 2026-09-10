@@ -39,6 +39,11 @@ Do not make code changes unless explicitly asked.
    `readiness:`) to **Reviewed** (or **Complete** if Final Status is also Complete).
 20. Recommend `/sdlc-spdd-prompt-update` for behavior or requirement changes before additional code changes.
 21. Recommend `/sdlc-spdd-sync` for accepted non-behavioral refactors after review.
+22. Run the operation-diff-scope machine check:
+    `./scripts/check-operation-diff-scope.sh --work-id <WORK-ID>`
+    (orchestrator: `./scripts/check-operation-diff-scope.sh`; installed
+    projects: `./sdlc-spdd/scripts/check-operation-diff-scope.sh`).
+    Exit 1: do not set Result to Approved or Approved With Notes.
 
 ## Context Backend (runtime-resolved)
 

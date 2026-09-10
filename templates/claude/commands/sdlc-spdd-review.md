@@ -47,6 +47,21 @@ Do not make code changes unless explicitly asked.
     `.gate.json` / VerificationResult). If the CLI or either snapshot is missing,
     continue — that is not an error. Do not use login fixtures. Do not start a
     JVM from `sdlc.sh next` or `sdlc.sh gate`.
+23. Run the operation-diff-scope machine check:
+    `./scripts/check-operation-diff-scope.sh --work-id <WORK-ID>`
+    (orchestrator: `./scripts/check-operation-diff-scope.sh`; installed
+    projects: `./sdlc-spdd/scripts/check-operation-diff-scope.sh` or
+    `python -m sdlc_engine.canvas --work-id <WORK-ID>`). Optional
+    `--base <ref>` adds `git diff --name-only <ref>...HEAD`. Optional
+    `--ops T01,T02` limits Files: to those operations; default is
+    selected/completed T## (or all T## if none selected). Changed paths
+    must be a subset of those Files: plus allowed test paths
+    (`tests/**`, `engine/tests_unit/**`, `engine/tests_integration/**`,
+    `engine/tests_e2e/**`, or basename `test_*.py` / `*_test.py` /
+    `*.spec.md`). Exit 1 (extra production paths or `..` traversal):
+    do not set Result to Approved or Approved With Notes — use Changes
+    Requested or Blocked and list the extra paths. Hunk-level C-DRIFT
+    inside an allowed file remains a human finding.
 
 ## Context Backend (runtime-resolved)
 
