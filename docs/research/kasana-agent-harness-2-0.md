@@ -209,7 +209,7 @@ I0 this note (done)
 Uberorchbot does not replace I1–I3. Cursor Automations (or a human) start Cloud Agents that run them; the Uberorchbot plugin is opt-in behavior inside the VM: see [Uberorchbot via SDLC-SPDD](uberorchbot-via-sdlc-spdd.md) (U0–U5). The platform is Cursor Environments + Cloud Agents, not a second farm. Native Automation self-chaining is out of scope.
 ```
 
-I1–I3 landed without promoting `LOCAL-001-kasana-harness-research`. The leftover after I3 is the copy-only test lock (adapter-install Test 17): `pre-commit.sample` ships to `sdlc-spdd/scripts/hooks/`; init/upgrade never write `.git/hooks`. Do not invent a DOC/FEAT.
+I1–I3 landed without promoting `LOCAL-001-kasana-harness-research`. The I3 copy-only leftover is done (#268). U2 (repo-managed `.cursor/environment.json`) is done in this repo. Next leftover is U3 in Uberorchbot. Do not invent a DOC/FEAT.
 
 ### Out of plan (still not doing)
 

@@ -1,0 +1,38 @@
+name: Test Cloud Environment
+
+on:
+  pull_request:
+    paths:
+      - '.cursor/environment.json'
+      - '.cursor/install.sh'
+      - 'docs/research/uberorchbot-via-sdlc-spdd.md'
+      - 'docs/maintaining-your-project.md'
+      - 'sdlc-spdd/docs/maintaining-your-project.md'
+      - 'docs/blog/cloud-agents-as-the-sdlc-platform.md'
+      - 'docs/research/kasana-agent-harness-2-0.md'
+      - 'tests/test-cloud-environment.sh'
+      - '.github/workflows/test-cloud-environment.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.cursor/environment.json'
+      - '.cursor/install.sh'
+      - 'docs/research/uberorchbot-via-sdlc-spdd.md'
+      - 'docs/maintaining-your-project.md'
+      - 'sdlc-spdd/docs/maintaining-your-project.md'
+      - 'docs/blog/cloud-agents-as-the-sdlc-platform.md'
+      - 'docs/research/kasana-agent-harness-2-0.md'
+      - 'tests/test-cloud-environment.sh'
+      - '.github/workflows/test-cloud-environment.yml'
+
+jobs:
+  test-cloud-environment:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check shell syntax
+        run: bash -n .cursor/install.sh tests/test-cloud-environment.sh
+
+      - name: Lock U2 environment.json contract
+        run: ./tests/test-cloud-environment.sh

@@ -100,7 +100,7 @@ Per **target** application (and a separate env for this orchestrator):
 
 Prefer a **repo-managed** `.cursor/environment.json` on each target so branches and PRs get the same platform. Dashboard Environments remain the place to attach **multiple** repos to an Automation fleet. Those are different objects: committed JSON is one repo’s bootstrap; the dashboard list is Automation scope.
 
-U2 in this orchestrator: commit `.cursor/environment.json` so Cloud Agents boot “SDLC-SPDD ready.”
+U2 in this orchestrator is done: `.cursor/environment.json` runs `.cursor/install.sh` so Cloud Agents boot “SDLC-SPDD ready,” with `agentCanUpdateSnapshot` true so Builds stay enabled.
 
 ## Contract the plugin and Automations must speak
 
@@ -134,12 +134,12 @@ Do **not**:
 |----|------|--------|
 | **U0** | Cloud Agents + Environments are the platform | this file (done) |
 | **U1** | Read Uberorchbot; correct dispatcher assumptions | this file (done in the U1 amendment) |
-| **U2** | Repo-managed `.cursor/environment.json`: `install` has `sdlc-engine`; builds enabled | this orchestrator |
+| **U2** | Repo-managed `.cursor/environment.json`: `install` has `sdlc-engine`; builds enabled | this orchestrator (done) |
 | **U3** | Opt-in `sdlc-session` skill: existing Work ID, gate, Resume Prompt, one phase, capture | Uberorchbot plugin |
 | **U4** | Document and configure **separate** event-triggered Automations; re-check `gate` every run; shelf after repeat failure | Uberorchbot docs + Cursor Automations UI |
 | **U5** | Reuse regenerated `/sdlc-spdd-code` (I1); do not duplicate the four bullets in the plugin | this repo I1, then U3 |
 
-U2 is the first *platform* work in *this* repo. U3–U4 are plugin + Automation configuration, not a new control plane.
+U2 is done in this repo (committed `.cursor/environment.json` + `.cursor/install.sh`). U3–U4 are plugin + Automation configuration, not a new control plane.
 
 ## Claims allowed
 
