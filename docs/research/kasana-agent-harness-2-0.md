@@ -200,9 +200,11 @@ This is the plan. Implementation is the next Work ID(s), not this research file�
 
 ```
 I0 this note (done)
-    → I1 code-command overlay     ← next coding work
-    → I2 review Files: vs diff     ← after I1, needs its own canvas
-    → I3 optional hook recipe      ← can parallel I2
+    → I1 code-command overlay     ← next coding work in *this* repo
+    → I2 review Files: vs diff
+    → I3 optional hook recipe
+
+Uberorchbot does not replace I1–I3. It *calls* them: see [Uberorchbot via SDLC-SPDD](uberorchbot-via-sdlc-spdd.md) (U0–U4).
 ```
 
 Promote `LOCAL-001-kasana-harness-research` (or a new DOC/FEAT) before I1 so command-spec edits have a Work ID. I1 is one operation if kept to the four command bullets; I2 is a second Work ID because it may touch review minima.
@@ -225,6 +227,7 @@ Promote `LOCAL-001-kasana-harness-research` (or a new DOC/FEAT) before I1 so com
 
 ## See also
 
+- [Uberorchbot via SDLC-SPDD](uberorchbot-via-sdlc-spdd.md) — outer dispatcher; this overlay is the code-phase inner loop
 - [Related-work and novelty (DOC-002)](../../sdlc-spdd/docs/research/related-work-and-novelty.md) — frozen positioning; coding agents are a different research object
 - [Context loading and scaling](../context-loading-and-scaling.md)
 - [Quality gates](../../sdlc-spdd/harness/quality-gates.md)
