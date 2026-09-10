@@ -545,34 +545,90 @@ def check_operation_diff_scope(
     )
 
 
+class GitChangedPathsError(Exception):
+    """git path collection failed (missing git, invalid --base, no merge-base)."""
+
+
+_DEFAULT_DIFF_SCOPE_BASES: tuple[str, ...] = (
+    "origin/main",
+    "main",
+    "origin/master",
+    "master",
+)
+
+
+def _git_output(repo: Path, *args: str, check: bool = True) -> str:
+    try:
+        proc = subprocess.run(
+            ["git", *args],
+            cwd=repo,
+            text=True,
+            capture_output=True,
+        )
+    except FileNotFoundError as exc:
+        raise GitChangedPathsError("git is not available on PATH") from exc
+    if check and proc.returncode != 0:
+        err = (proc.stderr or proc.stdout or "").strip() or f"exit {proc.returncode}"
+        raise GitChangedPathsError(f"git {' '.join(args)} failed: {err}")
+    return proc.stdout
+
+
+def resolve_diff_scope_base(repo: Path, preferred: str | None = None) -> str:
+    """Return the ref used for ``<ref>...HEAD``.
+
+    Explicit ``preferred`` must exist and share a merge-base with HEAD.
+    When omitted, use the merge-base with the default branch
+    (``origin/main``, ``main``, ``origin/master``, ``master``).
+    """
+    if preferred and preferred.strip():
+        ref = preferred.strip()
+        _git_output(repo, "rev-parse", "--verify", f"{ref}^{{commit}}")
+        mb = _git_output(repo, "merge-base", "HEAD", ref).strip()
+        if not mb:
+            raise GitChangedPathsError(f"could not resolve merge-base with {ref}")
+        return ref
+
+    for ref in _DEFAULT_DIFF_SCOPE_BASES:
+        parsed = _git_output(
+            repo, "rev-parse", "--verify", f"{ref}^{{commit}}", check=False
+        ).strip()
+        if not parsed:
+            continue
+        mb = _git_output(repo, "merge-base", "HEAD", ref, check=False).strip()
+        if mb:
+            return mb
+    raise GitChangedPathsError(
+        "could not resolve a merge base (tried "
+        + ", ".join(_DEFAULT_DIFF_SCOPE_BASES)
+        + ")"
+    )
+
+
 def collect_git_changed_paths(
     *,
     repo: Path,
     base: str | None = None,
 ) -> list[str]:
-    """Working tree vs HEAD, plus ``<base>...HEAD`` when ``base`` is set."""
+    """Uncommitted vs HEAD plus committed since merge-base with ``base``.
+
+    When ``base`` is omitted, resolve merge-base with the default branch so
+    committed out-of-scope edits still appear. Invalid ``base`` raises
+    ``GitChangedPathsError`` instead of returning an empty list.
+    """
+    effective = resolve_diff_scope_base(repo, base)
     paths: list[str] = []
     seen: set[str] = set()
 
     def add_from(args: list[str]) -> None:
-        try:
-            out = subprocess.check_output(
-                args,
-                cwd=repo,
-                text=True,
-                stderr=subprocess.DEVNULL,
-            )
-        except (subprocess.CalledProcessError, FileNotFoundError):
-            return
+        out = _git_output(repo, *args)
         for line in out.splitlines():
             name = line.strip()
             if name and name not in seen:
                 seen.add(name)
                 paths.append(name)
 
-    add_from(["git", "diff", "--name-only", "HEAD"])
-    if base:
-        add_from(["git", "diff", "--name-only", f"{base}...HEAD"])
+    add_from(["diff", "--name-only", "HEAD"])
+    add_from(["diff", "--name-only", f"{effective}...HEAD"])
     return paths
 
 
@@ -606,7 +662,10 @@ def check_diff_scope_main(argv: Sequence[str] | None = None) -> int:
     )
     parser.add_argument(
         "--base",
-        help="Also include git diff --name-only <base>...HEAD",
+        help=(
+            "Compare committed changes to REF...HEAD (must exist). "
+            "Default: merge-base with origin/main, main, origin/master, or master"
+        ),
     )
     parser.add_argument(
         "--root",
@@ -630,7 +689,11 @@ def check_diff_scope_main(argv: Sequence[str] | None = None) -> int:
     if args.changed:
         changed = list(args.changed)
     else:
-        changed = collect_git_changed_paths(repo=root, base=args.base)
+        try:
+            changed = collect_git_changed_paths(repo=root, base=args.base)
+        except GitChangedPathsError as exc:
+            print(f"check-diff-scope: {exc}", file=sys.stderr)
+            return 1
     result = check_operation_diff_scope(
         canvas_path.read_text(encoding="utf-8"),
         changed,

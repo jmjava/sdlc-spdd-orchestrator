@@ -23,17 +23,21 @@ Compare git changed paths to coded operations' Files: plus allowed test paths.
   --work-id ID     Resolve the REASONS canvas via Project.canvas_path
   --canvas PATH    Canvas file (overrides --work-id)
   --ops T01,T02    Limit Files: to these operations
-  --base REF       Also include git diff --name-only <REF>...HEAD
+  --base REF       Compare committed changes to REF...HEAD (must exist).
+                   Default: merge-base with origin/main, main, origin/master,
+                   or master. Invalid REF exits non-zero.
   --root DIR       Repo root for git + canvas resolution (default: cwd)
   --changed PATH   Skip git; pass changed paths (repeatable)
   -h, --help       Show this help
 
 Exit 0 when every changed path is in Files: or an allowed test path.
-Exit 1 when extra production paths exist or a path traverses with "..".
+Exit 1 when extra production paths exist, a path traverses with "..",
+or git collection fails (missing git, invalid --base, no merge-base).
 Prints extra and allowed lists.
 
-Working-tree collection is `git diff --name-only HEAD` (staged + unstaged
-vs HEAD). Hunk-level C-DRIFT inside an allowed file remains a human check.
+Collection is uncommitted (`git diff --name-only HEAD`) plus committed
+since the resolved base (`git diff --name-only <base>...HEAD`).
+Hunk-level C-DRIFT inside an allowed file remains a human check.
 EOF
 }
 
