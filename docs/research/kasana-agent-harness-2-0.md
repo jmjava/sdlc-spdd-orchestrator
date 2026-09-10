@@ -204,7 +204,7 @@ I0 this note (done)
     → I2 review Files: vs diff
     → I3 optional hook recipe
 
-Uberorchbot does not replace I1–I3. It *calls* them: see [Uberorchbot via SDLC-SPDD](uberorchbot-via-sdlc-spdd.md) (U0–U4).
+Uberorchbot does not replace I1–I3. It *starts Cloud Agents* that run them: see [Uberorchbot via SDLC-SPDD](uberorchbot-via-sdlc-spdd.md) (U0–U5). The platform is Cursor Environments + Cloud Agents, not a second farm.
 ```
 
 Promote `LOCAL-001-kasana-harness-research` (or a new DOC/FEAT) before I1 so command-spec edits have a Work ID. I1 is one operation if kept to the four command bullets; I2 is a second Work ID because it may touch review minima.
@@ -227,7 +227,7 @@ Promote `LOCAL-001-kasana-harness-research` (or a new DOC/FEAT) before I1 so com
 
 ## See also
 
-- [Uberorchbot via SDLC-SPDD](uberorchbot-via-sdlc-spdd.md) — outer dispatcher; this overlay is the code-phase inner loop
+- [Uberorchbot via SDLC-SPDD](uberorchbot-via-sdlc-spdd.md) — Cloud Agents + Environments are the platform; this overlay is the code-phase inner loop inside those agents
 - [Related-work and novelty (DOC-002)](../../sdlc-spdd/docs/research/related-work-and-novelty.md) — frozen positioning; coding agents are a different research object
 - [Context loading and scaling](../context-loading-and-scaling.md)
 - [Quality gates](../../sdlc-spdd/harness/quality-gates.md)
