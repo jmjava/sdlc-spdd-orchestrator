@@ -254,13 +254,19 @@ orchestrator-forced hook.
 
 ## Cloud Environment vs local checkout
 
-A committed `.cursor/environment.json` (U2) is the **cloud** bootstrap for
-this repository so Cloud Agents get `sdlc-engine` without a manual install.
-Local Agent chat uses your existing checkout and venv; it does not need that
-Environment. Dashboard multi-repo Environments are a different object: they
-scope Automations, not this file.
+This repository commits `.cursor/environment.json` (U2) so Cloud Agents
+boot with `sdlc-engine` and no manual install. `install` runs
+`.cursor/install.sh`, which calls `scripts/setup-engine-venv.sh` and
+persists `.venv/bin` on `PATH`. `agentCanUpdateSnapshot` is true so
+Cursor Builds can refresh that disk state.
+
+Local Agent chat uses your existing checkout and venv; it does not need
+that Environment. Dashboard multi-repo Environments are a different
+object: they scope Automations, not this file.
 
 Secrets stay in Cursor Environment settings, never in `environment.json`.
+`init-project.sh` / `upgrade-project.sh` do not copy this file into
+target apps, and they still never write `.git/hooks`.
 
 ## Validate Before Done
 
