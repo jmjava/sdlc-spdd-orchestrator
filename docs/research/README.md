@@ -22,5 +22,6 @@ This folder is **not** a paper. It holds investigation notes that support either
 | [Academic-review proof](../../sdlc-spdd/docs/research/prove-academic-review.sh) | Referee replication | One command: P0 + TEST-003 + REF-001 + CHORE-003 |
 | [Milestone 2 task list](../../sdlc-spdd/spdd/tasks/milestone-2-academic-hardening.md) | Iteration backlog | Picking the next Work ID |
 | [Jira ADF and requirements sync](jira-adf-and-requirements-sync.md) | Product/integration research | Jira Cloud description payloads |
+| [Kasana Agent Harness 2.0](kasana-agent-harness-2-0.md) | Product/integration research | Coding-agent harness vs SDLC-SPDD: match / differ / adopt. Not a DOC-002 matrix row |
 
 TEST-002 recorded an n=1 protocol-incomplete comparison under `tests/eval/test-002-hello/`. Do not treat README language ("fixes" drift) as an evaluated result. Academic review of this repo is **three storage modes** + retrievability (DOC-001 §1). Live Guide+Neo4j is required for the graph mode. See the [claims-allowed table](../../sdlc-spdd/docs/research/research-questions-and-constructs.md#5-claims-allowed-today-vs-after-milestone-2).
