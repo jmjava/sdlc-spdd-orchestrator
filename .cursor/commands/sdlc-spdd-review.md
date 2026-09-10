@@ -39,11 +39,29 @@ Do not make code changes unless explicitly asked.
    `readiness:`) to **Reviewed** (or **Complete** if Final Status is also Complete).
 20. Recommend `/sdlc-spdd-prompt-update` for behavior or requirement changes before additional code changes.
 21. Recommend `/sdlc-spdd-sync` for accepted non-behavioral refactors after review.
-22. Run the operation-diff-scope machine check:
+22. Optional DIF check (never required). If `$DIF_HOME/scripts/dif-fold.sh` or a
+    sibling `../embabel-dif/scripts/dif-fold.sh` exists **and** snapshot files
+    `sdlc-spdd/spdd/snapshots/<WORK-ID>-before.json` and `sdlc-spdd/spdd/snapshots/<WORK-ID>-after.json`
+    exist, run `review --quiet --before … --after … --canvas sdlc-spdd/spdd/canvas/<WORK-ID>.md`.
+    Exit 1: do not set Reviewed / Approved; cite the one-line `dif=blocked` (and
+    `.gate.json` / VerificationResult). If the CLI or either snapshot is missing,
+    continue — that is not an error. Do not use login fixtures. Do not start a
+    JVM from `sdlc.sh next` or `sdlc.sh gate`.
+23. Run the operation-diff-scope machine check:
     `./scripts/check-operation-diff-scope.sh --work-id <WORK-ID>`
     (orchestrator: `./scripts/check-operation-diff-scope.sh`; installed
-    projects: `./sdlc-spdd/scripts/check-operation-diff-scope.sh`).
-    Exit 1: do not set Result to Approved or Approved With Notes.
+    projects: `./sdlc-spdd/scripts/check-operation-diff-scope.sh` or
+    `python -m sdlc_engine.canvas --work-id <WORK-ID>`). Optional
+    `--base <ref>` adds `git diff --name-only <ref>...HEAD`. Optional
+    `--ops T01,T02` limits Files: to those operations; default is
+    selected/completed T## (or all T## if none selected). Changed paths
+    must be a subset of those Files: plus allowed test paths
+    (`tests/**`, `engine/tests_unit/**`, `engine/tests_integration/**`,
+    `engine/tests_e2e/**`, or basename `test_*.py` / `*_test.py` /
+    `*.spec.md`). Exit 1 (extra production paths or `..` traversal):
+    do not set Result to Approved or Approved With Notes — use Changes
+    Requested or Blocked and list the extra paths. Hunk-level C-DRIFT
+    inside an allowed file remains a human finding.
 
 ## Context Backend (runtime-resolved)
 
