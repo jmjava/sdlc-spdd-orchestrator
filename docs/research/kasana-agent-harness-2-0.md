@@ -192,7 +192,9 @@ This is the plan. Implementation is the next Work ID(s), not this research file�
 
 ### I3 — Optional target hook recipe (docs)
 
-**Where:** `docs/maintaining-your-project.md` (or a short subsection). A copy-paste pre-commit / CI snippet (lint, typecheck, tests). Install does **not** force the hook onto every target.
+**Where:** `docs/maintaining-your-project.md` (and the `sdlc-spdd/docs/` copy). A copy-paste pre-commit / CI snippet (lint, typecheck, tests). Sample file: `templates/agent-context/hooks/pre-commit.sample` (shipped to `sdlc-spdd/scripts/hooks/`). Install does **not** force the hook onto every target.
+
+**Status:** done in this PR.
 
 **Done when:** maintainers can opt in without an orchestrator-owned git hook.
 
@@ -200,14 +202,14 @@ This is the plan. Implementation is the next Work ID(s), not this research file�
 
 ```
 I0 this note (done)
-    → I1 code-command overlay     ← next coding work in *this* repo
-    → I2 review Files: vs diff
-    → I3 optional hook recipe
+    → I1 code-command overlay     (done — #264)
+    → I2 review Files: vs diff    (done — #264)
+    → I3 optional hook recipe     (done — this PR)
 
 Uberorchbot does not replace I1–I3. Cursor Automations (or a human) start Cloud Agents that run them; the Uberorchbot plugin is opt-in behavior inside the VM: see [Uberorchbot via SDLC-SPDD](uberorchbot-via-sdlc-spdd.md) (U0–U5). The platform is Cursor Environments + Cloud Agents, not a second farm. Native Automation self-chaining is out of scope.
 ```
 
-Promote `LOCAL-001-kasana-harness-research` (or a new DOC/FEAT) before I1 so command-spec edits have a Work ID. I1 is one operation if kept to the four command bullets; I2 is a second Work ID because it may touch review minima.
+I1–I3 landed without promoting `LOCAL-001-kasana-harness-research`. Do not invent a DOC/FEAT for leftover hook-recipe docs.
 
 ### Out of plan (still not doing)
 

@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Kasana I3 — optional local verify hook. Copy to .git/hooks/pre-commit.
+# SDLC-SPDD init/upgrade ships this sample and never installs it as a git hook.
+set -euo pipefail
+# Replace with this repository's documented verify command, e.g. the
+# script named in CI or the canvas Validation: line.
+"${PROJECT_VERIFY_CMD:-./scripts/test-ci-local.sh}"

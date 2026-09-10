@@ -289,6 +289,11 @@ copy_if_missing \
   "${REPO_ROOT}/templates/agent-context/hooks/notify-team-registry.example.sh" \
   "${HOME_DIR}/scripts/hooks/notify-team-registry.example.sh"
 
+# Kasana I3 — optional verify sample. Never install as .git/hooks/pre-commit.
+copy_if_missing \
+  "${REPO_ROOT}/templates/agent-context/hooks/pre-commit.sample" \
+  "${HOME_DIR}/scripts/hooks/pre-commit.sample"
+
 # Runtime session scripts for cross-session handoffs.
 for file in \
   start-agent-session.sh \

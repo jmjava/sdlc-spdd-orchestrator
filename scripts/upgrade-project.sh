@@ -603,6 +603,11 @@ copy_framework_file \
   "${REPO_ROOT}/templates/agent-context/hooks/notify-team-registry.example.sh" \
   "${HOME_DIR}/scripts/hooks/notify-team-registry.example.sh"
 
+# Kasana I3 — optional verify sample. Never install as .git/hooks/pre-commit.
+copy_framework_file \
+  "${REPO_ROOT}/templates/agent-context/hooks/pre-commit.sample" \
+  "${HOME_DIR}/scripts/hooks/pre-commit.sample"
+
 # Target-local runtime scripts are framework-owned and safe to upgrade.
 for file in \
   start-agent-session.sh \

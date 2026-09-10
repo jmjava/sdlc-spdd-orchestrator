@@ -224,10 +224,16 @@ set -euo pipefail
 "${PROJECT_VERIFY_CMD:-./scripts/test-ci-local.sh}"
 ```
 
-Install only if you want it:
+Install only if you want it. `init-project.sh` / `upgrade-project.sh` copy
+the sample into `sdlc-spdd/scripts/hooks/` and **never** write `.git/hooks/`.
 
 ```bash
-cp scripts/hooks/pre-commit.sample .git/hooks/pre-commit
+# installed target
+cp sdlc-spdd/scripts/hooks/pre-commit.sample .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+
+# this orchestrator checkout
+cp templates/agent-context/hooks/pre-commit.sample .git/hooks/pre-commit
 chmod +x .git/hooks/pre-commit
 ```
 
