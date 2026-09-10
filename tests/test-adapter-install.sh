@@ -78,6 +78,19 @@ assert_same() {
   if cmp -s "$1" "$2"; then ok "byte-identical to template: $(rel "$1")"; else bad "differs from template: $(rel "$1")"; fi
 }
 
+# init/upgrade may mention .git/hooks only in comments (never as a write dest).
+assert_comment_only_git_hooks() {
+  local file="$1"
+  local label="$2"
+  local live
+  live="$(grep -nE '\.git/hooks' "${file}" | grep -vE '^[^:]+:[[:space:]]*#' || true)"
+  if [[ -z "${live}" ]]; then
+    ok "${label}: .git/hooks only in comments"
+  else
+    bad "${label}: non-comment .git/hooks reference"
+  fi
+}
+
 assert_same_installed() {
   # IDE adapter stubs at the target repo root are rewritten at install time to
   # reference the single-folder home sdlc-spdd/ (storage v3).
@@ -462,7 +475,7 @@ assert_contains "${REPO_ROOT}/sdlc-spdd/docs/maintaining-your-project.md" \
 assert_contains "${REPO_ROOT}/docs/maintaining-your-project.md" \
   "does **not** create or overwrite git hooks" "I3 never-write-hooks in docs/"
 assert_contains "${REPO_ROOT}/docs/research/kasana-agent-harness-2-0.md" \
-  "**Status:** done in this PR." "I3 marked done"
+  "**Status:** done — #267." "I3 marked done"
 T="${WORK}/i3-hook"; mkdir -p "${T}/.git/hooks"
 printf '%s\n' '#!/bin/sh' 'echo preexisting' > "${T}/.git/hooks/keep-me"
 "${INIT}" --target "${T}" --cursor >/dev/null 2>&1
@@ -470,6 +483,32 @@ assert_file "${T}/sdlc-spdd/scripts/hooks/pre-commit.sample"
 assert_same "${T}/sdlc-spdd/scripts/hooks/pre-commit.sample" \
   "${REPO_ROOT}/templates/agent-context/hooks/pre-commit.sample"
 assert_absent "${T}/.git/hooks/pre-commit"
+assert_content "${T}/.git/hooks/keep-me" $'#!/bin/sh\necho preexisting'
+
+# ---------------------------------------------------------------------------
+echo "== Test 17: pre-commit.sample is copy-only; init/upgrade never write .git/hooks =="
+assert_contains "${REPO_ROOT}/scripts/init-project.sh" \
+  '${HOME_DIR}/scripts/hooks/pre-commit.sample' "init copy dest is scripts/hooks"
+assert_contains "${REPO_ROOT}/scripts/upgrade-project.sh" \
+  '${HOME_DIR}/scripts/hooks/pre-commit.sample' "upgrade copy dest is scripts/hooks"
+assert_contains "${REPO_ROOT}/scripts/init-project.sh" \
+  "Never install as .git/hooks/pre-commit" "init never-install comment"
+assert_contains "${REPO_ROOT}/scripts/upgrade-project.sh" \
+  "Never install as .git/hooks/pre-commit" "upgrade never-install comment"
+assert_comment_only_git_hooks "${REPO_ROOT}/scripts/init-project.sh" "init-project.sh"
+assert_comment_only_git_hooks "${REPO_ROOT}/scripts/upgrade-project.sh" "upgrade-project.sh"
+
+T="${WORK}/i3-hook-upgrade"
+mkdir -p "${T}/.git/hooks"
+printf '%s\n' '#!/bin/sh' 'echo preexisting' > "${T}/.git/hooks/keep-me"
+printf '%s\n' '#!/bin/sh' 'echo custom-hook' > "${T}/.git/hooks/pre-commit"
+"${INIT}" --target "${T}" --cursor >/dev/null 2>&1
+rm -f "${T}/sdlc-spdd/scripts/hooks/pre-commit.sample"
+"${UPGRADE}" --target "${T}" --all >/dev/null 2>&1
+assert_file "${T}/sdlc-spdd/scripts/hooks/pre-commit.sample"
+assert_same "${T}/sdlc-spdd/scripts/hooks/pre-commit.sample" \
+  "${REPO_ROOT}/templates/agent-context/hooks/pre-commit.sample"
+assert_content "${T}/.git/hooks/pre-commit" $'#!/bin/sh\necho custom-hook'
 assert_content "${T}/.git/hooks/keep-me" $'#!/bin/sh\necho preexisting'
 
 # ---------------------------------------------------------------------------

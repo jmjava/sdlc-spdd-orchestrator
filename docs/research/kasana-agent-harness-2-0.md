@@ -194,7 +194,7 @@ This is the plan. Implementation is the next Work ID(s), not this research file�
 
 **Where:** `docs/maintaining-your-project.md` (and the `sdlc-spdd/docs/` copy). A copy-paste pre-commit / CI snippet (lint, typecheck, tests). Sample file: `templates/agent-context/hooks/pre-commit.sample` (shipped to `sdlc-spdd/scripts/hooks/`). Install does **not** force the hook onto every target.
 
-**Status:** done in this PR.
+**Status:** done — #267.
 
 **Done when:** maintainers can opt in without an orchestrator-owned git hook.
 
@@ -204,12 +204,12 @@ This is the plan. Implementation is the next Work ID(s), not this research file�
 I0 this note (done)
     → I1 code-command overlay     (done — #264)
     → I2 review Files: vs diff    (done — #264)
-    → I3 optional hook recipe     (done — this PR)
+    → I3 optional hook recipe     (done — #267)
 
 Uberorchbot does not replace I1–I3. Cursor Automations (or a human) start Cloud Agents that run them; the Uberorchbot plugin is opt-in behavior inside the VM: see [Uberorchbot via SDLC-SPDD](uberorchbot-via-sdlc-spdd.md) (U0–U5). The platform is Cursor Environments + Cloud Agents, not a second farm. Native Automation self-chaining is out of scope.
 ```
 
-I1–I3 landed without promoting `LOCAL-001-kasana-harness-research`. Do not invent a DOC/FEAT for leftover hook-recipe docs.
+I1–I3 landed without promoting `LOCAL-001-kasana-harness-research`. The leftover after I3 is the copy-only test lock (adapter-install Test 17): `pre-commit.sample` ships to `sdlc-spdd/scripts/hooks/`; init/upgrade never write `.git/hooks`. Do not invent a DOC/FEAT.
 
 ### Out of plan (still not doing)
 
