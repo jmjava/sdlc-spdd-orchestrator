@@ -95,6 +95,8 @@ Program detail: [Storage v3](docs/storage-v3.md)
 
 ## Current focus
 
+**On main after [#264](https://github.com/jmjava/sdlc-spdd-orchestrator/pull/264)–[#269](https://github.com/jmjava/sdlc-spdd-orchestrator/pull/269):** Kasana I1–I3 on `/sdlc-spdd-code` and `/sdlc-spdd-review`, a copy-only `pre-commit.sample`, and this repo’s Cloud Agent `.cursor/environment.json`. Details: [Maintaining your project](docs/maintaining-your-project.md) · [Kasana overlay](docs/research/kasana-agent-harness-2-0.md).
+
 **Product:** ADF template library + Vue3 ops console (unchanged).
 
 **Research program (Milestone 2):** raise this repo from hobby/engineering
@@ -157,9 +159,13 @@ What lands in the target:
 
 - Assistant adapters (Cursor commands, Copilot prompts, Claude Code commands)
 - Always-on grounding (`.cursor/rules/sdlc-spdd.mdc`, Copilot instructions, `CLAUDE.md`)
-- A single framework home folder **`sdlc-spdd/`**: workflow CLI (`scripts/`), scaffolding
-  (`ROADMAP.md`, `requirements/`, `spdd/` with the lessons ledger), harness/playbooks, and
-  gitignored runtime under `.sdlc/` (legacy sprawled installs keep working until you upgrade)
+- A single framework home folder **`sdlc-spdd/`**: workflow CLI (`scripts/`, including
+  `check-operation-diff-scope.sh`), scaffolding (`ROADMAP.md`, `requirements/`, `spdd/`
+  with the lessons ledger), harness/playbooks, optional
+  `scripts/hooks/pre-commit.sample` (copy-only — init/upgrade **never** write
+  `.git/hooks`), and gitignored runtime under `.sdlc/` (legacy sprawled installs
+  keep working until you upgrade)
+- This orchestrator’s `.cursor/environment.json` is **not** copied into targets
 
 Upgrade without clobbering app source, canvases, or notes:
 
@@ -193,9 +199,9 @@ More: [Installing into your project](docs/installing-into-your-project.md) ·
 | `/sdlc-spdd-analysis` | Scoped analysis artifact |
 | `/sdlc-spdd-plan` | Create / update the REASONS Canvas |
 | `/sdlc-spdd-architect` | Harden the canvas before coding |
-| `/sdlc-spdd-code` | Implement **one** approved operation |
+| `/sdlc-spdd-code` | Implement **one** approved operation; run named Validation (or documented test/lint/typecheck) before marking it complete |
 | `/sdlc-spdd-api-test` | API verification script for the work |
-| `/sdlc-spdd-review` | Compare implementation to the canvas |
+| `/sdlc-spdd-review` | Compare implementation to the canvas; fail-closed if `check-operation-diff-scope` finds paths outside T## `Files:` plus tests |
 | `/sdlc-spdd-prompt-update` | Change the canvas when acceptance criteria change |
 | `/sdlc-spdd-retro` | Capture reusable lessons |
 | `/sdlc-spdd-sync` | Reconcile accepted drift into prompt artifacts |
@@ -322,6 +328,7 @@ trees, `work-registry.tsv`) keep working read-only and are consolidated by
 3. [Installing into your project](docs/installing-into-your-project.md)  
 4. [Daily runbook](docs/daily-runbook.md) · [Cheat sheet](docs/sdlc-spdd-cheat-sheet.md)  
 5. [Useful concepts and commands](docs/useful-concepts-and-commands.md)  
+6. [Maintaining your project](docs/maintaining-your-project.md) — upgrades, copy-only hook sample, Cloud Environment  
 
 **Shipped platform (`v2.0.0a6`)**
 
@@ -332,6 +339,7 @@ trees, `work-registry.tsv`) keep working read-only and are consolidated by
 - [Local SQLite index](docs/local-sqlite-index.md)  
 - [Ops console](docs/ops-console.md) · [ADF Viewer](docs/adf-viewer.md)  
 - [Jira runbook](docs/jira-runbook.md) · [Jira-compatible requirements](docs/jira-compatible-requirements-format.md)  
+- [Kasana overlay](docs/research/kasana-agent-harness-2-0.md) — I1–I3 on `/sdlc-spdd-code` / review / optional hook sample  
 - [Changelog](CHANGELOG.md) · [ROADMAP](sdlc-spdd/ROADMAP.md)  
 
 **Next product slice**
@@ -358,6 +366,10 @@ resumable, and reusable across assistants and teammates.
 We develop this framework through its own Work IDs (`sdlc-spdd/spdd/canvas/`, `sdlc-spdd/requirements/milestones/`).
 See [CONTRIBUTING.md](CONTRIBUTING.md) for script-path rules (orchestrator vs target) and
 [ROADMAP.md](ROADMAP.md) for delivery posture.
+
+This checkout commits `.cursor/environment.json` so Cloud Agents run
+`.cursor/install.sh` and get `sdlc-engine`. `init` / `upgrade` do **not** copy
+that file into application targets, and they still never write `.git/hooks`.
 
 ---
 

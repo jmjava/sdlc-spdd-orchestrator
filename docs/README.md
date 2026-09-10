@@ -118,8 +118,8 @@ Also useful day to day:
 | [DICE projection runbook](dice-projection-runbook.md) | You run the local Guide + Neo4j stack for dogfood or retrieval tests |
 | [Local SQLite index](local-sqlite-index.md) | Zero-install `.sdlc/index.sqlite` query cache; opt-in, fully regenerable from the ledger |
 | [Jira ADF + requirements sync](research/jira-adf-and-requirements-sync.md) | Exact Cloud ADF / Server wiki payloads; requirements as source of truth for Jira + REASONS |
-| [Kasana Agent Harness 2.0](research/kasana-agent-harness-2-0.md) | Integration plan: overlay Kasana’s loop on `/sdlc-spdd-code` (I1–I3). Not a new Python agent runtime |
-| [Uberorchbot via SDLC-SPDD](research/uberorchbot-via-sdlc-spdd.md) | Vision: Cursor Cloud Agents + Environments as the platform; Uberorchbot dispatches; SDLC-SPDD governs |
+| [Kasana Agent Harness 2.0](research/kasana-agent-harness-2-0.md) | Shipped overlay: I1 verify-before-done on `/sdlc-spdd-code`, I2 review `check-operation-diff-scope`, I3 copy-only `pre-commit.sample`. Not a new Python agent runtime |
+| [Uberorchbot via SDLC-SPDD](research/uberorchbot-via-sdlc-spdd.md) | Vision: Cloud Agents + Environments; this orchestrator commits `.cursor/environment.json` (U2). Uberorchbot dispatches; SDLC-SPDD governs |
 | [Blog: Cloud Agents as the SDLC platform](blog/cloud-agents-as-the-sdlc-platform.md) | Publishable draft of the intended four-layer architecture |
 | [Research notes index](research/README.md) | Academic program (SPIKE-004) vs product/integration research |
 | [SDLC Engine — commit-message](engine-v2.md#commit-message-diff-report) | Python engine diff report for `/sdlc-spdd-commit-message` |
