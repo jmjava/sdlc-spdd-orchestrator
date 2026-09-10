@@ -120,6 +120,7 @@ Also useful day to day:
 | [Jira ADF + requirements sync](research/jira-adf-and-requirements-sync.md) | Exact Cloud ADF / Server wiki payloads; requirements as source of truth for Jira + REASONS |
 | [Kasana Agent Harness 2.0](research/kasana-agent-harness-2-0.md) | Integration plan: overlay Kasana’s loop on `/sdlc-spdd-code` (I1–I3). Not a new Python agent runtime |
 | [Uberorchbot via SDLC-SPDD](research/uberorchbot-via-sdlc-spdd.md) | Vision: Cursor Cloud Agents + Environments as the platform; Uberorchbot dispatches; SDLC-SPDD governs |
+| [Blog: Cloud Agents as the SDLC platform](blog/cloud-agents-as-the-sdlc-platform.md) | Publishable draft of the intended four-layer architecture |
 | [Research notes index](research/README.md) | Academic program (SPIKE-004) vs product/integration research |
 | [SDLC Engine — commit-message](engine-v2.md#commit-message-diff-report) | Python engine diff report for `/sdlc-spdd-commit-message` |
 | [SDLC Engine — sunset](engine-v2.md#feature-sunset-snapshot) | Close-out snapshot of GitHub PR, GitHub issue, commits, and Jira into the ledger |
