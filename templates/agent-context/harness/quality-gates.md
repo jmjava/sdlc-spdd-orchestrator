@@ -14,3 +14,5 @@ Every feature should pass these gates before being considered complete:
 - [ ] Retro completed
 - [ ] Prompt-optimization ledger updated when prompts/canvas changed (FEAT-004)
 - [ ] Canvas synced with implementation
+
+Instruction vs constraint: Norms instruct; `/sdlc-spdd-code` exit is constrained by named Validation (or documented test/lint/typecheck), a twice-same-error stop, and `git diff --name-only` within the T## `Files:` plus tests.

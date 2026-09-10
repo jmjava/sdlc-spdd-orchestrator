@@ -1,0 +1,4 @@
+{
+  "name": "sdlc-spdd-orchestrator",
+  "install": "./scripts/setup-engine-venv.sh && echo 'export PATH=\"$PWD/.venv/bin:$PATH\"' >> \"$HOME/.profile\" && echo 'export PATH=\"$PWD/.venv/bin:$PATH\"' >> \"$HOME/.bashrc\""
+}

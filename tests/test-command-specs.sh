@@ -114,6 +114,14 @@ for spec in \
 done
 assert_contains "${SPEC_DIR}/lifecycle-code.spec.md" "Ready For Coding" \
   "lifecycle-code encodes readiness gate"
+assert_contains "${SPEC_DIR}/lifecycle-code.spec.md" "Validation commands named" \
+  "lifecycle-code encodes verify-before-done"
+assert_contains "${SPEC_DIR}/lifecycle-code.spec.md" "do not mark the T## complete" \
+  "lifecycle-code encodes fail-closed complete"
+assert_contains "${SPEC_DIR}/lifecycle-code.spec.md" "fails twice with the same error" \
+  "lifecycle-code encodes repeated-failure stop"
+assert_contains "${SPEC_DIR}/lifecycle-code.spec.md" "git diff --name-only" \
+  "lifecycle-code encodes Files: path allowlist"
 assert_contains "${SPEC_DIR}/lifecycle-architect.spec.md" "Optional DIF check" \
   "lifecycle-architect encodes optional DIF gate"
 assert_contains "${SPEC_DIR}/lifecycle-architect.spec.md" "architect --quiet" \
@@ -128,6 +136,10 @@ assert_contains "${SPEC_DIR}/lifecycle-review.spec.md" "review --quiet" \
   "lifecycle-review uses quiet DIF review"
 assert_contains "${SPEC_DIR}/lifecycle-review.spec.md" "Do not use login fixtures" \
   "lifecycle-review must not wire login fixtures"
+assert_contains "${SPEC_DIR}/lifecycle-review.spec.md" "check-operation-diff-scope.sh" \
+  "lifecycle-review encodes Files: diff-scope machine check"
+assert_contains "${SPEC_DIR}/lifecycle-review.spec.md" "do not set Result to Approved or Approved With Notes" \
+  "lifecycle-review fail-closes Approved on extra paths"
 assert_contains "${SPEC_DIR}/workflow-advance.spec.md" "Ready For Coding" \
   "workflow-advance encodes readiness gate"
 assert_contains "${SPEC_DIR}/workflow-claim.spec.md" "--jira" \
@@ -154,6 +166,14 @@ for adapter_file in \
     "readiness in ${adapter_file#${REPO_ROOT}/templates/}"
   assert_contains "${adapter_file}" "Optional DIF check" \
     "optional DIF in ${adapter_file#${REPO_ROOT}/templates/}"
+  assert_contains "${adapter_file}" "Validation commands named" \
+    "verify-before-done in ${adapter_file#${REPO_ROOT}/templates/}"
+  assert_contains "${adapter_file}" "do not mark the T## complete" \
+    "fail-closed complete in ${adapter_file#${REPO_ROOT}/templates/}"
+  assert_contains "${adapter_file}" "fails twice with the same error" \
+    "repeated-failure stop in ${adapter_file#${REPO_ROOT}/templates/}"
+  assert_contains "${adapter_file}" "git diff --name-only" \
+    "Files: path allowlist in ${adapter_file#${REPO_ROOT}/templates/}"
 done
 
 for adapter_file in \
@@ -172,6 +192,10 @@ for adapter_file in \
     "optional DIF in ${adapter_file#${REPO_ROOT}/templates/}"
   assert_contains "${adapter_file}" "Do not use login fixtures" \
     "no login fixtures in ${adapter_file#${REPO_ROOT}/templates/}"
+  assert_contains "${adapter_file}" "check-operation-diff-scope.sh" \
+    "Files: diff-scope check in ${adapter_file#${REPO_ROOT}/templates/}"
+  assert_contains "${adapter_file}" "do not set Result to Approved or Approved With Notes" \
+    "fail-closed approval in ${adapter_file#${REPO_ROOT}/templates/}"
 done
 
 # ---------------------------------------------------------------------------
@@ -215,6 +239,28 @@ expect_fail "validate fails when code readiness stripped" "${VALIDATE}"
 restore_victim
 trap - EXIT
 expect_pass "validate after code restore" "${VALIDATE}"
+
+victim="${REPO_ROOT}/templates/cursor/sdlc-spdd-code.md"
+bak="$(mktemp)"
+cp "${victim}" "${bak}"
+restore_victim() { cp "${bak}" "${victim}"; rm -f "${bak}"; }
+trap 'restore_victim' EXIT
+grep -Fv -- 'git diff --name-only' "${bak}" > "${victim}"
+expect_fail "validate fails when code Files: allowlist stripped" "${VALIDATE}"
+restore_victim
+trap - EXIT
+expect_pass "validate after code I1 restore" "${VALIDATE}"
+
+victim="${REPO_ROOT}/templates/cursor/sdlc-spdd-review.md"
+bak="$(mktemp)"
+cp "${victim}" "${bak}"
+restore_victim() { cp "${bak}" "${victim}"; rm -f "${bak}"; }
+trap 'restore_victim' EXIT
+grep -Fv -- 'check-operation-diff-scope.sh' "${bak}" > "${victim}"
+expect_fail "validate fails when review Files: diff-scope check stripped" "${VALIDATE}"
+restore_victim
+trap - EXIT
+expect_pass "validate after review I2 restore" "${VALIDATE}"
 
 # ---------------------------------------------------------------------------
 echo "== whereami / next Required Behavior step-count parity =="

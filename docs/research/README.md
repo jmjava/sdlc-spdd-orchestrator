@@ -22,5 +22,8 @@ This folder is **not** a paper. It holds investigation notes that support either
 | [Academic-review proof](../../sdlc-spdd/docs/research/prove-academic-review.sh) | Referee replication | One command: P0 + TEST-003 + REF-001 + CHORE-003 |
 | [Milestone 2 task list](../../sdlc-spdd/spdd/tasks/milestone-2-academic-hardening.md) | Iteration backlog | Picking the next Work ID |
 | [Jira ADF and requirements sync](jira-adf-and-requirements-sync.md) | Product/integration research | Jira Cloud description payloads |
+| [Kasana Agent Harness 2.0](kasana-agent-harness-2-0.md) | Product/integration **plan** | **Integrate** as `/sdlc-spdd-code` overlay (I0–I3). Reject only a Python `AgentHarness` replacement |
+| [Uberorchbot via SDLC-SPDD](uberorchbot-via-sdlc-spdd.md) | Product/integration **vision** | **Platform = Cursor Cloud Agents + Environments.** Automations trigger runs; Uberorchbot is plugin policy; SDLC-SPDD governs; Kasana I1 runs inside the code-phase agent |
+| [Blog: Cloud Agents as the SDLC platform](../blog/cloud-agents-as-the-sdlc-platform.md) | Publishable draft | Same architecture in blog form — not pushed to `jmjava/blogs` from this environment |
 
 TEST-002 recorded an n=1 protocol-incomplete comparison under `tests/eval/test-002-hello/`. Do not treat README language ("fixes" drift) as an evaluated result. Academic review of this repo is **three storage modes** + retrievability (DOC-001 §1). Live Guide+Neo4j is required for the graph mode. See the [claims-allowed table](../../sdlc-spdd/docs/research/research-questions-and-constructs.md#5-claims-allowed-today-vs-after-milestone-2).

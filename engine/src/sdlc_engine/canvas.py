@@ -1,8 +1,13 @@
-"""REASONS Canvas helpers: Final Status and next operation inference."""
+"""REASONS Canvas helpers: Final Status, operations, and review-time Files: scope."""
 
 from __future__ import annotations
 
+import argparse
 import re
+import subprocess
+import sys
+from collections.abc import Sequence
+from dataclasses import dataclass
 from pathlib import Path
 
 
@@ -204,6 +209,22 @@ def canvas_allows_coding(text: str) -> bool:
 
 
 _FILES_LINE = re.compile(r"^- Files:\s*\S", re.IGNORECASE)
+_FILES_CAPTURE = re.compile(r"^- Files:\s*(.+)$", re.IGNORECASE)
+
+# Review-time test-path allow rule (Kasana I2 / CASP-04). Documented in
+# scripts/check-operation-diff-scope.sh and sdlc-spdd/docs/research/code-maps-to-ops.md.
+# A changed path is an allowed test path when:
+#   - it is exactly `tests` or sits under `tests/`, `engine/tests_unit/`,
+#     `engine/tests_integration/`, or `engine/tests_e2e/`; or
+#   - its basename matches `test_*.py`, `*_test.py`, or `*.spec.md`.
+ALLOWED_TEST_DIR_PREFIXES: tuple[str, ...] = (
+    "tests/",
+    "engine/tests_unit/",
+    "engine/tests_integration/",
+    "engine/tests_e2e/",
+)
+
+_CODED_STATUS_MARKERS = ("complete", "done", "selected", "in progress")
 
 
 def operation_mapping_issues(text: str) -> list[str]:
@@ -286,3 +307,338 @@ def next_operation(canvas_path: Path) -> tuple[str, str]:
                     return current_op, current_title
                 current_op, current_title = "", ""
     return "", ""
+
+
+def normalize_repo_path(raw: str) -> str | None:
+    """Return a repo-relative POSIX path, or None if empty, absolute, or ``..``.
+
+    Does not resolve ``..`` components — any traversal token is rejected.
+    """
+    s = raw.strip().strip("`").strip().strip("'\"").strip()
+    if not s:
+        return None
+    s = s.replace("\\", "/")
+    if s.startswith("/") or (len(s) >= 2 and s[1] == ":"):
+        return None
+    parts: list[str] = []
+    for part in s.split("/"):
+        if part in ("", "."):
+            continue
+        if part == "..":
+            return None
+        parts.append(part)
+    if not parts:
+        return None
+    return "/".join(parts)
+
+
+def parse_files_tokens(rest: str) -> tuple[str, ...]:
+    """Split a ``- Files:`` remainder into path tokens (backticks or commas)."""
+    quoted = re.findall(r"`([^`]+)`", rest)
+    raw_tokens = quoted if quoted else [part.strip() for part in rest.split(",")]
+    out: list[str] = []
+    seen: set[str] = set()
+    for raw in raw_tokens:
+        tok = raw.strip().strip("`").strip("'\"").strip()
+        if not tok or tok.lower() in {"and", "or"}:
+            continue
+        if tok not in seen:
+            seen.add(tok)
+            out.append(tok)
+    return tuple(out)
+
+
+def is_allowed_test_path(rel: str) -> bool:
+    """True when ``rel`` matches the documented review-time test-path rule."""
+    if rel == "tests" or any(
+        rel == prefix.rstrip("/") or rel.startswith(prefix)
+        for prefix in ALLOWED_TEST_DIR_PREFIXES
+    ):
+        return True
+    name = rel.rsplit("/", 1)[-1]
+    if name.startswith("test_") and name.endswith(".py"):
+        return True
+    if name.endswith("_test.py"):
+        return True
+    return name.endswith(".spec.md")
+
+
+def path_allowed_by_files(rel: str, files: set[str]) -> bool:
+    """Exact Files: match, or a descendant of a Files: directory entry."""
+    if rel in files:
+        return True
+    for allowed in files:
+        prefix = allowed.rstrip("/")
+        if prefix and rel.startswith(prefix + "/"):
+            return True
+    return False
+
+
+def _is_coded_status(status: str) -> bool:
+    lower = status.lower()
+    return any(marker in lower for marker in _CODED_STATUS_MARKERS)
+
+
+def _iter_operation_records(text: str) -> list[tuple[str, str, tuple[str, ...]]]:
+    """Return ``(op_id, status, files_tokens)`` for each T## under Operations."""
+    in_ops = False
+    current: str | None = None
+    status = ""
+    files: list[str] = []
+    records: list[tuple[str, str, tuple[str, ...]]] = []
+
+    def flush() -> None:
+        nonlocal current, status, files
+        if current:
+            records.append((current, status, tuple(files)))
+        current = None
+        status = ""
+        files = []
+
+    for line in text.splitlines():
+        if line.startswith("## O") or line.startswith("## Operations"):
+            in_ops = True
+            continue
+        if in_ops and line.startswith("## ") and not line.startswith("## O"):
+            flush()
+            break
+        if not in_ops:
+            continue
+        header = _OP_HEADER.match(line.strip()) or re.match(r"^###\s+(T\d+)\b", line.strip())
+        if header:
+            flush()
+            current = header.group(1)
+            continue
+        if not current:
+            continue
+        sm = _OP_STATUS.match(line.strip())
+        if sm:
+            status = sm.group(1).strip()
+            continue
+        fm = _FILES_CAPTURE.match(line.strip())
+        if fm:
+            files.extend(parse_files_tokens(fm.group(1)))
+    flush()
+    return records
+
+
+def operation_files(
+    text: str,
+    *,
+    selected_ops: Sequence[str] | None = None,
+) -> dict[str, tuple[str, ...]]:
+    """Files: tokens for selected/completed T## ops, or all T## if none selected."""
+    records = _iter_operation_records(text)
+    chosen: list[tuple[str, str, tuple[str, ...]]]
+    if selected_ops:
+        wanted = {op.strip().upper() for op in selected_ops if op.strip()}
+        chosen = [rec for rec in records if rec[0].upper() in wanted]
+    else:
+        coded = [rec for rec in records if _is_coded_status(rec[1])]
+        chosen = coded if coded else list(records)
+    return {op_id: files for op_id, _status, files in chosen}
+
+
+def allowed_files_from_operations(op_map: dict[str, tuple[str, ...]]) -> set[str]:
+    """Normalize Files: tokens; drop empty / absolute / ``..`` entries."""
+    allowed: set[str] = set()
+    for tokens in op_map.values():
+        for raw in tokens:
+            norm = normalize_repo_path(raw)
+            if norm:
+                allowed.add(norm)
+    return allowed
+
+
+@dataclass(frozen=True)
+class DiffScopeResult:
+    """Path-level Files: vs diff check. Hunk-level C-DRIFT is out of scope."""
+
+    ok: bool
+    extra_paths: tuple[str, ...]
+    allowed_files: tuple[str, ...]
+    changed_paths: tuple[str, ...]
+    traversal_rejected: tuple[str, ...]
+    operations_used: tuple[str, ...]
+
+    def format_report(self) -> str:
+        lines = [
+            f"operation-diff-scope: {'PASS' if self.ok else 'FAIL'}",
+            f"operations: {', '.join(self.operations_used) or '(none)'}",
+            "allowed Files:",
+        ]
+        if self.allowed_files:
+            lines.extend(f"  {path}" for path in self.allowed_files)
+        else:
+            lines.append("  (none)")
+        lines.append(
+            "allowed test paths: tests/**, engine/tests_unit/**, "
+            "engine/tests_integration/**, engine/tests_e2e/**, "
+            "basename test_*.py / *_test.py / *.spec.md"
+        )
+        lines.append("changed:")
+        if self.changed_paths:
+            lines.extend(f"  {path}" for path in self.changed_paths)
+        else:
+            lines.append("  (none)")
+        if self.traversal_rejected:
+            lines.append("traversal rejected:")
+            lines.extend(f"  {path}" for path in self.traversal_rejected)
+        if self.extra_paths:
+            lines.append("extra:")
+            lines.extend(f"  {path}" for path in self.extra_paths)
+        return "\n".join(lines) + "\n"
+
+
+def check_operation_diff_scope(
+    canvas_text: str,
+    changed_paths: Sequence[str],
+    *,
+    selected_ops: Sequence[str] | None = None,
+) -> DiffScopeResult:
+    """Compare changed paths to coded operations' Files: plus allowed test paths.
+
+    Extra production paths or ``..`` traversal => ``ok`` is False. Renames and
+    deletes are the path names supplied (whatever ``git diff --name-only``
+    reported). Not used by ``gate_check(code)``.
+    """
+    op_map = operation_files(canvas_text, selected_ops=selected_ops)
+    allowed = allowed_files_from_operations(op_map)
+    changed_norm: list[str] = []
+    traversal: list[str] = []
+    extra: list[str] = []
+    seen_changed: set[str] = set()
+    seen_extra: set[str] = set()
+    seen_trav: set[str] = set()
+
+    for raw in changed_paths:
+        display = raw.strip()
+        if not display or display in seen_changed:
+            continue
+        seen_changed.add(display)
+        norm = normalize_repo_path(raw)
+        if norm is None:
+            changed_norm.append(display)
+            if display not in seen_trav:
+                seen_trav.add(display)
+                traversal.append(display)
+            if display not in seen_extra:
+                seen_extra.add(display)
+                extra.append(display)
+            continue
+        changed_norm.append(norm)
+        if path_allowed_by_files(norm, allowed) or is_allowed_test_path(norm):
+            continue
+        if norm not in seen_extra:
+            seen_extra.add(norm)
+            extra.append(norm)
+
+    extra_t = tuple(extra)
+    trav_t = tuple(traversal)
+    return DiffScopeResult(
+        ok=not extra_t and not trav_t,
+        extra_paths=extra_t,
+        allowed_files=tuple(sorted(allowed)),
+        changed_paths=tuple(changed_norm),
+        traversal_rejected=trav_t,
+        operations_used=tuple(op_map.keys()),
+    )
+
+
+def collect_git_changed_paths(
+    *,
+    repo: Path,
+    base: str | None = None,
+) -> list[str]:
+    """Working tree vs HEAD, plus ``<base>...HEAD`` when ``base`` is set."""
+    paths: list[str] = []
+    seen: set[str] = set()
+
+    def add_from(args: list[str]) -> None:
+        try:
+            out = subprocess.check_output(
+                args,
+                cwd=repo,
+                text=True,
+                stderr=subprocess.DEVNULL,
+            )
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            return
+        for line in out.splitlines():
+            name = line.strip()
+            if name and name not in seen:
+                seen.add(name)
+                paths.append(name)
+
+    add_from(["git", "diff", "--name-only", "HEAD"])
+    if base:
+        add_from(["git", "diff", "--name-only", f"{base}...HEAD"])
+    return paths
+
+
+def _resolve_canvas_path(work_id: str | None, canvas: str | None, root: Path) -> Path:
+    if canvas:
+        return Path(canvas)
+    if not work_id:
+        raise SystemExit("check-diff-scope: --canvas or --work-id is required")
+    from .project import Project
+
+    path = Project.resolve(root).canvas_path(work_id)
+    if path.is_file():
+        return path
+    raise SystemExit(f"check-diff-scope: canvas not found: {path}")
+
+
+def check_diff_scope_main(argv: Sequence[str] | None = None) -> int:
+    """Thin CLI: compare git/changed paths to canvas Files: plus test paths."""
+    parser = argparse.ArgumentParser(
+        prog="python -m sdlc_engine.canvas",
+        description=(
+            "Review-time path-scope check: git diff paths must be a subset of "
+            "coded T## Files: plus allowed test paths. Not gate_check(code)."
+        ),
+    )
+    parser.add_argument("--canvas", help="Path to the REASONS canvas")
+    parser.add_argument("--work-id", help="Resolve canvas via Project.canvas_path")
+    parser.add_argument(
+        "--ops",
+        help="Comma-separated T## ids (default: selected/completed, else all T##)",
+    )
+    parser.add_argument(
+        "--base",
+        help="Also include git diff --name-only <base>...HEAD",
+    )
+    parser.add_argument(
+        "--root",
+        default=".",
+        help="Repo root for git and canvas resolution (default: cwd)",
+    )
+    parser.add_argument(
+        "--changed",
+        action="append",
+        default=[],
+        help="Changed path (repeatable). When set, skip git collection.",
+    )
+    args = parser.parse_args(list(argv) if argv is not None else None)
+
+    root = Path(args.root).expanduser()
+    canvas_path = _resolve_canvas_path(args.work_id, args.canvas, root)
+    if not canvas_path.is_file():
+        print(f"check-diff-scope: canvas not found: {canvas_path}", file=sys.stderr)
+        return 1
+    selected = [part.strip() for part in (args.ops or "").split(",") if part.strip()] or None
+    if args.changed:
+        changed = list(args.changed)
+    else:
+        changed = collect_git_changed_paths(repo=root, base=args.base)
+    result = check_operation_diff_scope(
+        canvas_path.read_text(encoding="utf-8"),
+        changed,
+        selected_ops=selected,
+    )
+    sys.stdout.write(result.format_report())
+    return 0 if result.ok else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(check_diff_scope_main())

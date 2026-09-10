@@ -224,10 +224,16 @@ check_pack() {
       require_contains "${path}" "Implement only that task." "single-operation scope guardrail"
       require_contains "${path}" "Ready For Coding" "code readiness gate"
       require_contains "${path}" "/sdlc-spdd-prompt-update" "code conflict → prompt-update"
+      require_contains "${path}" "Validation commands named" "code verify-before-done"
+      require_contains "${path}" "do not mark the T## complete" "code fail-closed complete"
+      require_contains "${path}" "fails twice with the same error" "code repeated-failure stop"
+      require_contains "${path}" "git diff --name-only" "code Files: path allowlist"
       ;;
     review)
       require_contains "${path}" "Do not make code changes unless explicitly asked." "review guardrail"
       require_contains "${path}" "Ready For Coding" "review readiness finding"
+      require_contains "${path}" "check-operation-diff-scope.sh" "review Files: diff-scope check"
+      require_contains "${path}" "do not set Result to Approved or Approved With Notes" "review fail-closed approval"
       ;;
     sync)
       require_contains "${path}" "Do not implement code unless explicitly asked." "sync guardrail"

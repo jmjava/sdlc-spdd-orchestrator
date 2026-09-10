@@ -622,6 +622,7 @@ for file in \
   validate-reasons-canvas.sh \
   validate-requirements-format.sh \
   verify-project-install.sh \
+  check-operation-diff-scope.sh \
   sdlc.sh; do
   copy_executable_framework_file \
     "${REPO_ROOT}/scripts/${file}" \
