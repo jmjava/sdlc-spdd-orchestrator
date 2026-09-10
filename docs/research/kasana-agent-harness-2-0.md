@@ -1,9 +1,10 @@
 # Related research: Kasana Agent Harness 2.0
 
-**Kind:** product / integration research (not a paper, not an evaluation result)  
+**Kind:** product / integration research **and integration plan** (not a paper, not an evaluation result)  
 **Date:** 2026-09-10  
-**Local session:** `LOCAL-001-kasana-harness-research` (not promoted to a Work ID)  
-**Does not change:** DOC-001 / DOC-002 freeze, `gate_check` semantics, or application source
+**Decision:** **Integrate.** Overlay Kasana’s loop onto `/sdlc-spdd-code`. Do **not** replace this repo with a Python `AgentHarness`.  
+**Local session:** `LOCAL-001-kasana-harness-research` (plan is in this file; promote to a DOC/FEAT when implementation starts)  
+**Does not change yet:** DOC-001 / DOC-002 freeze, `gate_check` semantics, command specs, or application source — those move in the plan below, not in this note’s first commit
 
 ## Source
 
@@ -116,7 +117,7 @@ Status key: **match** = we already do this as designed · **partial** = same int
 | 11. Git awareness | `git diff`; rollback if forbidden paths (`.env`, `generated/`, `infrastructure/`) | Canvas `Files:` must be *named* (FEAT-016). Hunk-level “diff only touches those paths” is still a human/TEST-002 remainder | **gap** | Strong adopt candidate: optional `gate` or review check that `git diff --name-only` is a subset of the active operation’s `Files:` plus test paths. |
 | 12. Plan before execute | Plan JSON of files/changes, reject before writes | **Architect phase** + Operations with files and validation steps; `/sdlc-spdd-code` implements one approved T## | **match** | Our plan is richer (REASONS). Do not add a parallel JSON planner. |
 | 13. Multi-layer verification | Syntax / behavior / architecture | Phases: typecheck/lint in the *target* repo; api-test; review vs all REASONS sections; `safeguards_checked` is labeled enforced but is a review-minima *mention*, not a static architecture checker | **partial** | Keep layered *phases*. Adopt an optional **architecture check** only when a target encodes Norms as executable rules. |
-| 14–15. Harness 2.0 / minimal class | One Python wrapper: context → action → verify → memory | `WorkflowEngine.gate_check` + adapters + retrieval. Explicitly not an LLM loop ([engine SUT](../../sdlc-spdd/docs/research/engine-sut.md)) | **reject** (as a product) | Keep the engine a process SUT. |
+| 14–15. Harness 2.0 / minimal class | One Python wrapper: context → action → verify → memory | `WorkflowEngine.gate_check` + adapters + retrieval. Explicitly not an LLM loop ([engine SUT](../../sdlc-spdd/docs/research/engine-sut.md)) | **reject that shape** | Integrate the *loop semantics* in `/sdlc-spdd-code`. Do not add `class AgentHarness`. |
 | 16. Developer designs the environment | Developer writes the harness; agent writes code | Developer (and architect phase) writes the canvas; agent implements one operation | **match** | Same mindset, different artifact (canvas vs Python class). |
 | 17. Prefer System B | Good model + focused context + tools + memory + verify + recovery + guardrails | Same bet: adapters + retrieve + gates over “just use a bigger model” | **match** | Already the operating model. |
 | 18. Correctable agent | Detect, explain, recover, prevent repeat, roll back | Detect/explain: review + ledger. Prevent repeat: retrieve pitfalls. Rollback: git, not harness-owned | **partial** | Adopt rollback-on-forbidden-path (row 11) and “stop on repeated verify hash” (row 10) as the missing correctability pieces. |
@@ -142,62 +143,84 @@ Kasana would call much of SDLC-SPDD a harness. We already built the *process* ha
 | No forced pre-commit on targets | Targets bring their own CI. Orchestrator install must stay non-overwrite-by-default. |
 | Guide is fork-only | Nothing in this note implies an Embabel upstream PR. |
 
-## What to adopt
+## Decision (not a rejection)
 
-Ranked. Nothing below is claimed until a Work ID is promoted and a canvas exists.
+**We are integrating Kasana.** The earlier “reject” language applied to **one shape** (a Python class that *is* the agent loop and replaces this repo). It did **not** mean “skip the article.”
 
-### Adopt now (docs / command text — this PR)
+| Verdict | What |
+|---------|------|
+| **Yes — integrate** | Verify-before-done, show the failing rule, cap repeated failures, path allowlist vs `Files:`, optional target hooks |
+| **Already done — keep** | Retrieve, ledger memory, plan-before-code, phase-layered verification, canvas as contract |
+| **No — only this shape** | `class AgentHarness` that calls the model; a second `AGENTS.md`; folding the whole SDLC into one ReAct loop; claiming reduced drift; Embabel upstream |
 
-- File this note under `docs/research/` and index it.
-- State the integration rule: Kasana’s loop is a **`/sdlc-spdd-code` overlay**; `sdlc_engine` does not grow an `AgentHarness`.
-- Rule of thumb: **instructions live in Norms; constraints are whatever `gate_check`, CI, or a named verify command can fail.**
-- `gate_check` remains enter-phase. Verify-before-done is a code-command **exit** condition if/when promoted.
+Rule of thumb once integrated: **instructions live in Norms; constraints are whatever `gate_check`, CI, or a named verify command can fail.** `gate_check` stays **enter-phase**. Kasana’s `verify()` is a **code-command exit** condition.
 
-### Adopt next (promote to a DOC/FEAT only if a human asks)
+## Integration plan
 
-These are the high-leverage gaps. Each is one operation-sized change, not a new runtime.
+This is the plan. Implementation is the next Work ID(s), not this research file’s first commit.
 
-1. **Path allowlist from `Files:` (Kasana §11)**  
-   After `/sdlc-spdd-code`, fail (or flag in review) if `git diff --name-only` is outside the active T## `Files:` plus an explicit tests glob. This is the missing half of FEAT-016 (`operation_mapping_issues` only requires the line to exist).
+### I0 — Record the decision (this file)
 
-2. **Verify-before-done in the code command (Kasana §5–7)**  
-   `/sdlc-spdd-code` already says add tests. Make the required behavior: run the canvas’s validation steps; on failure, return the command output and the Norm/Safeguard; do not mark the operation complete. Still no engine retry loop — the host agent retries, the command defines “done.”
+- Index the article under `docs/research/`.
+- Freeze the overlay rule: loop lives in `/sdlc-spdd-code`; engine does not call a model.
+- **Status:** done in this PR.
 
-3. **Repeated-failure stop (Kasana §10)**  
-   Command text: if the same verify command fails twice with the same error, stop and recommend `/sdlc-spdd-prompt-update` or shelf. Cheap, prevents expensive loops.
+### I1 — Code-command overlay (first implementation)
 
-4. **Optional target hook recipe (Kasana §8)**  
-   A *documented* pre-commit / CI snippet for installed apps (lint, typecheck, tests) in maintaining-your-project — not an orchestrator-owned hook that mutates every target.
+**Where:** `spec/commands/lifecycle-code.spec.md` → regenerate Cursor / Copilot / Claude adapters ([command-spec workflow](../contributing-command-specs.md)). Optionally mirror a short “instruction vs constraint” line in `harness/quality-gates.md` (and its template) so targets see the same rule.
 
-### Do not adopt
+**Add as required behavior of `/sdlc-spdd-code` (exit of one T##):**
+
+1. Run the **validation steps named on that operation** (canvas Operations). If none, run the project’s documented test/lint/typecheck commands when they exist.
+2. On failure: do **not** mark the T## complete. Return the command output **and** the Norm/Safeguard it violates. The host may retry in the same session.
+3. If the **same** verify command fails twice with the same error, **stop**. Recommend `/sdlc-spdd-prompt-update` or shelf. Do not loop forever.
+4. After edits: `git diff --name-only` should stay within the active T## `Files:` plus test paths. If it does not, do not mark complete; restore or drop the extra files (host `git checkout` / unstage — not a new engine API).
+
+**Does not change:** `WorkflowEngine.gate_check` enter-phase semantics, DOC-001/002 freeze, no Python model loop.
+
+**Done when:** `/sdlc-spdd-code` adapters include the four bullets; `generate-command-adapters.sh --check` and `validate-command-adapters.sh` pass.
+
+### I2 — Review / Files: machine check (second implementation)
+
+**Where:** `/sdlc-spdd-review` and/or a small helper used by review (not `gate_check` enter-code). Completes the human remainder of FEAT-016: the `Files:` line exists today; the **diff** is not yet checked.
+
+**Add:** review reports fail (or a named warning that cannot be “Result: pass”) when the Work ID’s uncommitted or PR diff includes paths outside the coded operations’ `Files:` plus tests.
+
+**Caution:** this is closer to C-COMPLY. Needs a promoted Work ID and canvas. Do **not** silently add it to `ENFORCED_GATES` / `gate_check(code)`.
+
+**Done when:** a documented check compares diff paths to `Files:`; review command tells the agent to run it.
+
+### I3 — Optional target hook recipe (docs)
+
+**Where:** `docs/maintaining-your-project.md` (or a short subsection). A copy-paste pre-commit / CI snippet (lint, typecheck, tests). Install does **not** force the hook onto every target.
+
+**Done when:** maintainers can opt in without an orchestrator-owned git hook.
+
+### Order and what “done” looks like
+
+```
+I0 this note (done)
+    → I1 code-command overlay     ← next coding work
+    → I2 review Files: vs diff     ← after I1, needs its own canvas
+    → I3 optional hook recipe      ← can parallel I2
+```
+
+Promote `LOCAL-001-kasana-harness-research` (or a new DOC/FEAT) before I1 so command-spec edits have a Work ID. I1 is one operation if kept to the four command bullets; I2 is a second Work ID because it may touch review minima.
+
+### Out of plan (still not doing)
 
 - A first-party `class AgentHarness` that calls the model.
-- Replacing REASONS or phase commands with a single ReAct loop.
+- Replacing REASONS or the 15-step workflow with one ReAct loop.
 - Repo-global `AGENTS.md` as a second contract.
+- Architecture AST checkers as a framework default (Prisma-in-controller). Encode in canvas Norms; run them only if the **target** already has ArchUnit / import-linter / equivalent.
 - Claiming this article as academic novelty or as evidence of reduced drift.
-- Architecture AST checkers (Prisma-in-controller) as a framework default — those are target-specific Norms. Encode them in the canvas; execute them only if the target already has a check (ArchUnit, import-linter, etc.).
-
-## Integration sketch (if promoted)
-
-Not scheduled. Suggested shape so a later `/sdlc-spdd-plan` does not start from zero.
-
-```
-Work A (DOC): this note + quality-gates wording (instruction vs constraint).
-Work B (FEAT, code command / review): verify-before-done + repeated-failure stop.
-Work C (FEAT, engine or review script): diff path allowlist vs active T## Files:.
-Work D (DOC, optional): target CI/hook recipe.
-```
-
-Order: A (done in spirit by this file) → B (prompt/command, no new SUT) → C (engine/review, touches C-COMPLY — needs a canvas) → D.
-
-Work C is the only one that might need a DOC-001-aware canvas, because it changes what `gate_check` or review minima mean. Do not silently extend `ENFORCED_GATES`.
+- Any PR against `embabel/guide`.
 
 ## Claims allowed
 
-- Kasana’s article is a useful **coding-agent harness** checklist.
-- SDLC-SPDD already implements the process-level analogue (context, memory, plan, layered verify).
-- Integration rule: the loop overlays `/sdlc-spdd-code`; it is not a Python `AgentHarness` and not a new lifecycle.
-- The remaining adopt list is **code-phase constraint enforcement** (command exit conditions), not a new method family.
+- **Decision is integrate**, via `/sdlc-spdd-code` overlay (I1 → I2 → I3).
+- Kasana’s article is a useful **coding-agent harness** checklist; SDLC-SPDD already has the process-level analogue.
+- The **only** rejected shape is a Python `AgentHarness` / replacing the lifecycle — not the ideas.
 - This note is **not** a DOC-002 matrix row, not a C-DRIFT result, and not a reason to open a PR against `embabel/guide`.
 
 ## See also
