@@ -4,6 +4,8 @@ name: Test Guide Stack (Experimental)
 # evidence for the third storage mode. Not required for a consumer *install*,
 # but required to accept the freeze. Runs on workflow_dispatch and when
 # ops-console / guide / research-freeze paths change on PRs.
+# Path filters mean this workflow can be skipped. Required research P0 must
+# not treat that skip, or MagicMock Guide parity, as graph-mode proof.
 # Unreachable repo.embabel.com fails this job (not a skip-pass). ADF viewer
 # live still runs, then the job fails if the graph stack did not boot.
 

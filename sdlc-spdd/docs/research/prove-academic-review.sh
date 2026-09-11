@@ -9,6 +9,8 @@
 #   SDLC_GUIDE_STACK_LIVE=1 ./tests/test-guide-stack-live.sh
 #
 # CI job: .github/workflows/test-guide-stack-experimental.yml (guide-neo4j-live).
+# That job is path-filtered and can be skipped. A skip is not graph-mode proof;
+# neither is MagicMock Guide parity in required research P0.
 #
 # Hermetic path:
 #
@@ -55,6 +57,13 @@ if python3 -m unittest tests.research.test_cretrieve -v; then
   ok "test_cretrieve"
 else
   err "test_cretrieve"
+fi
+
+step "Live graph MagicMock / skipped job is not required-CI proof"
+if python3 -m unittest tests.research.test_live_graph_required_ci -v; then
+  ok "test_live_graph_required_ci"
+else
+  err "test_live_graph_required_ci"
 fi
 
 step "REF-001 gate_check SUT"

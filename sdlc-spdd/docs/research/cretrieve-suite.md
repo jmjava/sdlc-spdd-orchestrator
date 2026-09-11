@@ -20,7 +20,11 @@ Hermetic (ledger + SQLite + mocked Guide client):
 PYTHONPATH=engine/src python3 -m unittest tests.research.test_cretrieve -v
 ```
 
-Research CI (`test-research-p0.yml`) runs the same module.
+Research CI (`test-research-p0.yml`) runs the same module. That job is
+**not** graph-mode proof: MagicMock Guide parity is the client contract.
+If the live graph job (`test-guide-stack-experimental.yml`) is the only
+evidence and it is **skipped**, required CI must fail that claim
+(`tests.research.test_live_graph_required_ci`).
 
 Referee hermetic one-shot (P0 docs + C-RETRIEVE hermetic + SUT + dogfood ledger):
 
