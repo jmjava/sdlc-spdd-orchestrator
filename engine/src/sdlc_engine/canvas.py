@@ -227,7 +227,8 @@ ALLOWED_TEST_DIR_PREFIXES: tuple[str, ...] = (
 )
 ALLOWED_REVIEW_SPEC_PATHS: frozenset[str] = frozenset({"docs/review.spec.md"})
 
-_CODED_STATUS_MARKERS = ("complete", "done", "selected", "in progress")
+_COMPLETE_STATUS_MARKERS = ("complete", "done")
+_ACTIVE_REVIEW_STATUS_MARKERS = ("selected", "in progress")
 
 
 def operation_mapping_issues(text: str) -> list[str]:
@@ -377,9 +378,35 @@ def path_allowed_by_files(rel: str, files: set[str]) -> bool:
     return False
 
 
-def _is_coded_status(status: str) -> bool:
+def _is_complete_status(status: str) -> bool:
     lower = status.lower()
-    return any(marker in lower for marker in _CODED_STATUS_MARKERS)
+    return any(marker in lower for marker in _COMPLETE_STATUS_MARKERS)
+
+
+def _is_active_review_status(status: str) -> bool:
+    """Selected or in-progress T## that is not already complete/done."""
+    if _is_complete_status(status):
+        return False
+    lower = status.lower()
+    return any(marker in lower for marker in _ACTIVE_REVIEW_STATUS_MARKERS)
+
+
+def default_review_operations(
+    records: Sequence[tuple[str, str, tuple[str, ...]]],
+) -> list[tuple[str, str, tuple[str, ...]]]:
+    """Choose the T## under review when ``--ops`` is omitted.
+
+    In-progress/selected first; else the last completed T##. A finished
+    canvas does not union every T## Files: list. Nothing coded yet falls
+    back to all T## (same as the pre-narrowing empty-coded case).
+    """
+    active = [rec for rec in records if _is_active_review_status(rec[1])]
+    if active:
+        return active
+    completed = [rec for rec in records if _is_complete_status(rec[1])]
+    if completed:
+        return [completed[-1]]
+    return list(records)
 
 
 def _iter_operation_records(text: str) -> list[tuple[str, str, tuple[str, ...]]]:
@@ -430,15 +457,14 @@ def operation_files(
     *,
     selected_ops: Sequence[str] | None = None,
 ) -> dict[str, tuple[str, ...]]:
-    """Files: tokens for selected/completed T## ops, or all T## if none selected."""
+    """Files: tokens for ``--ops``, else the T## under review."""
     records = _iter_operation_records(text)
     chosen: list[tuple[str, str, tuple[str, ...]]]
     if selected_ops:
         wanted = {op.strip().upper() for op in selected_ops if op.strip()}
         chosen = [rec for rec in records if rec[0].upper() in wanted]
     else:
-        coded = [rec for rec in records if _is_coded_status(rec[1])]
-        chosen = coded if coded else list(records)
+        chosen = default_review_operations(records)
     return {op_id: files for op_id, _status, files in chosen}
 
 
@@ -661,7 +687,10 @@ def check_diff_scope_main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--work-id", help="Resolve canvas via Project.canvas_path")
     parser.add_argument(
         "--ops",
-        help="Comma-separated T## ids (default: selected/completed, else all T##)",
+        help=(
+            "Comma-separated T## ids (default: T## under review — "
+            "in-progress/selected, else last completed; not every T##)"
+        ),
     )
     parser.add_argument(
         "--base",

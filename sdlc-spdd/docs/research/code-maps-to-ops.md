@@ -13,7 +13,7 @@ This is **not** proof that the diff implements the operation. It is a contract t
 
 ### Review-time path scope (Kasana I2 / CASP-04)
 
-`/sdlc-spdd-review` runs `scripts/check-operation-diff-scope.sh` (pure helper: `check_operation_diff_scope` in `engine/src/sdlc_engine/canvas.py`). Changed paths from `git diff --name-only HEAD` (uncommitted vs HEAD) plus `git diff --name-only <base>...HEAD` must be a subset of the selected/completed T## `Files:` union (or all T## if none selected) plus allowed test paths. Default `<base>` is the merge-base with `origin/main`, `main`, `origin/master`, or `master`. A missing or invalid `--base` exits non-zero instead of treating the change list as empty. Allowed test paths:
+`/sdlc-spdd-review` runs `scripts/check-operation-diff-scope.sh` (pure helper: `check_operation_diff_scope` in `engine/src/sdlc_engine/canvas.py`). Changed paths from `git diff --name-only HEAD` (uncommitted vs HEAD) plus `git diff --name-only <base>...HEAD` must be a subset of the T## under review `Files:` (in-progress/selected, else the last completed T##; `--ops` unions an explicit list) plus allowed test paths. A finished canvas does not default to the union of every T## `Files:` list. Default `<base>` is the merge-base with `origin/main`, `main`, `origin/master`, or `master`. A missing or invalid `--base` exits non-zero instead of treating the change list as empty. Allowed test paths:
 
 - under `tests/`, `engine/tests_unit/`, `engine/tests_integration/`, or `engine/tests_e2e/`
 - or basename `test_*.py` / `*_test.py`

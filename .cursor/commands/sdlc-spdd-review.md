@@ -54,7 +54,8 @@ Do not make code changes unless explicitly asked.
     `python -m sdlc_engine.canvas --work-id <WORK-ID>`). Optional
     `--base <ref>` adds `git diff --name-only <ref>...HEAD`. Optional
     `--ops T01,T02` limits Files: to those operations; default is
-    selected/completed T## (or all T## if none selected). Changed paths
+    the T## under review (in-progress/selected, else the last
+    completed T## — not the union of every completed T##). Changed paths
     must be a subset of those Files: plus allowed test paths
     (`tests/**`, `engine/tests_unit/**`, `engine/tests_integration/**`,
     `engine/tests_e2e/**`, or basename `test_*.py` / `*_test.py` /
