@@ -29,6 +29,7 @@ on:
       - 'tests/test-gate-review-validation.sh'
       - 'tests/test-gate-advisory-visible.sh'
       - 'tests/test-quality-gates-match-labels.sh'
+      - 'tests/test-quality-gates-constraint-honest.sh'
       - 'sdlc-spdd/harness/quality-gates.md'
       - 'templates/agent-context/harness/quality-gates.md'
       - 'engine/src/sdlc_engine/phases.py'
@@ -62,6 +63,7 @@ on:
       - 'tests/test-gate-review-validation.sh'
       - 'tests/test-gate-advisory-visible.sh'
       - 'tests/test-quality-gates-match-labels.sh'
+      - 'tests/test-quality-gates-constraint-honest.sh'
       - 'sdlc-spdd/harness/quality-gates.md'
       - 'templates/agent-context/harness/quality-gates.md'
       - 'engine/src/sdlc_engine/phases.py'
@@ -83,6 +85,7 @@ jobs:
           bash -n tests/test-gate-review-validation.sh
           bash -n tests/test-gate-advisory-visible.sh
           bash -n tests/test-quality-gates-match-labels.sh
+          bash -n tests/test-quality-gates-constraint-honest.sh
           bash -n scripts/start-agent-session.sh
           bash -n scripts/capture-session-memory.sh
           bash -n scripts/lib/readiness.sh
@@ -106,6 +109,9 @@ jobs:
 
       - name: Run leftover #15 harness checklist proving tests
         run: ./tests/test-quality-gates-match-labels.sh
+
+      - name: Run leftover #16 constraint-honesty proving tests
+        run: ./tests/test-quality-gates-constraint-honest.sh
 
       - name: Run archive-work regression tests
         run: ./tests/test-archive-work.sh

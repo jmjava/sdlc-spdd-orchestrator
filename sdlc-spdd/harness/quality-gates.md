@@ -15,4 +15,4 @@ Every feature should pass these gates before being considered complete:
 
 Human reminders (not `GATE_LABELS`): canvas readiness is Ready For Coding before `/sdlc-spdd-code`; flag review if coding proceeded without Ready For Coding; update the prompt-optimization ledger when prompts/canvas changed (FEAT-004).
 
-Instruction vs constraint: Norms instruct; `/sdlc-spdd-code` exit is constrained by named Validation (or documented test/lint/typecheck), a twice-same-error stop, and `git diff --name-only` within the T## `Files:` plus tests.
+Instruction vs constraint: Norms and named Validation instruct. `/sdlc-spdd-code` exit is constrained by the leftover #6 verify receipt (command, exit, pass/fail) on `sdlc.sh capture`/`complete`, not by Validation prose. `tests_updated` stays advisory.
