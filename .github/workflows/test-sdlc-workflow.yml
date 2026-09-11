@@ -9,6 +9,7 @@ on:
       - 'templates/agent-context/README.md'
       - 'scripts/start-agent-session.sh'
       - 'scripts/capture-session-memory.sh'
+      - 'scripts/lib/paths.sh'
       - 'scripts/lib/readiness.sh'
       - 'scripts/init-project.sh'
       - 'scripts/upgrade-project.sh'
@@ -24,6 +25,7 @@ on:
       - 'tests/test-sdlc-workflow.sh'
       - 'tests/test-sdlc-pointer.sh'
       - 'tests/test-archive-work.sh'
+      - 'tests/test-verify-receipt.sh'
       - '.github/workflows/test-sdlc-workflow.yml'
   push:
     branches: [main]
@@ -34,6 +36,7 @@ on:
       - 'templates/agent-context/README.md'
       - 'scripts/start-agent-session.sh'
       - 'scripts/capture-session-memory.sh'
+      - 'scripts/lib/paths.sh'
       - 'scripts/lib/readiness.sh'
       - 'scripts/init-project.sh'
       - 'scripts/upgrade-project.sh'
@@ -49,6 +52,7 @@ on:
       - 'tests/test-sdlc-workflow.sh'
       - 'tests/test-sdlc-pointer.sh'
       - 'tests/test-archive-work.sh'
+      - 'tests/test-verify-receipt.sh'
       - '.github/workflows/test-sdlc-workflow.yml'
 
 jobs:
@@ -63,9 +67,11 @@ jobs:
           bash -n templates/agent-context/sdlc-workflow.sh
           bash -n scripts/sdlc.sh
           bash -n tests/test-sdlc-workflow.sh
+          bash -n tests/test-verify-receipt.sh
           bash -n scripts/start-agent-session.sh
           bash -n scripts/capture-session-memory.sh
           bash -n scripts/lib/readiness.sh
+          bash -n scripts/lib/paths.sh
           bash -n scripts/validate-command-adapters.sh
 
       - name: Run SDLC pointer regression tests
@@ -73,6 +79,9 @@ jobs:
 
       - name: Run SDLC workflow regression tests
         run: ./tests/test-sdlc-workflow.sh
+
+      - name: Run I1 verify-receipt proving tests
+        run: ./tests/test-verify-receipt.sh
 
       - name: Run archive-work regression tests
         run: ./tests/test-archive-work.sh

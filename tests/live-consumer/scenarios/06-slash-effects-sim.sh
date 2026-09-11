@@ -100,7 +100,10 @@ fi
   --target "${ROOT}" \
   --work-id "${WORK_ID}" \
   --phase code \
-  --summary "live matrix code capture" >/dev/null || true
+  --summary "live matrix code capture" \
+  --verify-command "true" \
+  --verify-exit 0 \
+  --verify-result pass >/dev/null || true
 if "${VERIFY}" --target "${ROOT}" --work-id "${WORK_ID}" --step capture >/dev/null; then
   ok "effects: capture"
 else

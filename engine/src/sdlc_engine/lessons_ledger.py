@@ -18,6 +18,10 @@ capture is ``kind + area + body``, not a invented ``FEAT-ADHOC-*``.
 
 Optional capture metrics (FEAT-015) are a ``metrics`` object, not body
 tags. Schema 2 when that object is present. ``kind=metric`` is not restored.
+
+Kasana I1 verify receipt is a ``verify`` object (command, exit, result).
+Schema 3 when that object is present. Title/body Validation prose is not
+a receipt.
 """
 
 from __future__ import annotations
@@ -33,6 +37,7 @@ from typing import Any, Iterable
 from .metrics import ProcessMetrics, SCHEMA_WITH_METRICS, query_metrics
 from .project import Project
 from .timeutil import utc_now as _utc_now
+from .verify_receipt import SCHEMA_WITH_VERIFY, VerifyReceipt
 
 # Committed kinds — the pared-down, highest-value set.
 LEDGER_KINDS = ("decision", "pitfall", "pattern", "session", "analysis")
@@ -65,6 +70,7 @@ class LessonRecord:
     commit: str = ""
     schema: int = SCHEMA
     metrics: ProcessMetrics = field(default_factory=ProcessMetrics)
+    verify: VerifyReceipt = field(default_factory=VerifyReceipt)
 
     def __post_init__(self) -> None:
         self.kind = (self.kind or "").strip().lower()
@@ -80,6 +86,10 @@ class LessonRecord:
             self.metrics = ProcessMetrics.from_json(self.metrics)
         elif self.metrics is None:
             self.metrics = ProcessMetrics()
+        if isinstance(self.verify, dict):
+            self.verify = VerifyReceipt.from_json(self.verify)
+        elif self.verify is None:
+            self.verify = VerifyReceipt()
 
     def validate(self) -> None:
         if self.kind not in LEDGER_KINDS:
@@ -108,6 +118,10 @@ class LessonRecord:
         if metrics_obj:
             payload["metrics"] = metrics_obj
             payload["schema"] = max(int(self.schema or SCHEMA), SCHEMA_WITH_METRICS)
+        verify_obj = self.verify.to_json() if self.verify else {}
+        if verify_obj:
+            payload["verify"] = verify_obj
+            payload["schema"] = max(int(payload.get("schema") or SCHEMA), SCHEMA_WITH_VERIFY)
         return payload
 
     @classmethod
@@ -126,6 +140,7 @@ class LessonRecord:
             commit=str(data.get("commit") or ""),
             schema=int(data.get("schema") or SCHEMA),
             metrics=ProcessMetrics.from_json(data.get("metrics")),
+            verify=VerifyReceipt.from_json(data.get("verify")),
         )
 
 

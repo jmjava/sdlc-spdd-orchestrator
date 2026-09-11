@@ -667,6 +667,7 @@ SDLC workflow helper — short paths for humans and agents
   ${helper} next         # concise "what do I do now?"
   ${helper} start        # open session brief at current phase
   ${helper} capture --summary "..."   # guarded capture (pointer must match)
+  ${helper} complete --summary "..." --verify-command CMD --verify-exit N --verify-result pass
   ${helper} status --json
 
   ${helper} resume <WORK-ID> [--phase PHASE] [--force]
@@ -1409,6 +1410,53 @@ sdlc_workflow_capture() {
     "${passthrough[@]}"
 }
 
+sdlc_workflow_complete() {
+  local have_cmd=0
+  local have_exit=0
+  local have_result=0
+  local -a passthrough=()
+  local has_phase=0
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --verify-command)
+        have_cmd=1
+        passthrough+=("$1" "${2:-}")
+        shift 2
+        ;;
+      --verify-exit)
+        have_exit=1
+        passthrough+=("$1" "${2:-}")
+        shift 2
+        ;;
+      --verify-result)
+        have_result=1
+        passthrough+=("$1" "${2:-}")
+        shift 2
+        ;;
+      --phase)
+        has_phase=1
+        passthrough+=("$1" "${2:-}")
+        shift 2
+        ;;
+      *)
+        passthrough+=("$1")
+        shift
+        ;;
+    esac
+  done
+
+  if [[ "${have_cmd}" -ne 1 || "${have_exit}" -ne 1 || "${have_result}" -ne 1 ]]; then
+    echo "sdlc_workflow_complete: verify receipt required (command, exit, pass/fail). Refuse complete without it." >&2
+    echo "Pass --verify-command, --verify-exit, and --verify-result=pass." >&2
+    return 1
+  fi
+  if [[ "${has_phase}" -ne 1 ]]; then
+    passthrough+=(--phase code)
+  fi
+  sdlc_workflow_capture --complete "${passthrough[@]}"
+}
+
 sdlc_workflow_resume() {
   local work_id="$1"
   local phase="${2:-}"
@@ -1868,6 +1916,9 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" && "${_SDLC_WORKFLOW_LOAD_DEPTH}" -eq 1 ]]; 
     capture|/sdlc-workflow-capture)
       sdlc_workflow_capture "$@"
       ;;
+    complete|/sdlc-workflow-complete)
+      sdlc_workflow_complete "$@"
+      ;;
     accept|/sdlc-accept-lessons)
       accept_script="${SDLC_ROOT}/sdlc-spdd/scripts/accept-lessons.sh"
       if [[ ! -x "${accept_script}" ]]; then
@@ -1978,7 +2029,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" && "${_SDLC_WORKFLOW_LOAD_DEPTH}" -eq 1 ]]; 
       fi
       ;;
     *)
-      echo "Usage: $0 {status|next|start|capture|accept|resume|advance|gate|skip|shelf|sync|sync-team|team|list-work|claim|release|archive|list-shelved|help} ..." >&2
+      echo "Usage: $0 {status|next|start|capture|complete|accept|resume|advance|gate|skip|shelf|sync|sync-team|team|list-work|claim|release|archive|list-shelved|help} ..." >&2
       echo "Try: $0 help" >&2
       exit 2
       ;;

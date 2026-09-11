@@ -26,7 +26,11 @@ Options:
   --phase <phase>       SDLC phase (default: resume)
   --summary <text>      Session summary
   --summary-file <path> Read session summary from a file; use - for stdin
-  --validation <text>   Validation or tests performed
+  --validation <text>   Validation or tests performed (prose; not an I1 receipt)
+  --verify-command <c>  I1 receipt: command that was run
+  --verify-exit <n>     I1 receipt: integer exit code
+  --verify-result <v>   I1 receipt: pass|fail
+  --complete            Mark T## complete (requires a passing verify receipt)
   --decisions <text>    Architecture or product decisions
   --pitfalls <text>     Pitfalls to remember
   --patterns <text>     Reusable patterns to remember
@@ -73,6 +77,10 @@ METRIC_REWORK=""
 METRIC_CONTEXT_FILES=""
 METRIC_VALIDATE_CYCLES=""
 METRIC_REVIEW_CYCLES=""
+VERIFY_COMMAND=""
+VERIFY_EXIT=""
+VERIFY_RESULT=""
+COMPLETE=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -100,6 +108,10 @@ while [[ $# -gt 0 ]]; do
     --context-files) METRIC_CONTEXT_FILES="${2:-}"; shift 2 ;;
     --validate-cycles) METRIC_VALIDATE_CYCLES="${2:-}"; shift 2 ;;
     --review-cycles) METRIC_REVIEW_CYCLES="${2:-}"; shift 2 ;;
+    --verify-command) VERIFY_COMMAND="${2:-}"; shift 2 ;;
+    --verify-exit) VERIFY_EXIT="${2:-}"; shift 2 ;;
+    --verify-result) VERIFY_RESULT="${2:-}"; shift 2 ;;
+    --complete) COMPLETE=1; shift ;;
     --dry-run) DRY_RUN=1; shift ;;
     --help|-h) usage; exit 0 ;;
     *) echo "Unknown option: $1" >&2; usage >&2; exit 1 ;;
@@ -124,6 +136,46 @@ fi
 if [[ -z "${SUMMARY}" ]]; then
   echo "Error: --summary or --summary-file is required" >&2
   usage >&2
+  exit 1
+fi
+
+# I1 machine artifact: code-phase capture and --complete need command/exit/result.
+# Title/body --validation prose is not a verify receipt.
+if [[ "${COMPLETE}" -eq 1 ]]; then
+  if [[ -z "${PHASE}" || "${PHASE}" == "resume" ]]; then
+    PHASE="code"
+  fi
+fi
+needs_verify_receipt=0
+if [[ "${COMPLETE}" -eq 1 || "${PHASE}" == "code" ]]; then
+  needs_verify_receipt=1
+fi
+if [[ "${needs_verify_receipt}" -eq 1 ]]; then
+  if [[ -z "${VERIFY_COMMAND}" || -z "${VERIFY_EXIT}" || -z "${VERIFY_RESULT}" ]]; then
+    echo "Error: verify receipt required (command, exit, pass/fail). Refuse capture/complete without it." >&2
+    echo "Pass --verify-command, --verify-exit, and --verify-result." >&2
+    exit 1
+  fi
+fi
+if [[ -n "${VERIFY_COMMAND}${VERIFY_EXIT}${VERIFY_RESULT}" ]]; then
+  if [[ -z "${VERIFY_COMMAND}" || -z "${VERIFY_EXIT}" || -z "${VERIFY_RESULT}" ]]; then
+    echo "Error: verify receipt required (command, exit, pass/fail). Refuse capture/complete without it." >&2
+    exit 1
+  fi
+  if [[ ! "${VERIFY_EXIT}" =~ ^-?[0-9]+$ ]]; then
+    echo "Error: --verify-exit must be an integer" >&2
+    exit 1
+  fi
+  case "${VERIFY_RESULT}" in
+    pass|fail) ;;
+    *)
+      echo "Error: --verify-result must be pass|fail" >&2
+      exit 1
+      ;;
+  esac
+fi
+if [[ "${COMPLETE}" -eq 1 && "${VERIFY_RESULT}" != "pass" ]]; then
+  echo "Error: complete requires verify.result=pass (do not mark T## complete on fail)" >&2
   exit 1
 fi
 
@@ -330,10 +382,30 @@ print(json.dumps(m) if m else "")
 PY
 )"
 
+VERIFY_JSON=""
+VERIFY_ENTRY=""
+if [[ -n "${VERIFY_COMMAND}" ]]; then
+  VERIFY_ENTRY="command=${VERIFY_COMMAND}; exit=${VERIFY_EXIT}; result=${VERIFY_RESULT}"
+  VERIFY_JSON="$(
+    VERIFY_COMMAND="${VERIFY_COMMAND}" \
+    VERIFY_EXIT="${VERIFY_EXIT}" \
+    VERIFY_RESULT="${VERIFY_RESULT}" \
+    python3 - <<'PY'
+import json, os
+print(json.dumps({
+    "command": os.environ["VERIFY_COMMAND"],
+    "exit": int(os.environ["VERIFY_EXIT"]),
+    "result": os.environ["VERIFY_RESULT"],
+}, ensure_ascii=False))
+PY
+  )"
+fi
+
 session_body="$(cat <<EOF
 Phase: ${PHASE}
 Summary: ${SUMMARY}
 Validation: ${VALIDATION:-Not recorded}
+Verify: ${VERIFY_ENTRY:-Not recorded}
 Next: ${NEXT_STEP:-Not recorded}
 Areas: ${areas[*]:-none}
 ${METRIC_ENTRY:+Metrics: ${METRIC_ENTRY}}
@@ -349,8 +421,10 @@ stage_record() {
 
 staged_records=()
 export METRICS_JSON
+export VERIFY_JSON
 staged_records+=("$(stage_record session "${SUMMARY}" "${session_body}" "capture")")
 unset METRICS_JSON
+unset VERIFY_JSON
 [[ -n "${DECISIONS}" ]] && staged_records+=("$(stage_record decision "Decision: ${WORK_ID}" "${DECISIONS}" "capture")")
 [[ -n "${PITFALLS}" ]] && staged_records+=("$(stage_record pitfall "Pitfall: ${WORK_ID}" "${PITFALLS}" "capture")")
 [[ -n "${PATTERNS}" ]] && staged_records+=("$(stage_record pattern "Pattern: ${WORK_ID}" "${PATTERNS}" "capture")")
