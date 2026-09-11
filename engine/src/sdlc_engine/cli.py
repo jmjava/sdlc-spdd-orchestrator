@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import sys
 
-from .cli_commands import cmd_next, cmd_version
 from .cli_parser import build_parser
 
 # Keep handler names importable from sdlc_engine.cli for compatibility.

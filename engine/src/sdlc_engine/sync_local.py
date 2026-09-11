@@ -14,7 +14,6 @@ from .links import (
     ensure_jira_section,
     parse_canvas_metadata,
     set_canvas_metadata_bullet,
-    set_milestone_bullet,
     upsert_note_token,
 )
 from .project import Project

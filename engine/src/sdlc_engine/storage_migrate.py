@@ -2,15 +2,14 @@
 
 from __future__ import annotations
 
-import json
 import shutil
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 from . import context_model as cm
 from .db import LocalIndex
-from .lessons_ledger import LEDGER_KINDS, LessonRecord, LessonsLedger, lesson_id
+from .lessons_ledger import LessonRecord, LessonsLedger, lesson_id
 from .persistence import BACKEND_SQLITE, enabled as backend_enabled
 from .project import Project
 from .registry import RegistryRow, TeamRegistry
