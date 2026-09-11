@@ -138,6 +138,8 @@ assert_contains "${SPEC_DIR}/lifecycle-review.spec.md" "Do not use login fixture
   "lifecycle-review must not wire login fixtures"
 assert_contains "${SPEC_DIR}/lifecycle-review.spec.md" "check-operation-diff-scope.sh" \
   "lifecycle-review encodes Files: diff-scope machine check"
+assert_contains "${SPEC_DIR}/lifecycle-review.spec.md" "T## under review" \
+  "lifecycle-review default --ops is the T## under review, not every T##"
 assert_contains "${SPEC_DIR}/lifecycle-review.spec.md" "do not set Result to Approved or Approved With Notes" \
   "lifecycle-review fail-closes Approved on extra paths"
 assert_contains "${SPEC_DIR}/workflow-advance.spec.md" "Ready For Coding" \
@@ -196,6 +198,8 @@ for adapter_file in \
     "Files: diff-scope check in ${adapter_file#${REPO_ROOT}/templates/}"
   assert_contains "${adapter_file}" "do not set Result to Approved or Approved With Notes" \
     "fail-closed approval in ${adapter_file#${REPO_ROOT}/templates/}"
+  assert_contains "${adapter_file}" "T## under review" \
+    "default --ops is T## under review in ${adapter_file#${REPO_ROOT}/templates/}"
 done
 
 # ---------------------------------------------------------------------------

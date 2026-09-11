@@ -4,8 +4,8 @@
 # Not part of gate_check(code) and not an ENFORCED_GATES entry. /sdlc-spdd-review
 # runs this so extra production paths cannot be Approved / Approved With Notes.
 #
-# Allow rule (in addition to canvas Files: on selected/completed T##, or all
-# T## if none selected):
+# Allow rule (in addition to canvas Files: on the T## under review —
+# in-progress/selected, else the last completed T##; not every T##):
 #   - paths under tests/, engine/tests_unit/, engine/tests_integration/,
 #     or engine/tests_e2e/
 #   - basename matching test_*.py or *_test.py
