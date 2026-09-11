@@ -11,6 +11,7 @@ on:
       - 'docs/blog/cloud-agents-as-the-sdlc-platform.md'
       - 'docs/research/kasana-agent-harness-2-0.md'
       - 'tests/test-cloud-environment.sh'
+      - 'tests/test-install-noninteractive-path.sh'
       - '.github/workflows/test-cloud-environment.yml'
   push:
     branches: [main]
@@ -23,6 +24,7 @@ on:
       - 'docs/blog/cloud-agents-as-the-sdlc-platform.md'
       - 'docs/research/kasana-agent-harness-2-0.md'
       - 'tests/test-cloud-environment.sh'
+      - 'tests/test-install-noninteractive-path.sh'
       - '.github/workflows/test-cloud-environment.yml'
 
 jobs:
@@ -32,7 +34,10 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Check shell syntax
-        run: bash -n .cursor/install.sh tests/test-cloud-environment.sh
+        run: bash -n .cursor/install.sh tests/test-cloud-environment.sh tests/test-install-noninteractive-path.sh
 
       - name: Lock U2 environment.json contract
         run: ./tests/test-cloud-environment.sh
+
+      - name: Leftover #10 non-interactive PATH
+        run: ./tests/test-install-noninteractive-path.sh

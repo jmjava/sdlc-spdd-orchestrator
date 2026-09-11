@@ -257,7 +257,9 @@ orchestrator-forced hook.
 This repository commits `.cursor/environment.json` (U2) so Cloud Agents
 boot with `sdlc-engine` and no manual install. `install` runs
 `.cursor/install.sh`, which calls `scripts/setup-engine-venv.sh` and
-persists `.venv/bin` on `PATH`. `agentCanUpdateSnapshot` is true so
+persists `.venv/bin` at the top of `~/.bashrc` (before the interactive-only
+return) and in `~/.profile`, so non-interactive Cloud Agent shells that
+source bashrc still see `sdlc-engine`. `agentCanUpdateSnapshot` is true so
 Cursor Builds can refresh that disk state.
 
 Local Agent chat uses your existing checkout and venv; it does not need

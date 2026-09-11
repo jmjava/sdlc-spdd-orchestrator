@@ -137,6 +137,14 @@ assert_contains "${REPO_ROOT}/docs/research/kasana-agent-harness-2-0.md" \
   "#268" "kasana leftover notes I3 copy-lock merged"
 
 echo
+echo "== leftover #10 proving test =="
+if bash "${REPO_ROOT}/tests/test-install-noninteractive-path.sh"; then
+  ok "test-install-noninteractive-path.sh"
+else
+  bad "test-install-noninteractive-path.sh"
+fi
+
+echo
 echo "Summary: ${pass} passed, ${fail} failed"
 if [[ "${fail}" -gt 0 ]]; then
   echo "Cloud environment contract FAILED." >&2
