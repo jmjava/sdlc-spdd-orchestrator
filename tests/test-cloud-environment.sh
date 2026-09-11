@@ -4,7 +4,8 @@
 # not bash -n + greps claiming "sdlc-engine is installed".
 # Leftover #10 PATH persist stays. Leftover #12: agentCanUpdateSnapshot is
 # schema ("Whether the agent can update the snapshot"), not a product switch.
-# No secrets. Never writes .git/hooks.
+# Leftover #13: do not pin research/blog leftover prose; assert environment
+# behavior instead. No secrets. Never writes .git/hooks.
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -127,19 +128,6 @@ else
   bad "install.sh bash -n failed"
 fi
 
-assert_contains "${REPO_ROOT}/docs/research/uberorchbot-via-sdlc-spdd.md" \
-  "this orchestrator (done)" "U2 marked done in research"
-assert_contains "${REPO_ROOT}/docs/maintaining-your-project.md" \
-  ".cursor/install.sh" "maintaining-your-project documents install.sh"
-assert_contains "${REPO_ROOT}/sdlc-spdd/docs/maintaining-your-project.md" \
-  ".cursor/install.sh" "sdlc-spdd copy documents install.sh"
-assert_contains "${REPO_ROOT}/docs/maintaining-your-project.md" \
-  "Whether the agent can update the snapshot" "maintaining-your-project documents schema meaning"
-assert_contains "${REPO_ROOT}/docs/blog/cloud-agents-as-the-sdlc-platform.md" \
-  "U2" "blog still names U2"
-assert_contains "${REPO_ROOT}/docs/research/kasana-agent-harness-2-0.md" \
-  "#268" "kasana leftover notes I3 copy-lock merged"
-
 echo
 echo "== leftover #10 proving test =="
 if bash "${REPO_ROOT}/tests/test-install-noninteractive-path.sh"; then
@@ -162,6 +150,14 @@ if bash "${REPO_ROOT}/tests/test-agent-can-update-snapshot-semantics.sh"; then
   ok "test-agent-can-update-snapshot-semantics.sh"
 else
   bad "test-agent-can-update-snapshot-semantics.sh"
+fi
+
+echo
+echo "== leftover #13 proving test =="
+if bash "${REPO_ROOT}/tests/test-u2-does-not-pin-doc-prose.sh"; then
+  ok "test-u2-does-not-pin-doc-prose.sh"
+else
+  bad "test-u2-does-not-pin-doc-prose.sh"
 fi
 
 echo
