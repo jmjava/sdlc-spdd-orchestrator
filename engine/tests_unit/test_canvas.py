@@ -1,7 +1,13 @@
+import subprocess
 from pathlib import Path
 
+import pytest
+
 from sdlc_engine.canvas import (
+    GitChangedPathsError,
+    check_diff_scope_main,
     coding_gate_issues,
+    collect_git_changed_paths,
     extract_readiness_raw,
     final_kind,
     next_operation,
@@ -272,3 +278,89 @@ def test_diff_scope_multiple_ops_union_files() -> None:
     assert coded_default.ok
     assert "T03" not in coded_default.operations_used
     assert "src/future.py" not in coded_default.allowed_files
+
+
+def _git(root: Path, *args: str) -> None:
+    subprocess.run(["git", "-C", str(root), *args], check=True, capture_output=True)
+
+
+def _init_scope_repo(tmp_path: Path) -> Path:
+    """Temp git repo with a scoped canvas on main. Not an orchestrator Work ID."""
+    root = tmp_path / "repo"
+    root.mkdir()
+    _git(root, "init")
+    _git(root, "config", "user.email", "test@example.com")
+    _git(root, "config", "user.name", "Test")
+    (root / "README.md").write_text("# demo\n", encoding="utf-8")
+    canvas_dir = root / "spdd" / "canvas"
+    canvas_dir.mkdir(parents=True)
+    (canvas_dir / "SCOPE-I2.md").write_text(_SCOPE_CANVAS, encoding="utf-8")
+    _git(root, "add", "README.md", "spdd/canvas/SCOPE-I2.md")
+    _git(root, "commit", "-m", "init")
+    current = subprocess.check_output(
+        ["git", "-C", str(root), "branch", "--show-current"],
+        text=True,
+    ).strip()
+    if current != "main":
+        _git(root, "branch", "-M", "main")
+    return root
+
+
+def _commit_out_of_scope_on_feature(root: Path) -> None:
+    _git(root, "checkout", "-b", "feature")
+    (root / "src").mkdir()
+    (root / "src" / "unrelated.py").write_text("x\n", encoding="utf-8")
+    _git(root, "add", "src/unrelated.py")
+    _git(root, "commit", "-m", "out of scope")
+
+
+def test_collect_git_changed_paths_includes_committed_vs_default_base(
+    tmp_path: Path,
+) -> None:
+    """Leftover #1: after commit, default collection is not HEAD-only."""
+    root = _init_scope_repo(tmp_path)
+    _commit_out_of_scope_on_feature(root)
+    paths = collect_git_changed_paths(repo=root)
+    assert "src/unrelated.py" in paths
+
+
+def test_check_diff_scope_work_id_only_fails_after_committed_out_of_scope(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Leftover #1: --work-id only must FAIL committed extras, not PASS (none)."""
+    root = _init_scope_repo(tmp_path)
+    _commit_out_of_scope_on_feature(root)
+    rc = check_diff_scope_main(["--work-id", "SCOPE-I2", "--root", str(root)])
+    captured = capsys.readouterr()
+    assert rc != 0
+    assert "FAIL" in captured.out
+    assert "src/unrelated.py" in captured.out
+    assert "changed:\n  (none)" not in captured.out
+
+
+def test_collect_git_changed_paths_invalid_base_raises(tmp_path: Path) -> None:
+    """Leftover #2: bad --base must not become an empty path list."""
+    root = _init_scope_repo(tmp_path)
+    with pytest.raises(GitChangedPathsError, match="does-not-exist"):
+        collect_git_changed_paths(repo=root, base="origin/does-not-exist")
+
+
+def test_check_diff_scope_invalid_base_exits_nonzero(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Leftover #2: --base origin/does-not-exist must exit non-zero, not PASS."""
+    root = _init_scope_repo(tmp_path)
+    rc = check_diff_scope_main(
+        [
+            "--work-id",
+            "SCOPE-I2",
+            "--root",
+            str(root),
+            "--base",
+            "origin/does-not-exist",
+        ]
+    )
+    captured = capsys.readouterr()
+    assert rc != 0
+    assert "PASS" not in captured.out
+    assert "does-not-exist" in captured.err
