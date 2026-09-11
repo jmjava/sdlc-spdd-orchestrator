@@ -9,6 +9,8 @@ on:
       - 'templates/adf/**'
       - 'scripts/sdlc.sh'
       - 'scripts/run-test-suites.sh'
+      - 'scripts/check-complexity.py'
+      - 'scripts/test-check-complexity.sh'
       - '.github/workflows/test-sdlc-engine.yml'
   push:
     branches: [main]
@@ -19,6 +21,8 @@ on:
       - 'templates/adf/**'
       - 'scripts/sdlc.sh'
       - 'scripts/run-test-suites.sh'
+      - 'scripts/check-complexity.py'
+      - 'scripts/test-check-complexity.sh'
       - '.github/workflows/test-sdlc-engine.yml'
 
 jobs:
@@ -26,11 +30,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - name: Install engine
         run: python3 -m pip install -e './engine[dev,viewer]'
+      - name: Ruff unused imports
+        run: python3 -m ruff check --select F401,F811 engine/src scripts
+      - name: Complexity proving test
+        run: bash scripts/test-check-complexity.sh
       - name: Suite 1 — unit
         run: PYTHONPATH=engine/src pytest -q engine/tests_unit
 
