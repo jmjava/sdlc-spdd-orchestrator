@@ -7,7 +7,7 @@ and ``sdlc.sh complete`` refuse unless this object is present.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Iterable
 
 VERIFY_RESULTS = ("pass", "fail")
 
@@ -109,3 +109,16 @@ class VerifyReceipt:
             else:
                 receipt.validate()
         return receipt
+
+
+def ledger_has_validation_receipt(records: Iterable[Any]) -> bool:
+    """True when any ledger row has a present I1 verify receipt.
+
+    A dummy lesson (title/body, including ``--validation`` prose) is not
+    evidence that Validation ran.
+    """
+    for rec in records:
+        verify = getattr(rec, "verify", None)
+        if isinstance(verify, VerifyReceipt) and verify.present():
+            return True
+    return False

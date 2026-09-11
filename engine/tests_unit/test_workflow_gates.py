@@ -11,6 +11,7 @@ from sdlc_engine.cli import main
 from sdlc_engine.lessons_ledger import LessonRecord, LessonsLedger
 from sdlc_engine.pointer import PointerStore
 from sdlc_engine.project import Project
+from sdlc_engine.verify_receipt import VerifyReceipt
 from sdlc_engine.workflow import WorkflowEngine
 
 
@@ -96,10 +97,18 @@ def _seed_review(root: Path, wid: str, *, body: str | None = None) -> None:
     (d / f"{wid}-review.md").write_text(text, encoding="utf-8")
 
 
-def _stage_record(root: Path, wid: str, kind: str = "session") -> None:
-    LessonsLedger(Project(root)).stage(
-        LessonRecord(id="", kind=kind, work_id=wid, title="t", body="b")
-    )
+def _stage_record(
+    root: Path,
+    wid: str,
+    kind: str = "session",
+    *,
+    body: str = "b",
+    verify: VerifyReceipt | None = None,
+) -> None:
+    rec = LessonRecord(id="", kind=kind, work_id=wid, title="t", body=body)
+    if verify is not None:
+        rec.verify = verify
+    LessonsLedger(Project(root)).stage(rec)
 
 
 @pytest.fixture
@@ -236,6 +245,43 @@ def test_cli_gate_local_exempt(proj: tuple[Project, WorkflowEngine]) -> None:
     wid = "LOCAL-002-quick-lane"
     rc = main(["--root", str(p.root), "gate", "--phase", "code", "--work-id", wid])
     assert rc == 0
+
+
+def test_gate_review_rejects_dummy_lesson_without_validation(
+    proj: tuple[Project, WorkflowEngine],
+) -> None:
+    """Leftover #7: a dummy lesson is not evidence that Validation ran."""
+    p, eng = proj
+    wid = "FEAT-025-dummy-review"
+    _seed_canvas(p.root, wid, ready=True)
+    _stage_record(
+        p.root,
+        wid,
+        body="Validation: skipped tests; looked fine",
+    )
+    ok, failures = eng.gate_check(wid, "review")
+    assert not ok
+    assert any("Validation receipt" in f for f in failures)
+    ok, failures = eng.gate_check(wid, "api-test")
+    assert not ok
+    assert any("Validation receipt" in f for f in failures)
+
+
+def test_gate_review_accepts_validation_receipt(
+    proj: tuple[Project, WorkflowEngine],
+) -> None:
+    p, eng = proj
+    wid = "FEAT-026-review-receipt"
+    _seed_canvas(p.root, wid, ready=True)
+    _stage_record(
+        p.root,
+        wid,
+        verify=VerifyReceipt(command="pytest tests/test_foo.py", exit=0, result="pass"),
+    )
+    ok, failures = eng.gate_check(wid, "review")
+    assert ok and not failures
+    ok, failures = eng.gate_check(wid, "api-test")
+    assert ok and not failures
 
 
 def test_gate_sync_requires_retro_lesson(proj: tuple[Project, WorkflowEngine]) -> None:

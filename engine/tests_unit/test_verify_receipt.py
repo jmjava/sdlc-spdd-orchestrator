@@ -9,6 +9,7 @@ from sdlc_engine.verify_receipt import (
     SCHEMA_WITH_VERIFY,
     VerifyReceipt,
     VerifyReceiptError,
+    ledger_has_validation_receipt,
 )
 
 
@@ -54,6 +55,21 @@ def test_receipt_round_trips_command_exit_result() -> None:
 def test_from_capture_refuses_missing_receipt() -> None:
     with pytest.raises(VerifyReceiptError, match="verify receipt required"):
         VerifyReceipt.from_capture(required=True)
+
+
+def test_dummy_lesson_is_not_a_validation_receipt() -> None:
+    dummy = LessonRecord(
+        id="",
+        kind="session",
+        work_id="FEAT-025",
+        title="dummy",
+        body="Validation: skipped tests",
+        source="capture",
+        phase="plan",
+    )
+    assert ledger_has_validation_receipt([dummy]) is False
+    dummy.verify = VerifyReceipt(command="pytest", exit=0, result="pass")
+    assert ledger_has_validation_receipt([dummy]) is True
 
 
 def test_complete_requires_pass() -> None:

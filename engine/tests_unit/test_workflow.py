@@ -2,6 +2,7 @@ from pathlib import Path
 
 from sdlc_engine.lessons_ledger import LessonRecord, LessonsLedger
 from sdlc_engine.project import Project
+from sdlc_engine.verify_receipt import VerifyReceipt
 from sdlc_engine.workflow import WorkflowEngine
 
 
@@ -26,7 +27,13 @@ def test_resume_advance_shelf_next(tmp_path: Path) -> None:
     _write_requirement(root, work_id)
     _write_canvas(root, work_id)
     LessonsLedger(Project(root)).stage(
-        LessonRecord(id="", kind="session", work_id=work_id, body="T01 complete — workflow test")
+        LessonRecord(
+            id="",
+            kind="session",
+            work_id=work_id,
+            body="T01 complete — workflow test",
+            verify=VerifyReceipt(command="pytest", exit=0, result="pass"),
+        )
     )
     eng = WorkflowEngine(Project(root))
     state = eng.resume(work_id)
