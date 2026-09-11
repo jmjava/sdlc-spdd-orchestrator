@@ -259,8 +259,13 @@ boot with `sdlc-engine` and no manual install. `install` runs
 `.cursor/install.sh`, which calls `scripts/setup-engine-venv.sh` and
 persists `.venv/bin` at the top of `~/.bashrc` (before the interactive-only
 return) and in `~/.profile`, so non-interactive Cloud Agent shells that
-source bashrc still see `sdlc-engine`. `agentCanUpdateSnapshot` is true so
-Cursor Builds can refresh that disk state.
+source bashrc still see `sdlc-engine`. `agentCanUpdateSnapshot` is optional.
+Cursor's environment schema defines it as "Whether the agent can update the snapshot."
+It defaults to true for snapshot-based and default-base
+environments, and is always false when the base is `build` or `image`.
+Public Cloud Agent Setup and Builds docs do not say this flag enables
+Builds. This repo may set the key `true` to match that default; omitting
+it has the same schema default on a default-base environment.
 
 Local Agent chat uses your existing checkout and venv; it does not need
 that Environment. Dashboard multi-repo Environments are a different
