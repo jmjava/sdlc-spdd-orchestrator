@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -393,3 +394,32 @@ def test_cli_gate_json_includes_advisory_did_not_run(
     assert "Architect review completed (advisory)" in labels
     assert "Operations are task-sized (advisory)" in labels
     assert all(row["ran"] is False for row in payload["advisory"])
+
+
+_CHECKLIST_RE = re.compile(r"^- \[[ xX]\] (.+)$", re.M)
+_QUALITY_GATES_PATHS = (
+    "sdlc-spdd/harness/quality-gates.md",
+    "templates/agent-context/harness/quality-gates.md",
+)
+
+
+def _repo_root() -> Path:
+    return Path(__file__).resolve().parents[2]
+
+
+def _human_ticked_list(path: Path) -> list[str]:
+    text = path.read_text(encoding="utf-8")
+    head = text.split("Instruction vs constraint", 1)[0]
+    return _CHECKLIST_RE.findall(head)
+
+
+def test_human_ticked_list_matches_gate_labels() -> None:
+    """Leftover #15: the human-ticked list must match GATE_LABELS."""
+    from sdlc_engine.phases import GATE_LABELS
+
+    expected = list(GATE_LABELS.values())
+    root = _repo_root()
+    for rel in _QUALITY_GATES_PATHS:
+        path = root / rel
+        assert path.is_file(), rel
+        assert _human_ticked_list(path) == expected, rel
