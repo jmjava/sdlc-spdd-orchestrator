@@ -107,3 +107,13 @@ def gates_for_phase(phase: str) -> tuple[str, ...]:
     if phase in {"prompt-update", "sync"}:
         return ("canvas_synced",)
     return ()
+
+
+def advisory_gates_for_phase(phase: str) -> tuple[str, ...]:
+    """Advisory GATE_LABELS rows for ``phase`` that ``gate_check`` never runs."""
+    return tuple(name for name in gates_for_phase(phase) if name in ADVISORY_GATES)
+
+
+def format_advisory_gate_rows(phase: str) -> list[str]:
+    """Human rows for ``sdlc.sh gate``: advisory labels that did not run."""
+    return [f"  ~ {GATE_LABELS[name]} (did not run)" for name in advisory_gates_for_phase(phase)]

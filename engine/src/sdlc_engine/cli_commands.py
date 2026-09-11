@@ -17,6 +17,7 @@ from .context_store import ContextStore
 from .db import LocalIndex, format_rows
 from .issues import IssueSyncService
 from .local_sessions import LocalSessionService
+from .phases import GATE_LABELS, advisory_gates_for_phase, format_advisory_gate_rows
 from .pointer import PointerError, PointerStore
 from .project import Project
 from .registry import TeamRegistry
@@ -79,20 +80,35 @@ def cmd_gate(args: argparse.Namespace) -> int:
     except ValueError as exc:
         print(str(exc), file=sys.stderr)
         return 2
+    advisory = [
+        {"gate": name, "label": GATE_LABELS[name], "ran": False}
+        for name in advisory_gates_for_phase(args.phase)
+    ]
+    advisory_rows = format_advisory_gate_rows(args.phase)
     if args.json:
         print(
             json.dumps(
-                {"work_id": work_id, "phase": args.phase, "ok": ok, "failures": failures},
+                {
+                    "work_id": work_id,
+                    "phase": args.phase,
+                    "ok": ok,
+                    "failures": failures,
+                    "advisory": advisory,
+                },
                 indent=2,
             )
         )
     else:
         if ok:
             print(f"gate {args.phase}: OK for {work_id}")
+            for row in advisory_rows:
+                print(row)
         else:
             print(f"gate {args.phase}: BLOCKED for {work_id}", file=sys.stderr)
             for failure in failures:
                 print(f"  - {failure}", file=sys.stderr)
+            for row in advisory_rows:
+                print(row, file=sys.stderr)
     return 0 if ok else 1
 
 
