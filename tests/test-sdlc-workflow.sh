@@ -841,6 +841,30 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+echo "== Test 22: code capture / complete without verify receipt refuse =="
+T="${WORK}/i1-receipt"
+work_id="FEAT-018-i1"
+setup_feature "${T}" "${work_id}"
+mkdir -p "${T}/scripts/sdlc-spdd/lib"
+cp "${REPO_ROOT}/scripts/sdlc.sh" "${T}/scripts/sdlc-spdd/sdlc.sh"
+cp "${CAPTURE}" "${T}/scripts/sdlc-spdd/capture-session-memory.sh"
+cp "${REPO_ROOT}/scripts/lib/"*.sh "${T}/scripts/sdlc-spdd/lib/"
+chmod +x "${T}/scripts/sdlc-spdd/sdlc.sh" "${T}/scripts/sdlc-spdd/capture-session-memory.sh"
+SDLC_ENGINE=shell SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" resume "${work_id}" --phase code >/dev/null
+if SDLC_ENGINE=shell SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" \
+  capture --phase code --summary "T01 complete" >/dev/null 2>&1; then
+  bad "code capture without receipt should refuse"
+else
+  ok "code capture without receipt refuses"
+fi
+if SDLC_ENGINE=shell SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" \
+  complete --summary "T01 complete" >/dev/null 2>&1; then
+  bad "complete without receipt should refuse"
+else
+  ok "complete without receipt refuses"
+fi
+
+# ---------------------------------------------------------------------------
 echo
 echo "Results: ${pass} passed, ${fail} failed"
 if [[ "${fail}" -gt 0 ]]; then

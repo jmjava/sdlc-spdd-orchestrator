@@ -144,6 +144,7 @@ sdlc_lesson_id() {
 
 # Build a lesson JSON object via python3 (handles escaping).
 # Optional METRICS_JSON env carries a structured metrics object (FEAT-015).
+# Optional VERIFY_JSON env carries the I1 receipt {command, exit, result}.
 sdlc_build_lesson_json() {
   local kind="$1" work_id="$2" area="$3" phase="$4" ts="$5" title="$6" body="$7" source="$8"
   local keywords_csv="${9:-}"
@@ -153,6 +154,7 @@ sdlc_build_lesson_json() {
   TITLE="${title}" BODY="${body}" SOURCE="${source}" KEYWORDS_CSV="${keywords_csv}" \
   COMMIT="${commit:-$(sdlc_git_head_short "${root}")}" \
   METRICS_JSON="${METRICS_JSON:-}" \
+  VERIFY_JSON="${VERIFY_JSON:-}" \
   python3 - <<'PY'
 import json, os
 kind = os.environ["KIND"]
@@ -193,6 +195,21 @@ if raw_metrics:
     if isinstance(metrics, dict) and metrics:
         payload["metrics"] = metrics
         payload["schema"] = 2
+raw_verify = (os.environ.get("VERIFY_JSON") or "").strip()
+if raw_verify:
+    try:
+        verify = json.loads(raw_verify)
+    except json.JSONDecodeError:
+        verify = {}
+    if isinstance(verify, dict) and verify.get("command") not in (None, "") \
+            and verify.get("exit") not in (None, "") \
+            and verify.get("result") not in (None, ""):
+        payload["verify"] = {
+            "command": str(verify["command"]),
+            "exit": int(verify["exit"]),
+            "result": str(verify["result"]),
+        }
+        payload["schema"] = max(int(payload.get("schema") or 1), 3)
 print(json.dumps(payload, ensure_ascii=False))
 PY
 }

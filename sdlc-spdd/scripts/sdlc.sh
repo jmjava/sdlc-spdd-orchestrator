@@ -108,7 +108,7 @@ _python_engine_available() {
 # Routing them under SDLC_ENGINE=auto would collide with the staging CLI.
 _python_engine_handles() {
   case "$1" in
-    capture|start|accept|help|-h|--help)
+    capture|complete|start|accept|help|-h|--help)
       return 1
       ;;
   esac
