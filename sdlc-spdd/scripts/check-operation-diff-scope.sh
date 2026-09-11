@@ -8,7 +8,8 @@
 # T## if none selected):
 #   - paths under tests/, engine/tests_unit/, engine/tests_integration/,
 #     or engine/tests_e2e/
-#   - basename matching test_*.py, *_test.py, or *.spec.md
+#   - basename matching test_*.py or *_test.py
+#   - the documented exception docs/review.spec.md (not any *.spec.md)
 # Paths are repo-relative. Any ".." traversal is rejected.
 # Renames/deletes are the names `git diff --name-only` reports.
 set -euo pipefail

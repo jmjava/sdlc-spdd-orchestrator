@@ -216,13 +216,16 @@ _FILES_CAPTURE = re.compile(r"^- Files:\s*(.+)$", re.IGNORECASE)
 # A changed path is an allowed test path when:
 #   - it is exactly `tests` or sits under `tests/`, `engine/tests_unit/`,
 #     `engine/tests_integration/`, or `engine/tests_e2e/`; or
-#   - its basename matches `test_*.py`, `*_test.py`, or `*.spec.md`.
+#   - its basename matches `test_*.py` or `*_test.py`; or
+#   - it is the documented exception `docs/review.spec.md`.
+# Random `*.spec.md` under spec/, engine/, or elsewhere is not auto-allowed.
 ALLOWED_TEST_DIR_PREFIXES: tuple[str, ...] = (
     "tests/",
     "engine/tests_unit/",
     "engine/tests_integration/",
     "engine/tests_e2e/",
 )
+ALLOWED_REVIEW_SPEC_PATHS: frozenset[str] = frozenset({"docs/review.spec.md"})
 
 _CODED_STATUS_MARKERS = ("complete", "done", "selected", "in progress")
 
@@ -360,7 +363,7 @@ def is_allowed_test_path(rel: str) -> bool:
         return True
     if name.endswith("_test.py"):
         return True
-    return name.endswith(".spec.md")
+    return rel in ALLOWED_REVIEW_SPEC_PATHS
 
 
 def path_allowed_by_files(rel: str, files: set[str]) -> bool:
@@ -474,7 +477,7 @@ class DiffScopeResult:
         lines.append(
             "allowed test paths: tests/**, engine/tests_unit/**, "
             "engine/tests_integration/**, engine/tests_e2e/**, "
-            "basename test_*.py / *_test.py / *.spec.md"
+            "basename test_*.py / *_test.py, docs/review.spec.md"
         )
         lines.append("changed:")
         if self.changed_paths:

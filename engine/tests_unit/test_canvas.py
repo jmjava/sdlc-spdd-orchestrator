@@ -194,8 +194,9 @@ def test_diff_scope_unrelated_path_fails() -> None:
 
 
 def test_diff_scope_allowed_test_path_passes() -> None:
-    from sdlc_engine.canvas import check_operation_diff_scope
+    from sdlc_engine.canvas import check_operation_diff_scope, is_allowed_test_path
 
+    assert is_allowed_test_path("docs/review.spec.md")
     result = check_operation_diff_scope(
         _SCOPE_CANVAS,
         [
@@ -211,6 +212,30 @@ def test_diff_scope_allowed_test_path_passes() -> None:
     )
     assert result.ok
     assert result.extra_paths == ()
+
+
+def test_diff_scope_random_spec_md_is_not_an_allowed_test_path() -> None:
+    from sdlc_engine.canvas import check_operation_diff_scope, is_allowed_test_path
+
+    assert not is_allowed_test_path("spec/commands/lifecycle-code.spec.md")
+    assert not is_allowed_test_path("engine/src/sdlc_engine/evil.spec.md")
+    assert not is_allowed_test_path("docs/other.spec.md")
+
+    result = check_operation_diff_scope(
+        _SCOPE_CANVAS,
+        [
+            "src/app.py",
+            "spec/commands/lifecycle-code.spec.md",
+            "engine/src/sdlc_engine/evil.spec.md",
+        ],
+        selected_ops=["T01"],
+    )
+    assert not result.ok
+    assert "spec/commands/lifecycle-code.spec.md" in result.extra_paths
+    assert "engine/src/sdlc_engine/evil.spec.md" in result.extra_paths
+    report = result.format_report()
+    assert "FAIL" in report
+    assert "*.spec.md" not in report
 
 
 def test_diff_scope_traversal_rejected() -> None:

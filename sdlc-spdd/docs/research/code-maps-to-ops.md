@@ -16,7 +16,8 @@ This is **not** proof that the diff implements the operation. It is a contract t
 `/sdlc-spdd-review` runs `scripts/check-operation-diff-scope.sh` (pure helper: `check_operation_diff_scope` in `engine/src/sdlc_engine/canvas.py`). Changed paths from `git diff --name-only HEAD` (uncommitted vs HEAD) plus `git diff --name-only <base>...HEAD` must be a subset of the selected/completed T## `Files:` union (or all T## if none selected) plus allowed test paths. Default `<base>` is the merge-base with `origin/main`, `main`, `origin/master`, or `master`. A missing or invalid `--base` exits non-zero instead of treating the change list as empty. Allowed test paths:
 
 - under `tests/`, `engine/tests_unit/`, `engine/tests_integration/`, or `engine/tests_e2e/`
-- or basename `test_*.py` / `*_test.py` / `*.spec.md`
+- or basename `test_*.py` / `*_test.py`
+- or the documented exception `docs/review.spec.md` (not any `*.spec.md`)
 
 Repo-relative paths only; `..` traversal is rejected. Renames and deletes are the names git reports. Extra production paths: review cannot be **Approved** or **Approved With Notes**.
 
