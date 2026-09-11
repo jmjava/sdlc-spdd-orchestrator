@@ -423,3 +423,19 @@ def test_human_ticked_list_matches_gate_labels() -> None:
         path = root / rel
         assert path.is_file(), rel
         assert _human_ticked_list(path) == expected, rel
+
+
+def test_constraint_line_names_leftover_6_receipt_or_is_deleted() -> None:
+    """Leftover #16: named Validation is prompt, same as Norms.
+
+    Keep the instruction-vs-constraint line only if it names the leftover #6
+    verify receipt. Deleting the distinction is also honest.
+    """
+    root = _repo_root()
+    for rel in _QUALITY_GATES_PATHS:
+        text = (root / rel).read_text(encoding="utf-8")
+        assert "constrained by named Validation" not in text, rel
+        if "Instruction vs constraint" in text:
+            assert "verify receipt" in text, rel
+            assert "command" in text and "exit" in text, rel
+            assert "pass/fail" in text or "pass-fail" in text, rel
