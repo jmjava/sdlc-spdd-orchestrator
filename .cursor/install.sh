@@ -2,9 +2,39 @@
 # Cloud Agent Build install for this orchestrator (U2).
 # Idempotent. Installs sdlc-engine into .venv and persists PATH on disk.
 # Never writes .git/hooks.
+#
+# PATH must be visible to non-interactive Cloud Agent shells. Ubuntu
+# ~/.bashrc returns before the end when $- lacks i; ~/.profile is login-only.
+# Prepend the export (and relocate a leftover append) so sourced bashrc
+# still puts sdlc-engine on PATH.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+if [[ -n "${SDLC_INSTALL_ROOT:-}" ]]; then
+  ROOT="${SDLC_INSTALL_ROOT}"
+fi
+
+persist_sdlc_engine_path() {
+  local home="${1:-${HOME}}"
+  local path_line="export PATH=\"${ROOT}/.venv/bin:\$PATH\""
+  local rc tmp
+  for rc in "${home}/.profile" "${home}/.bashrc"; do
+    mkdir -p "$(dirname "${rc}")"
+    touch "${rc}"
+    tmp="$(mktemp)"
+    {
+      printf '%s\n' "${path_line}"
+      grep -Fxv "${path_line}" "${rc}" || true
+    } > "${tmp}"
+    mv "${tmp}" "${rc}"
+  done
+}
+
+if [[ "${1:-}" == "--path-only" || "${SDLC_INSTALL_PATH_ONLY:-}" == "1" ]]; then
+  persist_sdlc_engine_path "${HOME}"
+  exit 0
+fi
+
 cd "${ROOT}"
 
 if ! command -v python3.12 >/dev/null 2>&1; then
@@ -19,15 +49,7 @@ fi
 
 "${ROOT}/scripts/setup-engine-venv.sh"
 
-PATH_LINE="export PATH=\"${ROOT}/.venv/bin:\$PATH\""
-for rc in "${HOME}/.profile" "${HOME}/.bashrc"; do
-  mkdir -p "$(dirname "${rc}")"
-  touch "${rc}"
-  if grep -Fqx "${PATH_LINE}" "${rc}"; then
-    continue
-  fi
-  printf '%s\n' "${PATH_LINE}" >> "${rc}"
-done
+persist_sdlc_engine_path "${HOME}"
 
 if [[ ! -x "${ROOT}/.venv/bin/sdlc-engine" ]]; then
   echo "error: sdlc-engine missing after setup-engine-venv.sh" >&2
