@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# U2 contract: committed .cursor/environment.json installs sdlc-engine and
-# keeps Cursor Builds enabled. No secrets. Never writes .git/hooks.
+# U2 contract: committed .cursor/environment.json + .cursor/install.sh.
+# Leftover #11: prove install.sh runs (PATH write + sdlc-engine verify),
+# not bash -n + greps claiming "sdlc-engine is installed".
+# Leftover #10 PATH persist stays. No secrets. Never writes .git/hooks.
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -142,6 +144,14 @@ if bash "${REPO_ROOT}/tests/test-install-noninteractive-path.sh"; then
   ok "test-install-noninteractive-path.sh"
 else
   bad "test-install-noninteractive-path.sh"
+fi
+
+echo
+echo "== leftover #11 proving test =="
+if bash "${REPO_ROOT}/tests/test-install-sh-runs.sh"; then
+  ok "test-install-sh-runs.sh"
+else
+  bad "test-install-sh-runs.sh"
 fi
 
 echo
