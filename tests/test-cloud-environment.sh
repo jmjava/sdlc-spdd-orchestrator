@@ -2,7 +2,9 @@
 # U2 contract: committed .cursor/environment.json + .cursor/install.sh.
 # Leftover #11: prove install.sh runs (PATH write + sdlc-engine verify),
 # not bash -n + greps claiming "sdlc-engine is installed".
-# Leftover #10 PATH persist stays. No secrets. Never writes .git/hooks.
+# Leftover #10 PATH persist stays. Leftover #12: agentCanUpdateSnapshot is
+# schema ("Whether the agent can update the snapshot"), not a product switch.
+# No secrets. Never writes .git/hooks.
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -61,7 +63,6 @@ def emit(name, value):
 emit("ENV_NAME", data.get("name", ""))
 emit("ENV_INSTALL", data.get("install", ""))
 emit("ENV_SNAPSHOT", data.get("snapshot", ""))
-emit("ENV_BUILDS", data.get("agentCanUpdateSnapshot", False))
 emit("ENV_HAS_BUILD", bool(data.get("build")))
 emit("ENV_HAS_IMAGE", bool(data.get("image")))
 keys = " ".join(sorted(data.keys()))
@@ -83,10 +84,11 @@ else
   bad "install does not mention sdlc-engine / install.sh / setup-engine-venv.sh"
 fi
 
-if [[ "${ENV_BUILDS}" == "true" || "${ENV_BUILDS}" == "True" ]]; then
-  ok "agentCanUpdateSnapshot is true (Builds enabled)"
+if flag_out="$(python3 "${REPO_ROOT}/tests/lib/agent_can_update_snapshot.py" "${ENV_JSON}")"; then
+  flag_status="$(sed -n 's/^status=//p' <<< "${flag_out}" | head -n1)"
+  ok "agentCanUpdateSnapshot ${flag_status} (schema: whether the agent can update the snapshot)"
 else
-  bad "agentCanUpdateSnapshot must be true (Builds enabled); got '${ENV_BUILDS}'"
+  bad "agentCanUpdateSnapshot is not a schema boolean"
 fi
 
 if [[ -z "${ENV_SNAPSHOT}" ]]; then
@@ -96,13 +98,13 @@ else
 fi
 
 if [[ "${ENV_HAS_BUILD}" == "True" ]]; then
-  bad "dockerfile build base disables snapshot updates"
+  bad "dockerfile build base forces agentCanUpdateSnapshot false per schema"
 else
   ok "no dockerfile build base"
 fi
 
 if [[ "${ENV_HAS_IMAGE}" == "True" ]]; then
-  bad "image base disables snapshot updates"
+  bad "image base forces agentCanUpdateSnapshot false per schema"
 else
   ok "no registry image base"
 fi
@@ -132,7 +134,7 @@ assert_contains "${REPO_ROOT}/docs/maintaining-your-project.md" \
 assert_contains "${REPO_ROOT}/sdlc-spdd/docs/maintaining-your-project.md" \
   ".cursor/install.sh" "sdlc-spdd copy documents install.sh"
 assert_contains "${REPO_ROOT}/docs/maintaining-your-project.md" \
-  "agentCanUpdateSnapshot" "maintaining-your-project documents Builds"
+  "Whether the agent can update the snapshot" "maintaining-your-project documents schema meaning"
 assert_contains "${REPO_ROOT}/docs/blog/cloud-agents-as-the-sdlc-platform.md" \
   "U2" "blog still names U2"
 assert_contains "${REPO_ROOT}/docs/research/kasana-agent-harness-2-0.md" \
@@ -152,6 +154,14 @@ if bash "${REPO_ROOT}/tests/test-install-sh-runs.sh"; then
   ok "test-install-sh-runs.sh"
 else
   bad "test-install-sh-runs.sh"
+fi
+
+echo
+echo "== leftover #12 proving test =="
+if bash "${REPO_ROOT}/tests/test-agent-can-update-snapshot-semantics.sh"; then
+  ok "test-agent-can-update-snapshot-semantics.sh"
+else
+  bad "test-agent-can-update-snapshot-semantics.sh"
 fi
 
 echo

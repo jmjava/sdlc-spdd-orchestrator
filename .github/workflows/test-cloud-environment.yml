@@ -13,6 +13,8 @@ on:
       - 'tests/test-cloud-environment.sh'
       - 'tests/test-install-noninteractive-path.sh'
       - 'tests/test-install-sh-runs.sh'
+      - 'tests/test-agent-can-update-snapshot-semantics.sh'
+      - 'tests/lib/agent_can_update_snapshot.py'
       - '.github/workflows/test-cloud-environment.yml'
   push:
     branches: [main]
@@ -27,6 +29,8 @@ on:
       - 'tests/test-cloud-environment.sh'
       - 'tests/test-install-noninteractive-path.sh'
       - 'tests/test-install-sh-runs.sh'
+      - 'tests/test-agent-can-update-snapshot-semantics.sh'
+      - 'tests/lib/agent_can_update_snapshot.py'
       - '.github/workflows/test-cloud-environment.yml'
 
 jobs:
@@ -36,7 +40,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Check shell syntax
-        run: bash -n .cursor/install.sh tests/test-cloud-environment.sh tests/test-install-noninteractive-path.sh tests/test-install-sh-runs.sh
+        run: bash -n .cursor/install.sh tests/test-cloud-environment.sh tests/test-install-noninteractive-path.sh tests/test-install-sh-runs.sh tests/test-agent-can-update-snapshot-semantics.sh
 
       - name: Lock U2 environment.json contract
         run: ./tests/test-cloud-environment.sh
@@ -46,3 +50,6 @@ jobs:
 
       - name: Leftover #11 install.sh runs
         run: ./tests/test-install-sh-runs.sh
+
+      - name: Leftover #12 snapshot-flag schema meaning
+        run: ./tests/test-agent-can-update-snapshot-semantics.sh
