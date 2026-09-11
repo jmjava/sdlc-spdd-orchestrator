@@ -27,6 +27,19 @@ canonical spec per command. This removes hand-maintained three-way drift.
    ```
 
 4. Commit **both** the spec and generated template files.
+5. If you changed `lifecycle-code` or `lifecycle-review`, resync this repo's
+   dogfood Cursor hosts (Cloud Agents execute `.cursor/commands/`, not
+   `templates/cursor/`). Use the same rewrite `install-cursor-commands.sh`
+   applies when `sdlc-spdd/` exists — do not copy templates blindly:
+
+   ```bash
+   # surgical: copy the two templates, then framework_rewrite_adapter_paths
+   # (see scripts/lib/framework-install.sh). Or:
+   ./scripts/install-cursor-commands.sh --target . --force
+   ```
+
+   `--force` rewrites **all** Cursor commands. Prefer the surgical copy+rewrite
+   when only code/review changed.
 
 CI runs `generate-command-adapters.sh --check`, `validate-command-adapters.sh`, and
 `tests/test-command-specs.sh` — stale adapters or missing semantic contracts fail the build.
@@ -115,6 +128,15 @@ If templates were edited by hand (avoid — prefer spec edits), refresh specs:
 - **No posture language** in generated adapters (`make it work/right/fast` stays in orchestrator planning docs only). Enforced by `check-posture-boundary.sh`.
 - **No new commands** under FEAT-002 — change existing commands only unless a new Work ID adds them.
 - Parity contract is encoded in `validate-command-adapters.sh` — read it when adding sections.
+- **Dogfood Cursor code/review must match shipped templates** except the
+  explicit path substitutions in `framework_rewrite_adapter_paths`
+  (`scripts/sdlc-spdd/` → `sdlc-spdd/scripts/`, `./scripts/sdlc.sh` →
+  `./sdlc-spdd/scripts/sdlc.sh`, `spdd/` → `sdlc-spdd/spdd/`, and the other
+  rewrite rules in that function). Do not add substitutions. Orchestrator-root
+  `./scripts/` parentheticals the rewrite leaves alone
+  (`./scripts/resolve-context-backend.sh`,
+  `./scripts/check-operation-diff-scope.sh`) must stay. Locked by
+  `tests/test-command-specs.sh`.
 
 ---
 

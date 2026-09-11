@@ -247,6 +247,10 @@ real upgrade. CI: `.github/workflows/test-upgrade-consolidate.yml`.
 `./tests/test-command-spec-generation.sh` asserts adapters match
 `spec/commands/*.spec.md`, that `--check` detects drift, and parity validation still passes (FEAT-002).
 
+`./tests/test-command-specs.sh` also locks dogfood `.cursor/commands/sdlc-spdd-code.md`
+and `sdlc-spdd-review.md` to the shipped Cursor templates after
+`framework_rewrite_adapter_paths` (Cloud Agents execute dogfood, not `templates/cursor/`).
+
 `./tests/test-commit-message-command.sh` asserts `/sdlc-spdd-commit-message` adapters
 exist with generate-only (no-commit) language, Python engine delegation
 (`sdlc.sh commit-message`), and that generator `--check` plus adapter validation

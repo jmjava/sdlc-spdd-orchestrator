@@ -95,7 +95,7 @@ Program detail: [Storage v3](docs/storage-v3.md)
 
 ## Current focus
 
-**On main after [#264](https://github.com/jmjava/sdlc-spdd-orchestrator/pull/264)–[#269](https://github.com/jmjava/sdlc-spdd-orchestrator/pull/269):** Kasana I1–I3 on `/sdlc-spdd-code` and `/sdlc-spdd-review`, a copy-only `pre-commit.sample`, and this repo’s Cloud Agent `.cursor/environment.json`. Details: [Maintaining your project](docs/maintaining-your-project.md) · [Kasana overlay](docs/research/kasana-agent-harness-2-0.md).
+**On main after [#264](https://github.com/jmjava/sdlc-spdd-orchestrator/pull/264)–[#270](https://github.com/jmjava/sdlc-spdd-orchestrator/pull/270):** Kasana I1–I3 on `/sdlc-spdd-code` and `/sdlc-spdd-review`, a copy-only `pre-commit.sample`, this repo’s Cloud Agent `.cursor/environment.json`, and the README sync for those contracts. Details: [Maintaining your project](docs/maintaining-your-project.md) · [Kasana overlay](docs/research/kasana-agent-harness-2-0.md).
 
 **Product:** ADF template library + Vue3 ops console (unchanged).
 

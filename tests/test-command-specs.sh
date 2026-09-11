@@ -199,6 +199,59 @@ for adapter_file in \
 done
 
 # ---------------------------------------------------------------------------
+echo "== Dogfood .cursor/commands parity (code / review) =="
+# Cloud Agents and live-consumer in this checkout execute .cursor/commands/,
+# not templates/cursor/. Allowlist vs shipped templates: only the substitutions
+# in scripts/lib/framework-install.sh framework_rewrite_adapter_paths (the same
+# rewrite install-cursor-commands.sh applies when sdlc-spdd/ exists).
+# Orchestrator-root ./scripts/ parentheticals the rewrite leaves alone must stay.
+# shellcheck source=../scripts/lib/framework-install.sh
+source "${REPO_ROOT}/scripts/lib/framework-install.sh"
+
+assert_dogfood_matches_rewritten_template() {
+  local slug="$1"
+  local expected
+  expected="$(mktemp)"
+  cp "${REPO_ROOT}/templates/cursor/${slug}.md" "${expected}"
+  framework_rewrite_adapter_paths "${expected}"
+  if diff -q "${expected}" "${REPO_ROOT}/.cursor/commands/${slug}.md" >/dev/null 2>&1; then
+    ok "dogfood ${slug} matches rewritten template"
+  else
+    bad "dogfood ${slug} drifted from templates/cursor/${slug}.md beyond rewrite allowlist"
+    diff -u "${expected}" "${REPO_ROOT}/.cursor/commands/${slug}.md" | head -40 >&2 || true
+  fi
+  rm -f "${expected}"
+}
+
+assert_dogfood_matches_rewritten_template sdlc-spdd-code
+assert_dogfood_matches_rewritten_template sdlc-spdd-review
+assert_contains "${REPO_ROOT}/.cursor/commands/sdlc-spdd-code.md" "Optional DIF check" \
+  "dogfood code has Optional DIF"
+assert_contains "${REPO_ROOT}/.cursor/commands/sdlc-spdd-review.md" "Optional DIF check" \
+  "dogfood review has Optional DIF"
+assert_contains "${REPO_ROOT}/.cursor/commands/sdlc-spdd-review.md" "python -m sdlc_engine.canvas" \
+  "dogfood review has full I2 check-operation-diff-scope text"
+assert_contains "${REPO_ROOT}/.cursor/commands/sdlc-spdd-code.md" "./scripts/resolve-context-backend.sh" \
+  "dogfood code keeps orchestrator-root resolve-context-backend path"
+assert_contains "${REPO_ROOT}/.cursor/commands/sdlc-spdd-review.md" "./scripts/check-operation-diff-scope.sh" \
+  "dogfood review keeps orchestrator-root check-operation-diff-scope path"
+
+dog_code="${REPO_ROOT}/.cursor/commands/sdlc-spdd-code.md"
+dog_bak="$(mktemp)"
+cp "${dog_code}" "${dog_bak}"
+printf '\n# dogfood-only drift\n' >> "${dog_code}"
+expected="$(mktemp)"
+cp "${REPO_ROOT}/templates/cursor/sdlc-spdd-code.md" "${expected}"
+framework_rewrite_adapter_paths "${expected}"
+if diff -q "${expected}" "${dog_code}" >/dev/null 2>&1; then
+  bad "dogfood parity compare missed injected drift"
+else
+  ok "dogfood parity compare detects injected drift"
+fi
+cp "${dog_bak}" "${dog_code}"
+rm -f "${dog_bak}" "${expected}"
+
+# ---------------------------------------------------------------------------
 echo "== Generator staleness check =="
 expect_pass "generate --check clean tree" "${GEN}" --check
 
