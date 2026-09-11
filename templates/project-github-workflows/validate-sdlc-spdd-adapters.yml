@@ -32,5 +32,5 @@ jobs:
       - name: Check validator shell syntax
         run: bash -n sdlc-spdd/scripts/validate-command-adapters.sh
 
-      - name: Validate Cursor + Copilot + Claude command-pack parity
-        run: bash sdlc-spdd/scripts/validate-command-adapters.sh --target .
+      - name: Validate installed command packs (not templates/)
+        run: bash sdlc-spdd/scripts/validate-command-adapters.sh --target . --mode installed

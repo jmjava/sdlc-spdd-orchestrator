@@ -252,6 +252,54 @@ cp "${dog_bak}" "${dog_code}"
 rm -f "${dog_bak}" "${expected}"
 
 # ---------------------------------------------------------------------------
+echo "== Leftover #4: installed dogfood validation (not templates/) =="
+# detect_roots prefers templates/ when both trees exist, so --target . can
+# pass while .cursor/commands is sabotaged. Dogfood CI must stage a
+# templates-free copy (or --mode installed) and the dogfood validator copy
+# must keep the same I1/I2 locks as scripts/.
+DF_VALIDATE="${REPO_ROOT}/sdlc-spdd/scripts/validate-command-adapters.sh"
+ORCH_WF="${REPO_ROOT}/.github/workflows/validate-sdlc-spdd-adapters.yml"
+if diff -q "${VALIDATE}" "${DF_VALIDATE}" >/dev/null 2>&1; then
+  ok "dogfood validator copy matches scripts/validate-command-adapters.sh"
+else
+  bad "sdlc-spdd/scripts/validate-command-adapters.sh drifted from scripts/"
+fi
+assert_contains "${ORCH_WF}" "--mode installed" \
+  "dogfood CI forces installed-pack mode"
+assert_contains "${ORCH_WF}" 'scratch="$(mktemp -d)"' \
+  "dogfood CI stages a templates-free scratch tree"
+assert_contains "${ORCH_WF}" "cp .cursor/commands/sdlc-*.md" \
+  "dogfood CI copies installed Cursor commands"
+expect_pass "default --target . still validates templates" \
+  "${VALIDATE}" --target "${REPO_ROOT}"
+expect_pass "--mode templates on orchestrator" \
+  "${VALIDATE}" --mode templates --target "${REPO_ROOT}"
+
+scratch="$(mktemp -d)"
+mkdir -p "${scratch}/.cursor/commands" "${scratch}/.cursor/rules"
+cp "${REPO_ROOT}/.cursor/commands/"sdlc-*.md "${scratch}/.cursor/commands/"
+cp "${REPO_ROOT}/.cursor/rules/sdlc-spdd.mdc" "${scratch}/.cursor/rules/"
+expect_pass "cursor-only dogfood copy validates" \
+  "${DF_VALIDATE}" --target "${scratch}" --mode installed
+grep -Fv -- 'Validation commands named' \
+  "${scratch}/.cursor/commands/sdlc-spdd-code.md" > "${scratch}/sabotaged.md"
+mv "${scratch}/sabotaged.md" "${scratch}/.cursor/commands/sdlc-spdd-code.md"
+expect_fail "cursor-only sabotaged dogfood fails" \
+  "${DF_VALIDATE}" --target "${scratch}" --mode installed
+
+both="$(mktemp -d)"
+mkdir -p "${both}/templates/cursor/rules" "${both}/.cursor/commands" "${both}/.cursor/rules"
+cp "${REPO_ROOT}/templates/cursor/"sdlc-*.md "${both}/templates/cursor/"
+cp "${REPO_ROOT}/templates/cursor/rules/sdlc-spdd.mdc" "${both}/templates/cursor/rules/"
+cp "${scratch}/.cursor/commands/"sdlc-*.md "${both}/.cursor/commands/"
+cp "${REPO_ROOT}/.cursor/rules/sdlc-spdd.mdc" "${both}/.cursor/rules/"
+expect_pass "auto mode ignores sabotaged dogfood when templates/ exist" \
+  "${VALIDATE}" --target "${both}"
+expect_fail "--mode installed sees sabotaged dogfood beside clean templates" \
+  "${VALIDATE}" --target "${both}" --mode installed
+rm -rf "${scratch}" "${both}"
+
+# ---------------------------------------------------------------------------
 echo "== Generator staleness check =="
 expect_pass "generate --check clean tree" "${GEN}" --check
 
