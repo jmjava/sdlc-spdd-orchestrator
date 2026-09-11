@@ -28,6 +28,10 @@ on:
       - 'tests/test-verify-receipt.sh'
       - 'tests/test-gate-review-validation.sh'
       - 'tests/test-gate-advisory-visible.sh'
+      - 'tests/test-quality-gates-match-labels.sh'
+      - 'sdlc-spdd/harness/quality-gates.md'
+      - 'templates/agent-context/harness/quality-gates.md'
+      - 'engine/src/sdlc_engine/phases.py'
       - '.github/workflows/test-sdlc-workflow.yml'
   push:
     branches: [main]
@@ -57,6 +61,10 @@ on:
       - 'tests/test-verify-receipt.sh'
       - 'tests/test-gate-review-validation.sh'
       - 'tests/test-gate-advisory-visible.sh'
+      - 'tests/test-quality-gates-match-labels.sh'
+      - 'sdlc-spdd/harness/quality-gates.md'
+      - 'templates/agent-context/harness/quality-gates.md'
+      - 'engine/src/sdlc_engine/phases.py'
       - '.github/workflows/test-sdlc-workflow.yml'
 
 jobs:
@@ -74,6 +82,7 @@ jobs:
           bash -n tests/test-verify-receipt.sh
           bash -n tests/test-gate-review-validation.sh
           bash -n tests/test-gate-advisory-visible.sh
+          bash -n tests/test-quality-gates-match-labels.sh
           bash -n scripts/start-agent-session.sh
           bash -n scripts/capture-session-memory.sh
           bash -n scripts/lib/readiness.sh
@@ -94,6 +103,9 @@ jobs:
 
       - name: Run leftover #14 advisory-visible proving tests
         run: ./tests/test-gate-advisory-visible.sh
+
+      - name: Run leftover #15 harness checklist proving tests
+        run: ./tests/test-quality-gates-match-labels.sh
 
       - name: Run archive-work regression tests
         run: ./tests/test-archive-work.sh
