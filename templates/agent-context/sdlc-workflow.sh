@@ -344,6 +344,43 @@ _wf_gates_for_phase() {
   esac
 }
 
+# Advisory GATE_LABELS that gate_check / this fallback never enforce.
+# Keep in sync with engine/src/sdlc_engine/phases.py ADVISORY_GATES + gates_for_phase.
+_wf_advisory_gates_for_phase() {
+  case "${1:-}" in
+    architect) printf '%s\n' architect_review operations_task_sized ;;
+    code|api-test) printf '%s\n' architect_review operations_task_sized tests_updated ;;
+    prompt-update|sync) printf '%s\n' canvas_synced ;;
+    *) ;;
+  esac
+}
+
+_wf_gate_label() {
+  local want="$1"
+  local gi
+  for ((gi = 0; gi < ${#SDLC_GATE_NAMES[@]}; gi++)); do
+    if [[ "${SDLC_GATE_NAMES[$gi]}" == "${want}" ]]; then
+      printf '%s' "${SDLC_GATE_LABELS[$gi]}"
+      return 0
+    fi
+  done
+  printf '%s' "${want}"
+}
+
+_wf_print_advisory_gate_rows() {
+  # Leftover #14: gate must show advisory rows that did not run.
+  local phase="$1"
+  local gate label
+  while IFS= read -r gate; do
+    [[ -z "${gate}" ]] && continue
+    label="$(_wf_gate_label "${gate}")"
+    if [[ "${label}" != *"(advisory)"* ]]; then
+      label="${label} (advisory)"
+    fi
+    echo "  ~ ${label} (did not run)"
+  done < <(_wf_advisory_gates_for_phase "${phase}")
+}
+
 _wf_pass_gates_for_phase() {
   local work_id="$1"
   local phase="$2"
@@ -988,6 +1025,7 @@ sdlc_workflow_gate() {
 
   if ((${#failures[@]} == 0)); then
     echo "gate ${phase}: OK for ${work_id}"
+    _wf_print_advisory_gate_rows "${phase}"
     return 0
   fi
   echo "gate ${phase}: BLOCKED for ${work_id}" >&2
@@ -995,6 +1033,7 @@ sdlc_workflow_gate() {
   for failure in "${failures[@]}"; do
     echo "  - ${failure}" >&2
   done
+  _wf_print_advisory_gate_rows "${phase}" >&2
   return 1
 }
 

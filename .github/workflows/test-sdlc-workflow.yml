@@ -27,6 +27,7 @@ on:
       - 'tests/test-archive-work.sh'
       - 'tests/test-verify-receipt.sh'
       - 'tests/test-gate-review-validation.sh'
+      - 'tests/test-gate-advisory-visible.sh'
       - '.github/workflows/test-sdlc-workflow.yml'
   push:
     branches: [main]
@@ -55,6 +56,7 @@ on:
       - 'tests/test-archive-work.sh'
       - 'tests/test-verify-receipt.sh'
       - 'tests/test-gate-review-validation.sh'
+      - 'tests/test-gate-advisory-visible.sh'
       - '.github/workflows/test-sdlc-workflow.yml'
 
 jobs:
@@ -71,6 +73,7 @@ jobs:
           bash -n tests/test-sdlc-workflow.sh
           bash -n tests/test-verify-receipt.sh
           bash -n tests/test-gate-review-validation.sh
+          bash -n tests/test-gate-advisory-visible.sh
           bash -n scripts/start-agent-session.sh
           bash -n scripts/capture-session-memory.sh
           bash -n scripts/lib/readiness.sh
@@ -88,6 +91,9 @@ jobs:
 
       - name: Run leftover #7 review Validation proving tests
         run: ./tests/test-gate-review-validation.sh
+
+      - name: Run leftover #14 advisory-visible proving tests
+        run: ./tests/test-gate-advisory-visible.sh
 
       - name: Run archive-work regression tests
         run: ./tests/test-archive-work.sh

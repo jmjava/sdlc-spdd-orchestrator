@@ -328,3 +328,68 @@ def test_advertised_gates_are_enforced_or_labeled_advisory() -> None:
         assert "(advisory)" in GATE_LABELS[name].lower(), name
     for name in ENFORCED_GATES:
         assert "(advisory)" not in GATE_LABELS[name].lower(), name
+
+
+def test_cli_gate_shows_advisory_rows_that_did_not_run(
+    proj: tuple[Project, WorkflowEngine], capsys
+) -> None:
+    """Leftover #14: gate output must show advisory rows that did not run."""
+    p, _ = proj
+    wid = "FEAT-014-advisory-visible"
+    _seed_req(p.root, wid)
+    _seed_canvas(p.root, wid, ready=False)
+    rc = main(["--root", str(p.root), "gate", "--phase", "architect", "--work-id", wid])
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "gate architect: OK" in out
+    assert "Architect review completed (advisory)" in out
+    assert "Operations are task-sized (advisory)" in out
+    assert "did not run" in out
+    assert "BLOCKED" not in out
+
+
+def test_cli_gate_blocked_still_shows_advisory(
+    proj: tuple[Project, WorkflowEngine], capsys
+) -> None:
+    p, _ = proj
+    wid = "FEAT-014-advisory-blocked"
+    rc = main(["--root", str(p.root), "gate", "--phase", "architect", "--work-id", wid])
+    assert rc == 1
+    err = capsys.readouterr().err
+    assert "BLOCKED" in err
+    assert "Architect review completed (advisory)" in err
+    assert "did not run" in err
+
+
+def test_cli_gate_analysis_has_no_advisory_rows(
+    proj: tuple[Project, WorkflowEngine], capsys
+) -> None:
+    p, _ = proj
+    wid = "FEAT-014-no-advisory"
+    _seed_req(p.root, wid)
+    rc = main(["--root", str(p.root), "gate", "--phase", "analysis", "--work-id", wid])
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "gate analysis: OK" in out
+    assert "(advisory)" not in out
+    assert "did not run" not in out
+
+
+def test_cli_gate_json_includes_advisory_did_not_run(
+    proj: tuple[Project, WorkflowEngine], capsys
+) -> None:
+    p, _ = proj
+    wid = "FEAT-014-advisory-json"
+    _seed_req(p.root, wid)
+    _seed_canvas(p.root, wid)
+    rc = main(
+        ["--root", str(p.root), "gate", "--phase", "architect", "--work-id", wid, "--json"]
+    )
+    assert rc == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["ok"] is True
+    assert payload["failures"] == []
+    labels = [row["label"] for row in payload["advisory"]]
+    assert "Architect review completed (advisory)" in labels
+    assert "Operations are task-sized (advisory)" in labels
+    assert all(row["ran"] is False for row in payload["advisory"])
