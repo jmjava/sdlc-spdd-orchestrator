@@ -136,6 +136,8 @@ class SuiteDocTests(unittest.TestCase):
         self.assertIn("embedding", text)
         self.assertIn("test_guide_projection_roundtrip", text)
         self.assertIn("test-guide-stack-experimental", text)
+        self.assertIn("skipped", text)
+        self.assertIn("test_live_graph_required_ci", text)
         self.assertIn("embabel-dif", text)
         self.assertIn("later / other-repo", text)
         self.assertIn("the graph-store proof", text)
@@ -158,12 +160,15 @@ class SuiteDocTests(unittest.TestCase):
     def test_ci_runs_this_suite(self) -> None:
         text = WORKFLOW.read_text(encoding="utf-8")
         self.assertIn("tests.research.test_cretrieve", text)
+        self.assertIn("tests.research.test_live_graph_required_ci", text)
         self.assertIn("PYTHONPATH=engine/src", text)
+        self.assertNotIn("SDLC_GUIDE_STACK_LIVE", text)
 
     def test_referee_prove_script_runs_this_suite(self) -> None:
         self.assertTrue(PROVE.is_file(), PROVE)
         text = PROVE.read_text(encoding="utf-8")
         self.assertIn("tests.research.test_cretrieve", text)
+        self.assertIn("tests.research.test_live_graph_required_ci", text)
         self.assertIn("SDLC_GUIDE_STACK_LIVE=1", text)
         self.assertIn("does NOT prove the Neo4j graph", text)
 
