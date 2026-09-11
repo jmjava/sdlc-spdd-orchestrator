@@ -7,6 +7,7 @@
 # ~/.bashrc returns before the end when $- lacks i; ~/.profile is login-only.
 # Prepend the export (and relocate a leftover append) so sourced bashrc
 # still puts sdlc-engine on PATH.
+# SDLC_INSTALL_SKIP_SYSTEM_DEPS=1 skips apt-get (proving tests).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -38,6 +39,10 @@ fi
 cd "${ROOT}"
 
 if ! command -v python3.12 >/dev/null 2>&1; then
+  if [[ "${SDLC_INSTALL_SKIP_SYSTEM_DEPS:-}" == "1" ]]; then
+    echo "error: python3.12 is required for sdlc-engine" >&2
+    exit 1
+  fi
   if command -v sudo >/dev/null 2>&1; then
     sudo apt-get update -qq
     sudo DEBIAN_FRONTEND=noninteractive apt-get install -y python3.12 python3.12-venv
