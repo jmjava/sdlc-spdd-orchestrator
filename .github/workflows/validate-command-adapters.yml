@@ -33,4 +33,4 @@ jobs:
         run: bash -n ./scripts/validate-command-adapters.sh
 
       - name: Validate Cursor + Copilot + Claude template parity
-        run: ./scripts/validate-command-adapters.sh
+        run: ./scripts/validate-command-adapters.sh --mode templates

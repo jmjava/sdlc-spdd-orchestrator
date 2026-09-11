@@ -228,7 +228,7 @@ assert_target_adapter_workflow() {
   assert_contains "${wf}" ".github/copilot-instructions.md" "Copilot grounding trigger"
   assert_contains "${wf}" "CLAUDE.md" "Claude grounding trigger"
   assert_contains "${wf}" "bash -n sdlc-spdd/scripts/validate-command-adapters.sh" "validator syntax check"
-  assert_contains "${wf}" "bash sdlc-spdd/scripts/validate-command-adapters.sh --target ." "validator run via bash"
+  assert_contains "${wf}" "bash sdlc-spdd/scripts/validate-command-adapters.sh --target . --mode installed" "validator run via bash on installed packs"
 }
 
 # ---------------------------------------------------------------------------

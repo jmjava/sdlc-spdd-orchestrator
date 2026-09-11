@@ -7,30 +7,42 @@ source "${_SCRIPT_DIR}/lib/common.sh"
 
 usage() {
   cat <<'EOF'
-Usage: validate-command-adapters.sh [--target <path>]
+Usage: validate-command-adapters.sh [--target <path>] [--mode auto|templates|installed]
 
 Validate Cursor + Copilot + Claude command-pack parity.
 
 The Claude pack is validated when present (always in the orchestrator repo, and
 in installed targets that opted into Claude Code).
 
-Works in two contexts:
-  1) Orchestrator repo (default): compares templates under templates/
-  2) Installed target app: compares .cursor/commands, .github/prompts, and
-     .claude/commands
+Root selection (--mode, default auto):
+  auto       Prefer templates/ when present, else installed dogfood packs
+  templates  Require templates/cursor, templates/copilot/prompts, and/or
+             templates/claude/commands
+  installed  Require .cursor/commands, .github/prompts, and/or .claude/commands
+             even when templates/ also exists
+
+This orchestrator checkout has both trees. Default --target . therefore
+validates shipped templates, not the Cloud Agent dogfood packs. Dogfood CI
+must pass --mode installed (or point --target at a copy that has no templates/).
 
 Examples:
   ./scripts/validate-command-adapters.sh
-  ./scripts/validate-command-adapters.sh --target /path/to/app
-  ./sdlc-spdd/scripts/validate-command-adapters.sh --target .
+  ./scripts/validate-command-adapters.sh --mode templates
+  ./scripts/validate-command-adapters.sh --target /path/to/app --mode installed
+  ./sdlc-spdd/scripts/validate-command-adapters.sh --target . --mode installed
 EOF
 }
 
 TARGET="."
+ROOT_MODE="auto"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --target)
       TARGET="${2:-}"
+      shift 2
+      ;;
+    --mode)
+      ROOT_MODE="${2:-}"
       shift 2
       ;;
     --help|-h)
@@ -44,6 +56,15 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+case "${ROOT_MODE}" in
+  auto|templates|installed) ;;
+  *)
+    echo "Unknown --mode: ${ROOT_MODE} (expected auto, templates, or installed)" >&2
+    usage >&2
+    exit 1
+    ;;
+esac
 
 TARGET="$(sdlc_resolve_target "${TARGET}")"
 
@@ -74,20 +95,54 @@ workflow_commands=(
 failures=0
 
 detect_roots() {
+  local have_templates=0 have_installed=0
   if [[ -d "${TARGET}/templates/cursor" || -d "${TARGET}/templates/copilot/prompts" || -d "${TARGET}/templates/claude/commands" ]]; then
+    have_templates=1
+  fi
+  if [[ -d "${TARGET}/.cursor/commands" || -d "${TARGET}/.github/prompts" || -d "${TARGET}/.claude/commands" ]]; then
+    have_installed=1
+  fi
+
+  local use=""
+  case "${ROOT_MODE}" in
+    templates)
+      if [[ "${have_templates}" -ne 1 ]]; then
+        echo "Could not find templates/ command packs in ${TARGET}." >&2
+        exit 1
+      fi
+      use="templates"
+      ;;
+    installed)
+      if [[ "${have_installed}" -ne 1 ]]; then
+        echo "Could not find installed command packs in ${TARGET}." >&2
+        echo "Need .cursor/commands, .github/prompts, and/or .claude/commands." >&2
+        exit 1
+      fi
+      use="installed"
+      ;;
+    auto)
+      if [[ "${have_templates}" -eq 1 ]]; then
+        use="templates"
+      elif [[ "${have_installed}" -eq 1 ]]; then
+        use="installed"
+      else
+        echo "Could not find command packs in ${TARGET}." >&2
+        echo "Need templates/ (orchestrator) or .cursor/.github/.claude command dirs (target)." >&2
+        exit 1
+      fi
+      ;;
+  esac
+
+  if [[ "${use}" == "templates" ]]; then
     CURSOR_ROOT="${TARGET}/templates/cursor"
     COPILOT_ROOT="${TARGET}/templates/copilot/prompts"
     CLAUDE_ROOT="${TARGET}/templates/claude/commands"
     MODE="orchestrator-templates"
-  elif [[ -d "${TARGET}/.cursor/commands" || -d "${TARGET}/.github/prompts" || -d "${TARGET}/.claude/commands" ]]; then
+  else
     CURSOR_ROOT="${TARGET}/.cursor/commands"
     COPILOT_ROOT="${TARGET}/.github/prompts"
     CLAUDE_ROOT="${TARGET}/.claude/commands"
     MODE="installed-target"
-  else
-    echo "Could not find command packs in ${TARGET}." >&2
-    echo "Need templates/ (orchestrator) or .cursor/.github/.claude command dirs (target)." >&2
-    exit 1
   fi
 
   # Each adapter pack is validated only when present, so single-assistant
@@ -169,7 +224,10 @@ if [[ "${HAS_CURSOR}" -eq 1 ]]; then present_packs+=("Cursor"); fi
 if [[ "${HAS_COPILOT}" -eq 1 ]]; then present_packs+=("Copilot"); fi
 if [[ "${HAS_CLAUDE}" -eq 1 ]]; then present_packs+=("Claude"); fi
 echo "Validating adapter command packs ($(IFS='+'; echo "${present_packs[*]}"))..."
-echo "Mode: ${MODE}"
+echo "Mode: ${MODE} (root --mode ${ROOT_MODE})"
+if [[ "${ROOT_MODE}" == "auto" && "${MODE}" == "orchestrator-templates" && -d "${TARGET}/.cursor/commands" ]]; then
+  echo "Note: templates/ preferred; installed dogfood packs were not validated. Use --mode installed."
+fi
 if [[ "${HAS_CURSOR}" -eq 1 ]]; then echo "Cursor root: ${CURSOR_ROOT}"; fi
 if [[ "${HAS_COPILOT}" -eq 1 ]]; then echo "Copilot root: ${COPILOT_ROOT}"; fi
 if [[ "${HAS_CLAUDE}" -eq 1 ]]; then echo "Claude root: ${CLAUDE_ROOT}"; fi
