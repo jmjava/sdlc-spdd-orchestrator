@@ -78,16 +78,38 @@ assert_same() {
   if cmp -s "$1" "$2"; then ok "byte-identical to template: $(rel "$1")"; else bad "differs from template: $(rel "$1")"; fi
 }
 
-# init/upgrade may mention .git/hooks only in comments (never as a write dest).
-assert_comment_only_git_hooks() {
-  local file="$1"
-  local label="$2"
-  local live
-  live="$(grep -nE '\.git/hooks' "${file}" | grep -vE '^[^:]+:[[:space:]]*#' || true)"
-  if [[ -z "${live}" ]]; then
-    ok "${label}: .git/hooks only in comments"
+# I3 leftover #18: the write gate is a filesystem snapshot, not a textual
+# grep of init/upgrade. A path assembled from variables (git_dir + /hooks)
+# would evade a ".git/hooks on non-comment lines" check.
+hooks_fingerprint() {
+  local dir="$1"
+  if [[ ! -d "${dir}" ]]; then
+    printf 'ABSENT\n'
+    return 0
+  fi
+  {
+    find "${dir}" -mindepth 1 \( -type f -o -type l \) -print0 \
+      | sort -z \
+      | while IFS= read -r -d '' path; do
+          if [[ -L "${path}" ]]; then
+            printf 'LINK %s -> %s\n' "${path#"${dir}"/}" "$(readlink "${path}")"
+          else
+            printf 'FILE %s %s\n' "${path#"${dir}"/}" "$(sha256sum "${path}" | awk '{print $1}')"
+          fi
+        done
+    find "${dir}" -mindepth 1 -type d -printf 'DIR %P\n' | sort
+  }
+}
+
+assert_hooks_unchanged() {
+  local before="$1"
+  local after="$2"
+  local label="$3"
+  if [[ "${before}" == "${after}" ]]; then
+    ok "hooks unchanged: ${label}"
   else
-    bad "${label}: non-comment .git/hooks reference"
+    bad "hooks changed: ${label}"
+    printf 'before:\n%s\nafter:\n%s\n' "${before}" "${after}" >&2
   fi
 }
 
@@ -478,7 +500,9 @@ assert_contains "${REPO_ROOT}/docs/research/kasana-agent-harness-2-0.md" \
   "**Status:** done — #267." "I3 marked done"
 T="${WORK}/i3-hook"; mkdir -p "${T}/.git/hooks"
 printf '%s\n' '#!/bin/sh' 'echo preexisting' > "${T}/.git/hooks/keep-me"
+before_init_hooks="$(hooks_fingerprint "${T}/.git/hooks")"
 "${INIT}" --target "${T}" --cursor >/dev/null 2>&1
+assert_hooks_unchanged "${before_init_hooks}" "$(hooks_fingerprint "${T}/.git/hooks")" "init"
 assert_file "${T}/sdlc-spdd/scripts/hooks/pre-commit.sample"
 assert_same "${T}/sdlc-spdd/scripts/hooks/pre-commit.sample" \
   "${REPO_ROOT}/templates/agent-context/hooks/pre-commit.sample"
@@ -486,7 +510,7 @@ assert_absent "${T}/.git/hooks/pre-commit"
 assert_content "${T}/.git/hooks/keep-me" $'#!/bin/sh\necho preexisting'
 
 # ---------------------------------------------------------------------------
-echo "== Test 17: pre-commit.sample is copy-only; init/upgrade never write .git/hooks =="
+echo "== Test 17: pre-commit.sample is copy-only; init/upgrade leave .git/hooks untouched =="
 assert_contains "${REPO_ROOT}/scripts/init-project.sh" \
   '${HOME_DIR}/scripts/hooks/pre-commit.sample' "init copy dest is scripts/hooks"
 assert_contains "${REPO_ROOT}/scripts/upgrade-project.sh" \
@@ -495,16 +519,18 @@ assert_contains "${REPO_ROOT}/scripts/init-project.sh" \
   "Never install as .git/hooks/pre-commit" "init never-install comment"
 assert_contains "${REPO_ROOT}/scripts/upgrade-project.sh" \
   "Never install as .git/hooks/pre-commit" "upgrade never-install comment"
-assert_comment_only_git_hooks "${REPO_ROOT}/scripts/init-project.sh" "init-project.sh"
-assert_comment_only_git_hooks "${REPO_ROOT}/scripts/upgrade-project.sh" "upgrade-project.sh"
 
 T="${WORK}/i3-hook-upgrade"
 mkdir -p "${T}/.git/hooks"
 printf '%s\n' '#!/bin/sh' 'echo preexisting' > "${T}/.git/hooks/keep-me"
 printf '%s\n' '#!/bin/sh' 'echo custom-hook' > "${T}/.git/hooks/pre-commit"
+before_upgrade_hooks="$(hooks_fingerprint "${T}/.git/hooks")"
 "${INIT}" --target "${T}" --cursor >/dev/null 2>&1
+assert_hooks_unchanged "${before_upgrade_hooks}" "$(hooks_fingerprint "${T}/.git/hooks")" \
+  "init (upgrade fixture)"
 rm -f "${T}/sdlc-spdd/scripts/hooks/pre-commit.sample"
 "${UPGRADE}" --target "${T}" --all >/dev/null 2>&1
+assert_hooks_unchanged "${before_upgrade_hooks}" "$(hooks_fingerprint "${T}/.git/hooks")" "upgrade"
 assert_file "${T}/sdlc-spdd/scripts/hooks/pre-commit.sample"
 assert_same "${T}/sdlc-spdd/scripts/hooks/pre-commit.sample" \
   "${REPO_ROOT}/templates/agent-context/hooks/pre-commit.sample"
