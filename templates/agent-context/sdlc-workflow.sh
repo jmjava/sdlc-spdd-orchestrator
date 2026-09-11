@@ -865,7 +865,7 @@ _wf_gate_ledger_files() {
 }
 
 _wf_gate_ledger_has_record() {
-  # $1 work id; $2 mode: "any" (default) or "retro" (decision/pitfall/pattern only)
+  # $1 work id; $2 mode: "any" (default), "verify" (I1 receipt), or "retro"
   local work_id="$1"
   local mode="${2:-any}"
   local file matches
@@ -876,6 +876,17 @@ _wf_gate_ledger_has_record() {
     if [[ "${mode}" == "retro" ]]; then
       if printf '%s\n' "${matches}" \
         | grep -Eq '"kind"[[:space:]]*:[[:space:]]*"(decision|pitfall|pattern)"'; then
+        return 0
+      fi
+    elif [[ "${mode}" == "verify" ]]; then
+      if printf '%s\n' "${matches}" \
+        | grep -Eq '"verify"' \
+        && printf '%s\n' "${matches}" \
+        | grep -Eq '"command"[[:space:]]*:[[:space:]]*"[^"]+"' \
+        && printf '%s\n' "${matches}" \
+        | grep -Eq '"exit"[[:space:]]*:' \
+        && printf '%s\n' "${matches}" \
+        | grep -Eq '"result"[[:space:]]*:[[:space:]]*"(pass|fail)"'; then
         return 0
       fi
     else
@@ -954,6 +965,8 @@ sdlc_workflow_gate() {
       [[ -f "${canvas}" ]] || failures+=("${canvas_msg}")
       if ! _wf_gate_ledger_has_record "${work_id}" any; then
         failures+=("no ledger evidence for ${work_id}: stage progress via ./scripts/sdlc.sh capture before ${phase}")
+      elif ! _wf_gate_ledger_has_record "${work_id}" verify; then
+        failures+=("no Validation receipt for ${work_id}: a dummy lesson is not enough; capture command/exit/result (run Validation) before ${phase} (skipping tests does not open ${phase})")
       fi
       ;;
     prompt-update)

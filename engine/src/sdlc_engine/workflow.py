@@ -142,6 +142,7 @@ class WorkflowEngine:
         """
         from .lessons_ledger import LessonsLedger
         from .local_sessions import is_local_id
+        from .verify_receipt import ledger_has_validation_receipt
 
         if not valid_phase(phase):
             raise ValueError(f"unknown phase: {phase}")
@@ -203,10 +204,17 @@ class WorkflowEngine:
             require_requirement()
         elif phase in {"api-test", "review"}:
             require_canvas()
-            if not ledger_records():
+            records = list(ledger_records())
+            if not records:
                 failures.append(
                     f"no ledger evidence for {work_id}: stage progress via "
                     f"./scripts/sdlc.sh capture before {phase}"
+                )
+            elif not ledger_has_validation_receipt(records):
+                failures.append(
+                    f"no Validation receipt for {work_id}: a dummy lesson is not "
+                    f"enough; capture command/exit/result (run Validation) before "
+                    f"{phase} (skipping tests does not open {phase})"
                 )
         elif phase == "prompt-update":
             require_canvas()
