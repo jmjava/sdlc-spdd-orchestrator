@@ -9,7 +9,7 @@ Use this runbook for **operational rhythm**: rules, script sequences, phase chec
 | Step order (1–13) | [Workflow](workflow.md) |
 | Planning → SPDD → SDLC loop | [Three-part operating path](three-part-operating-path.md) |
 | **Rules, scripts, checklists** | **This page** |
-| Workflow CLI + team registry (reference) | [agent-context/README.md](../templates/agent-context/README.md#sdlc-pointer-current-choretask) |
+| Workflow CLI + team registry (reference) | [agent-context/README.md](../agent-context/README.md#sdlc-pointer-current-choretask) |
 
 ## Daily Operating Rules
 
@@ -165,7 +165,7 @@ Create new Jira issue draft in the milestone requirement file first:
 
     requirements/milestones/<WORK-ID>.md   →   ## Jira section (Key, Summary, Type, …)
 
-See [requirements/milestones/README.md](../sdlc-spdd/requirements/milestones/README.md) and [jira-runbook.md](jira-runbook.md). On claim, `./sdlc-spdd/scripts/sdlc.sh claim <WORK-ID>` auto-links the Key into the registry event note (`spdd/memory/registry.jsonl`).
+See [requirements/milestones/README.md](../requirements/milestones/README.md) and [jira-runbook.md](jira-runbook.md). On claim, `./sdlc-spdd/scripts/sdlc.sh claim <WORK-ID>` auto-links the Key into the registry event note (`spdd/memory/registry.jsonl`).
 
 Then draft for Jira UI or automation:
 

@@ -138,7 +138,7 @@ The active Work ID on **this machine**. Stored in `.sdlc/pointer` (gitignored). 
     ./sdlc-spdd/scripts/sdlc.sh claim <WORK-ID>    # sets pointer + team registry
     ./agent-context/sdlc-pointer.sh get
 
-See [agent-context/README.md](../templates/agent-context/README.md#sdlc-pointer-current-choretask).
+See [agent-context/README.md](../agent-context/README.md#sdlc-pointer-current-choretask).
 
 ### Workflow CLI
 
@@ -195,7 +195,7 @@ Common files:
 - `milestone-2.md`
 - `session-notes/YYYY-MM-DD.md`
 
-Milestone requirements may include a `## Jira` draft section (`requirements/milestones/<WORK-ID>.md`). On claim, `./sdlc-spdd/scripts/sdlc.sh claim <WORK-ID>` auto-links the Jira Key into the team registry. See [requirements/milestones/README.md](../sdlc-spdd/requirements/milestones/README.md).
+Milestone requirements may include a `## Jira` draft section (`requirements/milestones/<WORK-ID>.md`). On claim, `./sdlc-spdd/scripts/sdlc.sh claim <WORK-ID>` auto-links the Jira Key into the team registry. See [requirements/milestones/README.md](../requirements/milestones/README.md).
 
 Use roadmap and milestone docs to give planning agents delivery context. Use REASONS Canvas files to govern each Work ID.
 

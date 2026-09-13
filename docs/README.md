@@ -54,7 +54,7 @@ Jira link & sync / ADF viewer), [ADF templates + Vue3 console](adf-template-libr
 5. [Maintaining your project](maintaining-your-project.md) — upgrades, memory hygiene, canvas sync, links, and session maintenance.
 6. [Storage v3](storage-v3.md) — where memory lives: ledger, Guide working store, runtime, backends.
 
-**Workflow CLI reference** (pointer, phase tracking, team registry): [agent-context/README.md](../templates/agent-context/README.md#sdlc-pointer-current-choretask) — installed in target projects at `sdlc-spdd/scripts/` with docs under `sdlc-spdd/docs/`.
+**Workflow CLI reference** (pointer, phase tracking, team registry): [agent-context/README.md](../agent-context/README.md#sdlc-pointer-current-choretask) — installed in target projects at `sdlc-spdd/scripts/` with docs under `sdlc-spdd/docs/`.
 
 **Python engine:** [SDLC Engine](engine-v2.md) — reusable `sdlc_engine` package; `SDLC_ENGINE=auto|python|shell` on `scripts/sdlc.sh`.
 
@@ -94,7 +94,7 @@ Also useful day to day:
 | [Roadmap, milestones, and session notes](roadmap-milestones-and-session-notes.md) | You use `ROADMAP.md`, `milestone-*.md`, and `session-notes/` to track project progress |
 | [Top useful concepts and commands](useful-concepts-and-commands.md) | You want definitions for Work ID, canvas, sync, memory |
 | [Cheat sheet](sdlc-spdd-cheat-sheet.md) | You want a one-page PDF-friendly **command** reference |
-| [agent-context/README.md](../templates/agent-context/README.md) | You need workflow CLI, pointer, or team registry detail |
+| [agent-context/README.md](../agent-context/README.md) | You need workflow CLI, pointer, or team registry detail |
 
 ## If You Are Integrating with Jira or GitHub
 
@@ -146,7 +146,7 @@ Also useful day to day:
 |-------|-------------|
 | [Java Spring Boot usage](java-spring-boot-usage.md) | You are applying SDLC-SPDD to a Spring Boot project |
 | [Tekton usage](tekton-usage.md) | You are applying SDLC-SPDD to Tekton pipelines |
-| [Roadmap](../sdlc-spdd/ROADMAP.md) | Planned capabilities (repo root, not docs/) |
+| [Roadmap](../ROADMAP.md) | Planned capabilities (repo root, not docs/) |
 
 ## Quick Start (one path)
 

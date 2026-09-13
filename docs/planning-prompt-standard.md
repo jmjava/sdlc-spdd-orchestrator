@@ -35,7 +35,7 @@ Single item:
 
     ./sdlc-spdd/scripts/create-work-from-milestone.sh --target . --milestone milestone-1.md --item "Add order status API" --type feature
 
-The script prints **Next SPDD prompts** for each created Work ID. Each stub includes a scaffolded `## Jira` section — see [requirements/milestones/README.md](../sdlc-spdd/requirements/milestones/README.md).
+The script prints **Next SPDD prompts** for each created Work ID. Each stub includes a scaffolded `## Jira` section — see [requirements/milestones/README.md](../requirements/milestones/README.md).
 
 ### Plan with milestone context
 

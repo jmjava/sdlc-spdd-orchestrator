@@ -9,7 +9,7 @@ Use this runbook for **operational rhythm**: rules, script sequences, phase chec
 | Step order (1–13) | [Workflow](workflow.md) |
 | Planning → SPDD → SDLC loop | [Three-part operating path](three-part-operating-path.md) |
 | **Rules, scripts, checklists** | **This page** |
-| Workflow CLI + team registry (reference) | `./sdlc-spdd/scripts/sdlc.sh --help` |
+| Workflow CLI + team registry (reference) | [agent-context/README.md](../agent-context/README.md#sdlc-pointer-current-choretask) |
 
 ## Daily Operating Rules
 

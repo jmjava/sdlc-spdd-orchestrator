@@ -1,6 +1,6 @@
 # Catch-up: unmerged branches and what to do next
 
-> **Superseded:** See [TESTING.md](../../TESTING.md#integration-merge-gate) and `./tests/test-integration-merge.sh`.
+> **Superseded:** See [TESTING.md](../TESTING.md#integration-merge-gate) and `./tests/test-integration-merge.sh`.
 > integration PR [#27](https://github.com/jmjava/sdlc-spdd-orchestrator/pull/27).
 > Do not merge PR #25/#26 separately — workflow commands and FEAT-001–003 are on
 > `cursor/integration-981e`. Keep this note for the historical remote-branch table.
@@ -26,7 +26,7 @@ Only **two branches** carry real unmerged work. The other **11** remote branches
 
 ## Delivery posture reminder
 
-From [ROADMAP.md](../ROADMAP.md) and [milestone-1.md](../requirements/milestones/milestone-1/MILESTONE-1.md):
+From [ROADMAP.md](../ROADMAP.md) and [milestone-1.md](../milestone-1.md):
 
 | Stage | Status | Focus |
 |-------|--------|-------|
@@ -116,7 +116,7 @@ git checkout cursor/spike-guide-ingest-agent-context-17f4
 
 ## Milestone 1 — make it right backlog (no branch yet)
 
-From [milestone-1.md](../requirements/milestones/milestone-1/MILESTONE-1.md), execution order:
+From [milestone-1.md](../milestone-1.md), execution order:
 
 | Work ID | Canvas | Status | Next step |
 |---------|--------|--------|-----------|
@@ -205,7 +205,7 @@ gh issue list --state open
 ## Related artifacts
 
 - Roadmap: [ROADMAP.md](../ROADMAP.md)
-- Active milestone: [milestone-1.md](../requirements/milestones/milestone-1/MILESTONE-1.md)
-- Issue spec (workflow commands): `issues/ENHANCEMENT-agent-commands-for-workflow.md` (removed; superseded by `/sdlc-claim`, `/sdlc-next`, `/sdlc-team`)
-- SPIKE canvas: `spdd/canvas/SPIKE-001-guide-rag-context-backend.md` (archived)
-- FEAT-001 canvas: `spdd/canvas/FEAT-001-shared-script-library.md` (archived)
+- Active milestone: [milestone-1.md](../milestone-1.md)
+- Issue spec (workflow commands): [issues/ENHANCEMENT-agent-commands-for-workflow.md](../issues/ENHANCEMENT-agent-commands-for-workflow.md)
+- SPIKE canvas: [spdd/canvas/SPIKE-001-guide-rag-context-backend.md](../spdd/canvas/SPIKE-001-guide-rag-context-backend.md)
+- FEAT-001 canvas: [spdd/canvas/FEAT-001-shared-script-library.md](../spdd/canvas/FEAT-001-shared-script-library.md)
