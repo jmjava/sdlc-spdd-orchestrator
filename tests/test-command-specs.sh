@@ -227,8 +227,31 @@ assert_dogfood_matches_rewritten_template() {
   rm -f "${expected}"
 }
 
-assert_dogfood_matches_rewritten_template sdlc-spdd-code
-assert_dogfood_matches_rewritten_template sdlc-spdd-review
+# CHORE-006: every dogfood pack must equal its path-rewritten template. Content lag
+# (missing I1/DIF steps) is a failure, not a warning.
+assert_dogfood_pack_matches() {
+  local tdir="$1" ddir="$2" ext="$3" f b expected
+  for f in "${REPO_ROOT}/${tdir}"/*"${ext}"; do
+    b="$(basename "${f}")"
+    if [[ ! -f "${REPO_ROOT}/${ddir}/${b}" ]]; then
+      bad "dogfood ${ddir}/${b} missing (template exists)"
+      continue
+    fi
+    expected="$(mktemp)"
+    cp "${f}" "${expected}"
+    framework_rewrite_adapter_paths "${expected}"
+    if diff -q "${expected}" "${REPO_ROOT}/${ddir}/${b}" >/dev/null 2>&1; then
+      ok "dogfood ${ddir}/${b} matches rewritten template"
+    else
+      bad "dogfood ${ddir}/${b} drifted from ${tdir}/${b} beyond rewrite allowlist"
+      diff -u "${expected}" "${REPO_ROOT}/${ddir}/${b}" | head -20 >&2 || true
+    fi
+    rm -f "${expected}"
+  done
+}
+assert_dogfood_pack_matches templates/cursor .cursor/commands .md
+assert_dogfood_pack_matches templates/claude/commands .claude/commands .md
+assert_dogfood_pack_matches templates/copilot/prompts .github/prompts .prompt.md
 assert_contains "${REPO_ROOT}/.cursor/commands/sdlc-spdd-code.md" "Optional DIF check" \
   "dogfood code has Optional DIF"
 assert_contains "${REPO_ROOT}/.cursor/commands/sdlc-spdd-review.md" "Optional DIF check" \
