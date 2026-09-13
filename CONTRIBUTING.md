@@ -50,7 +50,7 @@ installs into a target project.
 
 - **Shipped surfaces (must stay neutral):** `templates/**`, every `docs/*.md`
   that is *not* listed as orchestrator-only in
-  `scripts/lib/shipped-docs-boundary.sh` (installed as `docs/sdlc-spdd/`), the
+  `scripts/lib/shipped-docs-boundary.sh` (installed as `sdlc-spdd/docs/`), the
   grounding files
   (`templates/{claude/CLAUDE.md,copilot/copilot-instructions.md,cursor/rules/sdlc-spdd.mdc}`),
   and the `templates/agent-context/` harness files that install copies.
@@ -91,9 +91,9 @@ Doc paths follow the same pattern:
 | Context | Documentation |
 |---------|---------------|
 | This orchestrator repo | `docs/*.md` |
-| Installed target application | `docs/sdlc-spdd/*.md` |
+| Installed target application | `sdlc-spdd/docs/*.md` |
 
-Generated session briefs reference `docs/sdlc-spdd/…` because they are written for target projects.
+Generated session briefs reference `sdlc-spdd/docs/…` because they are written for target projects.
 
 ## Command adapters and extensions
 
@@ -142,7 +142,7 @@ Before merging doc or script changes that touch the three-part model (Planning, 
 
 - [ ] **Workflow CLI** — daily runbook, first-day walkthrough, cheat sheet, and session prompt standard teach `sdlc.sh` (`next`, `claim`, `capture`) not raw scripts alone
 - [ ] **Workflow chat commands** — `/sdlc-claim`, `/sdlc-shelf`, `/sdlc-advance`, `/sdlc-next`, `/sdlc-team` appear alongside shell equivalents where users start/claim/orient
-- [ ] **Pointer + team registry** — docs explain `.sdlc/pointer` / `.sdlc/workflows/` (local) vs `work-registry.tsv` (committed); claim/release commit reminder present
+- [ ] **Pointer + team registry** — docs explain `.sdlc/pointer` / `.sdlc/workflows/` (local) vs `spdd/memory/registry.jsonl` (committed); claim/release commit reminder present
 - [ ] **Whereami / next** — `/sdlc-next` and `/sdlc-spdd-whereami` in assistant orientation tables (README, cheat sheet, cursor/copilot/claude usage)
 - [ ] **Jira draft** — milestone `## Jira` convention referenced from runbook, cheat sheet, planning prompts where Jira drafts appear
 - [ ] **Three-part mandate** — no Planning, SPDD, or SDLC artifacts removed or conflated; see [design mandate](docs/three-part-operating-path.md#three-part-design-mandate)
@@ -159,7 +159,7 @@ Before merging doc or script changes that touch the three-part model (Planning, 
 - [ ] **Script output** — if a script prints “next step” prompts, they align with the matching prompt standard doc
 - [ ] **Diagrams** — if you changed PlantUML under `docs/diagrams/*.puml`, `./scripts/render-diagrams.sh --check` passes; regenerate committed SVG exports with `./scripts/render-diagrams.sh`
 - [ ] **Daily doc roles** — prompts stay in `session-prompt-standard.md`; step table in `workflow.md`; rules/checklists in `daily-runbook.md`; Cursor/Copilot/Claude Code syntax in `initialization-and-invocation.md`; concepts in `useful-concepts-and-commands.md`; commands in `sdlc-spdd-cheat-sheet.md` (link, do not duplicate)
-- [ ] **Target docs hub** — `docs/README.md` is orchestrator-only; installed projects use `templates/project-docs/docs-sdlc-spdd-README.md` → `docs/sdlc-spdd/README.md` (do not copy orchestrator `docs/README.md` to targets)
+- [ ] **Target docs hub** — `docs/README.md` is orchestrator-only; installed projects use `templates/project-docs/docs-sdlc-spdd-README.md` → `sdlc-spdd/docs/README.md` (do not copy orchestrator `docs/README.md` to targets)
 - [ ] **Assistant vs shell** — `/sdlc-spdd-*` is chat (link [How to run assistant commands](docs/initialization-and-invocation.md#how-to-run-assistant-commands)); `./scripts/` is terminal
 - [ ] **Script paths** — install/setup from orchestrator `./scripts/`; daily/runtime in target `./sdlc-spdd/scripts/`; label which context in examples
 

@@ -1,6 +1,6 @@
 # Documentation
 
-**Orchestrator repo hub** — when SDLC-SPDD is installed into a target application, that project gets a leaner hub at `docs/sdlc-spdd/README.md` (same guides, clearer entry path).
+**Orchestrator repo hub** — when SDLC-SPDD is installed into a target application, that project gets a leaner hub at `sdlc-spdd/docs/README.md` (same guides, clearer entry path).
 
 Use this hub to choose the right guide for your current task. If you are new, read the first section in order. If you are already operating a project, jump to the section that matches what you are doing.
 
@@ -54,7 +54,7 @@ Jira link & sync / ADF viewer), [ADF templates + Vue3 console](adf-template-libr
 5. [Maintaining your project](maintaining-your-project.md) — upgrades, memory hygiene, canvas sync, links, and session maintenance.
 6. [Storage v3](storage-v3.md) — where memory lives: ledger, Guide working store, runtime, backends.
 
-**Workflow CLI reference** (pointer, phase tracking, team registry): [agent-context/README.md](../agent-context/README.md#sdlc-pointer-current-choretask) — installed in target projects at `sdlc-spdd/scripts/` with docs under `docs/sdlc-spdd/`.
+**Workflow CLI reference** (pointer, phase tracking, team registry): [agent-context/README.md](../agent-context/README.md#sdlc-pointer-current-choretask) — installed in target projects at `sdlc-spdd/scripts/` with docs under `sdlc-spdd/docs/`.
 
 **Python engine:** [SDLC Engine](engine-v2.md) — reusable `sdlc_engine` package; `SDLC_ENGINE=auto|python|shell` on `scripts/sdlc.sh`.
 
@@ -152,4 +152,4 @@ Also useful day to day:
 
 Follow the adoption path in the repository [README](../README.md#the-adoption-path): install → first day → three-part operating path → daily prompts.
 
-After install, target-local copies of these docs live at `docs/sdlc-spdd/` in your application. Cursor/Copilot/Claude Code slash-command examples: [Initialization and invocation](initialization-and-invocation.md).
+After install, target-local copies of these docs live at `sdlc-spdd/docs/` in your application. Cursor/Copilot/Claude Code slash-command examples: [Initialization and invocation](initialization-and-invocation.md).

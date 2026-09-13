@@ -8,4 +8,4 @@ The workflow table in the docs gives you the canonical sequence. Step one is set
 
 Work IDs use prefixes like FEAT, BUG, REF, SPIKE, DOC, TEST, and CHORE. The REASONS Canvas should reach Ready For Coding before you run slash sdlc-spdd-code on an operation.
 
-After install, your target project gets a docs slash sdlc-spdd hub and the same guides under a leaner entry path. The orchestrator docs README remains the full reference for contributors extending the framework itself. Deeper guides live in docs/README.md and docs/sdlc-spdd/ in target projects after install.
+After install, your target project gets a sdlc-spdd slash docs hub and the same guides under a leaner entry path. The orchestrator docs README remains the full reference for contributors extending the framework itself. Deeper guides live in docs/README.md and sdlc-spdd/docs/ in target projects after install.

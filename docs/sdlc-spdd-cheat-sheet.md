@@ -35,7 +35,7 @@ One assistant only (advanced):
 
 Target-local docs:
 
-    docs/sdlc-spdd/
+    sdlc-spdd/docs/
 
 Project planning:
 

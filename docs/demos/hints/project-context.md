@@ -16,7 +16,7 @@ docgen:
           Plain spoken paragraphs suitable for TTS; no markdown headings in narration output.
         - >-
           Emphasize the REASONS Canvas, Work IDs, and the three-part operating path (Planning,
-          SPDD, SDLC). Target projects receive templates and docs/sdlc-spdd/ — not Guide RAG
+          SPDD, SDLC). Target projects receive templates and sdlc-spdd/docs/ — not Guide RAG
           or this docgen bundle.
       context:
         paths:

@@ -61,11 +61,10 @@ Then open the target application in Cursor, a Copilot-enabled editor, or Claude 
 
 Expected result:
 
-- `requirements/` exists.
-- `spdd/` exists.
-- `agent-context/` exists.
-- `ROADMAP.md`, `milestone-1.md`, `requirements/milestones/`, and `session-notes/` exist when they were missing.
-- stack information is captured in project memory.
+- `sdlc-spdd/` exists — the single framework home.
+- `sdlc-spdd/requirements/milestones/milestone-1/`, `sdlc-spdd/spdd/{canvas,analysis,tasks,reviews,sync,memory}/`, `sdlc-spdd/harness/`, `sdlc-spdd/docs/`, `sdlc-spdd/scripts/`, and `sdlc-spdd/session-notes/` exist.
+- `sdlc-spdd/ROADMAP.md` and `sdlc-spdd/spdd/memory/lessons.jsonl` exist when they were missing.
+- adapter stubs exist at the repo root (`.cursor/`, `.github/`, `.claude/`, `CLAUDE.md`) for the assistants you selected.
 - no application source code is changed.
 
 ## 3. Create or Choose a Work ID

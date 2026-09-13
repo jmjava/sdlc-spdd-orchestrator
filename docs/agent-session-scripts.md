@@ -63,7 +63,7 @@ repo root (see the [install layout diagram](diagrams/09-install-layout.svg) and
   `.github/prompts/`, `CLAUDE.md` + `.claude/commands/`
 - `.github/workflows/validate-sdlc-spdd-adapters.yml` when both Cursor and
   Copilot adapters are installed
-- `docs/sdlc-spdd/` — target-local copies of these docs
+- `sdlc-spdd/docs/` — target-local copies of these docs
 
 ## Upgrade an Older Installation
 
@@ -75,7 +75,7 @@ Preview first:
 
     ./scripts/upgrade-project.sh --target /path/to/app --all --dry-run
 
-The upgrade updates framework-owned prompts, harness/skills files, target-local docs under `docs/sdlc-spdd/`, and target-local runtime scripts. It preserves application source, application docs outside `docs/sdlc-spdd/`, requirements, canvases, reviews, sync logs, the lessons ledger, existing root `CLAUDE.md`, and target workflow customizations. Legacy memory layouts are converted by `sdlc-engine storage migrate` — see [Framework upgrade](framework-upgrade.md).
+The upgrade updates framework-owned prompts, harness/skills files, target-local docs under `sdlc-spdd/docs/`, and target-local runtime scripts. It preserves application source, application docs outside `sdlc-spdd/docs/`, requirements, canvases, reviews, sync logs, the lessons ledger, existing root `CLAUDE.md`, and target workflow customizations. See [Framework upgrade](framework-upgrade.md).
 
 ## 2. Start a New Agent Session
 
