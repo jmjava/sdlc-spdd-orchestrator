@@ -21,7 +21,7 @@ docgen:
           Mention Work ID prefixes (FEAT, BUG, REF, SPIKE, DOC, TEST, CHORE) and that canvases
           must reach Ready For Coding before /sdlc-spdd-code.
         - >-
-          Close by noting deeper guides live in docs/README.md and sdlc-spdd/docs/ in target
+          Close by noting deeper guides live in docs/README.md and docs/sdlc-spdd/ in target
           projects after install.
       context:
         paths:

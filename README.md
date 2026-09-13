@@ -303,9 +303,9 @@ your-app/
   adf/                       Optional checked-in ADF JSON
 ```
 
-Storage v3 is the only supported layout. Pre-v3 installs (framework folders at
-the repo root, `agent-context/` trees, `work-registry.tsv`) are not migrated;
-re-run `init-project.sh` on a clean checkout (Milestone 3, REF-002).
+Legacy sprawled installs (framework folders at the repo root, `agent-context/`
+trees, `work-registry.tsv`) keep working read-only and are consolidated by
+`upgrade` + `sdlc-engine storage migrate`.
 
 | Path (this repo) | Purpose |
 | ---------------- | ------- |

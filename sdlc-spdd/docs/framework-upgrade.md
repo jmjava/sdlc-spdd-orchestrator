@@ -11,7 +11,7 @@ The upgrade script updates **framework-owned files only**.
 It does not overwrite:
 
 - application source code
-- application docs outside `sdlc-spdd/docs/`
+- application docs outside `docs/sdlc-spdd/`
 - existing `ROADMAP.md`
 - existing `milestone-*.md`
 - existing `session-notes/`
@@ -30,7 +30,7 @@ It can update:
 - `.github/prompts/sdlc-spdd-*.prompt.md`
 - `.claude/commands/sdlc-spdd-*.md`
 - `harness/*.md` and `harness/skills/*.md`
-- `sdlc-spdd/docs/*.md`
+- `docs/sdlc-spdd/*.md`
 - `sdlc-spdd/scripts/*.sh` (including `sdlc.sh`)
 
 It can create when missing:
@@ -144,7 +144,7 @@ After upgrade, review:
 - `.github/copilot-instructions.md` if your project had custom Copilot rules
 - `CLAUDE.md` if the upgrade created it for the first time
 - `harness/skills/` if your team added custom `#SkillName` files
-- SDLC-SPDD docs if your team edited `sdlc-spdd/docs/`
+- SDLC-SPDD docs if your team edited `docs/sdlc-spdd/`
 - `spdd/memory/registry.jsonl` claims after template merge
 - backup folder for any local framework changes worth reapplying
 

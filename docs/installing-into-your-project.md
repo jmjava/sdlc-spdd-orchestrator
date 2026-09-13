@@ -64,7 +64,7 @@ This installs a single framework home at `<repo>/sdlc-spdd/`. See the
 - `.github/copilot-instructions.md` and `.github/prompts/`
 - `CLAUDE.md` and `.claude/commands/`
 - `.github/workflows/validate-sdlc-spdd-adapters.yml` (when both Cursor and Copilot adapters are installed)
-- `sdlc-spdd/docs/` — target-local doc hub (`sdlc-spdd/docs/README.md`)
+- `docs/sdlc-spdd/` — target-local doc hub (`docs/sdlc-spdd/README.md`)
 
 **Gitignored runtime** (created on first use, not committed):
 
@@ -217,17 +217,17 @@ Avoid hand-editing generated framework prompt files unless you intend to keep lo
 - `.claude/commands/sdlc-spdd-*.md`
 - `CLAUDE.md`
 - `sdlc-spdd/scripts/*.sh`
-- `sdlc-spdd/docs/*.md`
+- `docs/sdlc-spdd/*.md`
 - `spdd/memory/lessons.jsonl` and `spdd/memory/registry.jsonl` (written only by `accept` and `claim`/`release`)
 
 Team-specific process guidance and custom skills belong in:
 
 - `sdlc-spdd/harness/skills/` — add `.md` skill files; request with `#SkillName`
-- project docs outside `sdlc-spdd/docs/`
+- project docs outside `docs/sdlc-spdd/`
 
 **Local agent state** (gitignored, do not commit): `.sdlc/pointer`, `.sdlc/workflows/`, `.sdlc/sessions/`, `.sdlc/staged/`.
 
-Keep application-specific documentation outside `sdlc-spdd/docs/` so framework upgrades can refresh SDLC-SPDD docs safely.
+Keep application-specific documentation outside `docs/sdlc-spdd/` so framework upgrades can refresh SDLC-SPDD docs safely.
 
 ## Troubleshooting
 
