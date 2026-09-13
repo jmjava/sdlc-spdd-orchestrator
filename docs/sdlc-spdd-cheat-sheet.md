@@ -227,7 +227,7 @@ Create Jira draft in the milestone requirement file:
 
     requirements/milestones/<WORK-ID>.md   →   ## Jira (Key, Summary, Type, Acceptance, …)
 
-See [requirements/milestones/README.md](../requirements/milestones/README.md). On claim, `./sdlc-spdd/scripts/sdlc.sh claim <WORK-ID>` auto-links the Key into the registry event note.
+See [requirements/milestones/README.md](../sdlc-spdd/requirements/milestones/README.md). On claim, `./sdlc-spdd/scripts/sdlc.sh claim <WORK-ID>` auto-links the Key into the registry event note.
 
 Draft for Jira UI:
 

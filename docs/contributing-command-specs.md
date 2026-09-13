@@ -144,4 +144,4 @@ If templates were edited by hand (avoid — prefer spec edits), refresh specs:
 
 - [spec/commands/README.md](../spec/commands/README.md) — format reference
 - [TESTING.md](../TESTING.md) — command and adapter test stack
-- Canvas: [spdd/canvas/FEAT-002-command-spec-generation.md](../spdd/canvas/FEAT-002-command-spec-generation.md)
+- Canvas: `FEAT-002-command-spec-generation` (archived after Milestone 1; see the [ROADMAP Work Map](../sdlc-spdd/ROADMAP.md))

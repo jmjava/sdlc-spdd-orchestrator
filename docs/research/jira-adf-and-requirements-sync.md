@@ -233,7 +233,7 @@ Useful mappings:
 | `` `code` `` | `{{code}}` |
 | `- item` | `* item` |
 | `1. item` | `# item` |
-| `[label](url)` | `[label\|url]` |
+| `[label](https://example.com)` | `[label\|https://example.com]` |
 | fenced code | `{code}...{code}` |
 
 Our engine already implements `markdown_to_wiki()` for this path.

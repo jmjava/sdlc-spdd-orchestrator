@@ -185,8 +185,8 @@ Keep the roadmap high level:
 
     ## Milestones
 
-    - [ ] [Milestone 1](milestone-1.md)
-    - [ ] [Milestone 2](milestone-2.md)
+    - [ ] Milestone 1 — requirements/milestones/milestone-1/MILESTONE-1.md
+    - [ ] Milestone 2 — requirements/milestones/milestone-2/MILESTONE-2.md
 
     ## Current Focus
 

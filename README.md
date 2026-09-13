@@ -365,7 +365,7 @@ resumable, and reusable across assistants and teammates.
 
 We develop this framework through its own Work IDs (`sdlc-spdd/spdd/canvas/`, `sdlc-spdd/requirements/milestones/`).
 See [CONTRIBUTING.md](CONTRIBUTING.md) for script-path rules (orchestrator vs target) and
-[ROADMAP.md](ROADMAP.md) for delivery posture.
+[ROADMAP.md](sdlc-spdd/ROADMAP.md) for delivery posture.
 
 This checkout commits `.cursor/environment.json` so Cloud Agents run
 `.cursor/install.sh` and get `sdlc-engine`. `init` / `upgrade` do **not** copy
