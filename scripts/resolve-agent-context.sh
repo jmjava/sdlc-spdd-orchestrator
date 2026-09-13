@@ -340,7 +340,9 @@ add_phase_index_glob() {
   local pattern="$1"
   shopt -s nullglob
   local match
-  for match in "${FRAMEWORK_HOME}/${pattern}"; do
+  # ${pattern} is intentionally unquoted so the glob expands.
+  # shellcheck disable=SC2086
+  for match in "${FRAMEWORK_HOME}"/${pattern}; do
     if [[ -f "${match}" ]]; then
       add_path "${match}"
     fi

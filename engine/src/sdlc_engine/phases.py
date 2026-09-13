@@ -65,7 +65,7 @@ def valid_phase(phase: str) -> bool:
 def recommended_command(phase: str, work_id: str = "", operation: str = "") -> str:
     wid = work_id or "<WORK-ID>"
     mapping = {
-        "init": f"/sdlc-spdd-init @requirements/ @ROADMAP.md",
+        "init": "/sdlc-spdd-init @requirements/ @ROADMAP.md",
         "analysis": f"/sdlc-spdd-analysis @requirements/milestones/{wid}.md",
         "plan": f"/sdlc-spdd-plan @requirements/milestones/{wid}.md @ROADMAP.md",
         "architect": f"/sdlc-spdd-architect @spdd/canvas/{wid}.md",
@@ -80,7 +80,7 @@ def recommended_command(phase: str, work_id: str = "", operation: str = "") -> s
         "retro": f"/sdlc-spdd-retro @spdd/canvas/{wid}.md",
         "sync": f"/sdlc-spdd-sync @spdd/canvas/{wid}.md",
     }
-    return mapping.get(phase, f"/sdlc-spdd-whereami")
+    return mapping.get(phase, "/sdlc-spdd-whereami")
 
 
 def gates_for_phase(phase: str) -> tuple[str, ...]:

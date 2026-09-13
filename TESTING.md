@@ -57,7 +57,7 @@ Then: `./scripts/setup-engine-venv.sh --e2e`
 
 1. **Preflight first** — fail in seconds, not after a 600s Guide wait or hung `/sse` curl.
 2. **One suite at a time** — unit → integration → e2e (never jump to e2e while unit is red).
-3. **Target failures** — use `--lf` or a single `path::test`; don’t re-run 158 unit tests while fixing one.
+3. **Target failures** — use `--lf` or a single `path::test`; don’t re-run the full unit suite (≈280 tests) while fixing one.
 4. **Skip green suites** — `all` skips suites already passed at the current commit (stored in `.sdlc/test-suite-state.tsv`).
 
 ### Typical session
@@ -95,7 +95,7 @@ Then: `./scripts/setup-engine-venv.sh --e2e`
 
 | Situation | Do this | Don’t do this |
 |-----------|---------|----------------|
-| One unit test red | `unit -- path::test` then `unit --lf` | `unit` (full 158 tests) |
+| One unit test red | `unit -- path::test` then `unit --lf` | `unit` (full suite) |
 | Unit green, editing installer | `integration -- path::test` | `all` from scratch |
 | Playwright flake | `e2e -- engine/tests_e2e/test_vue3_console_playwright.py::test_foo` | `e2e --guide` |
 | Guide not up | `preflight e2e --guide` first | bare `curl …/sse` |
@@ -103,7 +103,21 @@ Then: `./scripts/setup-engine-venv.sh --e2e`
 
 Shell workflow harness (separate from engine pytest): `./tests/test-sdlc-workflow.sh` — run only when touching `scripts/sdlc.sh` or workflow gates.
 
-**Suite 1** — fast, isolated: mocks, `tmp_path`, no Flask server, no browser, no network.
+**Suite 1** — fast, isolated: mocks, `tmp_path`, no browser, no network. (Three
+installer/console files still use a Flask `test_client`; TEST-004 moves them to Suite 2.)
+
+### Static gates (Suite 1 and CI)
+
+| Gate | Where | Fails when |
+|------|-------|------------|
+| Ruff `F,E9` (full pyflakes + syntax) | `engine/pyproject.toml`, `test_quality_gates.py`, `test-sdlc-engine.yml` | any undefined name, unused import/variable, redefinition, syntax error in `engine/src` or `scripts` |
+| Complexity on the PR diff | `scripts/check-complexity.py --base origin/<base>` in `test-sdlc-engine.yml` (PRs only) | a changed file adds a function with CCN > 10 or NLOC > 80, or raises an existing function's CCN |
+| Complexity proving test | `scripts/test-check-complexity.sh` (synthetic repo) | the checker itself stops detecting a CCN-11 function |
+| Shellcheck | `.github/workflows/shellcheck.yml` | `bash -n` fails or any `-S error` finding in `scripts/`, `templates/agent-context/`, `tests/`, `.cursor/install.sh` (warnings are printed, not failing yet) |
+
+Proved 2026-09-13 (CHORE-004): adding a CCN-11 `probe()` under `engine/src` made
+`check-complexity.py --base main` exit 1 with `NEW …::probe CCN=11`; the tree
+without it exits 0.
 
 **Suite 2** — Flask `test_client`: ops console installer API, ADF viewer HTTP, mocked externals.
 

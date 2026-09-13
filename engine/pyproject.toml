@@ -39,4 +39,6 @@ target-version = "py312"
 src = ["src"]
 
 [tool.ruff.lint]
-select = ["F401", "F811"]
+# Full pyflakes (undefined names, unused imports/variables, redefinitions) plus
+# syntax/IO errors. CHORE-004: the narrower F401,F811 set shipped 9 NameErrors.
+select = ["F", "E9"]

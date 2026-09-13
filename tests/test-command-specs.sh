@@ -322,10 +322,11 @@ expect_pass "validate-command-adapters clean" "${VALIDATE}"
 
 # ---------------------------------------------------------------------------
 echo "== Validator catches stripped semantic contracts =="
+# restore_victim reads bak/victim at call time; defined once for all blocks below.
+restore_victim() { cp "${bak}" "${victim}"; rm -f "${bak}"; }
 victim="${REPO_ROOT}/templates/cursor/sdlc-spdd-whereami.md"
 bak="$(mktemp)"
 cp "${victim}" "${bak}"
-restore_victim() { cp "${bak}" "${victim}"; rm -f "${bak}"; }
 trap 'restore_victim' EXIT
 # Remove the jira-ask step while keeping file otherwise valid enough to parse.
 grep -Fv -- 'Jira as `missing` or `draft`' "${bak}" > "${victim}"
@@ -337,7 +338,6 @@ expect_pass "validate after restore" "${VALIDATE}"
 victim="${REPO_ROOT}/templates/cursor/sdlc-spdd-code.md"
 bak="$(mktemp)"
 cp "${victim}" "${bak}"
-restore_victim() { cp "${bak}" "${victim}"; rm -f "${bak}"; }
 trap 'restore_victim' EXIT
 grep -Fv -- 'Ready For Coding' "${bak}" > "${victim}"
 expect_fail "validate fails when code readiness stripped" "${VALIDATE}"
@@ -348,7 +348,6 @@ expect_pass "validate after code restore" "${VALIDATE}"
 victim="${REPO_ROOT}/templates/cursor/sdlc-spdd-code.md"
 bak="$(mktemp)"
 cp "${victim}" "${bak}"
-restore_victim() { cp "${bak}" "${victim}"; rm -f "${bak}"; }
 trap 'restore_victim' EXIT
 grep -Fv -- 'git diff --name-only' "${bak}" > "${victim}"
 expect_fail "validate fails when code Files: allowlist stripped" "${VALIDATE}"
@@ -359,7 +358,6 @@ expect_pass "validate after code I1 restore" "${VALIDATE}"
 victim="${REPO_ROOT}/templates/cursor/sdlc-spdd-review.md"
 bak="$(mktemp)"
 cp "${victim}" "${bak}"
-restore_victim() { cp "${bak}" "${victim}"; rm -f "${bak}"; }
 trap 'restore_victim' EXIT
 grep -Fv -- 'check-operation-diff-scope.sh' "${bak}" > "${victim}"
 expect_fail "validate fails when review Files: diff-scope check stripped" "${VALIDATE}"

@@ -10,10 +10,19 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[2]
 
 
-def test_ruff_unused_imports() -> None:
+RUFF_SELECT = "F,E9"  # mirrors [tool.ruff.lint] select in engine/pyproject.toml
+
+
+def test_ruff_rule_set_matches_pyproject() -> None:
+    text = (REPO / "engine" / "pyproject.toml").read_text(encoding="utf-8")
+    assert 'select = ["F", "E9"]' in text, "CI/test rule set drifted from pyproject"
+
+
+def test_ruff_pyflakes_clean() -> None:
+    """CHORE-004: full pyflakes, not only unused imports — F821 shipped a NameError once."""
     ruff = shutil.which("ruff") or sys.executable
-    cmd = [ruff, "check", "--select", "F401,F811", "engine/src", "scripts"] if ruff != sys.executable else [
-        sys.executable, "-m", "ruff", "check", "--select", "F401,F811", "engine/src", "scripts"
+    cmd = [ruff, "check", "--select", RUFF_SELECT, "engine/src", "scripts"] if ruff != sys.executable else [
+        sys.executable, "-m", "ruff", "check", "--select", RUFF_SELECT, "engine/src", "scripts"
     ]
     proc = subprocess.run(cmd, cwd=REPO, capture_output=True, text=True, check=False)
     assert proc.returncode == 0, proc.stdout + proc.stderr

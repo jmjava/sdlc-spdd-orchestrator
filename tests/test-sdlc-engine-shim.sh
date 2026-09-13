@@ -60,15 +60,10 @@ if grep -Fq 'Started local session LOCAL-' <<< "${out}"; then
 else
   bad "local start unexpected: ${out}"
 fi
-if [[ -f "${tmp}/.sdlc/local-sessions/"LOCAL-*/session.json ]]; then
+if find "${tmp}/.sdlc/local-sessions" -path '*/LOCAL-*/session.json' 2>/dev/null | grep -q .; then
   ok "local session artifacts under .sdlc/local-sessions"
 else
-  # glob may not expand in [[ -f ]]; check via find
-  if find "${tmp}/.sdlc/local-sessions" -name session.json | grep -q .; then
-    ok "local session artifacts under .sdlc/local-sessions"
-  else
-    bad "missing local session artifacts"
-  fi
+  bad "missing local session artifacts"
 fi
 
 echo "== work init-from-adf (python engine + sdlc.sh route) =="
