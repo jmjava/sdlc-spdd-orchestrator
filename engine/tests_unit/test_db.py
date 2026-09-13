@@ -123,6 +123,22 @@ def test_export_json_and_cli(tmp_path: Path, monkeypatch) -> None:
     )
 
 
+def test_export_sql_dump_and_cli(tmp_path: Path, monkeypatch) -> None:
+    """BUG-001: export_sql raised NameError (_utc_now) — the SQL dump path must round-trip."""
+    monkeypatch.setenv("SDLC_USER", "db-tester")
+    _seed(tmp_path, "FEAT-704-sql-export")
+    idx = LocalIndex(Project(tmp_path))
+    idx.rebuild()
+    out = tmp_path / "dump.sql"
+    text = idx.export_sql(out)
+    assert text.startswith("-- SDLC local index dump (")
+    assert "BEGIN;" in text and "COMMIT;" in text
+    assert "work_items" in text
+    assert out.read_text(encoding="utf-8") == text
+    assert main(["--root", str(tmp_path), "db", "export", "--format", "sql", "--output", str(tmp_path / "cli.sql")]) == 0
+    assert (tmp_path / "cli.sql").is_file()
+
+
 def test_lookup_json_and_markdown(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setenv("SDLC_USER", "db-tester")
     wid = "FEAT-704-lookup"
