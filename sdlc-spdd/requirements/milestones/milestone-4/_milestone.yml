@@ -1,0 +1,7 @@
+name: "Milestone 4 — Documentation truth and release hygiene"
+number: 4
+start_date: "2026-09-13"
+end_date: ""
+status: "active"
+related_epics: []
+notes: "Docs describe the one flow of Milestone 3: correct install vocabulary, generated grounding, zero broken links in CI, single authoring root, current ADRs, version and registry hygiene. Opened by SPIKE-005."

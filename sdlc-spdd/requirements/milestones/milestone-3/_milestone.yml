@@ -1,0 +1,7 @@
+name: "Milestone 3 — One flow on storage v3"
+number: 3
+start_date: "2026-09-13"
+end_date: ""
+status: "active"
+related_epics: []
+notes: "One engine (Python sdlc-engine), one persistence model (storage v3), aligned code/tests/docs. Purge pre-v3 compatibility and the bash workflow twin; real lint/complexity/shellcheck gates; hermetic tests; consolidated CI. Opened by SPIKE-005."

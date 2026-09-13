@@ -17,7 +17,7 @@ whole framework through the stages in order.
 | Stage | State | Focus |
 |-------|-------|-------|
 | **Make it work** | mostly done | MVP delivered — three assistant adapters, capture, indexes, session briefs, and validation CI all function end to end. |
-| **Make it right** | **complete** | Refactors landed (FEAT-001→003, FEAT-009→012) and archived. Active: **storage v3** on integration branch. |
+| **Make it right** | **active (Milestones 3–4)** | Milestone 1 refactors and Milestone 2 research hardening landed. Now: **one engine, one persistence model** (Milestone 3) and **docs truth** (Milestone 4). |
 | **Make it fast** | **spikes (shelved)** | Measurement landed (FEAT-004/005). SPIKE-001/002 archived pending Guide MCP; act on metrics when resumed. |
 
 Planning guidance:
@@ -73,7 +73,7 @@ Milestone 1 requirement stubs and canvases were removed from the working tree;
 use git history. Storage v3 (`docs/storage-v3.md`), `harness/skills`, `.sdlc/`
 runtime, and test-suite restructure remain the engineering baseline.
 
-## Milestone 2 — Academic contribution bar (planned)
+## Milestone 2 — Academic contribution bar (complete)
 
 See [requirements/milestones/milestone-2/MILESTONE-2.md](requirements/milestones/milestone-2/MILESTONE-2.md)
 and the [iteration task list](spdd/tasks/milestone-2-academic-hardening.md).
@@ -89,6 +89,36 @@ incomplete n=1 — not a journal result); CHORE-003 Complete (dogfood ledger
 seeded); REF-001 Complete (Python `gate_check` is the named SUT);
 TEST-003 Complete (T01–T05: three storage modes, context-select,
 unreachable Guide fails `context parity`; mocked Guide in default CI). Journal n≥3 remains TEST-001's stop rule, not a new SPIKE.
+
+## Milestone 3 — One flow on storage v3 (active)
+
+See [requirements/milestones/milestone-3/MILESTONE-3.md](requirements/milestones/milestone-3/MILESTONE-3.md)
+and the [task list](spdd/tasks/milestone-3-one-flow.md). Opened by the
+[SPIKE-005 architectural review](spdd/analysis/SPIKE-005-architecture-review-analysis.md).
+
+**Stage:** make it right. Owner decision (2026-09-13): **no competing versions**.
+Python `sdlc-engine` is the only engine; storage v3 is the only persistence model;
+pre-v3 compatibility (legacy `agent-context/` layouts, `work-registry.tsv`, feature
+mirrors, `spdd/*/archive/`, migration shims) and the bash workflow twin are removed,
+not maintained. Losing pre-v3 context is accepted.
+
+P0: BUG-001, CHORE-004, CHORE-006, REF-002 (purge pre-v3), REF-003 (retire bash twin).
+P1: REF-004→008, CHORE-005, TEST-004. P2: REF-009→011.
+
+## Milestone 4 — Documentation truth and release hygiene (active, parallel)
+
+See [requirements/milestones/milestone-4/MILESTONE-4.md](requirements/milestones/milestone-4/MILESTONE-4.md).
+Docs describe the layout `init` creates and the one flow of Milestone 3; generated
+grounding; zero broken links in CI; one authoring root; current ADRs; version and
+registry hygiene. P0: DOC-004, DOC-005, CHORE-007. P1: CHORE-008, DOC-006, CHORE-009,
+CHORE-010. P2: DOC-007.
+
+## Milestone 5 — Make it fast (outline)
+
+See [requirements/milestones/milestone-5/MILESTONE-5.md](requirements/milestones/milestone-5/MILESTONE-5.md).
+Not opened until Milestone 3 P0/P1 and Milestone 4 P0 are complete.
+
+Month-scoped view of all three: [spdd/tasks/2026-10-monthly-goals.md](spdd/tasks/2026-10-monthly-goals.md).
 
 ## Post-MVP backlog
 
@@ -188,13 +218,22 @@ Milestone 1 feature track is Complete on the integration branch.
 | CHORE-003-dogfood-ledger | make it right | Complete (P2) |
 | REF-001-engine-single-source | make it right | Complete (P2) |
 | TEST-003-cretrieve-roundtrip | make it right | Complete (T01–T05) |
+| SPIKE-005-architecture-review | make it right (program) | In Progress — opened Milestones 3–5 |
+| BUG-001-db-query-undefined-names | make it right | Milestone 3 P0 |
+| CHORE-004-lint-and-complexity-gates-real | make it right | Milestone 3 P0 |
+| CHORE-006-dogfood-adapters-and-quick-spec | make it right | Milestone 3 P0 |
+| REF-002-purge-pre-v3-compat | make it right | Milestone 3 P0 |
+| REF-003-retire-bash-workflow-dual-path | make it right | Milestone 3 P0 |
+| REF-004…REF-011, CHORE-005, TEST-004 | make it right | Milestone 3 P1/P2 |
+| DOC-004…DOC-007, CHORE-007…CHORE-010 | make it right (docs) | Milestone 4 |
 
 Deferred / residual (not Work IDs yet):
 
 | Item | Notes |
 |------|-------|
-| Readability pass | Consistent structure/naming across code/docs (milestone residual) |
+| Readability pass | Absorbed into Milestone 3 (REF-004/005) and Milestone 4 (CHORE-008) |
 | Dual milestone root stub | Root `milestone-1.md` + subdirectory both exist; prefer subdir |
+| `spdd --metrics` | Superseded by `sdlc-engine context metrics` (FEAT-015); row above is historical |
 
 `spdd --metrics` is no longer a nameless residual — it is **FEAT-015-first-class-metrics** under Milestone 2.
 
