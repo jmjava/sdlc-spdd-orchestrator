@@ -16,7 +16,8 @@ def test_cli_claim_next_archive(tmp_path: Path, monkeypatch) -> None:
     assert main(["--root", str(tmp_path), "claim", work_id]) == 0
     assert main(["--root", str(tmp_path), "next"]) == 0
     assert main(["--root", str(tmp_path), "archive", work_id]) == 0
-    assert (tmp_path / "spdd" / "canvas" / "archive" / f"{work_id}.md").is_file()
+    assert not (tmp_path / "spdd" / "canvas" / f"{work_id}.md").exists()
+    assert not (tmp_path / "spdd" / "canvas" / "archive").exists()
     assert main(["--root", str(tmp_path), "version"]) == 0
 
 
