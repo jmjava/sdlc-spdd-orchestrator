@@ -136,7 +136,7 @@ Create one:
 The active Work ID on **this machine**. Stored in `.sdlc/pointer` (gitignored). Guarded commands (for example `sdlc.sh capture`) refuse to run when the pointer does not match the requested Work ID.
 
     ./sdlc-spdd/scripts/sdlc.sh claim <WORK-ID>    # sets pointer + team registry
-    ./agent-context/sdlc-pointer.sh get
+    ./sdlc-spdd/scripts/sdlc.sh pointer get
 
 See [agent-context/README.md](../agent-context/README.md#sdlc-pointer-current-choretask).
 

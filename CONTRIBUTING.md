@@ -142,7 +142,7 @@ Before merging doc or script changes that touch the three-part model (Planning, 
 
 - [ ] **Workflow CLI** — daily runbook, first-day walkthrough, cheat sheet, and session prompt standard teach `sdlc.sh` (`next`, `claim`, `capture`) not raw scripts alone
 - [ ] **Workflow chat commands** — `/sdlc-claim`, `/sdlc-shelf`, `/sdlc-advance`, `/sdlc-next`, `/sdlc-team` appear alongside shell equivalents where users start/claim/orient
-- [ ] **Pointer + team registry** — docs explain `.sdlc/pointer` / `.sdlc/workflows/` (local) vs `work-registry.tsv` (committed); claim/release commit reminder present
+- [ ] **Pointer + team registry** — docs explain `.sdlc/pointer` / `.sdlc/workflows/` (local) vs `spdd/memory/registry.jsonl` (committed); claim/release commit reminder present
 - [ ] **Whereami / next** — `/sdlc-next` and `/sdlc-spdd-whereami` in assistant orientation tables (README, cheat sheet, cursor/copilot/claude usage)
 - [ ] **Jira draft** — milestone `## Jira` convention referenced from runbook, cheat sheet, planning prompts where Jira drafts appear
 - [ ] **Three-part mandate** — no Planning, SPDD, or SDLC artifacts removed or conflated; see [design mandate](docs/three-part-operating-path.md#three-part-design-mandate)

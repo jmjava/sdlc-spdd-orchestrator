@@ -48,17 +48,17 @@ Each milestone requirement file stores Jira syntax:
 
 - **Before create** — fill Summary, Description, acceptance criteria, labels, components
 - **After create** — set `- Key: ABC-123` and commit
-- **On claim** — `./scripts/sdlc.sh claim <WORK-ID>` (or `SDLC_ENGINE=python`) auto-reads the Key into the team registry
+- **On claim** — `./scripts/sdlc.sh claim <WORK-ID>` auto-reads the Key into the team registry
   `jira:` note token (disable with `SDLC_TEAM_AUTO_JIRA=0`)
 
 Engine helpers (v2):
 
 ```bash
-SDLC_ENGINE=python ./scripts/sdlc.sh issues draft <WORK-ID> --system jira
-SDLC_ENGINE=python ./scripts/sdlc.sh issues draft <WORK-ID> --system jira --format adf  # Cloud payload preview
-SDLC_ENGINE=python ./scripts/sdlc.sh issues push <WORK-ID> --system jira          # dry-run
-SDLC_ENGINE=python ./scripts/sdlc.sh issues push <WORK-ID> --system jira --apply  # ADF on Jira Cloud
-SDLC_ENGINE=python ./scripts/sdlc.sh sync-links --repair
+./scripts/sdlc.sh issues draft <WORK-ID> --system jira
+./scripts/sdlc.sh issues draft <WORK-ID> --system jira --format adf  # Cloud payload preview
+./scripts/sdlc.sh issues push <WORK-ID> --system jira          # dry-run
+./scripts/sdlc.sh issues push <WORK-ID> --system jira --apply  # ADF on Jira Cloud
+./scripts/sdlc.sh sync-links --repair
 ```
 
 Jira Cloud needs ADF for descriptions — the engine converts this markdown
@@ -82,7 +82,7 @@ Optional `## GitHub` section for teams that track delivery in GitHub Issues:
 After create, set `Number` / `URL`. Claim auto-links `github:#N` (disable with `SDLC_TEAM_AUTO_GITHUB=0`).
 
 ```bash
-SDLC_ENGINE=python ./scripts/sdlc.sh issues push <WORK-ID> --system github --apply   # uses gh CLI
+./scripts/sdlc.sh issues push <WORK-ID> --system github --apply   # uses gh CLI
 ```
 
 <!-- reconcile: retained subdirectory guidance from integration -->

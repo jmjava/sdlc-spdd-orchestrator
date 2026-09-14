@@ -33,13 +33,11 @@ Or without activating the venv:
 .venv/bin/python -m sdlc_engine next --root .
 ```
 
-Prefer the engine from the existing wrapper (shell remains the default):
+`scripts/sdlc.sh` is a thin dispatcher to `python -m sdlc_engine` (no shell fallback):
 
 ```bash
-SDLC_ENGINE=python ./scripts/sdlc.sh next
-SDLC_ENGINE=auto ./scripts/sdlc.sh next   # python if importable, else shell
+./scripts/sdlc.sh next
 
-# Local/offline sessions + SQLite index always use the Python engine (even with SDLC_ENGINE=shell)
 ./scripts/sdlc.sh local start --name scratch --intent "explore without a FEAT"
 ./scripts/sdlc.sh local promote --type feature --name "Documented title"
 ./scripts/sdlc.sh db rebuild
@@ -58,7 +56,7 @@ SDLC_ENGINE=auto ./scripts/sdlc.sh next   # python if importable, else shell
 | `phases` | Phase order, gates, recommended assistant commands |
 | `pointer` | `.sdlc/pointer` get/set/reset + guarded run |
 | `workflow` | Resume/advance/skip/shelf/sync/next/status |
-| `registry` | `spdd/memory/registry.jsonl` claim/release/team/list-work (legacy TSV fallback) |
+| `registry` | `spdd/memory/registry.jsonl` claim/release/team/list-work |
 | `archive` | Remove Complete/Cancelled work artifacts (git history retains them) |
 | `canvas` | Final Status + next-operation inference |
 | `links` / `sync_local` | Milestone↔canvas↔registry drift check/repair + ROADMAP sync |
@@ -71,7 +69,8 @@ SDLC_ENGINE=auto ./scripts/sdlc.sh next   # python if importable, else shell
 | `sunset` | Close-out snapshot: GitHub PR + issue + commits + Jira → lesson ledger |
 | `viewer` | ADF WYSIWYG editor for checked-in `adf/*.json` (optional `[viewer]` / Flask) |
 | `installer` / `console` / `dashboard` | **EXPERIMENTAL** ops console: install/upgrade, SQLite, rollback, Guide+Neo4j, ADF viewer lifecycle (optional `[viewer]` / Flask) |
-| `cli` / `cli_commands` / `cli_parser` | `sdlc-engine` / `python -m sdlc_engine` |
+| `session` | Session bridge for `start-agent-session.sh` / `capture-session-memory.sh` (touch, brief, record-capture, Jira status, recommend) |
+| `cli` / `cli_parser` / `commands/` | `sdlc-engine` / `python -m sdlc_engine`; handlers split into `commands/{state,team,context,integrations,storage}.py` |
 
 Two local GUIs + Guide map: [docs/ops-console.md](../docs/ops-console.md)
 (Guide pin for console dogfood: **`jmjava/orch-guide`** tag **`sdlc-spdd-projection-v2`**).  
@@ -85,9 +84,8 @@ python3 -m pip install -e './engine[dev,viewer]'
 
 ## Compatibility
 
-- File formats stay identical (`.sdlc/`, `spdd/memory/registry.jsonl`, canvas paths).
-- Shell `sdlc.sh` can delegate to this engine (`SDLC_ENGINE=auto|python|shell`).
-- Target projects can keep using bash until they opt into the engine.
+- One engine: the bash workflow twins and `SDLC_ENGINE` / `SDLC_GATE_ENGINE` switches are gone. Installed `sdlc.sh` requires an importable `sdlc_engine`.
+- Only the v3 `sdlc-spdd/` home is read; pre-v3 layouts are refused by `upgrade-project.sh`.
 
 ## Tests
 

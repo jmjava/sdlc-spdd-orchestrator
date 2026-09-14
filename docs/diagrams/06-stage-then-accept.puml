@@ -5,7 +5,7 @@ title Stage-then-accept - captures without git noise (storage v3)
 actor "AI Agent" as agent
 participant "sdlc.sh capture\n(capture-session-memory.sh)" as capture
 database ".sdlc/staged/\nlessons.jsonl\n(gitignored)" as staged
-participant "sdlc.sh accept\n(accept-lessons.sh /\nsdlc-engine context accept)" as accept
+participant "sdlc.sh accept\n(sdlc-engine accept)" as accept
 database "spdd/memory/\nlessons.jsonl\n(committed)" as ledger
 database ".sdlc/index.sqlite\n(opt-in cache)" as sqlite
 participant "Guide DICE\n(projection)" as guide

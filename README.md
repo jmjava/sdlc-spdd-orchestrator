@@ -225,7 +225,7 @@ Python engine (same surface, importable):
 
 ```bash
 python3 -m pip install -e './engine[dev,viewer]'
-SDLC_ENGINE=python ./scripts/sdlc.sh next
+./scripts/sdlc.sh next
 sdlc-engine context retrieve --work-id FEAT-001-order-status
 sdlc-engine context backends
 ```
@@ -303,9 +303,9 @@ your-app/
   adf/                       Optional checked-in ADF JSON
 ```
 
-Legacy sprawled installs (framework folders at the repo root, `agent-context/`
-trees, `work-registry.tsv`) keep working read-only and are consolidated by
-`upgrade` + `sdlc-engine storage migrate`.
+This is the only supported layout. Pre-v3 installs (framework folders at the
+repo root, `agent-context/` trees, `work-registry.tsv`) are not read or
+migrated; `upgrade-project.sh` refuses them and asks for a fresh `init`.
 
 | Path (this repo) | Purpose |
 | ---------------- | ------- |

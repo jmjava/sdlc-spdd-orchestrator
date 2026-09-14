@@ -49,7 +49,7 @@ contracts (`spdd/canvas/`, analysis, reviews) are the audit trail; run
 ./scripts/sdlc.sh capture --summary "finished T02"
 ```
 
-Set `SDLC_ENGINE=python` (or `auto`) to use the Python engine — see
+Every verb runs in the Python engine (`python -m sdlc_engine`) — see
 [docs/engine-v2.md](../docs/engine-v2.md).
 
 ## Team registry
