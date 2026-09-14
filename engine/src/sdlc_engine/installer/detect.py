@@ -25,30 +25,36 @@ UNSUPPORTED_MARKERS = (
 )
 
 
+ASSISTANT_MARKERS = {
+    "cursor": ".cursor/commands/sdlc-spdd-init.md",
+    "copilot": ".github/prompts/sdlc-spdd-init.prompt.md",
+    "claude": ".claude/commands/sdlc-spdd-init.md",
+}
+
+
+def _present(root: Path, rels: tuple[str, ...]) -> list[str]:
+    return [rel for rel in rels if (root / rel).exists()]
+
+
+def _mode(exists: bool, unsupported: list[str], markers: list[str]) -> tuple[str, str]:
+    if not exists:
+        return "missing", "create"
+    if unsupported:
+        # Matches upgrade-project.sh: any pre-v3 path blocks upgrade until removed.
+        return "unsupported", "reinit"
+    if markers:
+        return "upgrade", "upgrade"
+    return "fresh", "install"
+
+
 def detect_target(target: Path | str) -> dict[str, Any]:
     """Return install-mode diagnosis for ``target``."""
     root = Path(target).expanduser().resolve()
     exists = root.is_dir()
-    markers_found = [rel for rel in MARKERS if exists and (root / rel).exists()]
-    unsupported_found = [rel for rel in UNSUPPORTED_MARKERS if exists and (root / rel).exists()]
-
-    has_cursor = (root / ".cursor/commands/sdlc-spdd-init.md").is_file() if exists else False
-    has_copilot = (root / ".github/prompts/sdlc-spdd-init.prompt.md").is_file() if exists else False
-    has_claude = (root / ".claude/commands/sdlc-spdd-init.md").is_file() if exists else False
-
-    if not exists:
-        mode = "missing"
-        recommendation = "create"
-    elif unsupported_found:
-        # Matches upgrade-project.sh: any pre-v3 path blocks upgrade until removed.
-        mode = "unsupported"
-        recommendation = "reinit"
-    elif markers_found:
-        mode = "upgrade"
-        recommendation = "upgrade"
-    else:
-        mode = "fresh"
-        recommendation = "install"
+    markers_found = _present(root, MARKERS) if exists else []
+    unsupported_found = _present(root, UNSUPPORTED_MARKERS) if exists else []
+    assistants = {name: exists and (root / rel).is_file() for name, rel in ASSISTANT_MARKERS.items()}
+    mode, recommendation = _mode(exists, unsupported_found, markers_found)
 
     return {
         "path": str(root),
@@ -57,9 +63,5 @@ def detect_target(target: Path | str) -> dict[str, Any]:
         "recommendation": recommendation,
         "markers": markers_found,
         "unsupported_markers": unsupported_found,
-        "assistants": {
-            "cursor": has_cursor,
-            "copilot": has_copilot,
-            "claude": has_claude,
-        },
+        "assistants": assistants,
     }

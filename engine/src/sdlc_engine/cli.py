@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import sys
 
 from .cli_parser import build_parser
@@ -11,19 +12,23 @@ from .commands import cmd_next, cmd_version
 PASSTHROUGH_VERBS = frozenset({"capture", "complete"})
 
 
+def _parse(parser: argparse.ArgumentParser, argv: list[str]) -> argparse.Namespace:
+    """Parse argv; capture/complete forward unknown options to the session script."""
+    args, extra = parser.parse_known_args(argv)
+    if not extra:
+        return args
+    if getattr(args, "command", None) not in PASSTHROUGH_VERBS:
+        parser.error(f"unrecognized arguments: {' '.join(extra)}")
+    args.script_args = list(getattr(args, "script_args", None) or []) + extra
+    return args
+
+
 def main(argv: list[str] | None = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
-    parser = build_parser()
-    args, extra = parser.parse_known_args(argv)
-    if extra:
-        if getattr(args, "command", None) in PASSTHROUGH_VERBS:
-            # capture/complete forward unknown options to the session script.
-            args.script_args = list(getattr(args, "script_args", None) or []) + extra
-        else:
-            parser.error(f"unrecognized arguments: {' '.join(extra)}")
-    if getattr(args, "version", False) and not getattr(args, "command", None):
-        return cmd_version(args)
+    args = _parse(build_parser(), argv)
     if not getattr(args, "command", None):
+        if getattr(args, "version", False):
+            return cmd_version(args)
         # default to next for parity with sdlc.sh
         args.command = "next"
         args.func = cmd_next

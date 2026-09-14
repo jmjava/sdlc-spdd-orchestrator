@@ -14,6 +14,7 @@ import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from . import canvas as canvas_mod
 from .links import collect_links
@@ -113,44 +114,56 @@ class SessionService:
 
     # --- brief ---
 
-    def brief_markdown(self, work_id: str = "") -> str:
-        wid = (work_id or self.workflow.pointer.get() or "").strip()
-        if not wid:
-            return "No active Work ID. Run `./scripts/sdlc.sh resume <WORK-ID>`."
-        state = self.workflow.sync(wid)
+    def _canvas_facts(self, wid: str, state: Any) -> tuple[str, str, str, str]:
+        """(next op id, op title, effective operation, readiness label) from the canvas."""
         canvas = self.project.canvas_path(wid)
-        op, title = canvas_mod.next_operation(canvas) if canvas.is_file() else ("", "")
-        operation = op or state.operation
-        readiness = "absent"
-        if canvas.is_file():
-            raw = canvas_mod.extract_readiness_raw(canvas.read_text(encoding="utf-8"))
-            readiness = canvas_mod.normalize_readiness(raw) or raw or "absent"
-        pending = [
+        if not canvas.is_file():
+            return "", "", state.operation, "absent"
+        op, title = canvas_mod.next_operation(canvas)
+        raw = canvas_mod.extract_readiness_raw(canvas.read_text(encoding="utf-8"))
+        readiness = canvas_mod.normalize_readiness(raw) or raw or "absent"
+        return op, title, op or state.operation, readiness
+
+    @staticmethod
+    def _pending_gates(state: Any) -> list[str]:
+        return [
             GATE_LABELS.get(g, g)
             for g in gates_for_phase(state.phase)
             if state.gates.get(g, "pending") != "passed"
         ]
+
+    def _brief_rows(self, wid: str, state: Any) -> list[str]:
+        op, title, operation, readiness = self._canvas_facts(wid, state)
         idx = PHASE_ORDER.index(state.phase) + 1 if state.phase in PHASE_ORDER else 0
-        status = jira_status(self.project, wid)
-        ask = jira_ask_prompt(self.project, wid)
-        lines = [
+        next_op = f"{op} — {title}" if op and title else (operation or "none")
+        status = "active" if state.active else "shelved"
+        return [
             "| Field | Value |",
             "|-------|-------|",
             f"| Work ID | {wid} |",
-            f"| Workflow status | {'active' if state.active else 'shelved'} |",
+            f"| Workflow status | {status} |",
             f"| Phase | {state.phase} ({idx}/{len(PHASE_ORDER)}) |",
             f"| Readiness | {readiness} |",
-            f"| Jira | {status} |",
-            f"| Next operation | {(op + ' — ' + title) if op and title else (operation or 'none')} |",
+            f"| Jira | {jira_status(self.project, wid)} |",
+            f"| Next operation | {next_op} |",
             f"| Assistant command | {self.recommend(wid, state.phase, operation)} |",
             "| After this phase | `./scripts/sdlc.sh advance` |",
             '| Capture (guarded) | `./scripts/sdlc.sh capture --summary "<summary>"` |',
             "| Orient / status | `./scripts/sdlc.sh next` or `/sdlc-spdd-whereami` |",
             "",
         ]
+
+    def brief_markdown(self, work_id: str = "") -> str:
+        wid = (work_id or self.workflow.pointer.get() or "").strip()
+        if not wid:
+            return "No active Work ID. Run `./scripts/sdlc.sh resume <WORK-ID>`."
+        state = self.workflow.sync(wid)
+        lines = self._brief_rows(wid, state)
+        pending = self._pending_gates(state)
         if pending:
             lines.append("Pending gates:")
             lines.extend(f"- {p}" for p in pending)
+        ask = jira_ask_prompt(self.project, wid)
         if ask:
             lines.extend(["", "Tracker follow-up:", f"- {ask}"])
         return "\n".join(lines) + "\n"
@@ -183,18 +196,24 @@ class SessionService:
             "--work-id", wid, "--phase", phase or state.phase,
         ])
 
-    def capture(self, args: list[str], *, work_id: str = "", phase: str = "") -> int:
+    def _resolve_capture_target(self, work_id: str) -> tuple[str, int]:
+        """(Work ID, rc): rc 3 on pointer mismatch, 2 when no pointer, 0 when resolved."""
         pointer = self.workflow.pointer.get()
-        wid = (work_id or pointer or "").strip()
         if work_id and pointer and pointer != work_id:
             print(f"capture: --work-id '{work_id}' does not match pointer '{pointer}'", file=sys.stderr)
             print(f"Run: ./scripts/sdlc.sh resume {work_id}", file=sys.stderr)
-            return 3
+            return "", 3
+        wid = (work_id or pointer or "").strip()
         if not wid:
             print("capture: no active pointer — run: ./scripts/sdlc.sh resume <WORK-ID>")
-            return 2
-        if not phase:
-            phase = self.workflow.ensure_state(wid).phase or "resume"
+            return "", 2
+        return wid, 0
+
+    def capture(self, args: list[str], *, work_id: str = "", phase: str = "") -> int:
+        wid, rc = self._resolve_capture_target(work_id)
+        if rc:
+            return rc
+        phase = phase or self.workflow.ensure_state(wid).phase or "resume"
         script = self._script("capture-session-memory.sh")
         argv = [str(script), "--target", str(self.project.root), "--work-id", wid, "--phase", phase, *args]
         return self.workflow.pointer.run_against(wid, argv)

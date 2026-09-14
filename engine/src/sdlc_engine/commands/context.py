@@ -6,9 +6,14 @@ import argparse
 import json
 import subprocess
 import sys
+from typing import TYPE_CHECKING, Any, Callable
+
 from ..context_store import ContextStore
 
 from .state import _project
+
+if TYPE_CHECKING:
+    from ..project import Project
 
 
 def cmd_context(args: argparse.Namespace) -> int:
@@ -262,39 +267,47 @@ def cmd_complete(args: argparse.Namespace) -> int:
     return SessionService(_project(args)).complete(list(args.script_args or []))
 
 
+def _list_staged(ledger: Any) -> int:
+    staged = [r for r in ledger.records(include_staged=True) if r.id in ledger.staged_ids()]
+    if not staged:
+        print("No staged records.")
+        return 0
+    for rec in staged:
+        print(f"{rec.id}\t{rec.kind}\t{rec.work_id}\t{rec.title}")
+    return 0
+
+
+def _commit_ledger(project: Project, count: int, wid: str) -> None:
+    if count == 0 or not project.ledger_path.is_file():
+        print("Nothing to commit (no records promoted).")
+        return
+    rel = project.rel(project.ledger_path)
+    subprocess.check_call(["git", "-C", str(project.root), "add", rel])
+    subprocess.check_call(
+        ["git", "-C", str(project.root), "commit", "-m", f"memory: accept {count} lessons for {wid}"]
+    )
+    print(f"Committed {rel}")
+
+
 def cmd_accept(args: argparse.Namespace) -> int:
     """Promote staged lessons to the committed ledger (optionally git-commit it)."""
 
     from ..lessons_ledger import LessonsLedger
 
     project = _project(args)
-    ledger = LessonsLedger(project)
     if getattr(args, "list", False):
-        staged = [r for r in ledger.records(include_staged=True) if r.id in ledger.staged_ids()]
-        if not staged:
-            print("No staged records.")
-            return 0
-        for rec in staged:
-            print(f"{rec.id}\t{rec.kind}\t{rec.work_id}\t{rec.title}")
-        return 0
-    store = ContextStore(project)
-    out = store.accept(
-        work_id=getattr(args, "work_id", "") or "",
-        ids=[i.strip() for i in (getattr(args, "ids", "") or "").split(",") if i.strip()] or None,
+        return _list_staged(LessonsLedger(project))
+    wid = getattr(args, "work_id", "") or ""
+    ids = [i.strip() for i in (getattr(args, "ids", "") or "").split(",") if i.strip()]
+    out = ContextStore(project).accept(
+        work_id=wid,
+        ids=ids or None,
         discard_rest=bool(getattr(args, "discard_rest", False)),
         project_guide=not getattr(args, "no_guide", False),
     )
     print(json.dumps(out, indent=2))
-    count = int(out.get("accepted_count", 0) or 0)
     if getattr(args, "commit", False):
-        if count == 0 or not project.ledger_path.is_file():
-            print("Nothing to commit (no records promoted).")
-            return 0
-        rel = project.rel(project.ledger_path)
-        wid = getattr(args, "work_id", "") or "all"
-        subprocess.check_call(["git", "-C", str(project.root), "add", rel])
-        subprocess.check_call(["git", "-C", str(project.root), "commit", "-m", f"memory: accept {count} lessons for {wid}"])
-        print(f"Committed {rel}")
+        _commit_ledger(project, int(out.get("accepted_count", 0) or 0), wid or "all")
     return 0
 
 
@@ -304,26 +317,20 @@ def cmd_session(args: argparse.Namespace) -> int:
 
     project = _project(args)
     svc = SessionService(project)
-    action = args.session_cmd
     wid = getattr(args, "work_id", "") or ""
-    if action == "brief":
-        print(svc.brief_markdown(wid), end="")
-        return 0
-    if action == "touch":
-        svc.touch_session(wid, args.phase, getattr(args, "milestone", "") or "")
-        return 0
-    if action == "record-capture":
-        svc.record_capture(wid, getattr(args, "phase", "") or "resume")
-        return 0
-    if action == "recommend":
-        print(svc.recommend(wid, args.phase, getattr(args, "operation", "") or ""))
-        return 0
-    if action == "jira-status":
-        print(jira_status(project, wid))
-        return 0
-    if action == "jira-ask":
-        text = jira_ask_prompt(project, wid)
-        if text:
-            print(text)
-        return 0
-    return 2
+    phase = getattr(args, "phase", "") or ""
+    actions: dict[str, Callable[[], str | None]] = {
+        "brief": lambda: svc.brief_markdown(wid),
+        "touch": lambda: svc.touch_session(wid, phase, getattr(args, "milestone", "") or ""),
+        "record-capture": lambda: svc.record_capture(wid, phase or "resume"),
+        "recommend": lambda: svc.recommend(wid, phase, getattr(args, "operation", "") or "") + "\n",
+        "jira-status": lambda: jira_status(project, wid) + "\n",
+        "jira-ask": lambda: (lambda t: t + "\n" if t else "")(jira_ask_prompt(project, wid)),
+    }
+    fn = actions.get(args.session_cmd)
+    if fn is None:
+        return 2
+    text = fn()
+    if text:
+        print(text, end="")
+    return 0

@@ -6,6 +6,7 @@ import argparse
 import json
 import subprocess
 import sys
+from pathlib import Path
 from .. import __version__
 from ..local_sessions import LocalSessionService
 from ..phases import GATE_LABELS, advisory_gates_for_phase, format_advisory_gate_rows
@@ -182,15 +183,20 @@ def cmd_version(_: argparse.Namespace) -> int:
     return 0
 
 
+def _find_script(project: Project, name: str) -> Path | None:
+    """Installed home first, then the orchestrator's scripts/; accepts bare or .sh names."""
+    for base in (project.home / "scripts", project.root / "scripts"):
+        for cand in (base / name, base / f"{name}.sh"):
+            if cand.is_file():
+                return cand
+    return None
+
+
 def cmd_shell(args: argparse.Namespace) -> int:
     """Bridge to the remaining shell session scripts (installed home first)."""
     project = _project(args)
-    name = args.script
-    candidates = []
-    for base in (project.home / "scripts", project.root / "scripts"):
-        candidates += [base / name, base / f"{name}.sh"]
-    script = next((c for c in candidates if c.is_file()), None)
+    script = _find_script(project, args.script)
     if script is None:
-        print(f"shell bridge: script not found: {name}", file=sys.stderr)
+        print(f"shell bridge: script not found: {args.script}", file=sys.stderr)
         return 1
     return subprocess.call([str(script), *args.script_args], cwd=project.root)
