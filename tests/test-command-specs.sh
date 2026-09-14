@@ -146,6 +146,11 @@ assert_contains "${SPEC_DIR}/workflow-advance.spec.md" "Ready For Coding" \
   "workflow-advance encodes readiness gate"
 assert_contains "${SPEC_DIR}/workflow-claim.spec.md" "--jira" \
   "workflow-claim encodes --jira"
+assert_file "${SPEC_DIR}/lifecycle-quick.spec.md"
+assert_contains "${SPEC_DIR}/lifecycle-quick.spec.md" "LOCAL-* pointer" \
+  "lifecycle-quick encodes machine-private pointer contract"
+assert_contains "${SPEC_DIR}/lifecycle-quick.spec.md" "local promote --type feature" \
+  "lifecycle-quick encodes explicit promotion"
 
 # ---------------------------------------------------------------------------
 echo "== Generated adapters carry contracts on all three packs =="

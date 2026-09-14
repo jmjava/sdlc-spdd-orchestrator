@@ -22,9 +22,9 @@ Each task below is one Work ID (requirement stub under `sdlc-spdd/requirements/m
   - [ ] `check-complexity.py --base origin/main` runs on PR diffs in `test-sdlc-engine.yml`
   - [ ] shellcheck workflow (`-S error` first) over `scripts/`, `scripts/lib/`, `templates/agent-context/`, `tests/*.sh`; fix SC2066 / SC1087 / SC2218 / SC2144
   - [ ] `test_quality_gates.py` asserts the new rule set
-- [ ] **CHORE-006** Regenerate dogfood adapters; spec for `/sdlc-spdd-quick` — S
-  - [ ] `.cursor/commands`, `.claude/commands`, `.github/prompts` diff clean vs path-rewritten templates
-  - [ ] `spec/commands/lifecycle-quick.spec.md` exists; `generate-command-adapters.sh --check` covers it
+- [x] **CHORE-006** Regenerate dogfood adapters; spec for `/sdlc-spdd-quick` — S
+  - [x] `.cursor/commands`, `.claude/commands`, `.github/prompts` diff clean vs path-rewritten templates
+  - [x] `spec/commands/lifecycle-quick.spec.md` exists; `generate-command-adapters.sh --check` covers it
   - [ ] `validate-sdlc-spdd-adapters` fails on stale dogfood packs
 - [ ] **DOC-004** Docs describe the layout `init` creates — S
   - [ ] `grep -rn 'docs/sdlc-spdd' docs README.md CONTRIBUTING.md` empty
