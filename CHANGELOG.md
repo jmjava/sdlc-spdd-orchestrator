@@ -25,8 +25,31 @@ All notable changes to this project will be documented in this file.
 - DOC-003: referee one-shot `prove-academic-review.sh` (Python only; Guide/Neo4j
   optional, not required).
 
+### Fixed
+
+- BUG-001: `sdlc-engine db export --format sql` no longer raises `NameError`;
+  `db_query.py` imports `utc_now`, the uncalled `context_linked_to_section`
+  (sole user of the graph constants) is removed, and an `export_sql`
+  round-trip test covers the CLI path (#308).
+
 ### Changed
 
+- Milestone 3 (one flow on storage v3) opened from SPIKE-005: Python
+  `sdlc-engine` is the only engine, storage v3 the only persistence model;
+  pre-v3 compatibility and the bash workflow twin are removed, not
+  maintained (#308).
+- CHORE-004: ruff selects full pyflakes (`F,E9`) in `pyproject`, CI, and the
+  suite; `check-complexity.py` runs against the PR base on pull requests; new
+  `shellcheck` workflow (`bash -n` + `-S error`) over scripts, installed
+  runtime templates, tests, and `install.sh` (#308).
+- REF-002 T01: `sdlc-engine archive` **removes** canvas, analysis, review,
+  sync, hot session briefs, and workflow `.state`, and appends the `archived`
+  registry event. No `spdd/*/archive/` folders and no `agent-context/sessions`
+  sweep; git history is the record. Requirements and `lessons.jsonl` are
+  untouched (#308).
+- CHORE-006: `.cursor/commands`, `.claude/commands`, and `.github/prompts`
+  regenerated from `templates/`; `tests/test-command-specs.sh` diffs every slug
+  in all three dogfood packs (#308).
 - TEST-003 T05 close-out: canvas, requirement, and review match `main`
   (`e716100` / #259). System review
   `sdlc-spdd/spdd/reviews/academic-freeze-system-review.md` lists remaining
@@ -61,7 +84,8 @@ All notable changes to this project will be documented in this file.
   importable, even if `SDLC_ENGINE=shell`. `SDLC_GATE_ENGINE=shell` is the
   labeled pre-FEAT-014 substring fallback and is **not** an evaluation
   condition (`tests/test-sdlc-workflow.sh` uses it for hermetic bash CLI).
-  Python `archive` moves contracts under `project.home` (storage v3).
+  Python `archive` moved contracts under `project.home` (superseded by
+  REF-002 T01: archive deletes).
 - Ops console `/` defaults to the Vue3 build (`console-ui/dist`); `sdlc.sh console` builds dist when needed. The Flask HTML template (`installer/pages.py`) is removed — Flask remains the `/api/*` BFF and the ADF Viewer
 - `sdlc.sh console --playground` seeds a disposable SPDD tree under `.sdlc/console-playground` so Vue tabs can be clicked without installing into an app
 - Playground Guide / Jira / GitHub are in-process fakes (`installer/playground_fakes.py`) so those tabs show live UP/sync mocks without Docker, JVM, or tracker APIs

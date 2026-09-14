@@ -4,7 +4,7 @@ jira_key: ""
 github_number: ""
 jira_epic: ""
 jira_type: "Bug"
-jira_status: "To Do"
+jira_status: "Done"
 jira_assignee: ""
 jira_due_date: ""
 jira_sprint: ""
@@ -22,7 +22,7 @@ related:
 
 **Work ID:** BUG-001-db-query-undefined-names  
 **Milestone:** Milestone 3 — One flow on storage v3  
-**Status:** To Do  
+**Status:** Done  
 **Priority / size:** P0 / S  
 **Date:** 2026-09-13  
 **Beck stage:** make it right (one engine, one persistence model, aligned docs/tests)
@@ -54,9 +54,9 @@ related:
 
 ## Acceptance Criteria
 
-- [ ] `ruff check --select F821 engine/src` is clean
-- [ ] Unit test calls LocalIndex.export_sql on a temp project and asserts the dump header
-- [ ] Unit test exercises context_linked_to_section or the method is removed
+- [x] `ruff check --select F821 engine/src` is clean
+- [x] Unit test calls LocalIndex.export_sql on a temp project and asserts the dump header
+- [x] Unit test exercises context_linked_to_section or the method is removed
 
 ## Non-Goals
 

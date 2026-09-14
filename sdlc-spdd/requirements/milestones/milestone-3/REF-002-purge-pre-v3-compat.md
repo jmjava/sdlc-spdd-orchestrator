@@ -4,7 +4,7 @@ jira_key: ""
 github_number: ""
 jira_epic: ""
 jira_type: "Refactor"
-jira_status: "To Do"
+jira_status: "In Progress"
 jira_assignee: ""
 jira_due_date: ""
 jira_sprint: ""
@@ -23,7 +23,7 @@ related:
 
 **Work ID:** REF-002-purge-pre-v3-compat  
 **Milestone:** Milestone 3 — One flow on storage v3  
-**Status:** To Do  
+**Status:** In Progress  
 **Priority / size:** P0 / L  
 **Date:** 2026-09-13  
 **Beck stage:** make it right (one engine, one persistence model, aligned docs/tests)
@@ -59,7 +59,7 @@ Storage v3 (ledger + registry + .sdlc/ runtime under sdlc-spdd/) is the only per
 ## Acceptance Criteria
 
 - [ ] `grep -r 'agent-context\|work-registry' engine/src scripts templates` returns only the install-source folder name templates/agent-context/
-- [ ] archive_work removes canvas/analysis/review/sync/session/state files; no archive/ directories are created; unit + bash tests assert the same contract
+- [x] archive_work removes canvas/analysis/review/sync/session/state files; no archive/ directories are created; unit + bash tests assert the same contract
 - [ ] storage migrate, legacy-layout-archive, and rollback-of-legacy code paths are deleted with their tests
 - [ ] TESTING.md and docs/storage-v3.md have no legacy-layout sections
 
