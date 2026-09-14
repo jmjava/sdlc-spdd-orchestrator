@@ -47,3 +47,6 @@
 {"event": "release", "work_id": "CHORE-006-dogfood-adapters-and-quick-spec", "status": "shelved", "phase": "retro", "operation": "", "owner": "Cursor Agent", "note": "CHORE-006 complete in PR #320; review, retro, and sync recorded", "ts": "2026-09-14T04:38:32Z"}
 {"event": "refresh", "work_id": "CHORE-006-dogfood-adapters-and-quick-spec", "status": "done", "phase": "retro", "operation": "", "owner": "Cursor Agent", "note": "canvas Final Status: Complete", "ts": "2026-09-14T04:38:32Z"}
 {"event": "claim", "work_id": "REF-003-retire-bash-workflow-dual-path", "status": "active", "phase": "init", "operation": "", "owner": "Cursor Agent", "note": "", "ts": "2026-09-14T04:42:43Z"}
+{"event": "claim", "work_id": "REF-003-retire-bash-workflow-dual-path", "status": "active", "phase": "code", "operation": "T06", "owner": "Cursor Agent", "note": "", "ts": "2026-09-14T05:50:26Z"}
+{"event": "release", "work_id": "REF-003-retire-bash-workflow-dual-path", "status": "shelved", "phase": "code", "operation": "", "owner": "Cursor Agent", "note": "REF-003 complete; PR #321", "ts": "2026-09-14T06:04:35Z"}
+{"event": "refresh", "work_id": "REF-003-retire-bash-workflow-dual-path", "status": "done", "phase": "code", "operation": "", "owner": "Cursor Agent", "note": "canvas Final Status: Complete", "ts": "2026-09-14T06:05:00Z"}

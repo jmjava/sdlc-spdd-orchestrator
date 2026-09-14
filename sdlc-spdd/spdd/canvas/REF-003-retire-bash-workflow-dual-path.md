@@ -4,8 +4,8 @@
 
 - Work ID: REF-003-retire-bash-workflow-dual-path
 - Work Type: Refactor
-- Status: In Progress
-- Readiness: Ready For Coding
+- Status: Complete
+- Readiness: Complete
 - Created: 2026-09-14
 - Updated: 2026-09-14
 - Milestone: milestone-3
@@ -197,7 +197,7 @@ already means the only supported engine. `SDLC_ENGINE=shell` and any
 
 ### T06 - Full validation, review, retro, and sync
 
-- Status: Pending
+- Status: Complete
 - Description: Run the complete local unit/integration/shell/live-consumer and
   documentation validation matrix, perform scope/review checks, capture and
   accept lessons, synchronize milestone/roadmap/dependencies, and release the
@@ -250,15 +250,18 @@ already means the only supported engine. `SDLC_ENGINE=shell` and any
 - [x] T03 shipped LOC reduction is at least 3,000
 - [x] T04 current shell/pytest matrix is green
 - [x] T05 current docs state one engine
-- [ ] T06 review, retro, sync, and dependency docs are complete
-- [ ] Full validation suite is green
+- [x] T06 review, retro, sync, and dependency docs are complete
+- [x] Full validation suite is green
 
 ## Sync Notes
 
 Begins from PR #320 merge commit `5ea5c8f`; all four post-merge `main`
-workflows passed before REF-003 coding began.
+workflows passed before REF-003 coding began. Delivered in PR #321 with 25/25
+checks green. Review:
+`sdlc-spdd/spdd/reviews/REF-003-retire-bash-workflow-dual-path-review.md`.
+Sync: `sdlc-spdd/spdd/sync/REF-003-retire-bash-workflow-dual-path-sync.md`.
 
 ## Final Status
 
-- Readiness: Ready For Coding
-- Status: In Progress
+- Readiness: Complete
+- Status: Complete

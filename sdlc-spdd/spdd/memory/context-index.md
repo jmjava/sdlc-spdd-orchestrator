@@ -4,6 +4,9 @@
 
 | Area | Kind | Work ID | Phase | Timestamp | Source | Entry |
 |------|------|---------|-------|-----------|--------|-------|
+| tests/test- | pitfall | REF-003-retire-bash-workflow-dual-path | code | 2026-09-14T06:00:59Z | capture | Pitfall: REF-003-retire-bash-workflow-dual-path |
+| tests/test- | pattern | REF-003-retire-bash-workflow-dual-path | code | 2026-09-14T06:00:59Z | capture | Pattern: REF-003-retire-bash-workflow-dual-path |
+| tests/test- | decision | REF-003-retire-bash-workflow-dual-path | code | 2026-09-14T06:00:59Z | capture | Decision: REF-003-retire-bash-workflow-dual-path |
 | adapters | pitfall | CHORE-006-dogfood-adapters-and-quick-spec | retro | 2026-09-14T04:37:23Z | capture | Pitfall: CHORE-006-dogfood-adapters-and-quick-spec |
 | adapters | pattern | CHORE-006-dogfood-adapters-and-quick-spec | retro | 2026-09-14T04:37:23Z | capture | Pattern: CHORE-006-dogfood-adapters-and-quick-spec |
 | scripts/lib | pitfall | REF-002-purge-pre-v3-compat | retro | 2026-09-14T04:21:58Z | capture | Pitfall: REF-002-purge-pre-v3-compat |

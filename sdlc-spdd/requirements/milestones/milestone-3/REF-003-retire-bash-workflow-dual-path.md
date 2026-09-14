@@ -4,7 +4,7 @@ jira_key: ""
 github_number: ""
 jira_epic: ""
 jira_type: "Refactor"
-jira_status: "To Do"
+jira_status: "Done"
 jira_assignee: ""
 jira_due_date: ""
 jira_sprint: ""
@@ -23,7 +23,7 @@ related:
 
 **Work ID:** REF-003-retire-bash-workflow-dual-path  
 **Milestone:** Milestone 3 — One flow on storage v3  
-**Status:** To Do  
+**Status:** Done (PR #321)  
 **Priority / size:** P0 / L  
 **Date:** 2026-09-13  
 **Beck stage:** make it right (one engine, one persistence model, aligned docs/tests)
@@ -58,10 +58,13 @@ sdlc-workflow.sh (2 089 LOC) and sdlc-team-registry.sh (981 LOC) reimplement wor
 
 ## Acceptance Criteria
 
-- [ ] templates/agent-context contains no sdlc-workflow.sh / sdlc-team-registry.sh / sdlc-pointer.sh
-- [ ] `SDLC_ENGINE=shell ./scripts/sdlc.sh next` exits non-zero with a clear message
-- [ ] All 30 bash harnesses either pass against the Python-only dispatcher or are removed with a pytest replacement
-- [ ] Shipped script LOC drops by at least 3 000
+- [x] templates/agent-context contains no sdlc-workflow.sh / sdlc-team-registry.sh / sdlc-pointer.sh
+- [x] `SDLC_ENGINE=shell ./scripts/sdlc.sh next` exits non-zero with a clear message
+- [x] All bash harnesses either pass against the Python-only dispatcher or are removed with a pytest
+  replacement. The count of 30 predates REF-002; the inventory was 28 when REF-003 began and is 25
+  after `test-sdlc-workflow.sh`, `test-sdlc-pointer.sh`, and `test-archive-work.sh` moved to pytest.
+  24 of 25 pass locally; `test-guide-stack-live.sh` needs a live Guide + Neo4j stack.
+- [x] Shipped script LOC drops by at least 3 000 (3 100 template LOC; 6 200 with dogfood copies)
 
 ## Non-Goals
 

@@ -28,7 +28,7 @@ P0 — one flow (do first, in order):
 - [x] CHORE-004-lint-and-complexity-gates-real — gates run on the real diff (#308)
 - [x] CHORE-006-dogfood-adapters-and-quick-spec — dogfood packs and `quick` regenerate from canonical specs (#308, #320)
 - [x] REF-002-purge-pre-v3-compat — one data model; archive deletes; no migrations (#314)
-- [ ] REF-003-retire-bash-workflow-dual-path — one engine; no shell twin
+- [x] REF-003-retire-bash-workflow-dual-path — one engine; no shell twin
 
 P1 — make the one flow maintainable:
 
@@ -55,7 +55,7 @@ P2 — finish the consolidation:
 | CHORE-004-lint-and-complexity-gates-real | P0 | M | [requirement](CHORE-004-lint-and-complexity-gates-real.md) | Complete | Lint, complexity, shellcheck gates on the real diff |
 | CHORE-006-dogfood-adapters-and-quick-spec | P0 | S | [requirement](CHORE-006-dogfood-adapters-and-quick-spec.md) | Complete | Dogfood parity in #308; canonical quick spec in #320 |
 | REF-002-purge-pre-v3-compat | P0 | L | [requirement](REF-002-purge-pre-v3-compat.md) | Complete | Storage v3 is the only supported layout (#314) |
-| REF-003-retire-bash-workflow-dual-path | P0 | L | [requirement](REF-003-retire-bash-workflow-dual-path.md) | To Do | Retire the bash workflow twin; Python is the only flow |
+| REF-003-retire-bash-workflow-dual-path | P0 | L | [requirement](REF-003-retire-bash-workflow-dual-path.md) | Complete | Bash workflow twin retired; Python is the only flow (#321) |
 | REF-004-split-installer-blueprints | P1 | M | [requirement](REF-004-split-installer-blueprints.md) | To Do | Split `installer/app.py` `create_app` into blueprints |
 | REF-005-cli-command-modules | P1 | M | [requirement](REF-005-cli-command-modules.md) | To Do | One module per CLI command; result objects, not prints |
 | REF-006-storage-records-and-atomic-appends | P1 | M | [requirement](REF-006-storage-records-and-atomic-appends.md) | To Do | Typed storage records; atomic, locked JSONL appends |
