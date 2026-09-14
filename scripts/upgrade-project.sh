@@ -457,9 +457,10 @@ copy_framework_file \
   "${REPO_ROOT}/templates/project-docs/docs-sdlc-spdd-README.md" \
   "${HOME_DIR}/docs/README.md"
 
-if [[ "${UPGRADE_CURSOR}" -eq 1 && "${UPGRADE_COPILOT}" -eq 1 ]]; then
-  # Framework-owned CI: refresh stale pre-v3 workflows (sdlc-spdd-* only,
-  # ./ execute bit) so claim/next/Claude/rules are watched.
+if [[ "${UPGRADE_CURSOR}" -eq 1 && "${UPGRADE_COPILOT}" -eq 1 ]] \
+  && ! framework_is_orchestrator_root "${TARGET}"; then
+  # Framework-owned CI for targets. The orchestrator keeps its own dogfood
+  # workflow (validates installed packs from a templates-free scratch tree).
   copy_framework_file \
     "${REPO_ROOT}/templates/project-github-workflows/validate-sdlc-spdd-adapters.yml" \
     "${TARGET}/.github/workflows/validate-sdlc-spdd-adapters.yml"

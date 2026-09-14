@@ -2,6 +2,8 @@
 # FEAT-005 readiness + FEAT-014 semantic minima smoke tests
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# shellcheck source=lib/harness.sh
+source "${ROOT}/tests/lib/harness.sh"
 VALIDATE="${ROOT}/scripts/validate-reasons-canvas.sh"
 CAPTURE="${ROOT}/scripts/capture-session-memory.sh"
 WORK="$(mktemp -d)"
@@ -166,11 +168,12 @@ else
 fi
 
 echo "== Test 6: capture validate/review cycle metrics =="
-T="${WORK}/cap"; mkdir -p "${T}"
+# Storage v3: captures land under <target>/sdlc-spdd/.sdlc/staged.
+T="${WORK}/cap"; mkdir -p "$(harness_home "${T}")"
 "${CAPTURE}" --target "${T}" --work-id FEAT-005-cycles --phase review \
   --summary "cycle metrics" --areas "scripts/validate-reasons-canvas.sh" \
   --validate-cycles 2 --review-cycles 1 >/dev/null
-stage="${T}/.sdlc/staged/lessons.jsonl"
+stage="$(harness_home "${T}")/.sdlc/staged/lessons.jsonl"
 if [[ -f "${stage}" ]] \
   && grep -q '"work_id": "FEAT-005-cycles"' "${stage}" \
   && grep -q '"kind": "session"' "${stage}" \

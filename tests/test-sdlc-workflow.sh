@@ -1,872 +1,488 @@
 #!/usr/bin/env bash
-set -euo pipefail
-
-# Hermetic: this harness tests the bash workflow CLI, not the Milestone 2 SUT.
-# Python gate_check is the SUT (REF-001); do not let a local pip install hijack gates.
-export SDLC_GATE_ENGINE=shell
-
-# Regression harness for templates/agent-context/sdlc-workflow.sh
+# Workflow-state contract for the Python engine (storage v3, one engine):
+#   claim -> next -> advance -> skip -> shelf -> resume -> gate
+# Asserts on sdlc-spdd/.sdlc/workflows/<WID>.state / .history, on
+# `status --json`, and on the team registry at sdlc-spdd/spdd/memory/registry.jsonl.
+#
+# Shell gate fallback (SDLC_GATE_ENGINE=shell) removed in REF-003; there is one engine.
 #
 # Usage: ./tests/test-sdlc-workflow.sh
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-WORKFLOW="${REPO_ROOT}/templates/agent-context/sdlc-workflow.sh"
-POINTER="${REPO_ROOT}/templates/agent-context/sdlc-pointer.sh"
-TEAM_REG="${REPO_ROOT}/templates/agent-context/sdlc-team-registry.sh"
-START="${REPO_ROOT}/scripts/start-agent-session.sh"
-CAPTURE="${REPO_ROOT}/scripts/capture-session-memory.sh"
+# shellcheck source=lib/harness.sh
+source "${SCRIPT_DIR}/lib/harness.sh"
 
+START="${HARNESS_REPO_ROOT}/scripts/start-agent-session.sh"
+EXAMPLE_CANVAS="${HARNESS_REPO_ROOT}/examples/spring-boot-order-api/spdd/canvas/FEAT-001-order-status-api.md"
+
+# All fixture targets are created under one WORK root so a single trap cleans up.
 WORK="$(mktemp -d)"
 trap 'rm -rf "${WORK}"' EXIT
 
-pass=0
-fail=0
-ok()  { echo "  ok   $1"; pass=$((pass + 1)); }
-bad() { echo "  FAIL $1" >&2; fail=$((fail + 1)); }
-
-registry_file() {
-  local t="$1"
-  printf '%s' "${t}/spdd/memory/registry.jsonl"
+new_target() {
+  TMPDIR="${WORK}" harness_new_target
 }
 
+state_file()   { printf '%s' "$(harness_home "$1")/.sdlc/workflows/$2.state"; }
+history_file() { printf '%s' "$(harness_home "$1")/.sdlc/workflows/$2.history"; }
+registry_file() { printf '%s' "$(harness_home "$1")/spdd/memory/registry.jsonl"; }
+
+state_val() {
+  local t="$1" work_id="$2" key="$3"
+  grep "^${key}=" "$(state_file "${t}" "${work_id}")" | head -1 | cut -d= -f2- || true
+}
+
+pointer_of() { harness_sdlc "$1" pointer get; }
+
+# Latest registry event for a Work ID must match the regex.
 registry_matches() {
   local t="$1" work_id="$2" regex="$3"
   local reg
   reg="$(registry_file "${t}")"
-  [[ -f "${reg}" ]] && grep -q "\"work_id\": \"${work_id}\"" "${reg}" && grep -Eq "${regex}" "${reg}"
+  [[ -f "${reg}" ]] && grep "\"work_id\": \"${work_id}\"" "${reg}" | tail -1 | grep -Eq "${regex}"
 }
 
-wf() { SDLC_ROOT="${1}" "${WORKFLOW}" "${@:2}"; }
+# Canvas with structured Readiness and one T01 op (Files mapping present so the
+# code gate's semantic minima are satisfied when readiness allows coding).
+write_canvas() {
+  local t="$1" work_id="$2" readiness="$3" op_status="${4:-Not Started}"
+  harness_seed_work "${t}" "${work_id}"
+  local readiness_line=""
+  if [[ -n "${readiness}" ]]; then
+    readiness_line="- Readiness: ${readiness}"
+  fi
+  cat > "$(harness_home "${t}")/spdd/canvas/${work_id}.md" <<EOF
+# REASONS Canvas: ${work_id}
 
-setup_feature() {
-  local t="$1"
-  local work_id="$2"
-  mkdir -p "${t}/.sdlc/sessions" \
-    "${t}/agent-context" \
-    "${t}/spdd/canvas" \
-    "${t}/spdd/analysis" \
-    "${t}/scripts/lib"
-  cp "${POINTER}" "${t}/agent-context/sdlc-pointer.sh"
-  cp "${WORKFLOW}" "${t}/agent-context/sdlc-workflow.sh"
-  cp "${TEAM_REG}" "${t}/agent-context/sdlc-team-registry.sh"
-  cp "${REPO_ROOT}/scripts/lib/paths.sh" "${t}/scripts/lib/paths.sh"
-  mkdir -p "${t}/spdd/memory"
-  : > "${t}/spdd/memory/registry.jsonl"
-  cp "${REPO_ROOT}/scripts/lib/readiness.sh" "${t}/scripts/lib/readiness.sh"
-  chmod +x "${t}/agent-context/sdlc-pointer.sh" "${t}/agent-context/sdlc-workflow.sh" "${t}/agent-context/sdlc-team-registry.sh"
+## Metadata
+
+- Work ID: ${work_id}
+- Status: In Progress
+${readiness_line}
+
+## R - Requirements
+
+- Harness requirement for ${work_id}.
+
+## O - Operations
+
+### T01 - First
+
+- Status: ${op_status}
+- Files: src/first.py
+
+## Final Status
+
+- Status:
+EOF
 }
 
 # ---------------------------------------------------------------------------
-echo "== Test 1: resume sets pointer and creates workflow state =="
-T="${WORK}/resume"
-setup_feature "${T}" "FEAT-001-alpha"
-wf "${T}" resume FEAT-001-alpha >/dev/null
-ptr="$(SDLC_ROOT="${T}" "${T}/agent-context/sdlc-pointer.sh" get)"
-if [[ "${ptr}" == "FEAT-001-alpha" ]]; then ok "resume sets pointer"; else bad "pointer not set"; fi
-if [[ -f "${T}/.sdlc/workflows/FEAT-001-alpha.state" ]]; then ok "workflow state created"; else bad "missing state file"; fi
+echo "== Test 1: claim sets pointer and creates workflow state + history =="
+T="$(new_target)"
+W="FEAT-001-alpha"
+harness_seed_work "${T}" "${W}"
+SDLC_USER="alice" harness_sdlc "${T}" claim "${W}" >/dev/null
+[[ "$(pointer_of "${T}")" == "${W}" ]] && ok "claim sets pointer" || bad "pointer not set by claim"
+[[ -f "$(state_file "${T}" "${W}")" ]] && ok "workflow .state created under sdlc-spdd/.sdlc/workflows" || bad "missing state file"
+[[ -f "$(history_file "${T}" "${W}")" ]] && ok "workflow .history created" || bad "missing history file"
+grep -q $'\tcreate\twork_id='"${W}" "$(history_file "${T}" "${W}")" && ok "history records create" || bad "history missing create"
+grep -q $'\tresume\tphase=' "$(history_file "${T}" "${W}")" && ok "history records resume" || bad "history missing resume"
+[[ "$(state_val "${T}" "${W}" work_id)" == "${W}" ]] && ok "state work_id" || bad "state work_id wrong"
+[[ "$(state_val "${T}" "${W}" active)" == "1" ]] && ok "state active=1 after claim" || bad "expected active=1"
+[[ "$(state_val "${T}" "${W}" phase)" == "architect" ]] && ok "canvas-only work infers architect" || bad "expected architect, got $(state_val "${T}" "${W}" phase)"
+[[ "$(state_val "${T}" "${W}" gate_canvas_exists)" == "passed" ]] && ok "gate_canvas_exists=passed" || bad "canvas gate not passed"
+[[ "$(state_val "${T}" "${W}" gate_requirement_documented)" == "passed" ]] && ok "gate_requirement_documented=passed" || bad "requirement gate not passed"
+[[ ! -d "${T}/.sdlc" ]] && ok "no legacy root .sdlc created" || bad "legacy root .sdlc created"
+registry_matches "${T}" "${W}" '"status": "active".*"owner": "alice"' && ok "claim writes team registry (active, alice)" || bad "registry row missing"
 
 # ---------------------------------------------------------------------------
-echo "== Test 2: advance moves through phases =="
-wf "${T}" advance >/dev/null
-phase="$(grep '^phase=' "${T}/.sdlc/workflows/FEAT-001-alpha.state" | cut -d= -f2)"
-if [[ "${phase}" == "analysis" ]]; then ok "advance to analysis"; else bad "expected analysis, got ${phase}"; fi
+echo "== Test 2: next is actionable and re-syncs state =="
+out="$(harness_sdlc "${T}" next)"
+grep -q "Work ID: ${W}" <<< "${out}" && ok "next names the Work ID" || bad "next missing Work ID"
+grep -q 'Do now (assistant):' <<< "${out}" && ok "next has Do now section" || bad "next missing Do now"
+grep -q 'When this phase is done:' <<< "${out}" && ok "next has phase-done section" || bad "next missing phase-done"
+grep -q 'sdlc-spdd-architect' <<< "${out}" && ok "next recommends architect at architect phase" || bad "next should recommend architect"
+grep -q '(moves to: code)' <<< "${out}" && ok "next names the following phase" || bad "next missing moves-to"
 
 # ---------------------------------------------------------------------------
-echo "== Test 3: skip records reason and moves past phase =="
-wf "${T}" skip api-test --reason "no HTTP surface" >/dev/null
-if grep -q '^skip_api-test=' "${T}/.sdlc/workflows/FEAT-001-alpha.state"; then
-  ok "skip recorded in state"
-else
-  bad "skip not recorded"
-fi
+echo "== Test 3: advance architect->code is gated on canvas readiness =="
+rc=0
+harness_sdlc "${T}" advance >/dev/null 2>"${T}/advance.err" || rc=$?
+[[ "${rc}" -ne 0 ]] && ok "advance refused for non-ready canvas (rc=${rc})" || bad "advance should fail on non-ready canvas"
+grep -q "not Ready For Coding" "${T}/advance.err" && ok "advance error names readiness" || bad "advance error missing readiness: $(cat "${T}/advance.err")"
+grep -q "missing structured Readiness field" "${T}/advance.err" && ok "absent readiness is reported (no compat pass-through)" || bad "expected missing-readiness message"
+[[ "$(state_val "${T}" "${W}" phase)" == "architect" ]] && ok "phase stays architect after refusal" || bad "phase changed after refused advance"
+
+write_canvas "${T}" "${W}" "Ready For Coding"
+harness_sdlc "${T}" advance >/dev/null && ok "advance succeeds once Ready For Coding" || bad "advance should succeed when ready"
+[[ "$(state_val "${T}" "${W}" phase)" == "code" ]] && ok "phase=code after advance" || bad "expected code, got $(state_val "${T}" "${W}" phase)"
+grep -q $'\tadvance\tphase=code' "$(history_file "${T}" "${W}")" && ok "history records advance" || bad "history missing advance"
+harness_sdlc "${T}" sync >/dev/null
+[[ "$(state_val "${T}" "${W}" phase)" == "code" ]] && ok "sync keeps code for Ready For Coding canvas" || bad "sync moved phase to $(state_val "${T}" "${W}" phase)"
+[[ "$(state_val "${T}" "${W}" operation)" == "T01" ]] && ok "sync infers operation T01 from canvas" || bad "expected operation T01"
 
 # ---------------------------------------------------------------------------
-echo "== Test 4: shelf and resume shelved work =="
-wf "${T}" shelf --reason "context switch" >/dev/null
-ptr="$(SDLC_ROOT="${T}" "${T}/agent-context/sdlc-pointer.sh" get)"
-if [[ -z "${ptr}" ]]; then ok "shelf clears pointer"; else bad "pointer should be empty"; fi
-active="$(grep '^active=' "${T}/.sdlc/workflows/FEAT-001-alpha.state" | cut -d= -f2)"
-if [[ "${active}" == "0" ]]; then ok "shelf marks inactive"; else bad "expected active=0"; fi
-
-setup_feature "${T}" "CHORE-002-beta"
-wf "${T}" resume CHORE-002-beta >/dev/null
-if wf "${T}" list-shelved | grep -q 'FEAT-001-alpha'; then ok "shelved list includes parked work"; else bad "shelved list missing FEAT-001-alpha"; fi
-wf "${T}" resume FEAT-001-alpha >/dev/null
-ptr="$(SDLC_ROOT="${T}" "${T}/agent-context/sdlc-pointer.sh" get)"
-if [[ "${ptr}" == "FEAT-001-alpha" ]]; then ok "resume restores shelved pointer"; else bad "resume failed"; fi
+echo "== Test 4: skip records reason and moves past the phase =="
+out="$(harness_sdlc "${T}" skip api-test --reason "no HTTP surface")"
+grep -q 'Skipped api-test; now at review' <<< "${out}" && ok "skip reports new phase" || bad "skip output: ${out}"
+[[ "$(state_val "${T}" "${W}" skip_api-test)" == "no HTTP surface" ]] && ok "skip reason recorded in state" || bad "skip not recorded"
+[[ "$(state_val "${T}" "${W}" phase)" == "review" ]] && ok "skip moved phase to review" || bad "expected review"
+grep -q $'\tskip\tphase=api-test reason=no HTTP surface' "$(history_file "${T}" "${W}")" && ok "history records skip" || bad "history missing skip"
 
 # ---------------------------------------------------------------------------
-echo "== Test 5: sync infers phase from artifacts =="
-T="${WORK}/sync"
-work_id="FEAT-003-gamma"
-setup_feature "${T}" "${work_id}"
-mkdir -p "${T}/requirements/milestones"
-printf '# req\n' > "${T}/requirements/milestones/${work_id}.md"
-printf '# analysis\n' > "${T}/spdd/analysis/${work_id}-analysis.md"
-printf '# canvas\nReady For Coding\n' > "${T}/spdd/canvas/${work_id}.md"
-wf "${T}" resume "${work_id}" >/dev/null
-phase="$(grep '^phase=' "${T}/.sdlc/workflows/${work_id}.state" | cut -d= -f2)"
-if [[ "${phase}" == "code" ]]; then ok "sync infers code from artifacts"; else bad "expected code, got ${phase}"; fi
-if grep -q '^gate_canvas_exists=passed' "${T}/.sdlc/workflows/${work_id}.state"; then
-  ok "sync marks canvas gate passed"
-else
-  bad "canvas gate not passed"
-fi
+echo "== Test 5: shelf clears pointer; resume restores; auto-shelf on switch =="
+harness_sdlc "${T}" shelf --reason "context switch" >/dev/null
+[[ -z "$(pointer_of "${T}")" ]] && ok "shelf clears pointer" || bad "pointer should be empty"
+[[ "$(state_val "${T}" "${W}" active)" == "0" ]] && ok "shelf marks active=0" || bad "expected active=0"
+[[ "$(state_val "${T}" "${W}" shelved_reason)" == "context switch" ]] && ok "shelf stores reason" || bad "shelved_reason wrong"
+[[ -n "$(state_val "${T}" "${W}" shelved_at)" ]] && ok "shelf stamps shelved_at" || bad "shelved_at empty"
+grep -q $'\tshelf\tcontext switch' "$(history_file "${T}" "${W}")" && ok "history records shelf" || bad "history missing shelf"
+harness_sdlc "${T}" list-shelved | grep -q "^${W}"$'\t' && ok "list-shelved includes parked work" || bad "list-shelved missing ${W}"
+
+rc=0
+harness_sdlc "${T}" shelf >/dev/null 2>&1 || rc=$?
+[[ "${rc}" -ne 0 ]] && ok "shelf with no pointer exits non-zero" || bad "shelf without pointer should fail"
+
+W2="CHORE-002-beta"
+harness_seed_work "${T}" "${W2}"
+harness_sdlc "${T}" resume "${W2}" >/dev/null
+[[ "$(pointer_of "${T}")" == "${W2}" ]] && ok "resume of second work sets pointer" || bad "pointer not ${W2}"
+harness_sdlc "${T}" resume "${W}" >/dev/null
+[[ "$(pointer_of "${T}")" == "${W}" ]] && ok "resume restores shelved pointer" || bad "resume failed"
+[[ "$(state_val "${T}" "${W}" active)" == "1" ]] && ok "resume sets active=1" || bad "expected active=1"
+[[ -z "$(state_val "${T}" "${W}" shelved_reason)" ]] && ok "resume clears shelved_reason" || bad "shelved_reason not cleared"
+[[ "$(state_val "${T}" "${W2}" active)" == "0" ]] && ok "switching work auto-shelves previous" || bad "${W2} should be auto-shelved"
+[[ "$(state_val "${T}" "${W2}" shelved_reason)" == "auto-shelf for resume ${W}" ]] && ok "auto-shelf reason recorded" || bad "auto-shelf reason: '$(state_val "${T}" "${W2}" shelved_reason)'"
+harness_sdlc "${T}" list-shelved | grep -q "^${W2}"$'\t' && ok "list-shelved shows auto-shelved work" || bad "list-shelved missing ${W2}"
 
 # ---------------------------------------------------------------------------
-echo "== Test 6: status output is human-readable =="
-out="$(wf "${T}" status "${work_id}")"
-if grep -q 'Quality gates:' <<< "${out}" && grep -q 'Phase track:' <<< "${out}"; then
-  ok "status shows gates and phase track"
-else
-  bad "status output incomplete"
-fi
+echo "== Test 6: sync infers phase from artifacts =="
+T="$(new_target)"
+W="FEAT-003-gamma"
+H="$(harness_home "${T}")"
+mkdir -p "${H}/requirements/milestones" "${H}/spdd/analysis" "${H}/spdd/canvas"
+printf '# Requirement: %s\n' "${W}" > "${H}/requirements/milestones/${W}.md"
+harness_sdlc "${T}" resume "${W}" >/dev/null
+[[ "$(state_val "${T}" "${W}" phase)" == "analysis" ]] && ok "requirement only -> analysis" || bad "expected analysis, got $(state_val "${T}" "${W}" phase)"
+printf '# analysis\n' > "${H}/spdd/analysis/${W}-analysis.md"
+harness_sdlc "${T}" sync >/dev/null
+[[ "$(state_val "${T}" "${W}" phase)" == "plan" ]] && ok "+analysis -> plan" || bad "expected plan"
+write_canvas "${T}" "${W}" "Needs Analysis"
+harness_sdlc "${T}" sync >/dev/null
+[[ "$(state_val "${T}" "${W}" phase)" == "architect" ]] && ok "+canvas (not ready) -> architect" || bad "expected architect"
+write_canvas "${T}" "${W}" "Ready For Coding"
+out="$(harness_sdlc "${T}" sync --work-id "${W}")"
+grep -q "Synced ${W} -> phase code" <<< "${out}" && ok "sync --work-id reports code" || bad "sync output: ${out}"
+[[ "$(state_val "${T}" "${W}" phase)" == "code" ]] && ok "Ready For Coding canvas -> code" || bad "expected code"
+[[ "$(state_val "${T}" "${W}" gate_canvas_exists)" == "passed" ]] && ok "sync marks canvas gate passed" || bad "canvas gate not passed"
+[[ "$(state_val "${T}" "${W}" gate_requirement_documented)" == "passed" ]] && ok "sync marks requirement gate passed" || bad "requirement gate not passed"
+grep -q $'\tsync\tphase=code' "$(history_file "${T}" "${W}")" && ok "history records sync" || bad "history missing sync"
 
 # ---------------------------------------------------------------------------
-echo "== Test 7: session scripts update workflow timestamps =="
-T="${WORK}/integrate"
-work_id="FEAT-004-delta"
-setup_feature "${T}" "${work_id}"
-"${START}" --target "${T}" --work-id "${work_id}" --phase plan >/dev/null
-if grep -q '^last_session_at=' "${T}/.sdlc/workflows/${work_id}.state"; then
-  ok "start-agent-session touches workflow"
-else
-  bad "missing last_session_at"
-fi
-"${CAPTURE}" --target "${T}" --work-id "${work_id}" --phase plan --summary "planned" >/dev/null
-if grep -q '^last_capture_at=' "${T}/.sdlc/workflows/${work_id}.state"; then
-  ok "capture-session-memory records workflow capture"
-else
-  bad "missing last_capture_at"
-fi
+echo "== Test 7: status is human-readable; status --json for agents =="
+out="$(harness_sdlc "${T}" status)"
+grep -q "^Pointer: ${W}" <<< "${out}" && ok "status shows pointer" || bad "status missing Pointer"
+grep -q "^Work ID: ${W}" <<< "${out}" && ok "status shows Work ID" || bad "status missing Work ID"
+json="$(harness_sdlc "${T}" status --json | tr -d ' \n')"
+grep -q "\"pointer\":\"${W}\"" <<< "${json}" && ok "json pointer" || bad "json pointer missing"
+grep -q "\"work_id\":\"${W}\"" <<< "${json}" && ok "json work_id" || bad "json work_id missing"
+grep -q '"phase":"code"' <<< "${json}" && ok "json phase=code" || bad "json phase wrong: ${json}"
+grep -q '"operation":"T01"' <<< "${json}" && ok "json operation=T01" || bad "json operation missing"
+grep -q '"operation_title":"First"' <<< "${json}" && ok "json operation_title" || bad "json operation_title missing"
+grep -q '"active":true' <<< "${json}" && ok "json active=true" || bad "json active missing"
+grep -q '"recommended_command":"/sdlc-spdd-code' <<< "${json}" && ok "json recommended_command is code" || bad "json recommended_command wrong"
+grep -q '"gates":{' <<< "${json}" && grep -q '"canvas_exists":"passed"' <<< "${json}" && ok "json gates include canvas_exists=passed" || bad "json gates incomplete"
+grep -q '"phases":\["init","analysis","plan","architect","code","api-test","review","prompt-update","retro","sync"\]' <<< "${json}" && ok "json lists phase track" || bad "json phases wrong"
+json_other="$(harness_sdlc "${T}" status --json --work-id "${W}" | tr -d ' \n')"
+grep -q '"phase":"code"' <<< "${json_other}" && ok "status --json --work-id works" || bad "status --work-id failed"
 
 # ---------------------------------------------------------------------------
-echo "== Test 8: next command gives actionable output =="
-T="${WORK}/next"
-work_id="FEAT-005-next"
-setup_feature "${T}" "${work_id}"
-printf '# canvas\nReady For Coding\n' > "${T}/spdd/canvas/${work_id}.md"
-wf "${T}" resume "${work_id}" >/dev/null
-out="$(wf "${T}" next)"
-if grep -q 'Do now (assistant):' <<< "${out}" && grep -q 'When this phase is done:' <<< "${out}"; then
-  ok "next output is actionable"
-else
-  bad "next output missing sections"
-fi
+echo "== Test 8: status --json / next without a pointer =="
+harness_sdlc "${T}" shelf --reason park >/dev/null
+json="$(harness_sdlc "${T}" status --json | tr -d ' \n')"
+grep -q '"pointer":""' <<< "${json}" && grep -q '"work_id":null' <<< "${json}" && ok "json shows empty pointer / null work_id" || bad "json without pointer: ${json}"
+out="$(harness_sdlc "${T}" next)"
+grep -q 'No active Work ID pointer' <<< "${out}" && ok "next explains missing pointer" || bad "next without pointer: ${out}"
+grep -q 'list-shelved' <<< "${out}" && ok "next hints at list-shelved when work is parked" || bad "next missing list-shelved hint"
+rc=0
+harness_sdlc "${T}" advance >/dev/null 2>&1 || rc=$?
+[[ "${rc}" -ne 0 ]] && ok "advance without pointer exits non-zero" || bad "advance without pointer should fail"
+rc=0
+harness_sdlc "${T}" gate --phase code >/dev/null 2>&1 || rc=$?
+[[ "${rc}" -eq 2 ]] && ok "gate without pointer exits 2" || bad "gate without pointer rc=${rc}"
+harness_sdlc "${T}" resume "${W}" >/dev/null
 
 # ---------------------------------------------------------------------------
-echo "== Test 9: status --json for agents =="
-json="$(wf "${T}" status --json)"
-if grep -q '"phase":"code"' <<< "${json}" && grep -q '"recommended_command"' <<< "${json}"; then
-  ok "json status includes phase and command"
-else
-  bad "json status incomplete: ${json}"
-fi
+echo "== Test 9: gate --phase reports OK / BLOCKED with --json =="
+out="$(harness_sdlc "${T}" gate --phase code)"
+grep -q "gate code: OK for ${W}" <<< "${out}" && ok "gate code OK for ready canvas" || bad "gate output: ${out}"
+json="$(harness_sdlc "${T}" gate --phase code --json | tr -d ' \n')"
+grep -q '"ok":true' <<< "${json}" && grep -q '"failures":\[\]' <<< "${json}" && ok "gate --json ok=true, no failures" || bad "gate json: ${json}"
+grep -q '"advisory":\[{"gate":"architect_review"' <<< "${json}" && ok "gate --json lists advisory gates" || bad "gate json advisory missing"
+write_canvas "${T}" "${W}" "Needs Clarification"
+rc=0
+harness_sdlc "${T}" gate --phase code >"${T}/gate.out" 2>"${T}/gate.err" || rc=$?
+[[ "${rc}" -eq 1 ]] && ok "gate exits 1 when blocked" || bad "gate rc=${rc} when blocked"
+grep -q "gate code: BLOCKED for ${W}" "${T}/gate.err" && ok "gate prints BLOCKED to stderr" || bad "gate BLOCKED missing"
+grep -q "readiness is needs-clarification, not Ready For Coding" "${T}/gate.err" && ok "gate names the readiness failure" || bad "gate failure text: $(cat "${T}/gate.err")"
+rc=0
+json="$(harness_sdlc "${T}" gate --phase code --json | tr -d ' \n')" || rc=$?
+grep -q '"ok":false' <<< "${json}" && ok "gate --json ok=false when blocked" || bad "gate json blocked: ${json}"
+json="$(harness_sdlc "${T}" gate --phase review --json --work-id "${W}" | tr -d ' \n' || true)"
+grep -q 'noledgerevidence' <<< "${json}" && ok "gate review requires ledger evidence" || bad "gate review json: ${json}"
 
 # ---------------------------------------------------------------------------
-echo "== Test 10: sdlc.sh wrapper delegates =="
-T="${WORK}/wrapper"
-work_id="FEAT-005-wrap"
-setup_feature "${T}" "${work_id}"
-mkdir -p "${T}/scripts/sdlc-spdd"
-cp "${REPO_ROOT}/scripts/sdlc.sh" "${T}/scripts/sdlc-spdd/sdlc.sh"
-chmod +x "${T}/scripts/sdlc-spdd/sdlc.sh"
-SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" resume "${work_id}" >/dev/null
-out="$(SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" next)"
-if grep -q "${work_id}" <<< "${out}"; then ok "sdlc.sh wrapper works"; else bad "sdlc.sh wrapper failed"; fi
+echo "== Test 10: session scripts update workflow timestamps + stage captures =="
+T="$(new_target)"
+W="FEAT-004-delta"
+H="$(harness_home "${T}")"
+write_canvas "${T}" "${W}" "Ready For Coding"
+"${START}" --target "${T}" --work-id "${W}" --phase plan >/dev/null
+[[ -n "$(state_val "${T}" "${W}" last_session_at)" ]] && ok "start-agent-session stamps last_session_at" || bad "missing last_session_at"
+[[ "$(pointer_of "${T}")" == "${W}" ]] && ok "start-agent-session sets pointer" || bad "pointer not set"
+[[ -f "${H}/.sdlc/sessions/current-session.md" ]] && ok "session brief written under sdlc-spdd/.sdlc/sessions" || bad "missing current-session.md"
+grep -q '## Workflow State' "${H}/.sdlc/sessions/current-session.md" \
+  && grep -q 'Assistant command' "${H}/.sdlc/sessions/current-session.md" \
+  && ok "session brief embeds workflow state" || bad "session brief missing workflow state"
+"${H}/scripts/capture-session-memory.sh" --target "${T}" --work-id "${W}" --phase plan --summary "planned" >/dev/null
+[[ -n "$(state_val "${T}" "${W}" last_capture_at)" ]] && ok "capture-session-memory stamps last_capture_at" || bad "missing last_capture_at"
+[[ -s "${H}/.sdlc/staged/lessons.jsonl" ]] && ok "capture stages into sdlc-spdd/.sdlc/staged/lessons.jsonl" || bad "staged ledger empty"
+grep -q "\"work_id\": \"${W}\"" "${H}/.sdlc/staged/lessons.jsonl" && ok "staged record carries work_id" || bad "staged record lacks work_id"
+[[ ! -f "${T}/.sdlc/staged/lessons.jsonl" ]] && ok "no legacy root staged ledger" || bad "legacy root staged ledger written"
+brief="$(harness_sdlc "${T}" session brief)"
+grep -q "| Work ID | ${W} |" <<< "${brief}" && grep -q '| Readiness | ready-for-coding |' <<< "${brief}" \
+  && ok "session brief has Work ID + Readiness rows" || bad "session brief: ${brief}"
 
 # ---------------------------------------------------------------------------
-echo "== Test 10b: sdlc.sh claim does not re-enter CLI (exec + nested source) =="
-T="${WORK}/wrapper-claim"
-work_id="FEAT-005b-claim"
-setup_feature "${T}" "${work_id}"
-mkdir -p "${T}/scripts/sdlc-spdd" "${T}/spdd/canvas"
-printf '%s\n' "# ${work_id}" '' '## Final Status' '' '- Status: In Progress' \
-  > "${T}/spdd/canvas/${work_id}.md"
-cp "${REPO_ROOT}/scripts/sdlc.sh" "${T}/scripts/sdlc-spdd/sdlc.sh"
-chmod +x "${T}/scripts/sdlc-spdd/sdlc.sh"
-if SDLC_USER="tester" SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" claim "${work_id}" >/dev/null 2>"${T}/claim.err"; then
-  if registry_matches "${T}" "${work_id}" '"status": "active"'; then
-    ok "sdlc.sh claim updates registry without CLI re-entry"
-  else
-    bad "sdlc.sh claim exited 0 but registry missing row"
-  fi
-else
-  bad "sdlc.sh claim failed (possible CLI re-entry): $(head -3 "${T}/claim.err")"
-fi
+echo "== Test 11: capture is guarded by the pointer =="
+# The Ready For Coding canvas re-syncs the phase to code, where a verify
+# receipt is mandatory; pin --phase plan for the plain guarded-capture case.
+harness_sdlc "${T}" capture --phase plan --summary "ok" >/dev/null 2>&1 && ok "capture succeeds when pointer matches" || bad "capture should succeed for active pointer"
+rc=0
+# Engine prints the mismatch on stdout, so capture both streams.
+harness_sdlc "${T}" capture --phase plan --work-id FEAT-999-other --summary "bad" >"${T}/cap.err" 2>&1 || rc=$?
+[[ "${rc}" -eq 3 ]] && ok "capture refuses stale work-id (rc=3)" || bad "capture mismatch rc=${rc}"
+grep -q "does not match pointer" "${T}/cap.err" && ok "capture mismatch names the pointer" || bad "capture error: $(cat "${T}/cap.err")"
+[[ "$(grep -c '"work_id"' "${H}/.sdlc/staged/lessons.jsonl")" -eq 2 ]] && ok "refused capture staged nothing" || bad "staged count changed on refused capture"
 
 # ---------------------------------------------------------------------------
-echo "== Test 11: session brief includes workflow state =="
-T="${WORK}/brief"
-work_id="FEAT-006-brief"
-setup_feature "${T}" "${work_id}"
-"${START}" --target "${T}" --work-id "${work_id}" --phase plan >/dev/null
-if grep -q '## Workflow State' "${T}/.sdlc/sessions/current-session.md" \
-  && grep -q 'Assistant command' "${T}/.sdlc/sessions/current-session.md"; then
-  ok "session brief embeds workflow state"
-else
-  bad "session brief missing workflow state"
-fi
+echo "== Test 12: code capture / complete without verify receipt refuse =="
+harness_sdlc "${T}" resume "${W}" --phase code >/dev/null
+rc=0
+harness_sdlc "${T}" capture --phase code --summary "T01 complete" >/dev/null 2>"${T}/receipt.err" || rc=$?
+[[ "${rc}" -ne 0 ]] && ok "code capture without receipt refuses" || bad "code capture without receipt should refuse"
+grep -q "verify receipt required" "${T}/receipt.err" && ok "capture names the receipt requirement" || bad "capture error: $(cat "${T}/receipt.err")"
+rc=0
+# complete prints its refusal on stdout; capture both streams.
+harness_sdlc "${T}" complete >"${T}/complete.err" 2>&1 || rc=$?
+[[ "${rc}" -ne 0 ]] && ok "complete without receipt refuses" || bad "complete without receipt should refuse"
+grep -q "verify receipt required" "${T}/complete.err" && ok "complete names the receipt requirement" || bad "complete error: $(cat "${T}/complete.err")"
 
 # ---------------------------------------------------------------------------
-echo "== Test 12: infers next canvas operation from REASONS Canvas =="
-T="${WORK}/ops"
-work_id="FEAT-007-ops"
-setup_feature "${T}" "${work_id}"
-cp "${REPO_ROOT}/examples/spring-boot-order-api/spdd/canvas/FEAT-001-order-status-api.md" \
-  "${T}/spdd/canvas/${work_id}.md"
-wf "${T}" resume "${work_id}" >/dev/null
-wf "${T}" sync "${work_id}" >/dev/null
-op="$(grep '^operation=' "${T}/.sdlc/workflows/${work_id}.state" | cut -d= -f2)"
-if [[ "${op}" == "T03" ]]; then ok "sync infers next operation T03"; else bad "expected T03, got ${op}"; fi
-out="$(wf "${T}" next)"
-if grep -q 'operation T03' <<< "${out}"; then ok "next recommends T03 in code command"; else bad "next missing T03 command"; fi
-json="$(wf "${T}" status --json)"
-if grep -q '"operation":"T03"' <<< "${json}" && grep -q '"operation_title"' <<< "${json}"; then
-  ok "json includes operation and title"
-else
-  bad "json missing operation fields"
-fi
+echo "== Test 13: infers next canvas operation from REASONS Canvas =="
+T="$(new_target)"
+W="FEAT-007-ops"
+H="$(harness_home "${T}")"
+harness_seed_work "${T}" "${W}"
+cp "${EXAMPLE_CANVAS}" "${H}/spdd/canvas/${W}.md"
+harness_sdlc "${T}" resume "${W}" >/dev/null
+harness_sdlc "${T}" sync --work-id "${W}" >/dev/null
+[[ "$(state_val "${T}" "${W}" operation)" == "T03" ]] && ok "sync infers next operation T03" || bad "expected T03, got $(state_val "${T}" "${W}" operation)"
+out="$(harness_sdlc "${T}" next)"
+grep -q 'Next canvas operation: T03' <<< "${out}" && ok "next names T03" || bad "next missing T03"
+json="$(harness_sdlc "${T}" status --json | tr -d '\n')"
+grep -q '"operation": "T03"' <<< "${json}" && grep -q '"operation_title": "' <<< "${json}" && ok "json includes operation and title" || bad "json missing operation fields"
 
 # ---------------------------------------------------------------------------
-echo "== Test 12b: empty Final Status does not keep last op incomplete =="
-T="${WORK}/ops-final"
-work_id="FEAT-012b-final"
-setup_feature "${T}" "${work_id}"
-cat > "${T}/spdd/canvas/${work_id}.md" <<'EOF'
-# REASONS Canvas: FEAT-012b-final - empty Final Status
-
-## Metadata
-- Work ID: FEAT-012b-final
-- Status: In Progress
-- Readiness: Ready For Coding
-
-## O - Operations
-
-### T01 - First
-
-- Status: Complete
-
-### T02 - Second
-
-- Status: Complete
-
-## Final Status
-
-- Status:
-- Completed Date:
-EOF
-wf "${T}" resume "${work_id}" --phase code >/dev/null
-wf "${T}" sync "${work_id}" >/dev/null
-op="$(grep '^operation=' "${T}/.sdlc/workflows/${work_id}.state" | cut -d= -f2 || true)"
-if [[ -z "${op}" ]]; then
-  ok "all-complete canvas has empty next operation"
-else
-  bad "expected empty operation, got '${op}'"
-fi
-out="$(wf "${T}" next)"
-if grep -q 'all canvas operations complete' <<< "${out}"; then
-  ok "next reports all operations complete"
-else
-  bad "next should say all operations complete: ${out}"
-fi
+echo "== Test 14: all-complete canvas has empty next operation =="
+W="FEAT-012b-final"
+write_canvas "${T}" "${W}" "Ready For Coding" "Complete"
+harness_sdlc "${T}" resume "${W}" --phase code >/dev/null
+harness_sdlc "${T}" sync --work-id "${W}" >/dev/null
+[[ -z "$(state_val "${T}" "${W}" operation)" ]] && ok "all-complete canvas has empty operation" || bad "expected empty operation, got '$(state_val "${T}" "${W}" operation)'"
+out="$(harness_sdlc "${T}" next)"
+! grep -q 'Next canvas operation' <<< "${out}" && ok "next omits operation when all complete" || bad "next should not name an operation: ${out}"
+json="$(harness_sdlc "${T}" status --json | tr -d ' \n')"
+grep -q '"operation":""' <<< "${json}" && ok "json operation empty when all complete" || bad "json operation: ${json}"
 
 # ---------------------------------------------------------------------------
-echo "== Test 12c: code phase with Needs Analysis redirects next to architect =="
-T="${WORK}/ops-readiness"
-work_id="FEAT-012c-readiness"
-setup_feature "${T}" "${work_id}"
-cat > "${T}/spdd/canvas/${work_id}.md" <<'EOF'
-# REASONS Canvas: FEAT-012c-readiness
-
-## Metadata
-- Work ID: FEAT-012c-readiness
-- Status: In Progress
-- Readiness: Needs Analysis
-
-## O - Operations
-
-### T01 - First
-
-- Status: Not Started
-
-## Final Status
-
-- Status:
-EOF
-wf "${T}" resume "${work_id}" --phase code >/dev/null
-out="$(wf "${T}" next)"
-if grep -q 'sdlc-spdd-architect' <<< "${out}" && grep -q 'not Ready For Coding' <<< "${out}"; then
-  ok "next redirects to architect when readiness blocks coding"
-else
-  bad "next should recommend architect when Needs Analysis: ${out}"
-fi
-json="$(wf "${T}" status --json)"
-if grep -q '"readiness":"needs-analysis"' <<< "${json}" \
-  && grep -q 'sdlc-spdd-architect' <<< "${json}"; then
-  ok "json readiness + recommended_command reflect gate"
-else
-  bad "json missing readiness gate fields: ${json}"
-fi
+echo "== Test 15: code phase with Needs Analysis redirects to architect =="
+W="FEAT-012c-readiness"
+write_canvas "${T}" "${W}" "Needs Analysis"
+rc=0
+harness_sdlc "${T}" resume "${W}" --phase code >/dev/null 2>"${T}/resume.err" || rc=$?
+[[ "${rc}" -ne 0 ]] && ok "resume --phase code refused when Needs Analysis" || bad "resume --phase code should refuse"
+grep -q "not Ready For Coding" "${T}/resume.err" && ok "resume error names readiness" || bad "resume error: $(cat "${T}/resume.err")"
+harness_sdlc "${T}" resume "${W}" --phase code --force >/dev/null && ok "resume --phase code --force overrides" || bad "resume --force should succeed"
+[[ "$(state_val "${T}" "${W}" phase)" == "code" ]] && ok "forced phase persisted as code" || bad "expected code after --force"
+out="$(harness_sdlc "${T}" next)"
+grep -q 'sdlc-spdd-architect' <<< "${out}" && grep -q 'Phase: architect' <<< "${out}" && ok "next re-syncs to architect when readiness blocks coding" || bad "next should recommend architect: ${out}"
+json="$(harness_sdlc "${T}" status --json | tr -d ' \n')"
+grep -q '"phase":"architect"' <<< "${json}" && grep -q 'sdlc-spdd-architect' <<< "${json}" && ok "json phase + recommended_command reflect gate" || bad "json: ${json}"
 
 # ---------------------------------------------------------------------------
-echo "== Test 12d: advance to code refused when readiness blocks coding =="
-T="${WORK}/advance-readiness"
-work_id="FEAT-012d-advance"
-setup_feature "${T}" "${work_id}"
-cat > "${T}/spdd/canvas/${work_id}.md" <<'EOF'
-# REASONS Canvas: FEAT-012d-advance
-
-## Metadata
-- Work ID: FEAT-012d-advance
-- Status: In Progress
-- Readiness: Needs Clarification
-
-## O - Operations
-
-### T01 - First
-
-- Status: Not Started
-
-## Final Status
-
-- Status:
-EOF
-wf "${T}" resume "${work_id}" --phase architect >/dev/null
-if wf "${T}" advance >/dev/null 2>"${WORK}/advance-err.txt"; then
-  bad "advance architect→code should fail when Needs Clarification"
-else
-  if grep -q "not Ready For Coding" "${WORK}/advance-err.txt"; then
-    ok "advance refuses code when readiness blocks"
-  else
-    bad "advance error missing readiness message: $(cat "${WORK}/advance-err.txt")"
-  fi
-fi
-phase="$(grep '^phase=' "${T}/.sdlc/workflows/${work_id}.state" | cut -d= -f2)"
-if [[ "${phase}" == "architect" ]]; then
-  ok "phase stays architect after refused advance"
-else
-  bad "expected phase architect, got ${phase}"
-fi
-if wf "${T}" advance --force >/dev/null; then
-  ok "advance --force overrides readiness gate"
-else
-  bad "advance --force should succeed"
-fi
-phase="$(grep '^phase=' "${T}/.sdlc/workflows/${work_id}.state" | cut -d= -f2)"
-if [[ "${phase}" == "code" ]]; then
-  ok "force advance reaches code"
-else
-  bad "expected phase code after --force, got ${phase}"
-fi
+echo "== Test 16: advance to code refused when readiness blocks; --force overrides =="
+W="FEAT-012d-advance"
+write_canvas "${T}" "${W}" "Needs Clarification"
+harness_sdlc "${T}" resume "${W}" --phase architect >/dev/null
+rc=0
+harness_sdlc "${T}" advance >/dev/null 2>"${T}/adv.err" || rc=$?
+[[ "${rc}" -ne 0 ]] && ok "advance architect->code refused when Needs Clarification" || bad "advance should fail"
+grep -q "not Ready For Coding" "${T}/adv.err" && ok "advance error names readiness" || bad "advance error: $(cat "${T}/adv.err")"
+grep -q "pass --force (a human decision" "${T}/adv.err" && ok "advance error explains --force is a human decision" || bad "advance error lacks --force hint"
+[[ "$(state_val "${T}" "${W}" phase)" == "architect" ]] && ok "phase stays architect after refusal" || bad "expected architect"
+! grep -q $'\tadvance\t' "$(history_file "${T}" "${W}")" && ok "refused advance leaves no history entry" || bad "history has advance despite refusal"
+harness_sdlc "${T}" advance --force >/dev/null && ok "advance --force overrides readiness gate" || bad "advance --force should succeed"
+[[ "$(state_val "${T}" "${W}" phase)" == "code" ]] && ok "force advance reaches code" || bad "expected code after --force"
+grep -q $'\tadvance\tphase=code' "$(history_file "${T}" "${W}")" && ok "history records forced advance" || bad "history missing forced advance"
 
 # ---------------------------------------------------------------------------
-echo "== Test 12e: resume --phase code warns when readiness blocks =="
-T="${WORK}/resume-readiness"
-work_id="FEAT-012e-resume"
-setup_feature "${T}" "${work_id}"
-cat > "${T}/spdd/canvas/${work_id}.md" <<'EOF'
-# REASONS Canvas: FEAT-012e-resume
-
-## Metadata
-- Work ID: FEAT-012e-resume
-- Readiness: Blocked
-
-## O - Operations
-
-### T01 - First
-- Status: Not Started
-EOF
-out="$(wf "${T}" resume "${work_id}" --phase code)"
-if grep -q 'not Ready For Coding' <<< "${out}" && grep -q 'sdlc-spdd-architect' <<< "${out}"; then
-  ok "resume warns and recommends architect when blocked"
-else
-  bad "resume missing readiness warning: ${out}"
-fi
-out="$(wf "${T}" next)"
-if grep -q 'Readiness: blocked' <<< "${out}"; then
-  ok "next prints Readiness line"
-else
-  bad "next missing Readiness line: ${out}"
-fi
+echo "== Test 17: advance to code succeeds when Ready For Coding =="
+W="FEAT-012f-ok"
+write_canvas "${T}" "${W}" "Ready For Coding"
+harness_sdlc "${T}" resume "${W}" --phase architect >/dev/null
+harness_sdlc "${T}" advance >/dev/null && ok "advance architect->code when Ready For Coding" || bad "advance should succeed when ready"
+[[ "$(state_val "${T}" "${W}" phase)" == "code" ]] && ok "phase is code after ready advance" || bad "expected code"
+out="$(harness_sdlc "${T}" next)"
+grep -q 'sdlc-spdd-code' <<< "${out}" && grep -q 'operation T01' <<< "${out}" && ok "next recommends code operation T01" || bad "next should recommend code: ${out}"
 
 # ---------------------------------------------------------------------------
-echo "== Test 12f: advance to code succeeds when Ready For Coding =="
-T="${WORK}/advance-ok"
-work_id="FEAT-012f-ok"
-setup_feature "${T}" "${work_id}"
-cat > "${T}/spdd/canvas/${work_id}.md" <<'EOF'
-# REASONS Canvas: FEAT-012f-ok
-
-## Metadata
-- Work ID: FEAT-012f-ok
-- Readiness: Ready For Coding
-
-## O - Operations
-
-### T01 - First
-- Status: Not Started
-EOF
-wf "${T}" resume "${work_id}" --phase architect >/dev/null
-if wf "${T}" advance >/dev/null; then
-  ok "advance architect→code when Ready For Coding"
-else
-  bad "advance should succeed when Ready For Coding"
-fi
-phase="$(grep '^phase=' "${T}/.sdlc/workflows/${work_id}.state" | cut -d= -f2)"
-if [[ "${phase}" == "code" ]]; then ok "phase is code after ready advance"; else bad "expected code, got ${phase}"; fi
-out="$(wf "${T}" next)"
-if grep -q 'sdlc-spdd-code' <<< "${out}"; then ok "next recommends code when ready"; else bad "next should recommend code: ${out}"; fi
+echo "== Test 18: advance --to code from plan refused when Blocked =="
+W="FEAT-012j-to"
+write_canvas "${T}" "${W}" "Blocked"
+harness_sdlc "${T}" resume "${W}" --phase plan --force >/dev/null
+rc=0
+harness_sdlc "${T}" advance --to code >/dev/null 2>"${T}/adv-to.err" || rc=$?
+[[ "${rc}" -ne 0 ]] && ok "advance --to code refuses when Blocked" || bad "advance --to code should refuse"
+grep -q "readiness is blocked, not Ready For Coding" "${T}/adv-to.err" && ok "--to error names blocked readiness" || bad "error: $(cat "${T}/adv-to.err")"
+[[ "$(state_val "${T}" "${W}" phase)" == "plan" ]] && ok "phase stays plan after refused --to code" || bad "expected plan"
+rc=0
+harness_sdlc "${T}" advance --to nowhere >/dev/null 2>&1 || rc=$?
+[[ "${rc}" -ne 0 ]] && ok "advance --to unknown phase fails" || bad "unknown phase should fail"
 
 # ---------------------------------------------------------------------------
-echo "== Test 12g: absent readiness still allows advance to code (compat) =="
-T="${WORK}/advance-absent"
-work_id="FEAT-012g-absent"
-setup_feature "${T}" "${work_id}"
-cat > "${T}/spdd/canvas/${work_id}.md" <<'EOF'
-# REASONS Canvas: FEAT-012g-absent
-
-## Metadata
-- Work ID: FEAT-012g-absent
-- Status: In Progress
-
-## O - Operations
-
-### T01 - First
-- Status: Not Started
-EOF
-wf "${T}" resume "${work_id}" --phase architect >/dev/null
-if wf "${T}" advance >/dev/null; then
-  ok "advance allowed when readiness absent"
-else
-  bad "absent readiness should not block advance"
-fi
-
-# ---------------------------------------------------------------------------
-echo "== Test 12h: YAML readiness + brief Readiness row + gate inference =="
-T="${WORK}/yaml-ready"
-work_id="FEAT-012h-yaml"
-setup_feature "${T}" "${work_id}"
-cat > "${T}/spdd/canvas/${work_id}.md" <<'EOF'
+echo "== Test 19: YAML frontmatter readiness is honored =="
+W="FEAT-012h-yaml"
+harness_seed_work "${T}" "${W}"
+cat > "${H}/spdd/canvas/${W}.md" <<EOF
 ---
 readiness: needs-redesign
 ---
-# REASONS Canvas: FEAT-012h-yaml
+# REASONS Canvas: ${W}
 
 ## Metadata
-- Work ID: FEAT-012h-yaml
+
+- Work ID: ${W}
+
+## R - Requirements
+
+- Harness requirement.
 
 ## O - Operations
 
 ### T01 - First
+
 - Status: Not Started
+- Files: src/first.py
 EOF
-wf "${T}" resume "${work_id}" --phase code >/dev/null
-wf "${T}" sync "${work_id}" >/dev/null
-json="$(wf "${T}" status --json)"
-if grep -q '"readiness":"needs-redesign"' <<< "${json}"; then
-  ok "json reads YAML readiness"
-else
-  bad "json YAML readiness: ${json}"
-fi
-brief="$(SDLC_ROOT="${T}" bash -c "source '${T}/agent-context/sdlc-workflow.sh'; sdlc_workflow_brief_markdown '${work_id}'")"
-if grep -q '| Readiness | needs-redesign |' <<< "${brief}"; then
-  ok "brief includes Readiness row"
-else
-  bad "brief missing Readiness: ${brief}"
-fi
-# Sync should not mark architect_review passed for needs-redesign
-gate="$(grep '^gate_architect_review=' "${T}/.sdlc/workflows/${work_id}.state" | cut -d= -f2 || true)"
-if [[ "${gate}" != "passed" ]]; then
-  ok "architect_review not auto-passed for needs-redesign"
-else
-  bad "architect_review should not be passed for needs-redesign (got ${gate})"
-fi
+harness_sdlc "${T}" resume "${W}" --phase architect >/dev/null
+rc=0
+harness_sdlc "${T}" gate --phase code >/dev/null 2>"${T}/yaml.err" || rc=$?
+[[ "${rc}" -eq 1 ]] && grep -q "readiness is needs-redesign" "${T}/yaml.err" && ok "gate reads YAML readiness" || bad "gate yaml: $(cat "${T}/yaml.err")"
+brief="$(harness_sdlc "${T}" session brief)"
+grep -q '| Readiness | needs-redesign |' <<< "${brief}" && ok "brief includes Readiness row from YAML" || bad "brief missing Readiness: ${brief}"
+[[ "$(state_val "${T}" "${W}" gate_architect_review)" != "passed" ]] && ok "architect_review not auto-passed for needs-redesign" || bad "architect_review should not be passed"
 
 # ---------------------------------------------------------------------------
-echo "== Test 12i: start-agent-session recommends architect when code blocked =="
-T="${WORK}/start-ready"
-work_id="FEAT-012i-start"
-setup_feature "${T}" "${work_id}"
-mkdir -p "${T}/scripts/lib"
-cp "${REPO_ROOT}/scripts/lib/"*.sh "${T}/scripts/lib/"
-cat > "${T}/spdd/canvas/${work_id}.md" <<'EOF'
-# REASONS Canvas: FEAT-012i-start
-
-## Metadata
-- Work ID: FEAT-012i-start
-- Readiness: Needs Analysis
-
-## O - Operations
-### T01 - First
-- Status: Not Started
-EOF
-# Point SDLC_ROOT at T so workflow readiness lib resolves; start uses TARGET workflow copy
-out="$("${START}" --target "${T}" --work-id "${work_id}" --phase code 2>&1)"
-brief="${T}/.sdlc/sessions/current-session.md"
-if grep -q 'sdlc-spdd-architect' "${brief}" && grep -q 'Readiness | needs-analysis' "${brief}"; then
-  ok "session brief readiness-gates code recommendation"
-else
-  bad "brief should recommend architect + show readiness: $(grep -E 'Recommended|Readiness' "${brief}" || true)"
-fi
+echo "== Test 20: team registry claim conflict and --force takeover =="
+T="$(new_target)"
+W="FEAT-009-team"
+harness_seed_work "${T}" "${W}"
+SDLC_USER="alice" harness_sdlc "${T}" claim "${W}" >/dev/null
+registry_matches "${T}" "${W}" '"status": "active".*"owner": "alice"' && ok "claim writes team registry" || bad "registry missing active row"
+rc=0
+SDLC_USER="bob" harness_sdlc "${T}" claim "${W}" >/dev/null 2>"${T}/bob.err" || rc=$?
+[[ "${rc}" -ne 0 ]] && ok "claim without --force refuses foreign owner" || bad "claim should refuse foreign owner"
+grep -q "is active under alice" "${T}/bob.err" && ok "refusal names current owner" || bad "refusal text: $(cat "${T}/bob.err")"
+registry_matches "${T}" "${W}" '"owner": "alice"' && ok "refused claim leaves alice as owner" || bad "owner changed despite refusal"
+SDLC_USER="bob" harness_sdlc "${T}" claim "${W}" --force >/dev/null && ok "claim --force takes over" || bad "claim --force should succeed"
+registry_matches "${T}" "${W}" '"status": "active".*"owner": "bob"' && ok "registry owner is bob after --force" || bad "owner not bob"
+[[ "$(grep -c "\"work_id\": \"${W}\"" "$(registry_file "${T}")")" -eq 2 ]] && ok "registry is append-only (2 events)" || bad "registry event count wrong"
+team_out="$(harness_sdlc "${T}" team)"
+grep -q "${W}" <<< "${team_out}" && grep -q 'bob' <<< "${team_out}" && ok "team view shows bob's claim" || bad "team output: ${team_out}"
+list_out="$(harness_sdlc "${T}" list-work)"
+grep -q "${W}" <<< "${list_out}" && ok "list-work shows work id" || bad "list-work missing id"
 
 # ---------------------------------------------------------------------------
-echo "== Test 12j: advance --to code from plan refused when blocked =="
-T="${WORK}/advance-to"
-work_id="FEAT-012j-to"
-setup_feature "${T}" "${work_id}"
-cat > "${T}/spdd/canvas/${work_id}.md" <<'EOF'
-# REASONS Canvas: FEAT-012j-to
-
-## Metadata
-- Work ID: FEAT-012j-to
-- Readiness: Blocked
-
-## O - Operations
-### T01 - First
-- Status: Not Started
-EOF
-wf "${T}" resume "${work_id}" --phase plan >/dev/null
-if wf "${T}" advance --to code >/dev/null 2>"${WORK}/advance-to-err.txt"; then
-  bad "advance --to code should refuse when Blocked"
-else
-  if grep -q "not Ready For Coding" "${WORK}/advance-to-err.txt"; then
-    ok "advance --to code refuses when Blocked"
-  else
-    bad "missing readiness error: $(cat "${WORK}/advance-to-err.txt")"
-  fi
-fi
-phase="$(grep '^phase=' "${T}/.sdlc/workflows/${work_id}.state" | cut -d= -f2)"
-if [[ "${phase}" == "plan" ]]; then ok "phase stays plan after refused --to code"; else bad "expected plan, got ${phase}"; fi
-
-# Ready For Coding Metadata passes architect_review on sync (no analysis file required)
-T="${WORK}/gate-meta"
-work_id="FEAT-012j-gate"
-setup_feature "${T}" "${work_id}"
-cat > "${T}/spdd/canvas/${work_id}.md" <<'EOF'
-# REASONS Canvas: FEAT-012j-gate
-
-## Metadata
-- Work ID: FEAT-012j-gate
-- Readiness: Ready For Coding
-
-## O - Operations
-### T01 - First
-- Status: Not Started
-EOF
-wf "${T}" resume "${work_id}" --phase architect >/dev/null
-wf "${T}" sync "${work_id}" >/dev/null
-gate="$(grep '^gate_architect_review=' "${T}/.sdlc/workflows/${work_id}.state" | cut -d= -f2 || true)"
-if [[ "${gate}" == "passed" ]]; then
-  ok "sync passes architect_review from Metadata Ready For Coding"
-else
-  bad "expected architect_review=passed, got '${gate}'"
-fi
-gate_c="$(grep '^gate_canvas_exists=' "${T}/.sdlc/workflows/${work_id}.state" | cut -d= -f2 || true)"
-if [[ "${gate_c}" == "passed" ]]; then
-  ok "sync passes canvas_exists without analysis artifact"
-else
-  bad "expected canvas_exists=passed without analysis, got '${gate_c}'"
-fi
+echo "== Test 21: sync-team marks canvas Complete as done =="
+harness_seed_work "${T}" CHORE-001-done Complete
+harness_sdlc "${T}" sync-team >/dev/null
+registry_matches "${T}" CHORE-001-done '"status": "done"' && ok "sync-team marks canvas complete as done" || bad "done status not written"
 
 # ---------------------------------------------------------------------------
-echo "== Test 13: capture wrapper guards pointer =="
-T="${WORK}/capture-guard"
-work_id="FEAT-008-cap"
-setup_feature "${T}" "${work_id}"
-mkdir -p "${T}/scripts/sdlc-spdd/lib"
-cp "${REPO_ROOT}/scripts/sdlc.sh" "${T}/scripts/sdlc-spdd/sdlc.sh"
-cp "${CAPTURE}" "${T}/scripts/sdlc-spdd/capture-session-memory.sh"
-# capture-session-memory.sh sources scripts/sdlc-spdd/lib/*.sh (FEAT-001)
-cp "${REPO_ROOT}/scripts/lib/"*.sh "${T}/scripts/sdlc-spdd/lib/"
-chmod +x "${T}/scripts/sdlc-spdd/sdlc.sh" "${T}/scripts/sdlc-spdd/capture-session-memory.sh"
-SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" resume "${work_id}" >/dev/null
-if SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" capture --summary "ok" >/dev/null 2>&1; then
-  ok "capture succeeds when pointer matches"
-else
-  bad "capture should succeed for active pointer"
-fi
-SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" resume FEAT-999-other >/dev/null 2>&1 || true
-if SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" capture --work-id "${work_id}" --summary "bad" >/dev/null 2>&1; then
-  bad "capture should refuse mismatched work-id"
-else
-  ok "capture refuses stale work-id"
-fi
+echo "== Test 22: claim records branch / pr / jira note tokens =="
+W="FEAT-011-notes"
+harness_seed_work "${T}" "${W}"
+SDLC_USER="dev1" harness_sdlc "${T}" claim "${W}" --branch "cursor/feat-011" --pr "#99" >/dev/null
+registry_matches "${T}" "${W}" 'branch:cursor/feat-011' && registry_matches "${T}" "${W}" 'pr:#99' \
+  && ok "claim stores branch and pr note tokens" || bad "branch/pr tokens missing"
+W="FEAT-013-jira"
+harness_seed_work "${T}" "${W}"
+printf '\n## Jira\n\n- Key: ORCH-42\n- Summary: test issue\n' >> "$(harness_home "${T}")/requirements/milestones/${W}.md"
+SDLC_USER="dev2" harness_sdlc "${T}" claim "${W}" >/dev/null
+registry_matches "${T}" "${W}" 'jira:ORCH-42' && ok "claim auto-reads jira key from milestone" || bad "milestone jira key not in registry"
+[[ "$(harness_sdlc "${T}" session jira-status --work-id "${W}")" == "ORCH-42" ]] && ok "session jira-status reports key" || bad "jira-status wrong"
+harness_sdlc "${T}" release >/dev/null
+[[ -z "$(pointer_of "${T}")" ]] && ok "release clears pointer" || bad "release should clear pointer"
 
 # ---------------------------------------------------------------------------
-echo "== Test 14: team registry claim and conflict =="
-T="${WORK}/team"
-work_id="FEAT-009-team"
-setup_feature "${T}" "${work_id}"
-SDLC_USER="alice" SDLC_ROOT="${T}" wf "${T}" claim "${work_id}" >/dev/null
-if registry_matches "${T}" "${work_id}" '"status": "active"'; then
-  ok "claim writes team registry"
-else
-  bad "team registry missing active row"
-fi
-if SDLC_USER="bob" SDLC_ROOT="${T}" wf "${T}" resume "${work_id}" >/dev/null 2>&1; then
-  bad "resume should refuse another owner claim"
-else
-  ok "resume refuses conflicting team claim"
-fi
-if SDLC_USER="bob" SDLC_ROOT="${T}" wf "${T}" resume "${work_id}" --force >/dev/null; then
-  ok "resume --force allows takeover"
-else
-  bad "resume --force should succeed"
-fi
+echo "== Test 23: agent-driven Jira ask on missing / draft / present =="
+T="$(new_target)"
+H="$(harness_home "${T}")"
+W="FEAT-014-jira-missing"
+mkdir -p "${H}/spdd/canvas"
+printf '# %s\n\n## Final Status\n\n- Status: In Progress\n' "${W}" > "${H}/spdd/canvas/${W}.md"
+[[ "$(harness_sdlc "${T}" session jira-status --work-id "${W}")" == "missing" ]] && ok "jira-status missing without requirement" || bad "expected missing"
+harness_sdlc "${T}" session jira-ask --work-id "${W}" | grep -q 'Ask the user for the issue key' && ok "jira-ask asks when missing" || bad "jira-ask should ask when missing"
+"${START}" --target "${T}" --work-id "${W}" --phase plan >/dev/null
+current="${H}/.sdlc/sessions/current-session.md"
+grep -q '^- Jira: missing$' "${current}" \
+  && grep -A20 '## Resume Prompt' "${current}" | grep -q 'Jira key is missing' \
+  && ok "session brief Resume Prompt asks when Jira missing" || bad "brief should ask when Jira missing"
+
+W="FEAT-015-jira-draft"
+harness_seed_work "${T}" "${W}"
+printf '\n## Jira\n\n- Summary: draft without key yet\n' >> "${H}/requirements/milestones/${W}.md"
+[[ "$(harness_sdlc "${T}" session jira-status --work-id "${W}")" == "draft" ]] && ok "jira-status draft without Key" || bad "expected draft"
+harness_sdlc "${T}" session jira-ask --work-id "${W}" | grep -q 'Jira draft exists' && ok "jira-ask asks when draft" || bad "jira-ask should ask when draft"
+"${START}" --target "${T}" --work-id "${W}" --phase plan >/dev/null
+grep -A20 '## Resume Prompt' "${current}" | grep -q 'Jira draft exists' && ok "session brief asks when Jira draft" || bad "brief should ask when draft"
+
+W="FEAT-016-jira-present"
+harness_seed_work "${T}" "${W}"
+printf '\n## Jira\n\n- Key: ORCH-99\n' >> "${H}/requirements/milestones/${W}.md"
+[[ "$(harness_sdlc "${T}" session jira-status --work-id "${W}")" == "ORCH-99" ]] && ok "jira-status returns key when present" || bad "expected ORCH-99"
+[[ -z "$(harness_sdlc "${T}" session jira-ask --work-id "${W}")" ]] && ok "jira-ask is silent when key present" || bad "jira-ask should be empty"
+"${START}" --target "${T}" --work-id "${W}" --phase plan >/dev/null
+grep -q '^- Jira: ORCH-99$' "${current}" \
+  && ! grep -A20 '## Resume Prompt' "${current}" | grep -q 'Ask the user for the issue key' \
+  && ok "session brief records key without ask" || bad "brief should record key without ask"
+
+W="FEAT-017-jira-off"
+harness_seed_work "${T}" "${W}"
+[[ -z "$(SDLC_SESSION_ASK_JIRA=0 harness_sdlc "${T}" session jira-ask --work-id "${W}")" ]] && ok "SDLC_SESSION_ASK_JIRA=0 suppresses ask" || bad "SDLC_SESSION_ASK_JIRA=0 should suppress"
+SDLC_SESSION_ASK_JIRA=0 "${START}" --target "${T}" --work-id "${W}" --phase plan >/dev/null
+! grep -A20 '## Resume Prompt' "${current}" | grep -q 'Ask the user for the issue key' \
+  && ok "start respects SDLC_SESSION_ASK_JIRA=0" || bad "start should honor SDLC_SESSION_ASK_JIRA=0"
 
 # ---------------------------------------------------------------------------
-echo "== Test 14b: claim --force takes over foreign claim =="
-T="${WORK}/team-claim-force"
-work_id="FEAT-009b-force"
-setup_feature "${T}" "${work_id}"
-mkdir -p "${T}/scripts/sdlc-spdd"
-cp "${REPO_ROOT}/scripts/sdlc.sh" "${T}/scripts/sdlc-spdd/sdlc.sh"
-chmod +x "${T}/scripts/sdlc-spdd/sdlc.sh"
-SDLC_USER="alice" SDLC_ROOT="${T}" wf "${T}" claim "${work_id}" >/dev/null
-if SDLC_USER="bob" SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" claim "${work_id}" >/dev/null 2>&1; then
-  bad "claim without --force should refuse foreign owner"
-else
-  ok "claim without --force refuses foreign owner"
-fi
-if SDLC_USER="bob" SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" claim "${work_id}" --force >"${T}/claim-force.out" 2>"${T}/claim-force.err"; then
-  if registry_matches "${T}" "${work_id}" '"status": "active".*"owner": "bob"'; then
-    ok "claim --force takes over via sdlc.sh wrapper"
-  else
-    bad "claim --force succeeded but owner not bob"
-  fi
-  takeover_count="$(grep -c 'Taking over' "${T}/claim-force.err" || true)"
-  if [[ "${takeover_count}" -eq 1 ]]; then
-    ok "claim --force prints Taking over once"
-  else
-    bad "claim --force Taking over count=${takeover_count} (want 1)"
-  fi
-else
-  bad "claim --force should succeed"
-fi
+echo "== Test 24: installed dispatcher has no bash twins and rejects removed env =="
+[[ ! -e "${H}/scripts/sdlc-workflow.sh" && ! -e "${H}/scripts/sdlc-team-registry.sh" && ! -e "${H}/scripts/sdlc-pointer.sh" ]] \
+  && ok "no bash workflow twins installed" || bad "retired twin installed"
+rc=0
+SDLC_GATE_ENGINE=shell "${H}/scripts/sdlc.sh" version >/dev/null 2>"${T}/env.err" || rc=$?
+[[ "${rc}" -eq 2 ]] && grep -q "removed" "${T}/env.err" && ok "SDLC_GATE_ENGINE=shell exits 2 (removed)" || bad "SDLC_GATE_ENGINE rc=${rc}: $(cat "${T}/env.err")"
 
-# ---------------------------------------------------------------------------
-echo "== Test 15: list-work discovers repo Work IDs =="
-T="${WORK}/team"
-work_id="FEAT-009-team"
-printf '# REASONS Canvas: %s\n\n## Metadata\n\n- Work ID: %s\n' "${work_id}" "${work_id}" \
-  > "${T}/spdd/canvas/${work_id}.md"
-# reuse team fixture from Test 14 (bob owns after --force resume)
-out="$(SDLC_ROOT="${T}" wf "${T}" list-work)"
-if grep -q 'FEAT-009-team' <<< "${out}"; then ok "list-work shows work id"; else bad "list-work missing id"; fi
-
-# ---------------------------------------------------------------------------
-echo "== Test 16: stale claim flagged in team output =="
-T="${WORK}/stale"
-work_id="FEAT-010-stale"
-setup_feature "${T}" "${work_id}"
-printf '%s\n' \
-  '{"event":"claim","work_id":"FEAT-010-stale","status":"active","phase":"code","operation":"","owner":"alice","note":"","ts":"2020-01-01T00:00:00Z"}' \
-  > "${T}/spdd/memory/registry.jsonl"
-out="$(SDLC_TEAM_STALE_DAYS=0 SDLC_ROOT="${T}" wf "${T}" team)"
-if grep -q 'STALE' <<< "${out}"; then ok "stale claim flagged"; else bad "stale flag missing"; fi
-
-# ---------------------------------------------------------------------------
-echo "== Test 17: done status from canvas Final Status =="
-T="${WORK}/done"
-work_id="CHORE-001-done"
-setup_feature "${T}" "${work_id}"
-cat > "${T}/spdd/canvas/${work_id}.md" <<'EOF'
-# CHORE-001-done
-
-## Final Status
-
-- Status: Complete
-EOF
-SDLC_ROOT="${T}" wf "${T}" sync-team >/dev/null
-if registry_matches "${T}" "CHORE-001-done" '"status": "done"'; then
-  ok "sync-team marks canvas complete as done"
-else
-  bad "done status not written"
-fi
-
-# ---------------------------------------------------------------------------
-echo "== Test 18: claim records branch and pr note tokens =="
-T="${WORK}/notes"
-work_id="FEAT-011-notes"
-setup_feature "${T}" "${work_id}"
-SDLC_USER="dev1" SDLC_ROOT="${T}" wf "${T}" claim "${work_id}" --branch "cursor/feat-011" --pr "#99" >/dev/null
-if registry_matches "${T}" "${work_id}" 'branch:cursor/feat-011' \
-  && registry_matches "${T}" "${work_id}" 'pr:#99'; then
-  ok "claim stores branch and pr note tokens"
-else
-  bad "branch/pr tokens missing from registry"
-fi
-
-# ---------------------------------------------------------------------------
-echo "== Test 19: registry hook fires on claim =="
-T="${WORK}/hook"
-work_id="FEAT-012-hook"
-setup_feature "${T}" "${work_id}"
-hook_log="${T}/hook.log"
-mkdir -p "${T}/agent-context/hooks"
-cat > "${T}/agent-context/hooks/notify.sh" <<EOF
-#!/usr/bin/env bash
-echo "\$*" >> "${hook_log}"
-EOF
-chmod +x "${T}/agent-context/hooks/notify.sh"
-SDLC_TEAM_REGISTRY_HOOK="${T}/agent-context/hooks/notify.sh" \
-  SDLC_USER="hooker" SDLC_ROOT="${T}" wf "${T}" claim "${work_id}" >/dev/null
-if [[ -f "${hook_log}" ]] && grep -q 'FEAT-012-hook' "${hook_log}"; then
-  ok "registry hook invoked"
-else
-  bad "registry hook not invoked"
-fi
-
-# ---------------------------------------------------------------------------
-echo "== Test 20: claim auto-reads jira Key from milestone requirement =="
-T="${WORK}/milestone-jira"
-work_id="FEAT-013-jira"
-setup_feature "${T}" "${work_id}"
-mkdir -p "${T}/requirements/milestones"
-cat > "${T}/requirements/milestones/${work_id}.md" <<'EOF'
-# Requirement: FEAT-013-jira
-
-## Jira
-
-- Key: ORCH-42
-- Summary: test issue
-EOF
-SDLC_USER="dev2" SDLC_ROOT="${T}" wf "${T}" claim "${work_id}" >/dev/null
-if registry_matches "${T}" "${work_id}" 'jira:ORCH-42'; then
-  ok "claim auto-reads jira key from milestone"
-else
-  bad "milestone jira key not in registry"
-fi
-out="$(SDLC_ROOT="${T}" wf "${T}" list-work)"
-if grep -q 'jira:ORCH-42' <<< "${out}"; then
-  ok "list-work shows milestone jira key"
-else
-  bad "list-work missing jira key"
-fi
-
-# ---------------------------------------------------------------------------
-echo "== Test 21: agent-driven Jira ask on missing / draft / present =="
-T="${WORK}/jira-ask-missing"
-work_id="FEAT-014-jira-ask"
-setup_feature "${T}" "${work_id}"
-wf "${T}" resume "${work_id}" >/dev/null
-out="$(SDLC_ROOT="${T}" wf "${T}" next)"
-if grep -q 'Jira: missing' <<< "${out}" && grep -q 'Tracker follow-up:' <<< "${out}" \
-  && grep -q 'Ask the user for the issue key' <<< "${out}"; then
-  ok "next asks when Jira missing"
-else
-  bad "next should ask when Jira missing"
-fi
-"${START}" --target "${T}" --work-id "${work_id}" --phase plan >/dev/null
-current="${T}/.sdlc/sessions/current-session.md"
-if grep -q '^- Jira: missing$' "${current}" \
-  && grep -A20 '## Resume Prompt' "${current}" | grep -q 'Tracker link: Jira key is missing'; then
-  ok "session brief Resume Prompt asks when Jira missing"
-else
-  bad "session brief should ask when Jira missing"
-fi
-
-T="${WORK}/jira-ask-draft"
-work_id="FEAT-015-jira-draft"
-setup_feature "${T}" "${work_id}"
-mkdir -p "${T}/requirements/milestones"
-cat > "${T}/requirements/milestones/${work_id}.md" <<'EOF'
-# Requirement: FEAT-015-jira-draft
-
-## Jira
-
-- Summary: draft without key yet
-EOF
-wf "${T}" resume "${work_id}" >/dev/null
-out="$(SDLC_ROOT="${T}" wf "${T}" next)"
-if grep -q 'Jira: draft' <<< "${out}" && grep -q 'Jira draft exists' <<< "${out}"; then
-  ok "next asks when Jira draft"
-else
-  bad "next should ask when Jira draft"
-fi
-"${START}" --target "${T}" --work-id "${work_id}" --phase plan >/dev/null
-current="${T}/.sdlc/sessions/current-session.md"
-if grep -A20 '## Resume Prompt' "${current}" | grep -q 'Jira draft exists'; then
-  ok "session brief asks when Jira draft"
-else
-  bad "session brief should ask when Jira draft"
-fi
-
-T="${WORK}/jira-ask-present"
-work_id="FEAT-016-jira-present"
-setup_feature "${T}" "${work_id}"
-mkdir -p "${T}/requirements/milestones"
-cat > "${T}/requirements/milestones/${work_id}.md" <<'EOF'
-# Requirement: FEAT-016-jira-present
-
-## Jira
-
-- Key: ORCH-99
-EOF
-wf "${T}" resume "${work_id}" >/dev/null
-out="$(SDLC_ROOT="${T}" wf "${T}" next)"
-if grep -q 'Jira: ORCH-99' <<< "${out}" && ! grep -q 'Tracker follow-up:' <<< "${out}"; then
-  ok "next shows key and skips ask when present"
-else
-  bad "next should not ask when Jira key present"
-fi
-"${START}" --target "${T}" --work-id "${work_id}" --phase plan >/dev/null
-current="${T}/.sdlc/sessions/current-session.md"
-if grep -q '^- Jira: ORCH-99$' "${current}" \
-  && grep -A20 '## Resume Prompt' "${current}" | grep -q 'Jira: ORCH-99' \
-  && ! grep -A20 '## Resume Prompt' "${current}" | grep -q 'Ask the user for the issue key'; then
-  ok "session brief records key without ask"
-else
-  bad "session brief should record key without ask"
-fi
-
-T="${WORK}/jira-ask-disabled"
-work_id="FEAT-017-jira-off"
-setup_feature "${T}" "${work_id}"
-wf "${T}" resume "${work_id}" >/dev/null
-out="$(SDLC_SESSION_ASK_JIRA=0 SDLC_ROOT="${T}" wf "${T}" next)"
-if grep -q 'Jira: missing' <<< "${out}" && ! grep -q 'Tracker follow-up:' <<< "${out}"; then
-  ok "SDLC_SESSION_ASK_JIRA=0 suppresses ask"
-else
-  bad "SDLC_SESSION_ASK_JIRA=0 should suppress ask"
-fi
-SDLC_SESSION_ASK_JIRA=0 "${START}" --target "${T}" --work-id "${work_id}" --phase plan >/dev/null
-current="${T}/.sdlc/sessions/current-session.md"
-if ! grep -A20 '## Resume Prompt' "${current}" | grep -q 'Ask the user for the issue key'; then
-  ok "start respects SDLC_SESSION_ASK_JIRA=0"
-else
-  bad "start should honor SDLC_SESSION_ASK_JIRA=0"
-fi
-
-# ---------------------------------------------------------------------------
-echo "== Test 22: code capture / complete without verify receipt refuse =="
-T="${WORK}/i1-receipt"
-work_id="FEAT-018-i1"
-setup_feature "${T}" "${work_id}"
-mkdir -p "${T}/scripts/sdlc-spdd/lib"
-cp "${REPO_ROOT}/scripts/sdlc.sh" "${T}/scripts/sdlc-spdd/sdlc.sh"
-cp "${CAPTURE}" "${T}/scripts/sdlc-spdd/capture-session-memory.sh"
-cp "${REPO_ROOT}/scripts/lib/"*.sh "${T}/scripts/sdlc-spdd/lib/"
-chmod +x "${T}/scripts/sdlc-spdd/sdlc.sh" "${T}/scripts/sdlc-spdd/capture-session-memory.sh"
-SDLC_ENGINE=shell SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" resume "${work_id}" --phase code >/dev/null
-if SDLC_ENGINE=shell SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" \
-  capture --phase code --summary "T01 complete" >/dev/null 2>&1; then
-  bad "code capture without receipt should refuse"
-else
-  ok "code capture without receipt refuses"
-fi
-if SDLC_ENGINE=shell SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" \
-  complete --summary "T01 complete" >/dev/null 2>&1; then
-  bad "complete without receipt should refuse"
-else
-  ok "complete without receipt refuses"
-fi
-
-# ---------------------------------------------------------------------------
-echo
-echo "Results: ${pass} passed, ${fail} failed"
-if [[ "${fail}" -gt 0 ]]; then
-  exit 1
-fi
+harness_finish

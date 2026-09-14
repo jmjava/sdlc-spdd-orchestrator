@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -186,8 +187,8 @@ class SessionService:
         pointer = self.workflow.pointer.get()
         wid = (work_id or pointer or "").strip()
         if work_id and pointer and pointer != work_id:
-            print(f"capture: --work-id '{work_id}' does not match pointer '{pointer}'")
-            print(f"Run: ./scripts/sdlc.sh resume {work_id}")
+            print(f"capture: --work-id '{work_id}' does not match pointer '{pointer}'", file=sys.stderr)
+            print(f"Run: ./scripts/sdlc.sh resume {work_id}", file=sys.stderr)
             return 3
         if not wid:
             print("capture: no active pointer — run: ./scripts/sdlc.sh resume <WORK-ID>")
@@ -208,8 +209,11 @@ class SessionService:
             if tok == "--phase":
                 has_phase = True
         if not all(have.values()):
-            print("complete: verify receipt required (command, exit, pass/fail). Refuse complete without it.")
-            print("Pass --verify-command, --verify-exit, and --verify-result=pass.")
+            print(
+                "complete: verify receipt required (command, exit, pass/fail). Refuse complete without it.",
+                file=sys.stderr,
+            )
+            print("Pass --verify-command, --verify-exit, and --verify-result=pass.", file=sys.stderr)
             return 1
         extra = list(args)
         if not has_phase:

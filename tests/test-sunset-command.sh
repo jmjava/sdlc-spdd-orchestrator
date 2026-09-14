@@ -49,7 +49,12 @@ for path in "${CURSOR}" "${COPILOT}" "${CLAUDE}"; do
   assert_contains "${path}" "lessons.jsonl" "ledger destination (${path##*/})"
   assert_contains "${path}" "--apply" "apply stages snapshot (${path##*/})"
 done
-assert_contains "${SDLC_SH}" 'sunset)' "sdlc.sh routes sunset to Python engine"
+# sdlc.sh is a thin dispatcher (no per-verb case arms): prove routing behaviorally.
+if help_out="$("${SDLC_SH}" sunset --help 2>&1)" && grep -Fq 'sunset' <<< "${help_out}"; then
+  ok "sdlc.sh routes sunset to Python engine (--help exits 0)"
+else
+  bad "sdlc.sh sunset --help failed or did not mention sunset: ${help_out}"
+fi
 
 echo "== Test 3: generator --check and adapter validation =="
 if "${REPO_ROOT}/scripts/generate-command-adapters.sh" --check >/dev/null; then
@@ -72,8 +77,10 @@ git -C "${smoke_root}" config user.name "CI"
 printf '# smoke\n' > "${smoke_root}/README.md"
 git -C "${smoke_root}" add README.md
 git -C "${smoke_root}" commit -q -m "init"
-mkdir -p "${smoke_root}/requirements/milestones" "${smoke_root}/spdd/canvas" "${smoke_root}/spdd/memory"
-cat > "${smoke_root}/requirements/milestones/FEAT-014-feature-sunset.md" <<'EOF'
+# Storage v3: framework files live under <root>/sdlc-spdd (no root-layout fallback).
+smoke_home="${smoke_root}/sdlc-spdd"
+mkdir -p "${smoke_home}/requirements/milestones" "${smoke_home}/spdd/canvas" "${smoke_home}/spdd/memory"
+cat > "${smoke_home}/requirements/milestones/FEAT-014-feature-sunset.md" <<'EOF'
 # Requirement: FEAT-014-feature-sunset
 
 ## Summary
@@ -86,7 +93,7 @@ Smoke sunset.
 - Summary: Smoke sunset
 EOF
 printf '%s\n' '# REASONS Canvas: FEAT-014-feature-sunset' '' '## Final Status' '' '- Status: Complete' \
-  > "${smoke_root}/spdd/canvas/FEAT-014-feature-sunset.md"
+  > "${smoke_home}/spdd/canvas/FEAT-014-feature-sunset.md"
 if PYTHONPATH="${REPO_ROOT}/engine/src${PYTHONPATH:+:${PYTHONPATH}}" \
   python3 -m sdlc_engine --root "${smoke_root}" sunset --work-id FEAT-014-feature-sunset --apply \
   >/tmp/sdlc-sunset-smoke.out 2>/tmp/sdlc-sunset-smoke.err
@@ -99,8 +106,8 @@ then
   else
     bad "engine output missing sunset snapshot"
   fi
-  if [[ -f "${smoke_root}/.sdlc/staged/lessons.jsonl" ]] \
-    && grep -Fq '"source": "sunset"' "${smoke_root}/.sdlc/staged/lessons.jsonl"
+  if [[ -f "${smoke_home}/.sdlc/staged/lessons.jsonl" ]] \
+    && grep -Fq '"source": "sunset"' "${smoke_home}/.sdlc/staged/lessons.jsonl"
   then
     ok "sunset --apply staged a session record"
   else

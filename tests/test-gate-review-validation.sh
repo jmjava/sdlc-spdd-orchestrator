@@ -3,31 +3,36 @@ set -euo pipefail
 
 # Leftover #7 proving test: gate review requires Validation ran, not any ledger row.
 # Capture a dummy lesson, skip tests, `gate review` must fail.
-
-export SDLC_ENGINE=shell
-export SDLC_GATE_ENGINE=shell
+#
+# Runs the Python engine through the installed sdlc-spdd/scripts/sdlc.sh on a
+# fresh init-project target per case. The former SDLC_ENGINE=shell /
+# SDLC_GATE_ENGINE=shell exports are gone: the bash gate twin was deleted and
+# setting those variables now makes sdlc.sh exit 2.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-WORKFLOW="${REPO_ROOT}/templates/agent-context/sdlc-workflow.sh"
-POINTER="${REPO_ROOT}/templates/agent-context/sdlc-pointer.sh"
-TEAM_REG="${REPO_ROOT}/templates/agent-context/sdlc-team-registry.sh"
-CAPTURE="${REPO_ROOT}/scripts/capture-session-memory.sh"
-SDLC_SH="${REPO_ROOT}/scripts/sdlc.sh"
+# shellcheck source=lib/harness.sh
+source "${SCRIPT_DIR}/lib/harness.sh"
 
-WORK="$(mktemp -d)"
-trap 'rm -rf "${WORK}"' EXIT
+TARGETS=()
+cleanup() {
+  local t
+  for t in "${TARGETS[@]}"; do rm -rf "${t}"; done
+  return 0
+}
+trap cleanup EXIT
 
-pass=0
-fail=0
-ok()  { echo "  ok   $1"; pass=$((pass + 1)); }
-bad() { echo "  FAIL $1" >&2; fail=$((fail + 1)); }
+# Sets T (installed target). Not a subshell, so the target is tracked for cleanup.
+new_target() {
+  T="$(harness_new_target)"
+  TARGETS+=("${T}")
+}
 
 write_canvas() {
-  local t="$1"
-  local work_id="$2"
-  mkdir -p "${t}/spdd/canvas"
-  cat > "${t}/spdd/canvas/${work_id}.md" <<EOF
+  local t="$1" work_id="$2"
+  local home
+  home="$(harness_home "${t}")"
+  mkdir -p "${home}/spdd/canvas"
+  cat > "${home}/spdd/canvas/${work_id}.md" <<EOF
 # REASONS Canvas: ${work_id}
 
 ## Metadata
@@ -40,51 +45,37 @@ write_canvas() {
 EOF
 }
 
-setup_feature() {
-  local t="$1"
-  mkdir -p "${t}/.sdlc/sessions" \
-    "${t}/agent-context" \
-    "${t}/spdd/canvas" \
-    "${t}/spdd/analysis" \
-    "${t}/spdd/memory" \
-    "${t}/scripts/sdlc-spdd/lib"
-  cp "${POINTER}" "${t}/agent-context/sdlc-pointer.sh"
-  cp "${WORKFLOW}" "${t}/agent-context/sdlc-workflow.sh"
-  cp "${TEAM_REG}" "${t}/agent-context/sdlc-team-registry.sh"
-  : > "${t}/spdd/memory/registry.jsonl"
-  cp "${SDLC_SH}" "${t}/scripts/sdlc-spdd/sdlc.sh"
-  cp "${CAPTURE}" "${t}/scripts/sdlc-spdd/capture-session-memory.sh"
-  cp "${REPO_ROOT}/scripts/lib/"*.sh "${t}/scripts/sdlc-spdd/lib/"
-  chmod +x "${t}/agent-context/"*.sh \
-    "${t}/scripts/sdlc-spdd/sdlc.sh" \
-    "${t}/scripts/sdlc-spdd/capture-session-memory.sh"
-}
-
-sdlc() {
-  local t="$1"
-  shift
-  SDLC_ROOT="${t}" SDLC_ENGINE=shell SDLC_GATE_ENGINE=shell \
-    "${t}/scripts/sdlc-spdd/sdlc.sh" "$@"
+# Park a Work ID at a phase. The engine's `resume --phase` enforces the
+# entrance gate of that phase, so fixtures use --force to set up the state
+# the gate under test then inspects.
+park() {
+  local t="$1" work_id="$2" phase="$3"
+  harness_sdlc "${t}" resume "${work_id}" --phase "${phase}" --force >/dev/null
 }
 
 echo "== test_gate_review_fails_dummy_lesson_skip_tests =="
-T="${WORK}/dummy-skip"
+new_target
 work_id="FEAT-025-dummy-review"
-setup_feature "${T}"
 write_canvas "${T}" "${work_id}"
-sdlc "${T}" resume "${work_id}" --phase plan >/dev/null
-if ! sdlc "${T}" capture --phase plan --summary "dummy lesson" \
+park "${T}" "${work_id}" plan
+if ! harness_sdlc "${T}" capture --phase plan --summary "dummy lesson" \
   --validation "skipped tests" >/dev/null; then
   bad "plan-phase dummy capture should succeed"
 else
   ok "captured dummy lesson without a verify receipt"
 fi
-if ! sdlc "${T}" skip api-test --reason "skip tests" >/dev/null; then
+if [[ -f "$(harness_home "${T}")/.sdlc/staged/lessons.jsonl" ]] \
+  && grep -q "\"work_id\": \"${work_id}\"" "$(harness_home "${T}")/.sdlc/staged/lessons.jsonl"; then
+  ok "dummy lesson staged under the home's .sdlc/staged"
+else
+  bad "dummy lesson not staged under $(harness_home "${T}")/.sdlc/staged"
+fi
+if ! harness_sdlc "${T}" skip api-test --reason "skip tests" >/dev/null; then
   bad "skip api-test should succeed"
 else
   ok "skipped tests (api-test)"
 fi
-if out="$(sdlc "${T}" gate review --work-id "${work_id}" 2>&1)"; then
+if out="$(harness_sdlc "${T}" gate --phase review --work-id "${work_id}" 2>&1)"; then
   bad "gate review must fail after dummy lesson + skip tests: ${out}"
 else
   if grep -q 'Validation receipt' <<< "${out}"; then
@@ -95,12 +86,11 @@ else
 fi
 
 echo "== test_gate_review_passes_with_validation_receipt =="
-T="${WORK}/receipt-ok"
+new_target
 work_id="FEAT-026-review-receipt"
-setup_feature "${T}"
 write_canvas "${T}" "${work_id}"
-sdlc "${T}" resume "${work_id}" --phase code >/dev/null
-if sdlc "${T}" capture --phase code --summary "T01 complete" \
+park "${T}" "${work_id}" code
+if harness_sdlc "${T}" capture --phase code --summary "T01 complete" \
   --verify-command "pytest tests/test_foo.py" \
   --verify-exit 0 \
   --verify-result pass >/dev/null; then
@@ -108,14 +98,10 @@ if sdlc "${T}" capture --phase code --summary "T01 complete" \
 else
   bad "code capture with receipt should succeed"
 fi
-if out="$(sdlc "${T}" gate review --work-id "${work_id}" 2>&1)"; then
+if out="$(harness_sdlc "${T}" gate --phase review --work-id "${work_id}" 2>&1)"; then
   ok "gate review passes with Validation receipt"
 else
   bad "gate review should pass with receipt: ${out}"
 fi
 
-echo
-echo "Results: ${pass} passed, ${fail} failed"
-if [[ "${fail}" -gt 0 ]]; then
-  exit 1
-fi
+harness_finish

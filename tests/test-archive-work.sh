@@ -1,24 +1,37 @@
 #!/usr/bin/env bash
 # Regression harness for completed/cancelled Work ID archive (storage v3: remove artifacts).
+#
+# Runs the Python engine through the installed sdlc-spdd/scripts/sdlc.sh on a
+# fresh init-project target per case. Contract under test:
+#   - archive refuses non-terminal Final Status unless --force
+#   - archive deletes canvas/analysis/review/sync + workflow state + session brief
+#   - the milestone requirement and lessons.jsonl are never touched
+#   - registry.jsonl gets an archived row with an archived:<kind> note token
+#   - there is NO archive/ folder; stray legacy archive paths are ignored
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-WORKFLOW="${REPO_ROOT}/templates/agent-context/sdlc-workflow.sh"
-POINTER="${REPO_ROOT}/templates/agent-context/sdlc-pointer.sh"
-TEAM="${REPO_ROOT}/templates/agent-context/sdlc-team-registry.sh"
+# shellcheck source=lib/harness.sh
+source "${SCRIPT_DIR}/lib/harness.sh"
 
-WORK="$(mktemp -d)"
-trap 'rm -rf "${WORK}"' EXIT
+TARGETS=()
+cleanup() {
+  local t
+  for t in "${TARGETS[@]}"; do rm -rf "${t}"; done
+  return 0
+}
+trap cleanup EXIT
 
-pass=0
-fail=0
-ok()  { echo "  ok   $1"; pass=$((pass + 1)); }
-bad() { echo "  FAIL $1" >&2; fail=$((fail + 1)); }
+# Sets T (installed target) and H (its sdlc-spdd home). Not a subshell, so the
+# target is tracked for cleanup.
+new_target() {
+  T="$(harness_new_target)"
+  H="$(harness_home "${T}")"
+  TARGETS+=("${T}")
+}
 
 registry_file() {
-  local t="$1"
-  printf '%s' "${t}/spdd/memory/registry.jsonl"
+  printf '%s' "$(harness_home "$1")/spdd/memory/registry.jsonl"
 }
 
 registry_matches() {
@@ -28,85 +41,65 @@ registry_matches() {
   [[ -f "${reg}" ]] && grep -q "\"work_id\": \"${work_id}\"" "${reg}" && grep -Eq "${regex}" "${reg}"
 }
 
-wf() { SDLC_ROOT="${1}" "${WORKFLOW}" "${@:2}"; }
-
+# Requirement + canvas (harness_seed_work) plus every sidecar the archive verb removes.
 setup_work() {
-  local t="$1"
-  local work_id="$2"
-  local final_status="$3"
+  local t="$1" work_id="$2" final_status="$3"
+  local home
+  home="$(harness_home "${t}")"
+  harness_seed_work "${t}" "${work_id}" "${final_status}"
   mkdir -p \
-    "${t}/agent-context" \
-    "${t}/spdd/canvas" \
-    "${t}/spdd/analysis" \
-    "${t}/spdd/reviews" \
-    "${t}/spdd/sync" \
-    "${t}/requirements/milestones" \
-    "${t}/.sdlc/workflows" \
-    "${t}/.sdlc/sessions" \
-    "${t}/scripts/sdlc-spdd"
-  cp "${POINTER}" "${t}/agent-context/sdlc-pointer.sh"
-  cp "${WORKFLOW}" "${t}/agent-context/sdlc-workflow.sh"
-  cp "${TEAM}" "${t}/agent-context/sdlc-team-registry.sh"
-  mkdir -p "${t}/spdd/memory" "${t}/scripts/lib"
-  cp "${REPO_ROOT}/scripts/lib/paths.sh" "${t}/scripts/lib/paths.sh"
-  : > "${t}/spdd/memory/registry.jsonl"
-  cp "${REPO_ROOT}/scripts/sdlc.sh" "${t}/scripts/sdlc-spdd/sdlc.sh"
-  chmod +x \
-    "${t}/agent-context/sdlc-pointer.sh" \
-    "${t}/agent-context/sdlc-workflow.sh" \
-    "${t}/agent-context/sdlc-team-registry.sh" \
-    "${t}/scripts/sdlc-spdd/sdlc.sh"
-
-  cat > "${t}/spdd/canvas/${work_id}.md" <<EOF
-# ${work_id}
-
-## Final Status
-
-- Status: ${final_status}
-EOF
-  printf '# analysis\n' > "${t}/spdd/analysis/${work_id}-analysis.md"
-  printf '# review\n' > "${t}/spdd/reviews/${work_id}-review.md"
-  printf '# sync\n' > "${t}/spdd/sync/${work_id}-sync.md"
-  printf '# feature\n' > "${t}/requirements/milestones/${work_id}.md"
-  printf 'phase=code\nactive=1\n' > "${t}/.sdlc/workflows/${work_id}.state"
-  printf '# session for %s\n' "${work_id}" > "${t}/.sdlc/sessions/20260727T000000Z-plan-${work_id}.md"
-  printf '# current\n' > "${t}/.sdlc/sessions/current-session.md"
+    "${home}/spdd/analysis" \
+    "${home}/spdd/reviews" \
+    "${home}/spdd/sync" \
+    "${home}/.sdlc/workflows" \
+    "${home}/.sdlc/sessions"
+  printf '# analysis\n' > "${home}/spdd/analysis/${work_id}-analysis.md"
+  printf '# review\n' > "${home}/spdd/reviews/${work_id}-review.md"
+  printf '# sync\n' > "${home}/spdd/sync/${work_id}-sync.md"
+  printf 'phase=code\nactive=1\n' > "${home}/.sdlc/workflows/${work_id}.state"
+  printf '# session for %s\n' "${work_id}" > "${home}/.sdlc/sessions/20260727T000000Z-plan-${work_id}.md"
+  printf '# current\n' > "${home}/.sdlc/sessions/current-session.md"
 }
 
 echo "== Test 1: refuse in-progress work without --force =="
-T="${WORK}/refuse"
+new_target
 setup_work "${T}" "FEAT-100-active" "In Progress"
-if SDLC_ROOT="${T}" wf "${T}" archive FEAT-100-active >/dev/null 2>&1; then
+if harness_sdlc "${T}" archive FEAT-100-active >/dev/null 2>&1; then
   bad "archive should refuse In Progress"
 else
   ok "archive refuses In Progress"
 fi
-if [[ -f "${T}/spdd/canvas/FEAT-100-active.md" ]]; then
+if [[ -f "${H}/spdd/canvas/FEAT-100-active.md" ]]; then
   ok "in-progress canvas left in place"
 else
   bad "in-progress canvas was removed"
 fi
 
 echo "== Test 2: archive completed work removes artifacts =="
-T="${WORK}/complete"
+new_target
 setup_work "${T}" "FEAT-101-done" "Complete"
-SDLC_USER="archiver" SDLC_ROOT="${T}" wf "${T}" claim FEAT-101-done >/dev/null
-SDLC_ROOT="${T}" wf "${T}" archive FEAT-101-done >/dev/null
-if [[ ! -f "${T}/spdd/canvas/FEAT-101-done.md" \
-   && ! -f "${T}/spdd/analysis/FEAT-101-done-analysis.md" \
-   && ! -f "${T}/spdd/reviews/FEAT-101-done-review.md" \
-   && ! -f "${T}/spdd/sync/FEAT-101-done-sync.md" ]]; then
+SDLC_USER="archiver" harness_sdlc "${T}" claim FEAT-101-done >/dev/null
+harness_sdlc "${T}" archive FEAT-101-done >/dev/null
+if [[ ! -f "${H}/spdd/canvas/FEAT-101-done.md" \
+   && ! -f "${H}/spdd/analysis/FEAT-101-done-analysis.md" \
+   && ! -f "${H}/spdd/reviews/FEAT-101-done-review.md" \
+   && ! -f "${H}/spdd/sync/FEAT-101-done-sync.md" ]]; then
   ok "canvas and sidecar artifacts removed"
 else
   bad "contract artifacts still present after archive"
 fi
-if [[ -f "${T}/requirements/milestones/FEAT-101-done.md" ]]; then
+if [[ ! -f "${H}/.sdlc/workflows/FEAT-101-done.state" ]]; then
+  ok "workflow state removed"
+else
+  bad "workflow state still present after archive"
+fi
+if [[ -f "${H}/requirements/milestones/FEAT-101-done.md" ]]; then
   ok "milestone requirement left in place"
 else
   bad "milestone should not be removed"
 fi
-if [[ ! -f "${T}/.sdlc/sessions/20260727T000000Z-plan-FEAT-101-done.md" \
-   && -f "${T}/.sdlc/sessions/current-session.md" ]]; then
+if [[ ! -f "${H}/.sdlc/sessions/20260727T000000Z-plan-FEAT-101-done.md" \
+   && -f "${H}/.sdlc/sessions/current-session.md" ]]; then
   ok "matching session brief removed; current-session kept"
 else
   bad "session archive behavior incorrect"
@@ -116,14 +109,19 @@ if registry_matches "${T}" "FEAT-101-done" '"status": "archived"'; then
 else
   bad "registry missing archived row"
 fi
-ptr="$(SDLC_ROOT="${T}" "${T}/agent-context/sdlc-pointer.sh" get)"
+if [[ ! -e "${H}/spdd/canvas/archive" && ! -e "${H}/spdd/archive" && ! -e "${H}/archive" ]]; then
+  ok "no archive/ folder created"
+else
+  bad "archive created an archive/ folder"
+fi
+ptr="$(harness_sdlc "${T}" pointer get)"
 if [[ -z "${ptr}" ]]; then ok "pointer cleared on archive"; else bad "pointer still set (${ptr})"; fi
 
 echo "== Test 3: archive cancelled work =="
-T="${WORK}/cancelled"
+new_target
 setup_work "${T}" "FEAT-102-cancel" "Cancelled"
-SDLC_ROOT="${T}" wf "${T}" archive FEAT-102-cancel >/dev/null
-if [[ ! -f "${T}/spdd/canvas/FEAT-102-cancel.md" ]] \
+harness_sdlc "${T}" archive FEAT-102-cancel >/dev/null
+if [[ ! -f "${H}/spdd/canvas/FEAT-102-cancel.md" ]] \
   && registry_matches "${T}" "FEAT-102-cancel" '"status": "archived"' \
   && registry_matches "${T}" "FEAT-102-cancel" 'archived:cancelled'; then
   ok "cancelled work archived with note token"
@@ -132,20 +130,20 @@ else
 fi
 
 echo "== Test 4: canceled spelling (US) treated as cancelled =="
-T="${WORK}/canceled-us"
+new_target
 setup_work "${T}" "FEAT-103-us" "Canceled — scope cut"
-SDLC_ROOT="${T}" wf "${T}" archive FEAT-103-us >/dev/null
-if [[ ! -f "${T}/spdd/canvas/FEAT-103-us.md" ]]; then
+harness_sdlc "${T}" archive FEAT-103-us >/dev/null
+if [[ ! -f "${H}/spdd/canvas/FEAT-103-us.md" ]]; then
   ok "Canceled spelling is archivable"
 else
   bad "Canceled spelling not accepted"
 fi
 
 echo "== Test 5: dry-run does not remove files =="
-T="${WORK}/dry"
+new_target
 setup_work "${T}" "FEAT-104-dry" "Complete"
-out="$(SDLC_ROOT="${T}" wf "${T}" archive FEAT-104-dry --dry-run)"
-if [[ -f "${T}/spdd/canvas/FEAT-104-dry.md" ]]; then
+out="$(harness_sdlc "${T}" archive FEAT-104-dry --dry-run)"
+if [[ -f "${H}/spdd/canvas/FEAT-104-dry.md" ]]; then
   ok "dry-run leaves canvas in place"
 else
   bad "dry-run removed canvas"
@@ -155,27 +153,32 @@ if grep -Fq '[dry-run]' <<< "${out}"; then
 else
   bad "dry-run missing plan output"
 fi
+if ! registry_matches "${T}" "FEAT-104-dry" '"status": "archived"'; then
+  ok "dry-run does not write the registry"
+else
+  bad "dry-run wrote an archived registry row"
+fi
 
 echo "== Test 6: --all archives every eligible Work ID =="
-T="${WORK}/all"
+new_target
 setup_work "${T}" "FEAT-105-a" "Complete"
 setup_work "${T}" "FEAT-105-b" "Cancelled"
 setup_work "${T}" "FEAT-105-c" "In Progress"
-SDLC_ROOT="${T}" wf "${T}" archive --all >/dev/null
-if [[ ! -f "${T}/spdd/canvas/FEAT-105-a.md" \
-   && ! -f "${T}/spdd/canvas/FEAT-105-b.md" \
-   && -f "${T}/spdd/canvas/FEAT-105-c.md" ]]; then
+harness_sdlc "${T}" archive --all >/dev/null
+if [[ ! -f "${H}/spdd/canvas/FEAT-105-a.md" \
+   && ! -f "${H}/spdd/canvas/FEAT-105-b.md" \
+   && -f "${H}/spdd/canvas/FEAT-105-c.md" ]]; then
   ok "--all archives complete+cancelled, skips in-progress"
 else
   bad "--all selection incorrect"
 fi
 
 echo "== Test 7: list-work ignores stray legacy archive paths =="
-T="${WORK}/discover"
+new_target
 setup_work "${T}" "FEAT-106-live" "In Progress"
-mkdir -p "${T}/spdd/canvas/archive"
-printf '# old canvas\n' > "${T}/spdd/canvas/archive/FEAT-999-old.md"
-out="$(SDLC_ROOT="${T}" wf "${T}" list-work)"
+mkdir -p "${H}/spdd/canvas/archive"
+printf '# old canvas\n' > "${H}/spdd/canvas/archive/FEAT-999-old.md"
+out="$(harness_sdlc "${T}" list-work)"
 if grep -q 'FEAT-106-live' <<< "${out}" && ! grep -q 'FEAT-999-old' <<< "${out}"; then
   ok "list-work skips Work IDs only under legacy archive paths"
 else
@@ -183,31 +186,25 @@ else
 fi
 
 echo "== Test 8: sync-team marks cancelled without archiving =="
-T="${WORK}/sync-cancel"
+new_target
 setup_work "${T}" "FEAT-107-sync" "Cancelled"
-SDLC_ROOT="${T}" wf "${T}" sync-team >/dev/null
+harness_sdlc "${T}" sync-team >/dev/null
 if registry_matches "${T}" "FEAT-107-sync" '"status": "cancelled"' \
-  && [[ -f "${T}/spdd/canvas/FEAT-107-sync.md" ]]; then
+  && [[ -f "${H}/spdd/canvas/FEAT-107-sync.md" ]]; then
   ok "sync-team sets cancelled and leaves files"
 else
   bad "sync-team cancelled behavior wrong"
 fi
 
-echo "== Test 9: sdlc.sh wrapper archive path =="
-T="${WORK}/wrapper"
-setup_work "${T}" "FEAT-108-wrap" "Complete"
-if SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" archive FEAT-108-wrap >/dev/null \
-  && [[ ! -f "${T}/spdd/canvas/FEAT-108-wrap.md" ]]; then
-  ok "sdlc.sh archive wrapper works"
-else
-  bad "sdlc.sh archive wrapper failed"
-fi
+# Former Test 9 ("sdlc.sh wrapper archive path") is gone: with the bash twin
+# deleted, the installed sdlc.sh dispatcher is the only path and every case
+# above already exercises it.
 
 echo "== Test 10: --force archives non-terminal work =="
-T="${WORK}/force"
+new_target
 setup_work "${T}" "FEAT-109-force" "In Progress"
-if SDLC_ROOT="${T}" wf "${T}" archive FEAT-109-force --force >/dev/null \
-  && [[ ! -f "${T}/spdd/canvas/FEAT-109-force.md" ]] \
+if harness_sdlc "${T}" archive FEAT-109-force --force >/dev/null \
+  && [[ ! -f "${H}/spdd/canvas/FEAT-109-force.md" ]] \
   && registry_matches "${T}" "FEAT-109-force" 'archived:forced'; then
   ok "--force archives non-terminal work"
 else
@@ -215,13 +212,13 @@ else
 fi
 
 echo "== Test 12: archive leaves lessons.jsonl in place =="
-T="${WORK}/ledger"
+new_target
 setup_work "${T}" "FEAT-111-mem" "Complete"
-mkdir -p "${T}/spdd/memory"
-printf '%s\n' '{"id":"pitfall:FEAT-111-mem:engine:test","kind":"pitfall","work_id":"FEAT-111-mem","area":"engine","title":"keep me","body":"archive must not drop this dogfood record from lessons.jsonl.","source":"test","keywords":[],"schema":1}' > "${T}/spdd/memory/lessons.jsonl"
-before="$(cat "${T}/spdd/memory/lessons.jsonl")"
-out="$(SDLC_ROOT="${T}" wf "${T}" archive FEAT-111-mem)"
-after="$(cat "${T}/spdd/memory/lessons.jsonl")"
+mkdir -p "${H}/spdd/memory"
+printf '%s\n' '{"id":"pitfall:FEAT-111-mem:engine:test","kind":"pitfall","work_id":"FEAT-111-mem","area":"engine","title":"keep me","body":"archive must not drop this dogfood record from lessons.jsonl.","source":"test","keywords":[],"schema":1}' > "${H}/spdd/memory/lessons.jsonl"
+before="$(cat "${H}/spdd/memory/lessons.jsonl")"
+out="$(harness_sdlc "${T}" archive FEAT-111-mem)"
+after="$(cat "${H}/spdd/memory/lessons.jsonl")"
 if [[ "${before}" == "${after}" ]] && grep -Fq 'lessons.jsonl' <<< "${out}"; then
   ok "archive leaves lessons.jsonl unchanged and says so"
 else
@@ -229,23 +226,18 @@ else
 fi
 
 echo "== Test 11: re-archive is a no-op for --all =="
-T="${WORK}/rearchive"
+new_target
 setup_work "${T}" "FEAT-110-once" "Complete"
-SDLC_ROOT="${T}" wf "${T}" archive FEAT-110-once >/dev/null
-out="$(SDLC_ROOT="${T}" wf "${T}" archive --all)"
+harness_sdlc "${T}" archive FEAT-110-once >/dev/null
+out="$(harness_sdlc "${T}" archive --all)"
 if grep -q 'processed 0 eligible' <<< "${out}"; then
   ok "--all skips already-archived registry rows"
 else
-  if [[ ! -f "${T}/spdd/canvas/FEAT-110-once.md" ]]; then
+  if [[ ! -f "${H}/spdd/canvas/FEAT-110-once.md" ]]; then
     ok "--all did not duplicate archive (artifacts remain removed)"
   else
     bad "re-archive behavior unexpected: ${out}"
   fi
 fi
 
-echo
-echo "Results: ${pass} passed, ${fail} failed"
-if [[ "${fail}" -gt 0 ]]; then
-  exit 1
-fi
-echo "All archive-work tests passed."
+harness_finish
