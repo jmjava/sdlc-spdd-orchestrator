@@ -11,9 +11,8 @@ folder — ``<repo>/sdlc-spdd/`` — called the *home*:
         scripts/           installed workflow CLI
         .sdlc/             gitignored runtime (sessions, staged, sqlite)
 
-Legacy sprawled layouts (framework dirs at repo root) resolve ``home == root``
-so every path helper keeps working until ``upgrade-project.sh`` consolidates
-(and archives leftovers) into ``sdlc-spdd/``.
+This is the only supported layout. ``SDLC_HOME`` overrides the home folder;
+there is no fallback to framework folders at the repo root.
 """
 
 from __future__ import annotations
@@ -54,18 +53,11 @@ class Project:
 
     @property
     def home(self) -> Path:
-        """Single framework folder; falls back to root for legacy layouts."""
+        """The single framework folder: ``$SDLC_HOME`` or ``<root>/sdlc-spdd``."""
         env = os.environ.get("SDLC_HOME")
         if env:
             return Path(env).expanduser().resolve()
-        candidate = self.root / HOME_DIR_NAME
-        if candidate.is_dir():
-            return candidate
-        return self.root
-
-    @property
-    def is_single_folder(self) -> bool:
-        return self.home != self.root
+        return self.root / HOME_DIR_NAME
 
     @property
     def sdlc_dir(self) -> Path:
@@ -97,11 +89,9 @@ class Project:
 
     @property
     def registry_jsonl_path(self) -> Path:
-        """Committed claim/release event log (replaces the legacy TSV registry)."""
+        """Committed claim/release event log."""
         return self.memory_dir / "registry.jsonl"
 
-    # Kept name for compatibility with existing callers; now points at the
-    # lean JSONL registry.
     @property
     def registry_path(self) -> Path:
         return self.registry_jsonl_path
@@ -126,11 +116,8 @@ class Project:
 
     @property
     def harness_dir(self) -> Path:
-        """Install-time harness. Single-folder: <home>/harness; legacy: agent-context/harness."""
-        direct = self.home / "harness"
-        if direct.is_dir():
-            return direct
-        return self.home / "agent-context" / "harness"
+        """Install-time harness and #SkillName playbooks."""
+        return self.home / "harness"
 
     @property
     def skills_dir(self) -> Path:

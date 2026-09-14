@@ -13,7 +13,7 @@ def is_quiet(
     quiet_flag: bool = False,
     env: dict[str, str] | None = None,
 ) -> bool:
-    """True when SDLC_QUIET=1, --quiet, or agent-context/harness/quiet-mode.md exists."""
+    """True when SDLC_QUIET=1, --quiet, or <home>/harness/quiet-mode.md exists."""
     if quiet_flag:
         return True
     environ = env if env is not None else os.environ
@@ -24,8 +24,8 @@ def is_quiet(
         "on",
     }:
         return True
-    root = (project or Project.resolve()).root
-    return (root / "agent-context" / "harness" / "quiet-mode.md").is_file()
+    proj = project or Project.resolve()
+    return (proj.harness_dir / "quiet-mode.md").is_file()
 
 
 def quiet_resume_blurb(*, guide_live: bool = False) -> str:
