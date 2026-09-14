@@ -8,6 +8,8 @@ source "${_SCRIPT_DIR}/lib/common.sh"
 source "${_SCRIPT_DIR}/lib/paths.sh"
 # shellcheck source=/dev/null
 source "${_SCRIPT_DIR}/lib/milestone.sh"
+# shellcheck source=/dev/null
+source "${_SCRIPT_DIR}/lib/python.sh"
 
 usage() {
   cat <<'EOF'
@@ -101,37 +103,51 @@ esac
 TARGET="$(sdlc_resolve_target "${TARGET}")"
 export SDLC_ROOT="${TARGET}"
 HOME="$(sdlc_home "${TARGET}")"
+if [[ "$(basename "$(dirname "${_SCRIPT_DIR}")")" == "sdlc-spdd" ]]; then
+  ENGINE_ROOT="$(cd "${_SCRIPT_DIR}/../.." && pwd)"
+else
+  ENGINE_ROOT="$(cd "${_SCRIPT_DIR}/.." && pwd)"
+fi
+SDLC_ROOT="${ENGINE_ROOT}" resolve_engine_python || exit 1
+export SDLC_ROOT="${TARGET}"
 
-pointer_script="${HOME}/scripts/sdlc-pointer.sh"
-if [[ -f "${pointer_script}" && -n "${WORK_ID}" ]]; then
-  SDLC_ROOT="${TARGET}"
-  # shellcheck source=/dev/null
-  source "${pointer_script}"
-  sdlc_set_pointer "${WORK_ID}" >/dev/null
+_engine_python() {
+  if [[ -d "${ENGINE_ROOT}/engine/src/sdlc_engine" ]]; then
+    PYTHONPATH="${ENGINE_ROOT}/engine/src${PYTHONPATH:+:${PYTHONPATH}}" \
+      "${SDLC_PY}" "$@"
+  else
+    "${SDLC_PY}" "$@"
+  fi
+}
+
+SDLC_CLI="${_SCRIPT_DIR}/sdlc.sh"
+if [[ ! -x "${SDLC_CLI}" ]]; then
+  echo "sdlc: mandatory Python dispatcher not installed: ${SDLC_CLI}" >&2
+  exit 1
 fi
 
-workflow_script="${HOME}/scripts/sdlc-workflow.sh"
-team_script="${HOME}/scripts/sdlc-team-registry.sh"
-workflow_brief_md="Workflow tools not installed."
+_engine_cli() {
+  "${SDLC_CLI}" --target "${TARGET}" "$@"
+}
+
+if [[ -n "${WORK_ID}" ]]; then
+  _engine_cli pointer set "${WORK_ID}" >/dev/null
+else
+  WORK_ID="$(_engine_cli pointer get)"
+fi
+
+workflow_brief_md="No active Work ID."
 jira_status=""
 jira_ask_prompt=""
-if [[ -f "${workflow_script}" && -n "${WORK_ID}" ]]; then
-  SDLC_ROOT="${TARGET}"
-  # shellcheck source=/dev/null
-  source "${workflow_script}"
-  sdlc_workflow_touch_session "${WORK_ID}" "${PHASE}" "${MILESTONE}"
-  sdlc_workflow_sync "${WORK_ID}" >/dev/null 2>&1 || true
-  workflow_brief_md="$(sdlc_workflow_brief_markdown "${WORK_ID}")"
-elif [[ -f "${team_script}" && -n "${WORK_ID}" ]]; then
-  SDLC_ROOT="${TARGET}"
-  # shellcheck source=/dev/null
-  source "${team_script}"
-fi
-if [[ -n "${WORK_ID}" ]] && declare -F sdlc_team_jira_status >/dev/null 2>&1; then
-  jira_status="$(sdlc_team_jira_status "${WORK_ID}")"
-fi
-if [[ -n "${WORK_ID}" ]] && declare -F sdlc_team_jira_ask_prompt >/dev/null 2>&1; then
-  jira_ask_prompt="$(sdlc_team_jira_ask_prompt "${WORK_ID}")"
+if [[ -n "${WORK_ID}" ]]; then
+  status_json="$(_engine_cli status --work-id "${WORK_ID}" --json)"
+  if [[ "${PHASE}" == "resume" ]]; then
+    PHASE="$(awk -F '"' '/"phase":/ { print $4; exit }' <<<"${status_json}")"
+    PHASE="${PHASE:-resume}"
+  fi
+  workflow_brief_md="$(
+    printf '### Python Engine Status\n\n```json\n%s\n```\n' "${status_json}"
+  )"
 fi
 
 timestamp="$(sdlc_timestamp_iso)"
@@ -225,9 +241,6 @@ export SDLC_ROOT="${TARGET}"
 if [[ "${QUIET}" -eq 1 ]]; then
   export SDLC_QUIET=1
 fi
-if [[ "${QUIET}" -eq 0 ]] && declare -F sdlc_workflow_recommended_command >/dev/null 2>&1 && [[ -n "${WORK_ID}" ]]; then
-  recommended_command="$(sdlc_workflow_recommended_command "${PHASE}" "${WORK_ID}")"
-fi
 if [[ "${QUIET}" -eq 1 ]]; then
   recommended_command="Quiet mode: retrieve context via SQLite/Guide/context store; no T## dogfood command."
 fi
@@ -302,23 +315,9 @@ sqlite_section_md=""
 sqlite_lookup_loaded=0
 if [[ -n "${WORK_ID}" ]]; then
   _run_db_lookup() {
-    local out=""
-    if [[ -x "${HOME}/scripts/sdlc.sh" ]]; then
-      out="$(
-        SDLC_ENGINE=python SDLC_ROOT="${TARGET}" \
-          "${HOME}/scripts/sdlc.sh" db lookup \
-          --work-id "${WORK_ID}" \
-          --markdown 2>/dev/null || true
-      )"
-    fi
-    if [[ -z "${out}" ]] && python3 -c 'import sdlc_engine' 2>/dev/null; then
-      out="$(
-        python3 -m sdlc_engine --root "${TARGET}" db lookup \
-          --work-id "${WORK_ID}" \
-          --markdown 2>/dev/null || true
-      )"
-    fi
-    printf '%s' "${out}"
+    _engine_cli db lookup \
+      --work-id "${WORK_ID}" \
+      --markdown 2>/dev/null || true
   }
   sqlite_section_md="$(_run_db_lookup)"
   if [[ -n "${sqlite_section_md}" ]] && grep -Fq 'Local SQLite Index' <<<"${sqlite_section_md}"; then
@@ -547,9 +546,8 @@ cp "${session_file}" "${current_file}"
 
 # Index hot session into SQLite when engine is available (#85).
 if [[ -n "${WORK_ID}" ]]; then
-  python3 -m sdlc_engine --root "${TARGET}" db query \
-    --sql "SELECT 1" >/dev/null 2>&1 || true
-  python3 - <<PY 2>/dev/null || true
+  _engine_cli db query --sql "SELECT 1" >/dev/null 2>&1 || true
+  _engine_python - <<PY 2>/dev/null || true
 from sdlc_engine.db import LocalIndex
 from sdlc_engine.project import Project
 idx = LocalIndex(Project("${TARGET}"))
