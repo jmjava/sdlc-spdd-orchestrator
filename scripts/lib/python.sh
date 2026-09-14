@@ -47,7 +47,7 @@ pick_bootstrap_python() {
 
 resolve_engine_python() {
   local root="${SDLC_ROOT:-${ROOT:-}}"
-  local major minor
+  local major minor version
 
   if [[ -n "${PYTHON:-}" ]]; then
     SDLC_PY="${PYTHON}"
@@ -63,12 +63,14 @@ resolve_engine_python() {
     return 1
   fi
 
-  read -r major minor <<<"$("${SDLC_PY}" -c 'import sys; print(sys.version_info.major, sys.version_info.minor)' 2>/dev/null)" || {
-    echo "error: cannot run ${SDLC_PY}" >&2
+  version="$("${SDLC_PY}" -c 'import sys; print(sys.version_info.major, sys.version_info.minor)' 2>/dev/null)"
+  if [[ -z "${version}" ]]; then
+    echo "error: cannot run ${SDLC_PY} — sdlc-engine requires Python 3.12 (./scripts/setup-engine-venv.sh)" >&2
     return 1
-  }
+  fi
+  read -r major minor <<<"${version}"
   if (( major != 3 || minor != 12 )); then
-    echo "error: ${SDLC_PY} is 3.${minor} — sdlc-engine requires Python 3.12 (./scripts/setup-engine-venv.sh)" >&2
+    echo "error: ${SDLC_PY} is ${major}.${minor} — sdlc-engine requires Python 3.12 (./scripts/setup-engine-venv.sh)" >&2
     return 1
   fi
   export SDLC_PY

@@ -8,13 +8,9 @@ WORK_ID="${LIVE_WORK_ID:-FEAT-001-hello-live}"
 DONE_WORK_ID="${LIVE_DONE_WORK_ID:-FEAT-002-done-live}"
 SDLC_USER="${SDLC_USER:-live-matrix}"
 if [[ -z "${PYTHON:-}" ]]; then
-  if [[ -x "${REPO_ROOT}/.venv/bin/python" ]]; then
-    PYTHON="${REPO_ROOT}/.venv/bin/python"
-  elif command -v python3.12 >/dev/null 2>&1; then
-    PYTHON="$(command -v python3.12)"
-  else
-    PYTHON="$(command -v python3)"
-  fi
+  # shellcheck source=../lib/engine-python.sh
+  source "${REPO_ROOT}/tests/lib/engine-python.sh"
+  PYTHON="$(sdlc_harness_python "${REPO_ROOT}")"
 fi
 export PYTHON
 export PYTHONPATH="${REPO_ROOT}/engine/src${PYTHONPATH:+:${PYTHONPATH}}"

@@ -6,6 +6,9 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+# shellcheck source=lib/engine-python.sh
+source "${SCRIPT_DIR}/lib/engine-python.sh"
+HARNESS_PYTHON="$(sdlc_harness_python "${REPO_ROOT}")"
 CAPTURE="${REPO_ROOT}/scripts/capture-session-memory.sh"
 SDLC_SH="${REPO_ROOT}/scripts/sdlc.sh"
 
@@ -62,7 +65,7 @@ sdlc() {
   local t="$1"
   shift
   SDLC_ROOT="${t}" \
-    PYTHON="${REPO_ROOT}/.venv/bin/python" \
+    PYTHON="${HARNESS_PYTHON}" \
     PYTHONPATH="${REPO_ROOT}/engine/src" \
     "${t}/sdlc-spdd/scripts/sdlc.sh" "$@"
 }
