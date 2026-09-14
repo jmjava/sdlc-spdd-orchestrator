@@ -153,7 +153,7 @@ already means the only supported engine. `SDLC_ENGINE=shell` and any
 
 ### T03 - Stop shipping and delete the bash twin
 
-- Status: Pending
+- Status: Complete
 - Description: Remove twin installation from init/upgrade, delete exact
   retired paths during upgrade, require their absence in install verification,
   and delete template plus dogfood copies.
@@ -243,8 +243,8 @@ already means the only supported engine. `SDLC_ENGINE=shell` and any
 - [x] T01 bridge is covered for source and installed targets
 - [x] T02 dispatcher has one mandatory engine
 - [x] T02 retained utilities have no twin dependency
-- [ ] T03 twin files are absent from source and installs
-- [ ] T03 shipped LOC reduction is at least 3,000
+- [x] T03 twin files are absent from source and installs
+- [x] T03 shipped LOC reduction is at least 3,000
 - [ ] T04 current shell/pytest matrix is green
 - [ ] T05 current docs state one engine
 - [ ] T06 review, retro, sync, and dependency docs are complete
