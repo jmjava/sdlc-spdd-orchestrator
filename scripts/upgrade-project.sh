@@ -115,6 +115,7 @@ updated=()
 unchanged=()
 backed_up=()
 preserved=()
+removed=()
 
 CLAUDE_BEGIN="<!-- BEGIN SDLC-SPDD MANAGED CLAUDE GROUNDING -->"
 CLAUDE_END="<!-- END SDLC-SPDD MANAGED CLAUDE GROUNDING -->"
@@ -192,6 +193,21 @@ copy_executable_framework_file() {
   if [[ "${DRY_RUN}" -eq 0 && -f "${dest}" ]]; then
     chmod +x "${dest}"
   fi
+}
+
+remove_retired_framework_file() {
+  local dest="$1"
+  if [[ ! -f "${dest}" ]]; then
+    unchanged+=("${dest} (already absent)")
+    return
+  fi
+  backup_existing "${dest}"
+  if [[ "${DRY_RUN}" -eq 1 ]]; then
+    echo "[dry-run] would remove retired framework file ${dest}"
+  else
+    rm -f "${dest}"
+  fi
+  removed+=("${dest}")
 }
 
 # Adapter files are rewritten so IDE stubs at the repo root reference paths
@@ -428,14 +444,13 @@ if [[ "${UPGRADE_CURSOR}" -eq 1 && "${UPGRADE_COPILOT}" -eq 1 ]]; then
     "${TARGET}/.github/workflows/validate-sdlc-spdd-adapters.yml"
 fi
 
-# Workflow CLI managers live with the runtime scripts under <home>/scripts/.
+# Python sdlc_engine is the only workflow implementation. Remove exact
+# framework-owned bash twins left by earlier v3 installs.
 for file in \
   sdlc-pointer.sh \
   sdlc-workflow.sh \
   sdlc-team-registry.sh; do
-  copy_executable_framework_file \
-    "${REPO_ROOT}/templates/agent-context/${file}" \
-    "${HOME_DIR}/scripts/${file}"
+  remove_retired_framework_file "${HOME_DIR}/scripts/${file}"
 done
 
 copy_framework_file \
@@ -547,6 +562,8 @@ echo "Created (${#created[@]}):"
 printf '  %s\n' "${created[@]:-none}"
 echo "Updated framework files (${#updated[@]}):"
 printf '  %s\n' "${updated[@]:-none}"
+echo "Removed retired framework files (${#removed[@]}):"
+printf '  %s\n' "${removed[@]:-none}"
 echo "Unchanged framework files (${#unchanged[@]}):"
 printf '  %s\n' "${unchanged[@]:-none}"
 echo "Preserved existing project content (${#preserved[@]}):"

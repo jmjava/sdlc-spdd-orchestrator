@@ -218,6 +218,10 @@ assert_v3_seed_files() {
   assert_file "${t}/sdlc-spdd/scripts/index-spdd-analysis.sh"
   assert_file "${t}/sdlc-spdd/spdd/analysis/.gitkeep"
   assert_file "${t}/sdlc-spdd/scripts/resolve-agent-context.sh"
+  assert_file "${t}/sdlc-spdd/scripts/sdlc.sh"
+  assert_absent "${t}/sdlc-spdd/scripts/sdlc-pointer.sh"
+  assert_absent "${t}/sdlc-spdd/scripts/sdlc-workflow.sh"
+  assert_absent "${t}/sdlc-spdd/scripts/sdlc-team-registry.sh"
   assert_file "${t}/sdlc-spdd/scripts/hooks/pre-commit.sample"
   assert_same "${t}/sdlc-spdd/scripts/hooks/pre-commit.sample" \
     "${REPO_ROOT}/templates/agent-context/hooks/pre-commit.sample"
@@ -349,6 +353,10 @@ expect_pass "verify all three after upgrade" "${VERIFY}" --target "${T}" --requi
 echo "== Test 10: Upgrade preserves project-owned Claude memory; refreshes adapter workflow =="
 T="${WORK}/preserve"; mkdir -p "${T}/.github/workflows"
 "${SETUP}" --target "${T}" --cursor --copilot >/dev/null 2>&1
+for retired in sdlc-pointer.sh sdlc-workflow.sh sdlc-team-registry.sh; do
+  printf '#!/usr/bin/env bash\n# retired framework twin\n' > "${T}/sdlc-spdd/scripts/${retired}"
+  chmod +x "${T}/sdlc-spdd/scripts/${retired}"
+done
 custom_claude="custom existing claude instructions"
 printf '%s' "${custom_claude}" > "${T}/CLAUDE.md"
 cat > "${T}/.github/workflows/validate-sdlc-spdd-adapters.yml" <<'OLDWF'
@@ -369,6 +377,12 @@ jobs:
         run: ./sdlc-spdd/scripts/validate-command-adapters.sh --target .
 OLDWF
 "${UPGRADE}" --target "${T}" --all >/dev/null 2>&1
+assert_absent "${T}/sdlc-spdd/scripts/sdlc-pointer.sh"
+assert_absent "${T}/sdlc-spdd/scripts/sdlc-workflow.sh"
+assert_absent "${T}/sdlc-spdd/scripts/sdlc-team-registry.sh"
+assert_glob_exists "${T}/.sdlc-spdd-upgrade-backups"/*/sdlc-spdd/scripts/sdlc-pointer.sh "retired pointer backup"
+assert_glob_exists "${T}/.sdlc-spdd-upgrade-backups"/*/sdlc-spdd/scripts/sdlc-workflow.sh "retired workflow backup"
+assert_glob_exists "${T}/.sdlc-spdd-upgrade-backups"/*/sdlc-spdd/scripts/sdlc-team-registry.sh "retired registry backup"
 assert_contains "${T}/CLAUDE.md" "${custom_claude}" "custom Claude content"
 assert_claude_grounded "${T}"
 assert_target_adapter_workflow "${T}"

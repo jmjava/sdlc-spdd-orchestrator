@@ -267,20 +267,6 @@ if [[ "${INSTALL_CURSOR}" -eq 1 && "${INSTALL_COPILOT}" -eq 1 ]]; then
     "${TARGET}/.github/workflows/validate-sdlc-spdd-adapters.yml"
 fi
 
-# Workflow CLI: sdlc.sh + pointer/workflow/team-registry managers live together
-# under <home>/scripts/.
-for file in \
-  sdlc-pointer.sh \
-  sdlc-workflow.sh \
-  sdlc-team-registry.sh; do
-  copy_if_missing \
-    "${REPO_ROOT}/templates/agent-context/${file}" \
-    "${HOME_DIR}/scripts/${file}"
-  if [[ "${DRY_RUN}" -eq 0 && -f "${HOME_DIR}/scripts/${file}" ]]; then
-    chmod +x "${HOME_DIR}/scripts/${file}"
-  fi
-done
-
 copy_if_missing \
   "${REPO_ROOT}/templates/agent-context/hooks/notify-team-registry.example.sh" \
   "${HOME_DIR}/scripts/hooks/notify-team-registry.example.sh"
