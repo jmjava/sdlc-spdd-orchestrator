@@ -6,7 +6,7 @@ import argparse
 
 from .metrics import CAPTURE_CONSTRUCTS, NON_CAPTURE_CONSTRUCTS
 
-from .cli_commands import (
+from .commands import (
     cmd_next,
     cmd_status,
     cmd_resume,
@@ -24,8 +24,12 @@ from .cli_commands import (
     cmd_archive,
     cmd_pointer,
     cmd_context,
-    cmd_storage,
-    cmd_agent_context,
+    cmd_quiet_status,
+    cmd_start,
+    cmd_capture,
+    cmd_complete,
+    cmd_accept,
+    cmd_session,
     cmd_version,
     cmd_shell,
     cmd_links,
@@ -600,36 +604,62 @@ def build_parser() -> argparse.ArgumentParser:
     cmc.add_argument("--timeout", type=float, default=30.0)
     cmc.set_defaults(func=cmd_context)
 
-    st = sub.add_parser("storage", help="Storage v3 migration and status")
-    st_sub = st.add_subparsers(dest="storage_cmd", required=True)
-    st_sub.add_parser("status", help="Detect legacy layout / migration state").set_defaults(
-        func=cmd_storage
-    )
-    stm = st_sub.add_parser("migrate", help="Migrate legacy agent-context to ledger v3")
-    stm.add_argument("--dry-run", action="store_true")
-    stm.set_defaults(func=cmd_storage)
-
-    ac = sub.add_parser(
-        "agent-context",
-        help="Upgrade/re-init noisy agent-context runtime + quiet mode (#80/#91)",
-    )
-    ac_sub = ac.add_subparsers(dest="agent_context_cmd", required=True)
-    ac_sub.add_parser("detect", help="Detect legacy sessions/features noise").set_defaults(
-        func=cmd_agent_context
-    )
-    acu = ac_sub.add_parser(
-        "upgrade",
-        help="Archive sessions/features to .sdlc/legacy-export and seed lean runtime",
-    )
-    acu.add_argument("--dry-run", action="store_true")
-    acu.add_argument("--no-rebuild", action="store_true")
-    acu.set_defaults(func=cmd_agent_context)
-    aqs = ac_sub.add_parser("quiet-status", help="Show quiet/product-test mode status")
+    aqs = sub.add_parser("quiet-status", help="Show quiet/product-test mode status")
     aqs.add_argument("--quiet", action="store_true", help="Treat as --quiet flag set")
     aqs.add_argument("--guide-live", action="store_true")
-    aqs.set_defaults(func=cmd_agent_context)
+    aqs.set_defaults(func=cmd_quiet_status)
 
-    shell = sub.add_parser("shell", help="Run a v1 scripts/*.sh via bridge")
+    st = sub.add_parser("start", help="Open the session brief for the active Work ID at its phase")
+    st.add_argument("--work-id", default="")
+    st.add_argument("--phase", default="")
+    st.set_defaults(func=cmd_start)
+
+    cap = sub.add_parser("capture", help="Guarded capture (pointer must match); stages lessons")
+    cap.add_argument("--work-id", default="")
+    cap.add_argument("--phase", default="")
+    cap.add_argument("script_args", nargs=argparse.REMAINDER, help="capture-session-memory.sh options, e.g. --summary ...")
+    cap.set_defaults(func=cmd_capture)
+
+    comp = sub.add_parser("complete", help="Capture --complete with a required verify receipt")
+    comp.add_argument("script_args", nargs=argparse.REMAINDER)
+    comp.set_defaults(func=cmd_complete)
+
+    acc = sub.add_parser("accept", help="Promote staged lessons to spdd/memory/lessons.jsonl")
+    acc.add_argument("--work-id", default="")
+    acc.add_argument("--ids", default="", help="Comma-separated record ids")
+    acc.add_argument("--discard-rest", action="store_true")
+    acc.add_argument("--no-guide", action="store_true")
+    acc.add_argument("--commit", action="store_true", help="git add + commit the ledger")
+    acc.add_argument("--list", action="store_true", help="Show staged records")
+    acc.set_defaults(func=cmd_accept)
+
+    ses = sub.add_parser("session", help="Engine callbacks used by the session scripts")
+    ses_sub = ses.add_subparsers(dest="session_cmd", required=True)
+    sb = ses_sub.add_parser("brief", help="Workflow brief table (markdown)")
+    sb.add_argument("--work-id", default="")
+    sb.set_defaults(func=cmd_session)
+    stt = ses_sub.add_parser("touch", help="Mark a session start for a Work ID/phase")
+    stt.add_argument("--work-id", required=True)
+    stt.add_argument("--phase", required=True)
+    stt.add_argument("--milestone", default="")
+    stt.set_defaults(func=cmd_session)
+    src = ses_sub.add_parser("record-capture", help="Record a capture on the workflow state")
+    src.add_argument("--work-id", required=True)
+    src.add_argument("--phase", default="resume")
+    src.set_defaults(func=cmd_session)
+    srec = ses_sub.add_parser("recommend", help="Assistant command for a phase (architecture-first)")
+    srec.add_argument("--work-id", required=True)
+    srec.add_argument("--phase", required=True)
+    srec.add_argument("--operation", default="")
+    srec.set_defaults(func=cmd_session)
+    sjs = ses_sub.add_parser("jira-status", help="<KEY> | draft | missing")
+    sjs.add_argument("--work-id", required=True)
+    sjs.set_defaults(func=cmd_session)
+    sja = ses_sub.add_parser("jira-ask", help="Agent instruction when the Jira key is unset")
+    sja.add_argument("--work-id", required=True)
+    sja.set_defaults(func=cmd_session)
+
+    shell = sub.add_parser("shell", help="Run a session script from <home>/scripts via bridge")
     shell.add_argument("script")
     shell.add_argument("script_args", nargs=argparse.REMAINDER)
     shell.set_defaults(func=cmd_shell)

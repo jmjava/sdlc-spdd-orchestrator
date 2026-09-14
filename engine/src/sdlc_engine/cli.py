@@ -6,44 +6,7 @@ import sys
 
 from .cli_parser import build_parser
 
-# Keep handler names importable from sdlc_engine.cli for compatibility.
-from .cli_commands import (  # noqa: F401
-    _project,
-    cmd_advance,
-    cmd_agent_context,
-    cmd_archive,
-    cmd_claim,
-    cmd_commit_message,
-    cmd_context,
-    cmd_db,
-    cmd_gate,
-    cmd_installer,
-    cmd_issues,
-    cmd_links,
-    cmd_list_shelved,
-    cmd_list_work,
-    cmd_local,
-    cmd_next,
-    cmd_pointer,
-    cmd_quick,
-    cmd_release,
-    cmd_resume,
-    cmd_shelf,
-    cmd_shell,
-    cmd_skip,
-    cmd_status,
-    cmd_storage,
-    cmd_sunset,
-    cmd_sync,
-    cmd_sync_links,
-    cmd_sync_roadmap,
-    cmd_sync_team,
-    cmd_team,
-    cmd_template,
-    cmd_version,
-    cmd_viewer,
-    cmd_work,
-)
+from .commands import cmd_next, cmd_version
 
 
 def main(argv: list[str] | None = None) -> int:
