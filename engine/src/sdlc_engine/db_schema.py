@@ -9,7 +9,7 @@ SCHEMA_VERSION = "5"
 DEFAULT_DB_NAME = "index.sqlite"
 
 # Typed edge kinds (src/dst) and relationship names — aligned with Guide DICE
-# plus requirement↔REASONS and full agent-context part links.
+# plus requirement↔REASONS and context-entry links.
 NODE_WORK = "work"
 NODE_REQUIREMENT = "requirement"
 NODE_CANVAS = "canvas"

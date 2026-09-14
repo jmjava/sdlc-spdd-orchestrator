@@ -1,7 +1,6 @@
 """Per-project issue tracker + Jira/GitHub credentials (gitignored runtime).
 
-Config file: ``.sdlc/integrations-config.json`` (falls back to legacy
-``.sdlc/issue-tracker-config.json`` for tracker-only fields).
+Config file: ``<home>/.sdlc/integrations-config.json``.
 
 Environment variables always win over file values when set.
 Secrets are never returned from :func:`status_dict` — only ``*_set`` booleans.
@@ -20,7 +19,6 @@ from .io_util import load_json_dict
 from .project import Project
 
 CONFIG_REL = Path(".sdlc") / "integrations-config.json"
-LEGACY_TRACKER_REL = Path(".sdlc") / "issue-tracker-config.json"
 
 TRACKER_JIRA = "jira"
 TRACKER_GITHUB = "github"
@@ -111,15 +109,6 @@ class ResolvedIntegrations:
 def load_config(project: Project) -> dict[str, Any]:
     path = config_path(project)
     data = _read_json(path)
-    if not data:
-        legacy = _read_json(project.sdlc_dir / LEGACY_TRACKER_REL.name)
-        if legacy:
-            data = {
-                "tracker": legacy.get("tracker", DEFAULT_TRACKER),
-                "notes": legacy.get("notes", ""),
-                "jira": {},
-                "github": {},
-            }
     tracker = normalize_tracker(str(data.get("tracker") or DEFAULT_TRACKER))
     if tracker not in ALL_TRACKERS:
         tracker = DEFAULT_TRACKER

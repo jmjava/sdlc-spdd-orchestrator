@@ -41,8 +41,8 @@ class LocalSyncService:
     def sync_roadmap(self, *, roadmap: str = "ROADMAP.md", dry_run: bool = False) -> str:
         roadmap_path = Path(roadmap)
         if not roadmap_path.is_absolute():
-            roadmap_path = self.project.root / roadmap_path
-        canvas_dir = self.project.root / "spdd" / "canvas"
+            roadmap_path = self.project.home / roadmap_path
+        canvas_dir = self.project.spdd_dir / "canvas"
         rows: list[str] = []
         files = sorted(canvas_dir.glob("*.md")) if canvas_dir.is_dir() else []
         for path in files:
@@ -101,7 +101,7 @@ class LocalSyncService:
             links = collect_links(self.project, wid, rows.get(wid))
             findings.extend(self._findings_for(links))
         # ROADMAP staleness: if markers missing or summary older than newest canvas mtime — soft check
-        roadmap = self.project.root / "ROADMAP.md"
+        roadmap = self.project.roadmap_path
         if roadmap.is_file():
             text = roadmap.read_text(encoding="utf-8")
             if START_MARKER not in text or END_MARKER not in text:

@@ -48,10 +48,7 @@ PROMPTS_DEST="${TARGET}/.github/prompts"
 
 # shellcheck source=lib/framework-install.sh
 source "${SCRIPT_DIR}/lib/framework-install.sh"
-# Storage v3 targets keep IDE stubs at the repo root but reference paths under
-# the single-folder home sdlc-spdd/.
-REWRITE_V3=0
-[[ -d "${TARGET}/sdlc-spdd" ]] && REWRITE_V3=1
+# IDE stubs stay at the repo root but reference paths under the sdlc-spdd/ home.
 
 installed=()
 skipped=()
@@ -65,7 +62,7 @@ copy_if_missing() {
   fi
   mkdir -p "$(dirname "${dest}")"
   cp "${src}" "${dest}"
-  [[ "${REWRITE_V3}" -eq 1 ]] && framework_rewrite_adapter_paths "${dest}"
+  framework_rewrite_adapter_paths "${dest}"
   installed+=("${dest}")
 }
 

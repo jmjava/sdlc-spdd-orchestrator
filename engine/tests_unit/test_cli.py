@@ -7,7 +7,7 @@ from sdlc_engine.cli import main
 def test_cli_claim_next_archive(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setenv("SDLC_USER", "cli-user")
     work_id = "FEAT-030-cli"
-    canvas = tmp_path / "spdd" / "canvas" / f"{work_id}.md"
+    canvas = tmp_path / "sdlc-spdd" / "spdd" / "canvas" / f"{work_id}.md"
     canvas.parent.mkdir(parents=True)
     canvas.write_text(
         f"# {work_id}\n\n## Final Status\n\n- Status: Complete\n",
@@ -16,8 +16,8 @@ def test_cli_claim_next_archive(tmp_path: Path, monkeypatch) -> None:
     assert main(["--root", str(tmp_path), "claim", work_id]) == 0
     assert main(["--root", str(tmp_path), "next"]) == 0
     assert main(["--root", str(tmp_path), "archive", work_id]) == 0
-    assert not (tmp_path / "spdd" / "canvas" / f"{work_id}.md").exists()
-    assert not (tmp_path / "spdd" / "canvas" / "archive").exists()
+    assert not (tmp_path / "sdlc-spdd" / "spdd" / "canvas" / f"{work_id}.md").exists()
+    assert not (tmp_path / "sdlc-spdd" / "spdd" / "canvas" / "archive").exists()
     assert main(["--root", str(tmp_path), "version"]) == 0
 
 
@@ -77,7 +77,7 @@ def test_cli_work_init_from_adf(tmp_path: Path, capsys) -> None:
     out = capsys.readouterr().out
     assert "FEAT-013-cli-adf-init" in out
     assert "[dry-run]" in out
-    assert not (tmp_path / "spdd" / "canvas" / "FEAT-013-cli-adf-init.md").exists()
+    assert not (tmp_path / "sdlc-spdd" / "spdd" / "canvas" / "FEAT-013-cli-adf-init.md").exists()
 
     rc = main(
         [
@@ -98,7 +98,7 @@ def test_cli_work_init_from_adf(tmp_path: Path, capsys) -> None:
     out = capsys.readouterr().out
     assert "Created FEAT-013-cli-adf-init" in out
     assert "/sdlc-spdd-analysis @" in out
-    canvas = tmp_path / "spdd" / "canvas" / "FEAT-013-cli-adf-init.md"
+    canvas = tmp_path / "sdlc-spdd" / "spdd" / "canvas" / "FEAT-013-cli-adf-init.md"
     assert canvas.is_file()
     text = canvas.read_text(encoding="utf-8")
     assert "CLI title" in text
@@ -172,10 +172,10 @@ def test_cli_work_init_from_adf_claims_by_default(tmp_path: Path, monkeypatch, c
     assert rc == 0
     out = capsys.readouterr().out
     assert "Created FEAT-013-cli-claim-default" in out
-    reg_path = tmp_path / "spdd" / "memory" / "registry.jsonl"
+    reg_path = tmp_path / "sdlc-spdd" / "spdd" / "memory" / "registry.jsonl"
     assert reg_path.is_file()
     assert "cli-claim" in reg_path.read_text(encoding="utf-8")
-    assert (tmp_path / ".sdlc" / "pointer").read_text(encoding="utf-8").strip() == (
+    assert (tmp_path / "sdlc-spdd" / ".sdlc" / "pointer").read_text(encoding="utf-8").strip() == (
         "FEAT-013-cli-claim-default"
     )
 
@@ -201,8 +201,8 @@ def test_cli_work_init_from_adf_invalid_json(tmp_path: Path, capsys) -> None:
 def test_cli_work_init_from_adf_claim_conflict(tmp_path: Path, monkeypatch, capsys) -> None:
     monkeypatch.setenv("SDLC_USER", "bob")
     wid = "FEAT-013-cli-conflict"
-    (tmp_path / "spdd" / "memory").mkdir(parents=True, exist_ok=True)
-    reg_jsonl = tmp_path / "spdd" / "memory" / "registry.jsonl"
+    (tmp_path / "sdlc-spdd" / "spdd" / "memory").mkdir(parents=True, exist_ok=True)
+    reg_jsonl = tmp_path / "sdlc-spdd" / "spdd" / "memory" / "registry.jsonl"
     reg_jsonl.write_text(
         json.dumps(
             {
@@ -237,4 +237,4 @@ def test_cli_work_init_from_adf_claim_conflict(tmp_path: Path, monkeypatch, caps
     )
     assert rc == 1
     assert "alice" in capsys.readouterr().err
-    assert not (tmp_path / "spdd" / "canvas" / f"{wid}.md").exists()
+    assert not (tmp_path / "sdlc-spdd" / "spdd" / "canvas" / f"{wid}.md").exists()

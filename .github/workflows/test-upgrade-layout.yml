@@ -1,4 +1,4 @@
-name: Test Upgrade Consolidate
+name: Test Upgrade Layout
 
 on:
   pull_request:
@@ -10,9 +10,8 @@ on:
       - 'scripts/lib/framework-install.sh'
       - 'scripts/lib/skills.sh'
       - 'templates/**'
-      - 'tests/test-upgrade-consolidate.sh'
-      - 'tests/test-framework-install-consolidate.sh'
-      - '.github/workflows/test-upgrade-consolidate.yml'
+      - 'tests/test-upgrade-layout.sh'
+      - '.github/workflows/test-upgrade-layout.yml'
   push:
     branches: [main]
     paths:
@@ -23,26 +22,28 @@ on:
       - 'scripts/lib/framework-install.sh'
       - 'scripts/lib/skills.sh'
       - 'templates/**'
-      - 'tests/test-upgrade-consolidate.sh'
-      - 'tests/test-framework-install-consolidate.sh'
-      - '.github/workflows/test-upgrade-consolidate.yml'
+      - 'tests/test-upgrade-layout.sh'
+      - '.github/workflows/test-upgrade-layout.yml'
 
 jobs:
-  test-upgrade-consolidate:
+  test-upgrade-layout:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install engine
+        run: python -m pip install -q -e ./engine
 
       - name: Check shell syntax
         run: |
           bash -n scripts/upgrade-project.sh
           bash -n scripts/verify-project-install.sh
           bash -n scripts/lib/framework-install.sh
-          bash -n tests/test-upgrade-consolidate.sh
-          bash -n tests/test-framework-install-consolidate.sh
+          bash -n tests/test-upgrade-layout.sh
 
-      - name: Unit — framework-install consolidate helpers
-        run: ./tests/test-framework-install-consolidate.sh
-
-      - name: Integration — upgrade layout consolidation
-        run: ./tests/test-upgrade-consolidate.sh
+      - name: Integration — upgrade layout contract (v3 only)
+        run: ./tests/test-upgrade-layout.sh

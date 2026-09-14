@@ -3,58 +3,46 @@ set -euo pipefail
 
 # Leftover #6 proving test: I1 capture/complete without a verify receipt refuse.
 # LessonRecord title/body (or --validation prose) is not a receipt.
-
-export SDLC_GATE_ENGINE=shell
-export SDLC_ENGINE=shell
+#
+# Runs the Python engine through the installed sdlc-spdd/scripts/sdlc.sh on a
+# fresh init-project target per case. The former SDLC_ENGINE=shell /
+# SDLC_GATE_ENGINE=shell exports are gone: the bash twin was deleted and
+# setting those variables now makes sdlc.sh exit 2.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-WORKFLOW="${REPO_ROOT}/templates/agent-context/sdlc-workflow.sh"
-POINTER="${REPO_ROOT}/templates/agent-context/sdlc-pointer.sh"
-TEAM_REG="${REPO_ROOT}/templates/agent-context/sdlc-team-registry.sh"
-CAPTURE="${REPO_ROOT}/scripts/capture-session-memory.sh"
-SDLC_SH="${REPO_ROOT}/scripts/sdlc.sh"
+# shellcheck source=lib/harness.sh
+source "${SCRIPT_DIR}/lib/harness.sh"
 
-WORK="$(mktemp -d)"
-trap 'rm -rf "${WORK}"' EXIT
+TARGETS=()
+cleanup() {
+  local t
+  for t in "${TARGETS[@]}"; do rm -rf "${t}"; done
+  return 0
+}
+trap cleanup EXIT
 
-pass=0
-fail=0
-ok()  { echo "  ok   $1"; pass=$((pass + 1)); }
-bad() { echo "  FAIL $1" >&2; fail=$((fail + 1)); }
-
-setup_feature() {
-  local t="$1"
-  mkdir -p "${t}/.sdlc/sessions" \
-    "${t}/agent-context" \
-    "${t}/spdd/canvas" \
-    "${t}/spdd/analysis" \
-    "${t}/spdd/memory" \
-    "${t}/scripts/sdlc-spdd/lib"
-  cp "${POINTER}" "${t}/agent-context/sdlc-pointer.sh"
-  cp "${WORKFLOW}" "${t}/agent-context/sdlc-workflow.sh"
-  cp "${TEAM_REG}" "${t}/agent-context/sdlc-team-registry.sh"
-  : > "${t}/spdd/memory/registry.jsonl"
-  cp "${SDLC_SH}" "${t}/scripts/sdlc-spdd/sdlc.sh"
-  cp "${CAPTURE}" "${t}/scripts/sdlc-spdd/capture-session-memory.sh"
-  cp "${REPO_ROOT}/scripts/lib/"*.sh "${t}/scripts/sdlc-spdd/lib/"
-  chmod +x "${t}/agent-context/"*.sh \
-    "${t}/scripts/sdlc-spdd/sdlc.sh" \
-    "${t}/scripts/sdlc-spdd/capture-session-memory.sh"
+# Sets T (installed target). Not a subshell, so the target is tracked for cleanup.
+new_target() {
+  T="$(harness_new_target)"
+  TARGETS+=("${T}")
 }
 
-sdlc() {
-  local t="$1"
-  shift
-  SDLC_ROOT="${t}" SDLC_ENGINE=shell "${t}/scripts/sdlc-spdd/sdlc.sh" "$@"
+staged_file() {
+  printf '%s' "$(harness_home "$1")/.sdlc/staged/lessons.jsonl"
+}
+
+# Park a Work ID at the code phase. The engine's `resume --phase` enforces the
+# entrance gate of that phase, so fixtures use --force to set up the state the
+# capture/complete verbs then operate on.
+park_code() {
+  harness_sdlc "$1" resume "$2" --phase code --force >/dev/null
 }
 
 echo "== test_capture_without_verify_receipt_refuses =="
-T="${WORK}/capture-refuse"
+new_target
 work_id="FEAT-020-i1-receipt"
-setup_feature "${T}"
-sdlc "${T}" resume "${work_id}" --phase code >/dev/null
-if out="$(sdlc "${T}" capture --phase code --summary "T01 complete" --validation "looked fine" 2>&1)"; then
+park_code "${T}" "${work_id}"
+if out="$(harness_sdlc "${T}" capture --phase code --summary "T01 complete" --validation "looked fine" 2>&1)"; then
   bad "capture without receipt should refuse: ${out}"
 else
   if grep -q 'verify receipt required' <<< "${out}"; then
@@ -63,18 +51,17 @@ else
     bad "capture refuse message missing receipt: ${out}"
   fi
 fi
-if [[ -f "${T}/.sdlc/staged/lessons.jsonl" ]]; then
+if [[ -f "$(staged_file "${T}")" ]]; then
   bad "refused capture must not stage a lesson"
 else
   ok "refused capture left no staged lesson"
 fi
 
 echo "== test_complete_without_verify_receipt_refuses =="
-T="${WORK}/complete-refuse"
+new_target
 work_id="FEAT-021-i1-complete"
-setup_feature "${T}"
-sdlc "${T}" resume "${work_id}" --phase code >/dev/null
-if out="$(sdlc "${T}" complete --summary "T01 complete" 2>&1)"; then
+park_code "${T}" "${work_id}"
+if out="$(harness_sdlc "${T}" complete --summary "T01 complete" 2>&1)"; then
   bad "complete without receipt should refuse: ${out}"
 else
   if grep -q 'verify receipt required' <<< "${out}"; then
@@ -85,11 +72,10 @@ else
 fi
 
 echo "== test_complete_fail_receipt_refuses =="
-T="${WORK}/complete-fail"
+new_target
 work_id="FEAT-022-i1-fail"
-setup_feature "${T}"
-sdlc "${T}" resume "${work_id}" --phase code >/dev/null
-if out="$(sdlc "${T}" complete --summary "T01 complete" \
+park_code "${T}" "${work_id}"
+if out="$(harness_sdlc "${T}" complete --summary "T01 complete" \
   --verify-command "pytest" --verify-exit 1 --verify-result fail 2>&1)"; then
   bad "complete with fail receipt should refuse: ${out}"
 else
@@ -99,13 +85,17 @@ else
     bad "complete fail-receipt message: ${out}"
   fi
 fi
+if [[ -f "$(staged_file "${T}")" ]]; then
+  bad "refused complete must not stage a lesson"
+else
+  ok "refused complete left no staged lesson"
+fi
 
 echo "== test_capture_with_receipt_stages_verify_object =="
-T="${WORK}/capture-ok"
+new_target
 work_id="FEAT-023-i1-ok"
-setup_feature "${T}"
-sdlc "${T}" resume "${work_id}" --phase code >/dev/null
-if sdlc "${T}" capture --phase code --summary "T01 complete" \
+park_code "${T}" "${work_id}"
+if harness_sdlc "${T}" capture --phase code --summary "T01 complete" \
   --verify-command "pytest tests/test_foo.py" \
   --verify-exit 0 \
   --verify-result pass >/dev/null; then
@@ -113,7 +103,7 @@ if sdlc "${T}" capture --phase code --summary "T01 complete" \
 else
   bad "capture with receipt should succeed"
 fi
-stage="${T}/.sdlc/staged/lessons.jsonl"
+stage="$(staged_file "${T}")"
 if [[ -f "${stage}" ]] \
   && grep -q '"command": "pytest tests/test_foo.py"' "${stage}" \
   && grep -q '"exit": 0' "${stage}" \
@@ -125,11 +115,10 @@ else
 fi
 
 echo "== test_complete_with_pass_receipt_succeeds =="
-T="${WORK}/complete-ok"
+new_target
 work_id="FEAT-024-i1-done"
-setup_feature "${T}"
-sdlc "${T}" resume "${work_id}" --phase code >/dev/null
-if sdlc "${T}" complete --summary "T01 complete" \
+park_code "${T}" "${work_id}"
+if harness_sdlc "${T}" complete --summary "T01 complete" \
   --verify-command "true" \
   --verify-exit 0 \
   --verify-result pass >/dev/null; then
@@ -137,9 +126,13 @@ if sdlc "${T}" complete --summary "T01 complete" \
 else
   bad "complete with pass receipt should succeed"
 fi
-
-echo
-echo "Results: ${pass} passed, ${fail} failed"
-if [[ "${fail}" -gt 0 ]]; then
-  exit 1
+stage="$(staged_file "${T}")"
+if [[ -f "${stage}" ]] \
+  && grep -q "\"work_id\": \"${work_id}\"" "${stage}" \
+  && grep -q '"result": "pass"' "${stage}"; then
+  ok "complete staged a pass receipt for ${work_id}"
+else
+  bad "complete did not stage a pass receipt: $(cat "${stage}" 2>/dev/null || true)"
 fi
+
+harness_finish

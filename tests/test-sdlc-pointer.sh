@@ -1,100 +1,104 @@
 #!/usr/bin/env bash
-set -euo pipefail
-
-# Regression harness for templates/agent-context/sdlc-pointer.sh
+# Pointer contract for the Python engine (storage v3, one engine):
+#   1. pointer get is empty (exit 0) when unset
+#   2. pointer set writes sdlc-spdd/.sdlc/pointer; get reads it back
+#   3. pointer reset clears it
+#   4. claim sets the pointer; shelf clears it; resume restores it
+#   5. --target from the orchestrator dispatcher operates on the target
+#   6. start-agent-session.sh --work-id sets the pointer
 #
 # Usage: ./tests/test-sdlc-pointer.sh
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-POINTER="${REPO_ROOT}/templates/agent-context/sdlc-pointer.sh"
-if [[ ! -f "${POINTER}" ]]; then
-  POINTER="${REPO_ROOT}/sdlc-spdd/scripts/sdlc-pointer.sh"
-fi
-START="${REPO_ROOT}/scripts/start-agent-session.sh"
+# shellcheck source=lib/harness.sh
+source "${SCRIPT_DIR}/lib/harness.sh"
 
-WORK="$(mktemp -d)"
-trap 'rm -rf "${WORK}"' EXIT
+START="${HARNESS_REPO_ROOT}/scripts/start-agent-session.sh"
 
-pass=0
-fail=0
-ok()  { echo "  ok   $1"; pass=$((pass + 1)); }
-bad() { echo "  FAIL $1" >&2; fail=$((fail + 1)); }
-
-run_pointer() {
-  SDLC_ROOT="${1}" "${POINTER}" "${@:2}"
-}
-
-source_pointer() {
-  SDLC_ROOT="${1}"
-  # shellcheck source=/dev/null
-  source "${POINTER}"
-}
+T="$(harness_new_target)"
+trap 'rm -rf "${T}"' EXIT
+HOME_DIR="$(harness_home "${T}")"
+POINTER_FILE="${HOME_DIR}/.sdlc/pointer"
 
 # ---------------------------------------------------------------------------
-echo "== Test 1: CLI set/get/reset =="
-T="${WORK}/cli"
-mkdir -p "${T}"
-run_pointer "${T}" set FEAT-001 >/dev/null
-current="$(run_pointer "${T}" get)"
+echo "== Test 1: pointer get is empty and exits 0 when unset =="
+rc=0
+current="$(harness_sdlc "${T}" pointer get)" || rc=$?
+if [[ "${rc}" -eq 0 ]]; then ok "pointer get exits 0 when unset"; else bad "pointer get exit ${rc} when unset"; fi
+if [[ -z "${current}" ]]; then ok "pointer get prints empty when unset"; else bad "expected empty pointer, got '${current}'"; fi
+
+# ---------------------------------------------------------------------------
+echo "== Test 2: pointer set writes sdlc-spdd/.sdlc/pointer =="
+harness_sdlc "${T}" pointer set FEAT-001 >/dev/null
+if [[ -f "${POINTER_FILE}" ]]; then ok "pointer file created under sdlc-spdd/.sdlc"; else bad "missing ${POINTER_FILE}"; fi
+stored="$(tr -d '[:space:]' < "${POINTER_FILE}")"
+if [[ "${stored}" == "FEAT-001" ]]; then ok "pointer file holds FEAT-001"; else bad "pointer file holds '${stored}'"; fi
+if [[ ! -e "${T}/.sdlc/pointer" ]]; then ok "no root-level .sdlc/pointer (legacy layout)"; else bad "pointer written to legacy root .sdlc"; fi
+current="$(harness_sdlc "${T}" pointer get)"
 if [[ "${current}" == "FEAT-001" ]]; then ok "set/get round-trip"; else bad "expected FEAT-001, got '${current}'"; fi
-run_pointer "${T}" reset >/dev/null
-current="$(run_pointer "${T}" get)"
-if [[ -z "${current}" ]]; then ok "reset clears pointer"; else bad "expected empty pointer after reset"; fi
 
 # ---------------------------------------------------------------------------
-echo "== Test 2: run_against_pointer guards execution =="
-T="${WORK}/guard"
-mkdir -p "${T}"
-source_pointer "${T}"
-sdlc_set_pointer "CHORE-123" >/dev/null
-if run_against_pointer "CHORE-123" -- printf ok | grep -q ok; then
-  ok "guarded run succeeds when pointer matches"
-else
-  bad "guarded run should succeed when pointer matches"
-fi
-if run_against_pointer "CHORE-999" -- printf fail >/dev/null 2>&1; then
-  bad "guarded run should fail on mismatch"
-else
-  ok "guarded run refuses mismatch"
-fi
+echo "== Test 3: pointer reset clears it =="
+harness_sdlc "${T}" pointer reset >/dev/null
+current="$(harness_sdlc "${T}" pointer get)"
+if [[ -z "${current}" ]]; then ok "reset clears pointer"; else bad "expected empty pointer after reset, got '${current}'"; fi
+if [[ ! -s "${POINTER_FILE}" ]]; then ok "pointer file absent or empty after reset"; else bad "pointer file still holds '$(cat "${POINTER_FILE}")'"; fi
 
 # ---------------------------------------------------------------------------
-echo "== Test 3: sdlc_init honors SDLC_POINTER_OVERRIDE =="
-T="${WORK}/init"
-mkdir -p "${T}"
-SDLC_ROOT="${T}" SDLC_POINTER_OVERRIDE=SPIKE-001 "${POINTER}" init >/dev/null
-current="$(run_pointer "${T}" get)"
-if [[ "${current}" == "SPIKE-001" ]]; then ok "sdlc_init sets override"; else bad "sdlc_init override failed"; fi
+echo "== Test 4: claim sets, shelf clears, resume restores =="
+harness_seed_work "${T}" FEAT-002-claim
+SDLC_USER="pointer-test" harness_sdlc "${T}" claim FEAT-002-claim >/dev/null
+current="$(harness_sdlc "${T}" pointer get)"
+if [[ "${current}" == "FEAT-002-claim" ]]; then ok "claim sets pointer"; else bad "claim: expected FEAT-002-claim, got '${current}'"; fi
+
+harness_sdlc "${T}" shelf --reason "pointer test" >/dev/null
+current="$(harness_sdlc "${T}" pointer get)"
+if [[ -z "${current}" ]]; then ok "shelf clears pointer"; else bad "shelf: expected empty pointer, got '${current}'"; fi
+
+harness_sdlc "${T}" resume FEAT-002-claim >/dev/null
+current="$(harness_sdlc "${T}" pointer get)"
+if [[ "${current}" == "FEAT-002-claim" ]]; then ok "resume restores pointer"; else bad "resume: expected FEAT-002-claim, got '${current}'"; fi
+
+harness_sdlc "${T}" release >/dev/null
+current="$(harness_sdlc "${T}" pointer get)"
+if [[ -z "${current}" ]]; then ok "release clears pointer"; else bad "release: expected empty pointer, got '${current}'"; fi
 
 # ---------------------------------------------------------------------------
-echo "== Test 4: start-agent-session.sh sets pointer from --work-id =="
-T="${WORK}/session"
-mkdir -p "${T}"
-"${REPO_ROOT}/scripts/init-project.sh" --target "${T}" >/dev/null
-"${START}" --target "${T}" --work-id FEAT-002-session --phase plan >/dev/null
-HOME="${T}/sdlc-spdd"
-current="$(SDLC_ROOT="${T}" "${HOME}/scripts/sdlc-pointer.sh" get)"
-if [[ "${current}" == "FEAT-002-session" ]]; then
+echo "== Test 5: orchestrator sdlc.sh --target operates on the target pointer =="
+ORCH_SDLC="${HARNESS_REPO_ROOT}/scripts/sdlc.sh"
+harness_export_engine
+"${ORCH_SDLC}" --target "${T}" pointer set SPIKE-001 >/dev/null
+current="$(harness_sdlc "${T}" pointer get)"
+if [[ "${current}" == "SPIKE-001" ]]; then ok "--target pointer set lands in target"; else bad "--target set: got '${current}'"; fi
+current="$("${ORCH_SDLC}" pointer get --target "${T}")"
+if [[ "${current}" == "SPIKE-001" ]]; then ok "trailing --target pointer get reads target"; else bad "trailing --target get: got '${current}'"; fi
+"${ORCH_SDLC}" --target "${T}" pointer reset >/dev/null
+current="$(harness_sdlc "${T}" pointer get)"
+if [[ -z "${current}" ]]; then ok "--target pointer reset clears target"; else bad "--target reset: got '${current}'"; fi
+
+# ---------------------------------------------------------------------------
+echo "== Test 6: start-agent-session.sh sets pointer from --work-id =="
+harness_seed_work "${T}" FEAT-003-session
+"${START}" --target "${T}" --work-id FEAT-003-session --phase plan >/dev/null
+current="$(harness_sdlc "${T}" pointer get)"
+if [[ "${current}" == "FEAT-003-session" ]]; then
   ok "start-agent-session sets pointer"
 else
-  bad "expected FEAT-002-session from session start, got '${current}'"
+  bad "expected FEAT-003-session from session start, got '${current}'"
 fi
 
 # ---------------------------------------------------------------------------
-echo "== Test 5: init-project installs pointer script =="
-T="${WORK}/install"
-mkdir -p "${T}"
-"${REPO_ROOT}/scripts/init-project.sh" --target "${T}" >/dev/null
-if [[ -x "${T}/sdlc-spdd/scripts/sdlc-pointer.sh" ]]; then
-  ok "init-project installs executable pointer script"
+echo "== Test 7: init-project installs no bash pointer twin =="
+if [[ ! -e "${HOME_DIR}/scripts/sdlc-pointer.sh" ]]; then
+  ok "sdlc-pointer.sh twin is not installed"
 else
-  bad "init-project missing sdlc-spdd/scripts/sdlc-pointer.sh"
+  bad "retired sdlc-pointer.sh twin installed"
+fi
+if [[ -x "${HOME_DIR}/scripts/sdlc.sh" ]]; then
+  ok "sdlc.sh dispatcher installed"
+else
+  bad "sdlc.sh dispatcher missing"
 fi
 
-# ---------------------------------------------------------------------------
-echo
-echo "Results: ${pass} passed, ${fail} failed"
-if [[ "${fail}" -gt 0 ]]; then
-  exit 1
-fi
+harness_finish

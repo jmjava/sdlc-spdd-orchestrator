@@ -9,7 +9,6 @@ orchestrator repo (storage v3 dogfood layout).
 |------|------|
 | `harness/` | `phase-index.md`, quality gates, validation rules |
 | `harness/skills/` | Phase-matching and `#SkillName` skills — resolve with `resolve-agent-context.sh` |
-| `sdlc-pointer.sh`, `sdlc-workflow.sh`, `sdlc-team-registry.sh` | Workflow CLI (also installed under `scripts/` in targets) |
 
 Committed memory lives under **`spdd/memory/`** (`lessons.jsonl`, `registry.jsonl`).
 Hot session brief: **`.sdlc/sessions/current-session.md`** (gitignored).
@@ -50,7 +49,7 @@ contracts (`spdd/canvas/`, analysis, reviews) are the audit trail; run
 ./scripts/sdlc.sh capture --summary "finished T02"
 ```
 
-Set `SDLC_ENGINE=python` (or `auto`) to use the Python engine — see
+Every verb runs in the Python engine (`python -m sdlc_engine`) — see
 [docs/engine-v2.md](../docs/engine-v2.md).
 
 ## Team registry

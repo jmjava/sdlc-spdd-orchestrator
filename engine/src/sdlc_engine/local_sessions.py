@@ -147,8 +147,8 @@ class LocalSessionService:
         max_n = 0
         pattern = re.compile(rf"^{re.escape(prefix)}-(\d+)-", re.IGNORECASE)
         roots = [
-            self.project.root / "spdd" / "canvas",
-            self.project.root / "requirements" / "milestones",
+            self.project.spdd_dir / "canvas",
+            self.project.requirements_dir / "milestones",
             self.root,
         ]
         for base in roots:
@@ -331,7 +331,7 @@ class LocalSessionService:
         # Optional daily session-notes tag (committed) — only when explicitly wanted via env
         if os.environ.get("SDLC_LOCAL_SESSION_NOTES", "0") == "1":
             day = utc_date()
-            notes_dir = self.project.root / "session-notes"
+            notes_dir = self.project.session_notes_dir
             notes_dir.mkdir(parents=True, exist_ok=True)
             path = notes_dir / f"{day}.md"
             block = f"\n### local:{sid}\n\n{summary.strip()}\n"
@@ -457,7 +457,7 @@ class LocalSessionService:
             notes_text = self._notes_path(sid).read_text(encoding="utf-8").strip()
 
         # Milestone requirement
-        req_dir = self.project.root / "requirements" / "milestones"
+        req_dir = self.project.requirements_dir / "milestones"
         req_dir.mkdir(parents=True, exist_ok=True)
         req_path = req_dir / f"{work_id}.md"
         req_path.write_text(
@@ -516,7 +516,7 @@ class LocalSessionService:
         )
 
         # Canvas
-        canvas_dir = self.project.root / "spdd" / "canvas"
+        canvas_dir = self.project.spdd_dir / "canvas"
         canvas_dir.mkdir(parents=True, exist_ok=True)
         work_type_label = {
             "FEAT": "Feature",

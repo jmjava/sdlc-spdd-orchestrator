@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pytest
 
 from sdlc_engine.cli import main
 from sdlc_engine.context_store import ContextStore
@@ -36,7 +35,7 @@ def test_save_and_load_persistence_config(tmp_path: Path) -> None:
     assert BACKEND_GIT in saved["backends"]
     assert BACKEND_SQLITE in saved["backends"]
     assert BACKEND_GUIDE not in saved["backends"]
-    assert (tmp_path / ".sdlc" / "persistence-config.json").is_file()
+    assert (tmp_path / "sdlc-spdd" / ".sdlc" / "persistence-config.json").is_file()
     status = status_dict(Project(tmp_path))
     assert status["enabled"]["sqlite"] is True
     assert status["enabled"]["guide-dice"] is False
@@ -54,8 +53,8 @@ def test_env_CONTEXT_BACKENDS_overrides_file(tmp_path: Path, monkeypatch) -> Non
 def test_persist_skips_disabled_sqlite_and_guide(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setenv("CONTEXT_BACKENDS", "git-pointers")
     project = Project(tmp_path)
-    (tmp_path / "spdd" / "canvas").mkdir(parents=True)
-    (tmp_path / "spdd" / "canvas" / "FEAT-persist-off.md").write_text(
+    (tmp_path / "sdlc-spdd" / "spdd" / "canvas").mkdir(parents=True)
+    (tmp_path / "sdlc-spdd" / "spdd" / "canvas" / "FEAT-persist-off.md").write_text(
         "# canvas\n", encoding="utf-8"
     )
     store = ContextStore(project)
@@ -70,7 +69,7 @@ def test_persist_skips_disabled_sqlite_and_guide(tmp_path: Path, monkeypatch) ->
     assert result.guide.get("skipped") is True
     assert result.ok is True
     assert result.partial is False
-    assert not (tmp_path / ".sdlc" / "index.sqlite").is_file()
+    assert not (tmp_path / "sdlc-spdd" / ".sdlc" / "index.sqlite").is_file()
 
 
 def test_cli_context_backends_set(tmp_path: Path, monkeypatch, capsys) -> None:
@@ -100,7 +99,7 @@ def test_ledger_lessons_ingested_on_rebuild(tmp_path: Path) -> None:
     from sdlc_engine.lessons_ledger import LessonRecord, LessonsLedger
 
     wid = "FEAT-lean-progress-only"
-    tmp_path.joinpath("spdd/memory").mkdir(parents=True)
+    tmp_path.joinpath("sdlc-spdd/spdd/memory").mkdir(parents=True)
     LessonsLedger(Project(tmp_path)).append_accepted(
         LessonRecord(
             id="",
@@ -121,7 +120,7 @@ def test_ledger_staged_flag_on_rebuild(tmp_path: Path) -> None:
     from sdlc_engine.lessons_ledger import LessonRecord, LessonsLedger
 
     wid = "FEAT-capture-progress"
-    tmp_path.joinpath("spdd/memory").mkdir(parents=True)
+    tmp_path.joinpath("sdlc-spdd/spdd/memory").mkdir(parents=True)
     ledger = LessonsLedger(Project(tmp_path))
     ledger.stage(
         LessonRecord(
@@ -147,8 +146,8 @@ def test_persist_partial_when_sqlite_fails(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.delenv("CONTEXT_BACKENDS", raising=False)
     save_config(tmp_path, {"backends": ["git-pointers", "sqlite"]})
     project = Project(tmp_path)
-    (tmp_path / "spdd" / "canvas").mkdir(parents=True)
-    (tmp_path / "spdd" / "canvas" / "FEAT-partial.md").write_text(
+    (tmp_path / "sdlc-spdd" / "spdd" / "canvas").mkdir(parents=True)
+    (tmp_path / "sdlc-spdd" / "spdd" / "canvas" / "FEAT-partial.md").write_text(
         "# canvas\n", encoding="utf-8"
     )
     store = ContextStore(project)
@@ -168,14 +167,14 @@ def test_persist_partial_when_sqlite_fails(tmp_path: Path, monkeypatch) -> None:
     assert result.partial is True
     assert result.sqlite.get("ok") is False
     assert any("sqlite:" in e for e in result.errors)
-    assert (tmp_path / ".sdlc" / "staged" / "lessons.jsonl").is_file()
+    assert (tmp_path / "sdlc-spdd" / ".sdlc" / "staged" / "lessons.jsonl").is_file()
 
 
 def test_retrieve_honors_backend_gating(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setenv("CONTEXT_BACKENDS", "git-pointers")
     project = Project(tmp_path)
-    (tmp_path / "spdd" / "canvas").mkdir(parents=True)
-    (tmp_path / "spdd" / "canvas" / "FEAT-retrieve-off.md").write_text(
+    (tmp_path / "sdlc-spdd" / "spdd" / "canvas").mkdir(parents=True)
+    (tmp_path / "sdlc-spdd" / "spdd" / "canvas" / "FEAT-retrieve-off.md").write_text(
         "# canvas\n", encoding="utf-8"
     )
     # Seed sqlite while backends allow it, then gate retrieve off.
@@ -202,13 +201,13 @@ def test_workflow_next_honors_quiet(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setenv("SDLC_QUIET", "ON")
     project = Project(tmp_path)
     wid = "FEAT-quiet-next"
-    (tmp_path / "requirements" / "milestones").mkdir(parents=True)
-    (tmp_path / "requirements" / "milestones" / f"{wid}.md").write_text(
+    (tmp_path / "sdlc-spdd" / "requirements" / "milestones").mkdir(parents=True)
+    (tmp_path / "sdlc-spdd" / "requirements" / "milestones" / f"{wid}.md").write_text(
         f"# Requirement: {wid}\n\n## Summary\nQuiet mode test.\n",
         encoding="utf-8",
     )
-    (tmp_path / "spdd" / "canvas").mkdir(parents=True)
-    (tmp_path / "spdd" / "canvas" / f"{wid}.md").write_text(
+    (tmp_path / "sdlc-spdd" / "spdd" / "canvas").mkdir(parents=True)
+    (tmp_path / "sdlc-spdd" / "spdd" / "canvas" / f"{wid}.md").write_text(
         f"# REASONS Canvas: {wid}\n\n## Metadata\n- Readiness: Ready For Coding\n\n## R - Requirements\nQuiet-mode fixture requirement.\n\n## O - Operations\n\n### T01 - Do\n- Status: Not Started\n- Files: src/app.py\n",
         encoding="utf-8",
     )
@@ -230,19 +229,19 @@ def test_workflow_infers_code_from_ledger_records(tmp_path: Path, monkeypatch) -
     project = Project(tmp_path)
     wid = "FEAT-lean-infer"
     other = "FEAT-other-progress"
-    (tmp_path / "requirements" / "milestones").mkdir(parents=True)
-    (tmp_path / "requirements" / "milestones" / f"{wid}.md").write_text(
+    (tmp_path / "sdlc-spdd" / "requirements" / "milestones").mkdir(parents=True)
+    (tmp_path / "sdlc-spdd" / "requirements" / "milestones" / f"{wid}.md").write_text(
         f"# Requirement: {wid}\n", encoding="utf-8"
     )
-    (tmp_path / "requirements" / "milestones" / f"{other}.md").write_text(
+    (tmp_path / "sdlc-spdd" / "requirements" / "milestones" / f"{other}.md").write_text(
         f"# Requirement: {other}\n", encoding="utf-8"
     )
-    (tmp_path / "spdd" / "canvas").mkdir(parents=True)
-    (tmp_path / "spdd" / "canvas" / f"{wid}.md").write_text(
+    (tmp_path / "sdlc-spdd" / "spdd" / "canvas").mkdir(parents=True)
+    (tmp_path / "sdlc-spdd" / "spdd" / "canvas" / f"{wid}.md").write_text(
         f"# REASONS Canvas: {wid}\n\n## Metadata\n- Readiness: Needs Analysis\n",
         encoding="utf-8",
     )
-    tmp_path.joinpath("spdd/memory").mkdir(parents=True)
+    tmp_path.joinpath("sdlc-spdd/spdd/memory").mkdir(parents=True)
     ledger = LessonsLedger(project)
     ledger.stage(
         LessonRecord(
@@ -305,6 +304,6 @@ def test_save_does_not_roundtrip_default_guide_url(tmp_path: Path, monkeypatch) 
     )
     assert saved["guide"]["base_url"] == ""
     cfg_file = json.loads(
-        (tmp_path / ".sdlc" / "persistence-config.json").read_text(encoding="utf-8")
+        (tmp_path / "sdlc-spdd" / ".sdlc" / "persistence-config.json").read_text(encoding="utf-8")
     )
     assert cfg_file.get("guide_base_url") == ""

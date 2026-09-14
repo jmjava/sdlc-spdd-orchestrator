@@ -28,7 +28,6 @@ chmod +x "$ROOT/scripts/run-test-suites.sh"
 
 step() { echo ""; echo "== $*"; }
 step "CLI smoke via sdlc.sh"
-export SDLC_ENGINE=python
 "$ROOT/scripts/sdlc.sh" version
 "$ROOT/scripts/sdlc.sh" next
 "$ROOT/scripts/sdlc.sh" viewer --help

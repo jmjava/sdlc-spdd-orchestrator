@@ -36,10 +36,10 @@ Same payloads via HTTP — use in agent prompts or terminal:
 ./scripts/guide/query-guide.sh --text --work-id FEAT-001-order-status-api
 
 # JSON (scripting)
-SDLC_ENGINE=python ./scripts/sdlc.sh context guide-query --work-id FEAT-001-order-status-api
+./scripts/sdlc.sh context guide-query --work-id FEAT-001-order-status-api
 
 # Explicit MCP tool call
-SDLC_ENGINE=python ./scripts/sdlc.sh context mcp-call \
+./scripts/sdlc.sh context mcp-call \
   --tool spdd_getLesson \
   --json '{"id":"pitfall:FEAT-001:engine:retro"}'
 ```

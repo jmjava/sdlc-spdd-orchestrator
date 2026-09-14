@@ -17,19 +17,19 @@ from sdlc_engine.workflow import WorkflowEngine
 
 
 def _seed_req(root: Path, wid: str) -> None:
-    d = root / "requirements" / "milestones"
+    d = root / "sdlc-spdd" / "requirements" / "milestones"
     d.mkdir(parents=True, exist_ok=True)
     (d / f"{wid}.md").write_text(f"# Requirement: {wid}\n\n## Summary\nTest.\n", encoding="utf-8")
 
 
 def _seed_analysis(root: Path, wid: str) -> None:
-    d = root / "spdd" / "analysis"
+    d = root / "sdlc-spdd" / "spdd" / "analysis"
     d.mkdir(parents=True, exist_ok=True)
     (d / f"{wid}-analysis.md").write_text(f"# Analysis: {wid}\n", encoding="utf-8")
 
 
 def _seed_canvas(root: Path, wid: str, *, ready: bool = False, extra: str = "") -> None:
-    d = root / "spdd" / "canvas"
+    d = root / "sdlc-spdd" / "spdd" / "canvas"
     d.mkdir(parents=True, exist_ok=True)
     readiness = "Ready For Coding" if ready else "Needs Analysis"
     (d / f"{wid}.md").write_text(
@@ -88,7 +88,7 @@ One operation.
 
 
 def _seed_review(root: Path, wid: str, *, body: str | None = None) -> None:
-    d = root / "spdd" / "reviews"
+    d = root / "sdlc-spdd" / "spdd" / "reviews"
     d.mkdir(parents=True, exist_ok=True)
     text = body or (
         f"# Review: {wid}\n\n"
@@ -172,7 +172,7 @@ def test_gate_code_rejects_empty_operations(proj: tuple[Project, WorkflowEngine]
     p, eng = proj
     wid = "FEAT-014-empty-ops"
     _seed_req(p.root, wid)
-    canvas = p.root / "spdd" / "canvas"
+    canvas = p.root / "sdlc-spdd" / "spdd" / "canvas"
     canvas.mkdir(parents=True, exist_ok=True)
     (canvas / f"{wid}.md").write_text(
         """# REASONS Canvas: empty-ops

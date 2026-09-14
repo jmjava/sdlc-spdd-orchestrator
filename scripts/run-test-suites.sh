@@ -135,7 +135,6 @@ if ! test_preflight_python "$PY"; then
 fi
 
 cd "$ROOT"
-export SDLC_ENGINE=python
 export PYTHONPATH="$ROOT/engine/src${PYTHONPATH:+:$PYTHONPATH}"
 
 if [[ "$CLEAN_STALE" == "1" ]]; then

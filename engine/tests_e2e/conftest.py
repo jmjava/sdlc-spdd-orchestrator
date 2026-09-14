@@ -73,7 +73,7 @@ def live_console(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
 
     def _save(target: Path | str, host: str, port: int) -> None:
         root = Path(target).expanduser().resolve()
-        (root / ".sdlc").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-spdd" / ".sdlc").mkdir(parents=True, exist_ok=True)
         vr._save_runtime(
             root,
             {

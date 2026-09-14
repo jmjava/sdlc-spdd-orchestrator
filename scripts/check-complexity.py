@@ -4,6 +4,10 @@
 Fails when a *changed* file introduces a new function with CCN > 10 or NLOC > 80,
 or when an existing function's CCN rises. Untouched hotspots do not fail.
 Docs-only diffs exit 0.
+
+A function that disappears from one changed/deleted file and reappears under the
+same name in another changed file is a MOVE: it is judged against its old CCN
+(rise fails) rather than as NEW, so splitting a module does not trip the gate.
 """
 
 from __future__ import annotations
@@ -25,8 +29,12 @@ def git(*args: str, cwd: Path) -> str:
     return subprocess.check_output(["git", *args], cwd=cwd, text=True).rstrip("\n")
 
 
-def changed_files(repo: Path, base: str, paths: list[str], exts: set[str]) -> list[str]:
-    rels = git("diff", "--name-only", "--diff-filter=ACMR", f"{base}...HEAD", "--", *paths, cwd=repo)
+def changed_files(
+    repo: Path, base: str, paths: list[str], exts: set[str], diff_filter: str = "ACMR"
+) -> list[str]:
+    rels = git(
+        "diff", "--name-only", f"--diff-filter={diff_filter}", f"{base}...HEAD", "--", *paths, cwd=repo
+    )
     files = []
     for line in rels.splitlines():
         line = line.strip()
@@ -68,10 +76,12 @@ def lizard_rows(source: str, filename: str, language: str) -> list[dict[str, str
 
 
 def file_at(repo: Path, rev: str, rel: str) -> str | None:
-    try:
-        return git("show", f"{rev}:{rel}", cwd=repo)
-    except subprocess.CalledProcessError:
+    proc = subprocess.run(
+        ["git", "show", f"{rev}:{rel}"], cwd=repo, text=True, capture_output=True, check=False
+    )
+    if proc.returncode != 0:
         return None
+    return proc.stdout.rstrip("\n")
 
 
 def index_funcs(rows: list[dict[str, str]]) -> dict[str, tuple[int, int]]:
@@ -79,6 +89,50 @@ def index_funcs(rows: list[dict[str, str]]) -> dict[str, tuple[int, int]]:
     for row in rows:
         out[row["name"]] = (int(row["ccn"]), int(row["nloc"]))
     return out
+
+
+def base_index(repo: Path, base: str, rels: list[str]) -> dict[str, dict[str, tuple[int, int]]]:
+    """Per-file function index at ``base`` for every path in ``rels``."""
+    out: dict[str, dict[str, tuple[int, int]]] = {}
+    for rel in rels:
+        src = file_at(repo, base, rel)
+        out[rel] = index_funcs(lizard_rows(src, rel, EXTS[Path(rel).suffix])) if src else {}
+    return out
+
+
+def moved_from(name: str, base_all: dict[str, dict[str, tuple[int, int]]]) -> tuple[int, int] | None:
+    """Return the base (ccn, nloc) if ``name`` existed in any base file of the diff.
+
+    When the same name existed in several files, the largest CCN is used so a
+    move is never judged more harshly than its worst previous home.
+    """
+    hits = [funcs[name] for funcs in base_all.values() if name in funcs]
+    return max(hits) if hits else None
+
+
+def judge_file(
+    rel: str,
+    head_funcs: dict[str, tuple[int, int]],
+    base_funcs: dict[str, tuple[int, int]],
+    base_all: dict[str, dict[str, tuple[int, int]]],
+    ccn_limit: int,
+    nloc_limit: int,
+) -> list[str]:
+    failures: list[str] = []
+    for name, (ccn, nloc) in sorted(head_funcs.items()):
+        old = base_funcs.get(name)
+        tag = "RISE"
+        if old is None:
+            old = moved_from(name, base_all)
+            tag = "RISE (moved)"
+        if old is None:
+            if ccn > ccn_limit or nloc > nloc_limit:
+                failures.append(
+                    f"NEW {rel}::{name} CCN={ccn} NLOC={nloc} (limits {ccn_limit}/{nloc_limit})"
+                )
+        elif ccn > old[0]:
+            failures.append(f"{tag} {rel}::{name} CCN {old[0]} -> {ccn}")
+    return failures
 
 
 def main() -> int:
@@ -104,25 +158,16 @@ def main() -> int:
         print("check-complexity: no changed source files")
         return 0
 
+    deleted = changed_files(repo, args.base, args.paths, set(EXTS), diff_filter="D")
+    base_all = base_index(repo, args.base, [*files, *deleted])
+
     failures: list[str] = []
     for rel in files:
-        language = EXTS[Path(rel).suffix]
         head = file_at(repo, "HEAD", rel)
         if head is None:
             continue
-        base_src = file_at(repo, args.base, rel)
-        head_funcs = index_funcs(lizard_rows(head, rel, language))
-        base_funcs = index_funcs(lizard_rows(base_src, rel, language)) if base_src is not None else {}
-        for name, (ccn, nloc) in sorted(head_funcs.items()):
-            if name not in base_funcs:
-                if ccn > args.ccn or nloc > args.nloc:
-                    failures.append(
-                        f"NEW {rel}::{name} CCN={ccn} NLOC={nloc} (limits {args.ccn}/{args.nloc})"
-                    )
-                continue
-            old_ccn, _old_nloc = base_funcs[name]
-            if ccn > old_ccn:
-                failures.append(f"RISE {rel}::{name} CCN {old_ccn} -> {ccn}")
+        head_funcs = index_funcs(lizard_rows(head, rel, EXTS[Path(rel).suffix]))
+        failures.extend(judge_file(rel, head_funcs, base_all[rel], base_all, args.ccn, args.nloc))
 
     if failures:
         print("check-complexity: FAIL", file=sys.stderr)

@@ -141,7 +141,7 @@ def test_sqlite_work_detail_reads_git_docs(tmp_path: Path) -> None:
     assert unknown["requirement"]["exists"] is False
     assert unknown["canvas"]["exists"] is False
 
-    req = dest / "requirements" / "milestones" / f"{active}.md"
+    req = dest / "sdlc-spdd" / "requirements" / "milestones" / f"{active}.md"
     req.write_text("X" * 80_001, encoding="utf-8")
     truncated = client.post("/api/sqlite/work", json={**body, "work_id": active}).get_json()
     assert truncated["requirement"]["truncated"] is True

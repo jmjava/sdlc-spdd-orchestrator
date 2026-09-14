@@ -11,10 +11,10 @@ from sdlc_engine.project import Project
 
 
 def _seed_v5_tree(root: Path, work_id: str) -> None:
-    req = root / "requirements" / "milestones" / f"{work_id}.md"
+    req = root / "sdlc-spdd" / "requirements" / "milestones" / f"{work_id}.md"
     req.parent.mkdir(parents=True, exist_ok=True)
     req.write_text(f"# Requirement: {work_id}\n\n## Summary\nV5 tree.\n", encoding="utf-8")
-    canvas = root / "spdd" / "canvas" / f"{work_id}.md"
+    canvas = root / "sdlc-spdd" / "spdd" / "canvas" / f"{work_id}.md"
     canvas.parent.mkdir(parents=True, exist_ok=True)
     canvas.write_text(
         f"""# REASONS Canvas: {work_id}
@@ -27,14 +27,14 @@ def _seed_v5_tree(root: Path, work_id: str) -> None:
 """,
         encoding="utf-8",
     )
-    (root / "spdd" / "analysis").mkdir(parents=True, exist_ok=True)
-    (root / "spdd" / "analysis" / f"{work_id}-analysis.md").write_text("# Analysis\n", encoding="utf-8")
-    (root / "spdd" / "reviews").mkdir(parents=True, exist_ok=True)
-    (root / "spdd" / "reviews" / f"{work_id}-review.md").write_text("# Review\n", encoding="utf-8")
-    (root / "spdd" / "sync").mkdir(parents=True, exist_ok=True)
-    (root / "spdd" / "sync" / f"{work_id}-sync.md").write_text("# Sync\n", encoding="utf-8")
+    (root / "sdlc-spdd" / "spdd" / "analysis").mkdir(parents=True, exist_ok=True)
+    (root / "sdlc-spdd" / "spdd" / "analysis" / f"{work_id}-analysis.md").write_text("# Analysis\n", encoding="utf-8")
+    (root / "sdlc-spdd" / "spdd" / "reviews").mkdir(parents=True, exist_ok=True)
+    (root / "sdlc-spdd" / "spdd" / "reviews" / f"{work_id}-review.md").write_text("# Review\n", encoding="utf-8")
+    (root / "sdlc-spdd" / "spdd" / "sync").mkdir(parents=True, exist_ok=True)
+    (root / "sdlc-spdd" / "spdd" / "sync" / f"{work_id}-sync.md").write_text("# Sync\n", encoding="utf-8")
 
-    mem = root / "spdd" / "memory"
+    mem = root / "sdlc-spdd" / "spdd" / "memory"
     mem.mkdir(parents=True, exist_ok=True)
     ledger = LessonsLedger(Project(root))
     for kind, body in (
@@ -84,7 +84,7 @@ def _seed_v5_tree(root: Path, work_id: str) -> None:
         )
     )
 
-    hot = root / ".sdlc" / "sessions"
+    hot = root / "sdlc-spdd" / ".sdlc" / "sessions"
     hot.mkdir(parents=True, exist_ok=True)
     (hot / f"20260808T120000Z-{work_id}-code.md").write_text("# Hot session\n", encoding="utf-8")
 

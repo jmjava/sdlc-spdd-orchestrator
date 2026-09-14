@@ -31,7 +31,7 @@ Flask is an optional extra so the core engine stays stdlib-only.
 # Preferred wrappers
 ./scripts/sdlc.sh viewer --port 5050
 # or
-SDLC_ENGINE=python ./scripts/sdlc.sh viewer --port 5050
+./scripts/sdlc.sh viewer --port 5050
 
 # Direct
 python3 -m sdlc_engine.viewer --root . --port 5050
@@ -67,7 +67,7 @@ The ops console **ADF** tab can seed a new Work ID from a selected `adf/*.adf.js
 2. Enter **Work ID** and title → **Init work (dry run)** previews; **Init work** creates requirement, canvas (Source System: ADF), and registry claim.
 
 ```bash
-SDLC_ENGINE=python ./scripts/sdlc.sh work init-from-adf \
+./scripts/sdlc.sh work init-from-adf \
   --root /path/to/target --adf adf/ORCH-77.adf.json \
   --work-id FEAT-013-from-adf --title "Title from ADF"
 ```

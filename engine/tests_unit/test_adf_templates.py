@@ -43,9 +43,9 @@ def test_bind_variables_and_unknown_empty() -> None:
 
 def test_render_feature_from_milestone(tmp_path: Path) -> None:
     root = tmp_path
-    (root / "requirements" / "milestones").mkdir(parents=True)
+    (root / "sdlc-spdd" / "requirements" / "milestones").mkdir(parents=True)
     work_id = "FEAT-900-template-demo"
-    (root / "requirements" / "milestones" / f"{work_id}.md").write_text(
+    (root / "sdlc-spdd" / "requirements" / "milestones" / f"{work_id}.md").write_text(
         """# Requirement
 
 ## Summary
@@ -88,9 +88,9 @@ Operators need consistent Jira docs.
 
 def test_render_writes_output(tmp_path: Path) -> None:
     root = tmp_path
-    (root / "requirements" / "milestones").mkdir(parents=True)
+    (root / "sdlc-spdd" / "requirements" / "milestones").mkdir(parents=True)
     work_id = "BUG-901-template-bug"
-    (root / "requirements" / "milestones" / f"{work_id}.md").write_text(
+    (root / "sdlc-spdd" / "requirements" / "milestones" / f"{work_id}.md").write_text(
         "## Summary\n\nFix the thing.\n",
         encoding="utf-8",
     )
@@ -122,9 +122,9 @@ def test_unknown_combo_raises() -> None:
 
 
 def test_cli_template_list_and_render(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
-    (tmp_path / "requirements" / "milestones").mkdir(parents=True)
+    (tmp_path / "sdlc-spdd" / "requirements" / "milestones").mkdir(parents=True)
     work_id = "SPIKE-902-cli-template"
-    (tmp_path / "requirements" / "milestones" / f"{work_id}.md").write_text(
+    (tmp_path / "sdlc-spdd" / "requirements" / "milestones" / f"{work_id}.md").write_text(
         "## Summary\n\nCLI template smoke.\n",
         encoding="utf-8",
     )

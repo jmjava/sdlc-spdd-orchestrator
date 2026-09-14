@@ -12,8 +12,9 @@ quietly and accepted at gates.**
 
 - **One home.** Framework-owned paths live under `<repo>/sdlc-spdd/`. Contracts,
   harness, scripts, and ledgers share one install layout (this orchestrator
-  dogfoods the same layout; `agent-context/` + root `scripts/` remain only as
-  framework *source*).
+  dogfoods the same layout). Install *source* lives under `templates/`; root
+  `scripts/` is orchestrator tooling only. Pre-v3 layouts (`agent-context/`,
+  root `spdd/`, `work-registry.tsv`) are unsupported and never migrated.
 - **Ledger-first.** One committed JSONL lessons file is the system of record;
   the work registry is a separate append-only event log. Neither is hand-edited.
 - **Stage-then-accept.** Captures land in gitignored `.sdlc/staged/`; accept at
@@ -27,8 +28,8 @@ quietly and accepted at gates.**
 - **Projections are regenerable.** SQLite cache and Guide are pure projections
   of the ledger — one write path, parity by construction.
 
-Older installs with scattered memory trees are converted by
-`sdlc-engine storage migrate` ([migration](#migrating-a-legacy-install)).
+- **One engine.** Every read and write goes through the Python `sdlc_engine`
+  package; `sdlc.sh` only dispatches to it ([engine-v2.md](engine-v2.md)).
 
 ## The model at a glance
 
@@ -42,9 +43,9 @@ Older installs with scattered memory trees are converted by
 | SQLite cache | `.sdlc/index.sqlite` | No (projection) | Opt-in local query cache, schema v5 |
 
 Everything the framework owns lives in a single folder, `<repo>/sdlc-spdd/`
-(the *home*; `SDLC_HOME` overrides). Older sprawled root layouts still resolve
-read-only until `upgrade-project.sh` consolidates them (leftovers are archived
-under `sdlc-spdd/.sdlc/legacy-layout-archive/`). See the
+(the *home*; `SDLC_HOME` overrides). Paths in the table above are relative to
+the home. There is no root-layout fallback: `upgrade-project.sh` refuses a
+pre-v3 tree and the ops console reports it as `unsupported`. See the
 [install layout diagram](diagrams/09-install-layout.svg) and
 [installing into your project](installing-into-your-project.md).
 
@@ -164,7 +165,7 @@ tools augment the same queries with cross-work graph context. Full guidance:
 | Path | Contents |
 |---|---|
 | `.sdlc/sessions/current-session.md` | Hot brief: workflow state, Resolved Context, Related Past Work digest, Resume Prompt |
-| `.sdlc/sessions/<timestamp>-<phase>-<WORK-ID>.md` | Timestamped briefs (rotated to `archive/`) |
+| `.sdlc/sessions/<timestamp>-<phase>-<WORK-ID>.md` | Timestamped briefs (ephemeral) |
 | `.sdlc/staged/lessons.jsonl` | Captures awaiting accept |
 | `.sdlc/index.sqlite` | Opt-in query cache (below) |
 | `.sdlc/pointer`, `.sdlc/workflows/` | Active Work ID pointer + phase/gate tracking |
@@ -205,16 +206,19 @@ Archive **never truncates**, filters, or deletes `spdd/memory/lessons.jsonl`. De
 
 Policy: `sdlc-spdd/docs/research/dogfood-ledger-policy.md`.
 
-## Migrating a legacy install
+## Pre-v3 installs
+
+Legacy layouts are not migrated. `upgrade-project.sh` exits 3 and lists the
+offending paths; `sdlc-engine installer detect` / the console report
+`unsupported` with recommendation `reinit`.
 
 ```bash
-sdlc-engine storage status          # detect non-v3 layouts
-sdlc-engine storage migrate         # one-shot → ledger + registry
-./scripts/upgrade-project.sh --target . --all   # always consolidates into sdlc-spdd/
-sdlc-engine context parity --repair # rebuild projections
+git rm -r agent-context spdd requirements session-notes .sdlc   # whatever it lists
+./scripts/init-project.sh --target .                            # fresh sdlc-spdd/ home
+sdlc-engine context parity --repair                             # rebuild projections
 ```
 
-See [framework upgrade](framework-upgrade.md).
+Git history keeps the old files. See [framework upgrade](framework-upgrade.md).
 
 ## Related
 

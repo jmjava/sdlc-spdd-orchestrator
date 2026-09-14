@@ -7,6 +7,8 @@ source "${_SCRIPT_DIR}/lib/common.sh"
 # shellcheck source=/dev/null
 source "${_SCRIPT_DIR}/lib/paths.sh"
 # shellcheck source=/dev/null
+source "${_SCRIPT_DIR}/lib/python.sh"
+# shellcheck source=/dev/null
 source "${_SCRIPT_DIR}/lib/areas.sh"
 # shellcheck source=/dev/null
 source "${_SCRIPT_DIR}/lib/milestone.sh"
@@ -490,15 +492,7 @@ if [[ -n "${ROADMAP_NOTE}" ]]; then
   } >> "${roadmap_file}"
 fi
 
-workflow_script="${HOME}/scripts/sdlc-workflow.sh"
-if [[ ! -f "${workflow_script}" ]]; then
-  workflow_script="${TARGET}/agent-context/sdlc-workflow.sh"
-fi
-if [[ -f "${workflow_script}" ]]; then
-  SDLC_ROOT="${TARGET}"
-  # shellcheck source=/dev/null
-  source "${workflow_script}"
-  sdlc_workflow_record_capture "${WORK_ID}" "${PHASE}"
-fi
+# One engine: record the capture on the workflow state via sdlc-engine.
+sdlc_engine_run "${TARGET}" session record-capture --work-id "${WORK_ID}" --phase "${PHASE}" >/dev/null 2>&1 || true
 
 echo "staged ${#staged_records[@]} records → ${stage_file#${TARGET}/}; run 'sdlc.sh accept --work-id ${WORK_ID}' at retro/sync"

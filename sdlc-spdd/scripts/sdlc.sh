@@ -1,60 +1,31 @@
 #!/usr/bin/env bash
-# Short entry point for SDLC pointer + workflow helpers.
-# Installed to sdlc-spdd/scripts/sdlc.sh in target projects (storage v3);
-# lives at scripts/sdlc.sh in the orchestrator repo.
+# Thin entry point for the SDLC-SPDD engine (one engine: Python sdlc-engine).
+# Installed to sdlc-spdd/scripts/sdlc.sh in target projects; lives at
+# scripts/sdlc.sh in the orchestrator repo.
 #
-# Engine selection (REF-001):
-#   SDLC_ENGINE=auto    Default. Prefer Python when importable (Milestone 2 SUT)
-#   SDLC_ENGINE=python  Require Python engine
-#   SDLC_ENGINE=shell   Legacy bash workflow CLI; gates still use Python when importable
-#                       unless SDLC_GATE_ENGINE=shell
+# Every verb is dispatched to `python -m sdlc_engine`. There is no shell
+# workflow implementation and no SDLC_ENGINE switch (REF-003).
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-if [[ -f "${SCRIPT_DIR}/sdlc-workflow.sh" ]]; then
-  # Storage v3 install / dogfood home: …/sdlc-spdd/scripts/sdlc.sh
-  # or orchestrator tooling if workflow scripts were co-located.
-  if [[ "$(basename "$(dirname "${SCRIPT_DIR}")")" == "sdlc-spdd" ]]; then
-    ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-  else
-    ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-  fi
-  WORKFLOW="${SCRIPT_DIR}/sdlc-workflow.sh"
-elif [[ -f "${SCRIPT_DIR}/../sdlc-spdd/scripts/sdlc-workflow.sh" ]]; then
-  # Orchestrator repo: scripts/sdlc.sh with dogfood home under sdlc-spdd/.
-  ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-  WORKFLOW="${ROOT}/sdlc-spdd/scripts/sdlc-workflow.sh"
-elif [[ -f "${SCRIPT_DIR}/../templates/agent-context/sdlc-workflow.sh" ]]; then
-  # Orchestrator source checkout before dogfood home exists.
-  ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-  WORKFLOW="${ROOT}/templates/agent-context/sdlc-workflow.sh"
-elif [[ -f "${SCRIPT_DIR}/../../agent-context/sdlc-workflow.sh" ]]; then
-  # Legacy sprawled install: <root>/scripts/sdlc-spdd/sdlc.sh.
+if [[ "$(basename "$(dirname "${SCRIPT_DIR}")")" == "sdlc-spdd" ]]; then
+  # Installed target or dogfood home: <root>/sdlc-spdd/scripts/sdlc.sh
   ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-  WORKFLOW="${ROOT}/agent-context/sdlc-workflow.sh"
 else
-  ROOT="$(git -C "${PWD}" rev-parse --show-toplevel 2>/dev/null || pwd)"
-  WORKFLOW="${ROOT}/sdlc-spdd/scripts/sdlc-workflow.sh"
-  if [[ ! -f "${WORKFLOW}" ]]; then
-    WORKFLOW="${ROOT}/templates/agent-context/sdlc-workflow.sh"
-  fi
+  # Orchestrator checkout: <root>/scripts/sdlc.sh
+  ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 fi
 
-# Script-derived ROOT finds the orch .venv + engine source. --target/--root
-# only changes the project the engine operates on (otherwise `next` runs
-# against the orch clone and prints "no active Work ID").
+# Script-derived ROOT finds the .venv + engine source. --target/--root only
+# changes the project the engine operates on.
 PROJECT_ROOT="${ROOT}"
 _forward=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --target|--root)
-      if [[ -z "${2:-}" ]]; then
-        echo "sdlc: $1 requires a directory path" >&2
-        exit 2
-      fi
-      if [[ ! -d "$2" ]]; then
-        echo "sdlc: $1 is not a directory: $2" >&2
+      if [[ -z "${2:-}" || ! -d "${2:-}" ]]; then
+        echo "sdlc: $1 requires an existing directory" >&2
         exit 2
       fi
       PROJECT_ROOT="$(cd "$2" && pwd)"
@@ -82,7 +53,6 @@ else
 fi
 
 export SDLC_ROOT="${ROOT}"
-ENGINE_MODE="${SDLC_ENGINE:-auto}"
 
 if [[ -f "${SCRIPT_DIR}/lib/python.sh" ]]; then
   # shellcheck source=scripts/lib/python.sh
@@ -90,133 +60,46 @@ if [[ -f "${SCRIPT_DIR}/lib/python.sh" ]]; then
 elif [[ -f "${ROOT}/scripts/lib/python.sh" ]]; then
   # shellcheck source=scripts/lib/python.sh
   source "${ROOT}/scripts/lib/python.sh"
+else
+  echo "sdlc: scripts/lib/python.sh not found next to $0" >&2
+  exit 1
 fi
 
-_python_engine_available() {
-  # python.sh may be absent in hermetic wrapper copies of this script.
-  declare -F resolve_engine_python >/dev/null 2>&1 || return 1
-  resolve_engine_python || return 1
-  if [[ -d "${ROOT}/engine/src/sdlc_engine" ]]; then
-    PYTHONPATH="${ROOT}/engine/src${PYTHONPATH:+:${PYTHONPATH}}" \
-      "${SDLC_PY}" -c 'import sdlc_engine' 2>/dev/null
-    return $?
-  fi
-  "${SDLC_PY}" -c 'import sdlc_engine' 2>/dev/null
-}
+if [[ -n "${SDLC_ENGINE:-}" || -n "${SDLC_GATE_ENGINE:-}" ]]; then
+  echo "sdlc: SDLC_ENGINE / SDLC_GATE_ENGINE were removed; the Python engine is the only engine (REF-003)" >&2
+  exit 2
+fi
 
-# Shell-only verbs. Python has `local capture` / `context accept`, not these.
-# Routing them under SDLC_ENGINE=auto would collide with the staging CLI.
-_python_engine_handles() {
-  case "$1" in
-    capture|complete|start|accept|help|-h|--help)
-      return 1
-      ;;
-  esac
-  return 0
-}
+resolve_engine_python || exit 1
 
-_run_python_engine() {
-  local args=("$@")
-  resolve_engine_python || exit 1
-  if [[ -d "${ROOT}/engine/src/sdlc_engine" ]]; then
-    PYTHONPATH="${ROOT}/engine/src${PYTHONPATH:+:${PYTHONPATH}}" \
-      exec "${SDLC_PY}" -m sdlc_engine --root "${PROJECT_ROOT}" "${args[@]}"
-  fi
-  exec "${SDLC_PY}" -m sdlc_engine --root "${PROJECT_ROOT}" "${args[@]}"
-}
+_pypath=""
+if [[ -d "${ROOT}/engine/src/sdlc_engine" ]]; then
+  _pypath="${ROOT}/engine/src${PYTHONPATH:+:${PYTHONPATH}}"
+fi
+
+if ! PYTHONPATH="${_pypath:-${PYTHONPATH:-}}" "${SDLC_PY}" -c 'import sdlc_engine' 2>/dev/null; then
+  echo "sdlc: sdlc_engine is not importable by ${SDLC_PY}" >&2
+  echo "Install with: ./scripts/setup-engine-venv.sh  # Python 3.12 (or: pip install -e ./engine)" >&2
+  exit 1
+fi
 
 cmd="${1:-next}"
 if [[ $# -gt 0 ]]; then
   shift
 fi
 
-# Python-engine-only commands that must work even when SDLC_ENGINE=shell.
-# Normalize hyphen aliases: local-* → local <verb>, db-* → db <verb>.
-_py_only_args=()
+# Hyphen aliases kept for chat commands and older docs.
+args=()
 case "${cmd}" in
-  local)
-    _py_only_args=("local" "$@")
-    ;;
-  local-start) _py_only_args=("local" "start" "$@") ;;
-  local-list) _py_only_args=("local" "list" "$@") ;;
-  local-status) _py_only_args=("local" "status" "$@") ;;
-  local-capture) _py_only_args=("local" "capture" "$@") ;;
-  local-shelf) _py_only_args=("local" "shelf" "$@") ;;
-  local-resume) _py_only_args=("local" "resume" "$@") ;;
-  local-promote) _py_only_args=("local" "promote" "$@") ;;
-  local-abandon) _py_only_args=("local" "abandon" "$@") ;;
-  quick)
-    _py_only_args=("quick" "$@")
-    ;;
-  db)
-    _py_only_args=("db" "$@")
-    ;;
-  db-rebuild) _py_only_args=("db" "rebuild" "$@") ;;
-  db-status) _py_only_args=("db" "status" "$@") ;;
-  db-path) _py_only_args=("db" "path" "$@") ;;
-  db-query) _py_only_args=("db" "query" "$@") ;;
-  db-lookup) _py_only_args=("db" "lookup" "$@") ;;
-  db-export) _py_only_args=("db" "export" "$@") ;;
-  commit-message)
-    _py_only_args=("commit-message" "$@")
-    ;;
-  sunset)
-    _py_only_args=("sunset" "$@")
-    ;;
-  viewer)
-    _py_only_args=("viewer" "$@")
-    ;;
-  work)
-    _py_only_args=("work" "$@")
-    ;;
-  work-init-from-adf|init-from-adf)
-    _py_only_args=("work" "init-from-adf" "$@")
-    ;;
-  context)
-    _py_only_args=("context" "$@")
-    ;;
-  guide-query)
-    _py_only_args=("context" "guide-query" "$@")
-    ;;
-  installer|console|dashboard)
-    _py_only_args=("${cmd}" "$@")
-    ;;
-esac
-if ((${#_py_only_args[@]} > 0)); then
-  if ! _python_engine_available; then
-    echo "sdlc: '${_py_only_args[0]}' requires the Python engine (engine/sdlc_engine)" >&2
-    echo "Install with: ./scripts/setup-engine-venv.sh  # Python 3.12" >&2
-    exit 1
-  fi
-  _run_python_engine "${_py_only_args[@]}"
-fi
-
-case "${ENGINE_MODE}" in
-  python)
-    if ! _python_engine_available; then
-      echo "sdlc: SDLC_ENGINE=python but sdlc_engine is not importable" >&2
-      echo "Install with: ./scripts/setup-engine-venv.sh  # Python 3.12" >&2
-      exit 1
-    fi
-    _run_python_engine "${cmd}" "$@"
-    ;;
-  auto)
-    if _python_engine_handles "${cmd}" && _python_engine_available; then
-      _run_python_engine "${cmd}" "$@"
-    fi
-    ;;
-  shell)
-    ;;
-  *)
-    echo "sdlc: unknown SDLC_ENGINE='${ENGINE_MODE}' (use auto|python|shell)" >&2
-    exit 2
-    ;;
+  help|-h|--help) args=("--help") ;;
+  local-*) args=("local" "${cmd#local-}" "$@") ;;
+  db-*) args=("db" "${cmd#db-}" "$@") ;;
+  work-init-from-adf|init-from-adf) args=("work" "init-from-adf" "$@") ;;
+  guide-query) args=("context" "guide-query" "$@") ;;
+  *) args=("${cmd}" "$@") ;;
 esac
 
-if [[ ! -x "${WORKFLOW}" ]]; then
-  echo "sdlc: workflow not installed (${WORKFLOW})" >&2
-  echo "Run setup-agent-prompts.sh or upgrade-project.sh from the orchestrator repo." >&2
-  exit 1
+if [[ -n "${_pypath}" ]]; then
+  PYTHONPATH="${_pypath}" exec "${SDLC_PY}" -m sdlc_engine --root "${PROJECT_ROOT}" "${args[@]}"
 fi
-
-exec "${WORKFLOW}" "${cmd}" "$@"
+exec "${SDLC_PY}" -m sdlc_engine --root "${PROJECT_ROOT}" "${args[@]}"

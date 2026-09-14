@@ -8,9 +8,7 @@ ROOT="${1:?target root required}"
 HOME="$(live_home "${ROOT}")"
 echo "== 02 pointer + workflow lifecycle =="
 
-PTR="${HOME}/scripts/sdlc-pointer.sh"
-
-if SDLC_ROOT="${ROOT}" "${PTR}" reset >/dev/null 2>&1 || true; then
+if live_sdlc "${ROOT}" pointer reset >/dev/null 2>&1 || true; then
   ok "pointer reset"
 else
   bad "pointer reset"
@@ -22,7 +20,7 @@ else
   bad "claim ${WORK_ID}"
 fi
 
-ptr="$(SDLC_ROOT="${ROOT}" "${PTR}" get)"
+ptr="$(live_sdlc "${ROOT}" pointer get)"
 [[ "${ptr}" == "${WORK_ID}" ]] && ok "pointer matches claim" || bad "pointer=${ptr}"
 
 next_out="$(live_sdlc "${ROOT}" next)"
@@ -70,7 +68,7 @@ else
   bad "shelf"
 fi
 
-ptr="$(SDLC_ROOT="${ROOT}" "${PTR}" get)"
+ptr="$(live_sdlc "${ROOT}" pointer get)"
 [[ -z "${ptr}" ]] && ok "shelf cleared pointer" || bad "pointer still set after shelf"
 
 if live_sdlc "${ROOT}" list-shelved | grep -Fq "${WORK_ID}"; then

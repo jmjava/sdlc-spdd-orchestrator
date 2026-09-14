@@ -76,9 +76,9 @@ jobs:
           --cov-fail-under=90
       - name: CLI smoke via sdlc.sh
         run: |
-          SDLC_ENGINE=python ./scripts/sdlc.sh version
-          SDLC_ENGINE=python ./scripts/sdlc.sh next
-          SDLC_ENGINE=python ./scripts/sdlc.sh viewer --help
+          ./scripts/sdlc.sh version
+          ./scripts/sdlc.sh next
+          ./scripts/sdlc.sh viewer --help
       - name: Shim regression harness
         run: ./tests/test-sdlc-engine-shim.sh
 

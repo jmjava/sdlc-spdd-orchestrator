@@ -25,13 +25,14 @@ from .jira_format import (
     markdown_to_adf,
     markdown_to_wiki,
 )
-from .integration_config import integration_env, resolve_integrations
-from .issue_tracker import (
+from .integration_config import (
     TRACKER_GITHUB,
     TRACKER_JIRA,
     TRACKER_NONE,
     effective_tracker,
+    integration_env,
     load_config as load_tracker_config,
+    resolve_integrations,
 )
 from .links import (
     _JIRA_KEY_RE,

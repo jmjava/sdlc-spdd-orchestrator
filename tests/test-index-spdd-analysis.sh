@@ -3,6 +3,8 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=lib/harness.sh
+source "${REPO_ROOT}/tests/lib/harness.sh"
 INDEX="${REPO_ROOT}/scripts/index-spdd-analysis.sh"
 WORK="$(mktemp -d)"
 trap 'rm -rf "${WORK}"' EXIT
@@ -23,13 +25,17 @@ assert_count() {
   if [[ "${n}" == "$3" ]]; then ok "$4"; else bad "$4 (got ${n}, want $3)"; fi
 }
 
+# Storage v3: every fixture lives under <target>/sdlc-spdd (the framework home).
 stage_file() {
-  printf '%s' "${1}/.sdlc/staged/lessons.jsonl"
+  printf '%s' "$(harness_home "$1")/.sdlc/staged/lessons.jsonl"
+}
+analysis_dir() {
+  printf '%s' "$(harness_home "$1")/spdd/analysis"
 }
 
-mkdir -p "${WORK}/spdd/analysis"
+mkdir -p "$(analysis_dir "${WORK}")"
 
-cat > "${WORK}/spdd/analysis/FEAT-010-billing-analysis.md" <<'AN'
+cat > "$(analysis_dir "${WORK}")/FEAT-010-billing-analysis.md" <<'AN'
 # Analysis Context: FEAT-010-billing
 
 ## Domain Keywords
@@ -64,8 +70,8 @@ assert_contains "${STAGE}" 'src/billing' "extra code area in keywords"
 
 echo "== Test 2: dry-run makes no writes =="
 DRY="$(mktemp -d)"
-mkdir -p "${DRY}/spdd/analysis"
-cp "${WORK}/spdd/analysis/FEAT-010-billing-analysis.md" "${DRY}/spdd/analysis/FEAT-010-billing-analysis.md"
+mkdir -p "$(analysis_dir "${DRY}")"
+cp "$(analysis_dir "${WORK}")/FEAT-010-billing-analysis.md" "$(analysis_dir "${DRY}")/FEAT-010-billing-analysis.md"
 "${INDEX}" --target "${DRY}" --work-id FEAT-010-billing --dry-run >/dev/null
 if [[ -f "$(stage_file "${DRY}")" ]]; then
   bad "dry-run should not create staged lessons"
@@ -83,8 +89,8 @@ fi
 
 echo "== Test 4: re-run appends staged records with stable id =="
 IDEM="$(mktemp -d)"
-mkdir -p "${IDEM}/spdd/analysis"
-cat > "${IDEM}/spdd/analysis/FEAT-020-quota-analysis.md" <<'AN'
+mkdir -p "$(analysis_dir "${IDEM}")"
+cat > "$(analysis_dir "${IDEM}")/FEAT-020-quota-analysis.md" <<'AN'
 # Analysis Context: FEAT-020-quota
 
 ## Domain Keywords
@@ -108,8 +114,8 @@ rm -rf "${IDEM}"
 
 echo "== Test 5: re-run refreshes a second Work ID without dropping the first =="
 MULTI="$(mktemp -d)"
-mkdir -p "${MULTI}/spdd/analysis"
-cat > "${MULTI}/spdd/analysis/FEAT-030-a-analysis.md" <<'AN'
+mkdir -p "$(analysis_dir "${MULTI}")"
+cat > "$(analysis_dir "${MULTI}")/FEAT-030-a-analysis.md" <<'AN'
 # Analysis Context: FEAT-030-a
 
 ## Domain Keywords
@@ -120,7 +126,7 @@ cat > "${MULTI}/spdd/analysis/FEAT-030-a-analysis.md" <<'AN'
 
 - src/alpha
 AN
-cat > "${MULTI}/spdd/analysis/FEAT-031-b-analysis.md" <<'AN'
+cat > "$(analysis_dir "${MULTI}")/FEAT-031-b-analysis.md" <<'AN'
 # Analysis Context: FEAT-031-b
 
 ## Domain Keywords
@@ -141,8 +147,8 @@ rm -rf "${MULTI}"
 
 echo "== Test 6: keyword-only analysis uses placeholder area =="
 KW="$(mktemp -d)"
-mkdir -p "${KW}/spdd/analysis"
-cat > "${KW}/spdd/analysis/FEAT-040-kw-analysis.md" <<'AN'
+mkdir -p "$(analysis_dir "${KW}")"
+cat > "$(analysis_dir "${KW}")/FEAT-040-kw-analysis.md" <<'AN'
 # Analysis Context: FEAT-040-kw
 
 ## Domain Keywords
@@ -161,8 +167,8 @@ rm -rf "${KW}"
 
 echo "== Test 7: area-only analysis (no Domain Keywords) still stages =="
 AR="$(mktemp -d)"
-mkdir -p "${AR}/spdd/analysis"
-cat > "${AR}/spdd/analysis/FEAT-050-ar-analysis.md" <<'AN'
+mkdir -p "$(analysis_dir "${AR}")"
+cat > "$(analysis_dir "${AR}")/FEAT-050-ar-analysis.md" <<'AN'
 # Analysis Context: FEAT-050-ar
 
 ## Code Areas

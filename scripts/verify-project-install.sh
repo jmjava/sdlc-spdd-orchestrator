@@ -189,12 +189,8 @@ run_part "Framework context (harness and skills)" \
 run_part "Workflow CLI and docs" \
   Runtime "workflow scripts directory" "${HOME_REL}/scripts" dir \
   Runtime "workflow helper script" "${HOME_REL}/scripts/sdlc.sh" executable \
-  Runtime "pointer manager script" "${HOME_REL}/scripts/sdlc-pointer.sh" executable \
-  Runtime "workflow manager script" "${HOME_REL}/scripts/sdlc-workflow.sh" executable \
-  Runtime "team registry script" "${HOME_REL}/scripts/sdlc-team-registry.sh" executable \
   Runtime "start session script" "${HOME_REL}/scripts/start-agent-session.sh" executable \
   Runtime "capture memory script" "${HOME_REL}/scripts/capture-session-memory.sh" executable \
-  Runtime "accept lessons script" "${HOME_REL}/scripts/accept-lessons.sh" executable \
   Runtime "create work from milestone script" "${HOME_REL}/scripts/create-work-from-milestone.sh" executable \
   Runtime "sync roadmap script" "${HOME_REL}/scripts/sync-roadmap-from-spdd.sh" executable \
   Runtime "summarize session notes script" "${HOME_REL}/scripts/summarize-session-notes.sh" executable \
@@ -233,6 +229,10 @@ legacy_checks=(
   Legacy "legacy session briefs" "${legacy_ac}/sessions" absent
   Legacy "legacy work registry" "${legacy_ac}/${legacy_wr}.tsv" absent
   Legacy "legacy workflow manager" "${legacy_ac}/sdlc-workflow.sh" absent
+  Legacy "retired bash workflow twin" "${HOME_REL}/scripts/sdlc-workflow.sh" absent
+  Legacy "retired bash registry twin" "${HOME_REL}/scripts/sdlc-team-registry.sh" absent
+  Legacy "retired bash pointer twin" "${HOME_REL}/scripts/sdlc-pointer.sh" absent
+  Legacy "retired accept-lessons script" "${HOME_REL}/scripts/accept-lessons.sh" absent
   Legacy "legacy agent-context tree" "${legacy_ac}" absent
   Legacy "legacy runtime scripts" "scripts/sdlc-spdd" absent
   Legacy "legacy root requirements" "requirements" absent

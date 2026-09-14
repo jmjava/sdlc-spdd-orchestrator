@@ -56,7 +56,7 @@ Jira link & sync / ADF viewer), [ADF templates + Vue3 console](adf-template-libr
 
 **Workflow CLI reference** (pointer, phase tracking, team registry): [agent-context/README.md](../agent-context/README.md#sdlc-pointer-current-choretask) — installed in target projects at `sdlc-spdd/scripts/` with docs under `docs/sdlc-spdd/`.
 
-**Python engine:** [SDLC Engine](engine-v2.md) — reusable `sdlc_engine` package; `SDLC_ENGINE=auto|python|shell` on `scripts/sdlc.sh`.
+**Python engine:** [SDLC Engine](engine-v2.md) — the single engine behind `scripts/sdlc.sh` (thin dispatcher to `python -m sdlc_engine`).
 
 **Local GUIs (experimental ops console + ADF Viewer):** [Ops console and ADF Viewer](ops-console.md).
 

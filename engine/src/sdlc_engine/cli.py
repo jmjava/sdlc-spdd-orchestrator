@@ -2,57 +2,33 @@
 
 from __future__ import annotations
 
+import argparse
 import sys
 
 from .cli_parser import build_parser
 
-# Keep handler names importable from sdlc_engine.cli for compatibility.
-from .cli_commands import (  # noqa: F401
-    _project,
-    cmd_advance,
-    cmd_agent_context,
-    cmd_archive,
-    cmd_claim,
-    cmd_commit_message,
-    cmd_context,
-    cmd_db,
-    cmd_gate,
-    cmd_installer,
-    cmd_issues,
-    cmd_links,
-    cmd_list_shelved,
-    cmd_list_work,
-    cmd_local,
-    cmd_next,
-    cmd_pointer,
-    cmd_quick,
-    cmd_release,
-    cmd_resume,
-    cmd_shelf,
-    cmd_shell,
-    cmd_skip,
-    cmd_status,
-    cmd_storage,
-    cmd_sunset,
-    cmd_sync,
-    cmd_sync_links,
-    cmd_sync_roadmap,
-    cmd_sync_team,
-    cmd_team,
-    cmd_template,
-    cmd_version,
-    cmd_viewer,
-    cmd_work,
-)
+from .commands import cmd_next, cmd_version
+
+PASSTHROUGH_VERBS = frozenset({"capture", "complete"})
+
+
+def _parse(parser: argparse.ArgumentParser, argv: list[str]) -> argparse.Namespace:
+    """Parse argv; capture/complete forward unknown options to the session script."""
+    args, extra = parser.parse_known_args(argv)
+    if not extra:
+        return args
+    if getattr(args, "command", None) not in PASSTHROUGH_VERBS:
+        parser.error(f"unrecognized arguments: {' '.join(extra)}")
+    args.script_args = list(getattr(args, "script_args", None) or []) + extra
+    return args
 
 
 def main(argv: list[str] | None = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
-    parser = build_parser()
-    args = parser.parse_args(argv)
-    if getattr(args, "version", False) and not getattr(args, "command", None):
-        return cmd_version(args)
+    args = _parse(build_parser(), argv)
     if not getattr(args, "command", None):
+        if getattr(args, "version", False):
+            return cmd_version(args)
         # default to next for parity with sdlc.sh
         args.command = "next"
         args.func = cmd_next

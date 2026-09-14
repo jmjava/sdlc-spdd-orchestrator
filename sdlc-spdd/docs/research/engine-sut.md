@@ -1,37 +1,39 @@
-# Engine system under test (REF-001)
+# Engine system under test (REF-001, REF-003)
 
-**Work ID:** REF-001-engine-single-source  
+**Work ID:** REF-001-engine-single-source (Milestone 2), closed out by REF-003-one-engine (Milestone 3)  
 **Construct:** C-COMPLY (named semantics; dual-engine confound)
 
-This names the **system under test** for Milestone 2 evaluation. It is not a claim that every shell script is gone.
+This names the **system under test** for evaluation. Since REF-003 there is
+exactly one engine: the Python `sdlc-engine` package. The bash workflow twin
+(`sdlc-workflow.sh` / `sdlc-team-registry.sh` / `sdlc-pointer.sh`) and the
+`SDLC_ENGINE` / `SDLC_GATE_ENGINE` switches were removed.
 
 ## SUT
 
 **Python `WorkflowEngine.gate_check`** (`engine/src/sdlc_engine/workflow.py`), invoked as:
 
 ```bash
-./scripts/sdlc.sh gate --phase code --work-id <WID>
-# default SDLC_ENGINE=auto → Python when sdlc_engine is importable
+./scripts/sdlc.sh gate --phase code --work-id <WID>   # thin dispatcher → python -m sdlc_engine
 sdlc-engine gate --phase code --work-id <WID>
 ```
 
-FEAT-014 semantic minima and FEAT-016 review/`Files:` checks live here. Shell `validate-reasons-canvas.sh` is a CI helper, not a second evaluation condition.
+FEAT-014 semantic minima and FEAT-016 review/`Files:` checks live here. Shell
+`validate-reasons-canvas.sh` is a CI helper, not a second evaluation condition.
 
-## Defaults
+## One engine
 
-| Variable | Default | Meaning |
-|----------|---------|---------|
-| `SDLC_ENGINE` | `auto` | Prefer Python for the `sdlc.sh` CLI when importable |
-| `SDLC_ENGINE=python` | — | Require Python; fail if missing |
-| `SDLC_ENGINE=shell` | — | Bash workflow CLI (`next`/`claim`/…). **Gates still call Python** when importable |
-| `SDLC_GATE_ENGINE=shell` | unset | Force the bash substring fallback. **Not the SUT.** Used by `tests/test-sdlc-workflow.sh` |
-
-`sdlc.sh capture`, `start`, and `accept` stay on the shell path under `auto`. Python equivalents are `local capture` and `context accept`.
+| Surface | Implementation |
+|---------|----------------|
+| `sdlc.sh <verb>` | `exec python -m sdlc_engine --root <root> <verb>`; no shell verbs remain |
+| `capture`, `start`, `complete`, `accept`, `session *` | Python top-level verbs (`sdlc_engine.commands.context`) |
+| Gates | Python only; there is no substring fallback |
+| `SDLC_ENGINE`, `SDLC_GATE_ENGINE` | Removed. Setting either makes `sdlc.sh` exit 2 with a removal notice |
 
 ## What is not the SUT
 
-- `SDLC_GATE_ENGINE=shell` fallback (pre-FEAT-014 `ready for coding` grep; no `Files:` mapping)
 - Adapter-text parity (`validate-command-adapters.sh`)
 - Live-consumer matrix (Cursor-oriented; not C-PORT)
+- Install/upgrade packaging shell (`init-project.sh`, `upgrade-project.sh`): copies files, holds no workflow logic
 
-Until you freeze `SDLC_ENGINE=auto` or `python` in the slice log, do not treat a shell-fallback gate pass as C-COMPLY.
+A gate pass is C-COMPLY evidence only when produced by the Python engine; since
+REF-003 that is the only way a gate can pass.

@@ -31,7 +31,7 @@ From the orchestrator repository:
     ./scripts/upgrade-project.sh --target /path/to/app --all
 
 The upgrade preserves application work, requirements, canvases, and the committed
-lessons ledger. Legacy layouts are migrated by `sdlc-engine storage migrate` — see
+lessons ledger. Pre-v3 layouts are refused (re-initialize) — see
 [Framework upgrade](framework-upgrade.md).
 
 Review backups under:
@@ -117,7 +117,7 @@ Keep the canvas Metadata current:
 
 For Jira updates:
 
-    SDLC_ENGINE=python ./scripts/sdlc.sh issues push <WORK-ID> --dry-run
+    ./scripts/sdlc.sh issues push <WORK-ID> --dry-run
 
 See [Jira runbook](jira-runbook.md) and [Issue sync and branching](issue-sync-and-branching.md).
 

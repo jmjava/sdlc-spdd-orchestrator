@@ -63,11 +63,11 @@ def test_init_from_adf_creates_artifacts(tmp_path: Path) -> None:
     # Stay-set only (#86): no committed per-feature mirror folders.
     assert result.feature_dir == ""
     assert not (root / "agent-context" / "features" / result.work_id).exists()
-    progress = root / "spdd" / "memory" / "entries" / "progress.md"
+    progress = root / "sdlc-spdd" / "spdd" / "memory" / "entries" / "progress.md"
     assert progress.is_file()
     assert result.work_id in progress.read_text(encoding="utf-8")
     # --no-claim still pins the pointer so analysis can resume immediately.
-    assert (root / ".sdlc" / "pointer").read_text(encoding="utf-8").strip() == result.work_id
+    assert (root / "sdlc-spdd" / ".sdlc" / "pointer").read_text(encoding="utf-8").strip() == result.work_id
     canvas = (root / result.canvas_path).read_text(encoding="utf-8")
     assert "Source System: ADF" in canvas
     assert "Browse ADF and create a canvas." in canvas
@@ -201,8 +201,8 @@ def test_init_from_adf_same_owner_reclaim_allowed(
     root = tmp_path / "app"
     root.mkdir()
     wid = "FEAT-013-same-owner"
-    (root / "spdd" / "memory").mkdir(parents=True, exist_ok=True)
-    (root / "spdd" / "memory" / "registry.jsonl").write_text(
+    (root / "sdlc-spdd" / "spdd" / "memory").mkdir(parents=True, exist_ok=True)
+    (root / "sdlc-spdd" / "spdd" / "memory" / "registry.jsonl").write_text(
         json.dumps(
             {
                 "event": "claim",
@@ -230,7 +230,7 @@ def test_init_from_adf_same_owner_reclaim_allowed(
 def test_init_from_adf_allocates_next_number(tmp_path: Path) -> None:
     root = tmp_path / "app"
     root.mkdir()
-    canvas_dir = root / "spdd" / "canvas"
+    canvas_dir = root / "sdlc-spdd" / "spdd" / "canvas"
     canvas_dir.mkdir(parents=True)
     (canvas_dir / "FEAT-002-existing.md").write_text("# existing\n", encoding="utf-8")
     adf = root / "next.adf.json"
@@ -252,9 +252,9 @@ def test_init_from_adf_claims_and_sets_pointer(tmp_path: Path, monkeypatch: pyte
         work_id="FEAT-013-claimed-from-adf",
         claim=True,
     )
-    pointer = (root / ".sdlc" / "pointer").read_text(encoding="utf-8").strip()
+    pointer = (root / "sdlc-spdd" / ".sdlc" / "pointer").read_text(encoding="utf-8").strip()
     assert pointer == "FEAT-013-claimed-from-adf"
-    reg = (root / "spdd" / "memory" / "registry.jsonl").read_text(encoding="utf-8")
+    reg = (root / "sdlc-spdd" / "spdd" / "memory" / "registry.jsonl").read_text(encoding="utf-8")
     assert "FEAT-013-claimed-from-adf" in reg
     assert "adf-claimer" in reg
     assert "init-from-adf:" in reg
@@ -270,8 +270,8 @@ def test_init_from_adf_claim_conflict_before_write(
     root.mkdir()
     wid = "FEAT-013-claim-conflict"
     # Seed an active claim owned by alice without a canvas yet.
-    (root / "spdd" / "memory").mkdir(parents=True, exist_ok=True)
-    (root / "spdd" / "memory" / "registry.jsonl").write_text(
+    (root / "sdlc-spdd" / "spdd" / "memory").mkdir(parents=True, exist_ok=True)
+    (root / "sdlc-spdd" / "spdd" / "memory" / "registry.jsonl").write_text(
         json.dumps(
             {
                 "event": "claim",
@@ -293,7 +293,7 @@ def test_init_from_adf_claim_conflict_before_write(
         AdfWorkService(Project.resolve(root)).init_from_adf(
             adf, work_id=wid, claim=True
         )
-    assert not (root / "spdd" / "canvas" / f"{wid}.md").exists()
+    assert not (root / "sdlc-spdd" / "spdd" / "canvas" / f"{wid}.md").exists()
 
 
 def test_init_from_adf_empty_body_and_outside_root(tmp_path: Path) -> None:

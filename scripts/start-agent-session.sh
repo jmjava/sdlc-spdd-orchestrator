@@ -8,6 +8,8 @@ source "${_SCRIPT_DIR}/lib/common.sh"
 source "${_SCRIPT_DIR}/lib/paths.sh"
 # shellcheck source=/dev/null
 source "${_SCRIPT_DIR}/lib/milestone.sh"
+# shellcheck source=/dev/null
+source "${_SCRIPT_DIR}/lib/python.sh"
 
 usage() {
   cat <<'EOF'
@@ -102,45 +104,17 @@ TARGET="$(sdlc_resolve_target "${TARGET}")"
 export SDLC_ROOT="${TARGET}"
 HOME="$(sdlc_home "${TARGET}")"
 
-pointer_script="${HOME}/scripts/sdlc-pointer.sh"
-if [[ ! -f "${pointer_script}" ]]; then
-  pointer_script="${TARGET}/agent-context/sdlc-pointer.sh"
-fi
-if [[ -f "${pointer_script}" && -n "${WORK_ID}" ]]; then
-  SDLC_ROOT="${TARGET}"
-  # shellcheck source=/dev/null
-  source "${pointer_script}"
-  sdlc_set_pointer "${WORK_ID}" >/dev/null
-fi
-
-workflow_script="${HOME}/scripts/sdlc-workflow.sh"
-if [[ ! -f "${workflow_script}" ]]; then
-  workflow_script="${TARGET}/agent-context/sdlc-workflow.sh"
-fi
-team_script="${HOME}/scripts/sdlc-team-registry.sh"
-if [[ ! -f "${team_script}" ]]; then
-  team_script="${TARGET}/agent-context/sdlc-team-registry.sh"
-fi
+# One engine: pointer, workflow state, and registry live in sdlc-engine.
 workflow_brief_md="Workflow tools not installed."
 jira_status=""
 jira_ask_prompt=""
-if [[ -f "${workflow_script}" && -n "${WORK_ID}" ]]; then
-  SDLC_ROOT="${TARGET}"
-  # shellcheck source=/dev/null
-  source "${workflow_script}"
-  sdlc_workflow_touch_session "${WORK_ID}" "${PHASE}" "${MILESTONE}"
-  sdlc_workflow_sync "${WORK_ID}" >/dev/null 2>&1 || true
-  workflow_brief_md="$(sdlc_workflow_brief_markdown "${WORK_ID}")"
-elif [[ -f "${team_script}" && -n "${WORK_ID}" ]]; then
-  SDLC_ROOT="${TARGET}"
-  # shellcheck source=/dev/null
-  source "${team_script}"
-fi
-if [[ -n "${WORK_ID}" ]] && declare -F sdlc_team_jira_status >/dev/null 2>&1; then
-  jira_status="$(sdlc_team_jira_status "${WORK_ID}")"
-fi
-if [[ -n "${WORK_ID}" ]] && declare -F sdlc_team_jira_ask_prompt >/dev/null 2>&1; then
-  jira_ask_prompt="$(sdlc_team_jira_ask_prompt "${WORK_ID}")"
+if [[ -n "${WORK_ID}" ]]; then
+  sdlc_engine_run "${TARGET}" pointer set "${WORK_ID}" >/dev/null 2>&1 || true
+  sdlc_engine_run "${TARGET}" session touch --work-id "${WORK_ID}" --phase "${PHASE}" --milestone "${MILESTONE}" >/dev/null 2>&1 || true
+  sdlc_engine_run "${TARGET}" sync --work-id "${WORK_ID}" >/dev/null 2>&1 || true
+  workflow_brief_md="$(sdlc_engine_run "${TARGET}" session brief --work-id "${WORK_ID}" 2>/dev/null || echo "Workflow tools not installed.")"
+  jira_status="$(sdlc_engine_run "${TARGET}" session jira-status --work-id "${WORK_ID}" 2>/dev/null || true)"
+  jira_ask_prompt="$(sdlc_engine_run "${TARGET}" session jira-ask --work-id "${WORK_ID}" 2>/dev/null || true)"
 fi
 
 timestamp="$(sdlc_timestamp_iso)"
@@ -229,13 +203,16 @@ case "${PHASE}" in
     ;;
 esac
 
-# Prefer workflow helper when installed — honors Ready For Coding gate for code phase.
+# The engine decides the command — honors the Ready For Coding gate for the code phase.
 export SDLC_ROOT="${TARGET}"
 if [[ "${QUIET}" -eq 1 ]]; then
   export SDLC_QUIET=1
 fi
-if [[ "${QUIET}" -eq 0 ]] && declare -F sdlc_workflow_recommended_command >/dev/null 2>&1 && [[ -n "${WORK_ID}" ]]; then
-  recommended_command="$(sdlc_workflow_recommended_command "${PHASE}" "${WORK_ID}")"
+if [[ "${QUIET}" -eq 0 && -n "${WORK_ID}" ]]; then
+  _rec="$(sdlc_engine_run "${TARGET}" session recommend --work-id "${WORK_ID}" --phase "${PHASE}" 2>/dev/null || true)"
+  if [[ -n "${_rec}" ]]; then
+    recommended_command="${_rec}"
+  fi
 fi
 if [[ "${QUIET}" -eq 1 ]]; then
   recommended_command="Quiet mode: retrieve context via SQLite/Guide/context store; no T## dogfood command."
@@ -271,24 +248,14 @@ fi
 active_milestone="$(resolve_milestone "${HOME}" "${WORK_ID}" "${MILESTONE}" relative || true)"
 today_note_rel="session-notes/$(sdlc_timestamp_day).md"
 
-# Command + docs hints in the brief must match the actual layout: v3 installs
-# use sdlc-spdd/scripts + sdlc-spdd/docs; the orchestrator repo keeps scripts/.
-if [[ "${HOME}" != "${TARGET}" ]]; then
-  scripts_hint="./sdlc-spdd/scripts"
-  sdlc_sh_hint="./sdlc-spdd/scripts/sdlc.sh"
-  docs_hint="sdlc-spdd/docs"
-else
-  scripts_hint="./scripts"
-  sdlc_sh_hint="./scripts/sdlc.sh"
-  docs_hint="docs/sdlc-spdd"
-  [[ -d "${TARGET}/docs/sdlc-spdd" ]] || docs_hint="docs"
-fi
+# Command + docs hints in the brief match the storage v3 layout (sdlc-spdd/ home).
+scripts_hint="./sdlc-spdd/scripts"
+sdlc_sh_hint="./sdlc-spdd/scripts/sdlc.sh"
+docs_hint="sdlc-spdd/docs"
 
 resolve_script=""
 if [[ -x "${HOME}/scripts/resolve-agent-context.sh" ]]; then
   resolve_script="${HOME}/scripts/resolve-agent-context.sh"
-elif [[ -x "${TARGET}/scripts/sdlc-spdd/resolve-agent-context.sh" ]]; then
-  resolve_script="${TARGET}/scripts/sdlc-spdd/resolve-agent-context.sh"
 elif [[ -x "$(dirname "${BASH_SOURCE[0]}")/resolve-agent-context.sh" ]]; then
   resolve_script="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/resolve-agent-context.sh"
 fi
@@ -320,23 +287,7 @@ sqlite_section_md=""
 sqlite_lookup_loaded=0
 if [[ -n "${WORK_ID}" ]]; then
   _run_db_lookup() {
-    local out=""
-    if [[ -x "${TARGET}/scripts/sdlc-spdd/sdlc.sh" ]]; then
-      out="$(
-        SDLC_ENGINE=python SDLC_ROOT="${TARGET}" \
-          "${TARGET}/scripts/sdlc-spdd/sdlc.sh" db lookup \
-          --work-id "${WORK_ID}" \
-          --markdown 2>/dev/null || true
-      )"
-    fi
-    if [[ -z "${out}" ]] && python3 -c 'import sdlc_engine' 2>/dev/null; then
-      out="$(
-        python3 -m sdlc_engine --root "${TARGET}" db lookup \
-          --work-id "${WORK_ID}" \
-          --markdown 2>/dev/null || true
-      )"
-    fi
-    printf '%s' "${out}"
+    sdlc_engine_run "${TARGET}" db lookup --work-id "${WORK_ID}" --markdown 2>/dev/null || true
   }
   sqlite_section_md="$(_run_db_lookup)"
   if [[ -n "${sqlite_section_md}" ]] && grep -Fq 'Local SQLite Index' <<<"${sqlite_section_md}"; then

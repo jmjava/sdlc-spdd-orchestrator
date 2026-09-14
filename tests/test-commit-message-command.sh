@@ -61,7 +61,12 @@ for path in "${CURSOR}" "${COPILOT}" "${CLAUDE}"; do
   assert_contains "${path}" "Paste-ready commit message" "paste-ready output (${path##*/})"
   assert_absent "${path}" "PR review comment" "not a PR review command (${path##*/})"
 done
-assert_contains "${SDLC_SH}" 'commit-message)' "sdlc.sh routes commit-message to Python engine"
+# sdlc.sh is a thin dispatcher (no per-verb case arms): prove routing behaviorally.
+if help_out="$("${SDLC_SH}" commit-message --help 2>&1)" && grep -Fq 'commit-message' <<< "${help_out}"; then
+  ok "sdlc.sh routes commit-message to Python engine (--help exits 0)"
+else
+  bad "sdlc.sh commit-message --help failed or did not mention commit-message: ${help_out}"
+fi
 
 echo "== Test 3: generator --check and adapter validation =="
 if "${REPO_ROOT}/scripts/generate-command-adapters.sh" --check >/dev/null; then

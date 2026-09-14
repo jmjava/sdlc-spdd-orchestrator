@@ -20,7 +20,7 @@ They solve four operational needs:
 | `sdlc-spdd/scripts/start-agent-session.sh` | Target-local script that creates a session brief for a new agent |
 | `sdlc-spdd/scripts/resync-agent-session.sh` | Target-local script that checks or reconciles the canonical canvas, validates it, and creates a session brief |
 | `sdlc-spdd/scripts/capture-session-memory.sh` | Stage session summary, decisions/pitfalls/patterns, and optional metrics as lesson records in `.sdlc/staged/lessons.jsonl` |
-| `sdlc-spdd/scripts/accept-lessons.sh` | Promote staged lesson records into the committed `spdd/memory/lessons.jsonl` (also `sdlc.sh accept`) |
+| `sdlc-spdd/scripts/sdlc.sh accept` | Promote staged lesson records into the committed `spdd/memory/lessons.jsonl` |
 | `sdlc-spdd/scripts/index-spdd-analysis.sh` | Stage an `analysis` lesson record from a Fowler analysis artifact |
 | `sdlc-spdd/scripts/resolve-agent-context.sh` | Resolve SDLC Agents `#SkillName` / phase extensions for progressive loading |
 | `sdlc-spdd/scripts/resolve-context-backend.sh` | Runtime probe: is the Guide DICE backend enabled and reachable? |
@@ -75,7 +75,7 @@ Preview first:
 
     ./scripts/upgrade-project.sh --target /path/to/app --all --dry-run
 
-The upgrade updates framework-owned prompts, harness/skills files, target-local docs under `docs/sdlc-spdd/`, and target-local runtime scripts. It preserves application source, application docs outside `docs/sdlc-spdd/`, requirements, canvases, reviews, sync logs, the lessons ledger, existing root `CLAUDE.md`, and target workflow customizations. Legacy memory layouts are converted by `sdlc-engine storage migrate` — see [Framework upgrade](framework-upgrade.md).
+The upgrade updates framework-owned prompts, harness/skills files, target-local docs under `docs/sdlc-spdd/`, and target-local runtime scripts. It preserves application source, application docs outside `docs/sdlc-spdd/`, requirements, canvases, reviews, sync logs, the lessons ledger, existing root `CLAUDE.md`, and target workflow customizations. Pre-v3 layouts are refused (re-initialize instead) — see [Framework upgrade](framework-upgrade.md).
 
 ## 2. Start a New Agent Session
 

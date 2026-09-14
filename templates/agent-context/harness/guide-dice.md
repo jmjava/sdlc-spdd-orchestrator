@@ -39,7 +39,7 @@ When native MCP is unavailable, agents **must** use the same tools via CLI:
 ```bash
 ./scripts/guide/query-guide.sh --text --work-id <WORK-ID>
 ./scripts/guide/query-guide.sh --area engine/tests
-SDLC_ENGINE=python ./scripts/sdlc.sh context mcp-call --tool spdd_getLesson --json '{"id":"<lesson-id>"}'
+./scripts/sdlc.sh context mcp-call --tool spdd_getLesson --json '{"id":"<lesson-id>"}'
 ```
 
 MCP config snippet: `./scripts/guide/mcp-config-snippet.sh --cursor`  

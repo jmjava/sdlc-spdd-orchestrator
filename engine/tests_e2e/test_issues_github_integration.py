@@ -39,7 +39,7 @@ def _repo() -> str:
 
 
 def _seed(root: Path, work_id: str, *, number: str = "TBD") -> Path:
-    req = root / "requirements" / "milestones" / f"{work_id}.md"
+    req = root / "sdlc-spdd" / "requirements" / "milestones" / f"{work_id}.md"
     req.parent.mkdir(parents=True, exist_ok=True)
     req.write_text(
         f"""# Requirement: {work_id}
@@ -62,7 +62,7 @@ GitHub integration probe for SDLC issue sync.
 """,
         encoding="utf-8",
     )
-    canvas = root / "spdd" / "canvas" / f"{work_id}.md"
+    canvas = root / "sdlc-spdd" / "spdd" / "canvas" / f"{work_id}.md"
     canvas.parent.mkdir(parents=True, exist_ok=True)
     canvas.write_text(
         f"""# REASONS Canvas: {work_id} - GH integration
@@ -150,14 +150,14 @@ def test_github_pull_existing_issue_apply(tmp_path: Path, gh_ready: str, monkeyp
     assert f"GitHub #{number}" in report
     assert remote["title"] in report
 
-    text = (tmp_path / "requirements" / "milestones" / f"{work_id}.md").read_text(
+    text = (tmp_path / "sdlc-spdd" / "requirements" / "milestones" / f"{work_id}.md").read_text(
         encoding="utf-8"
     )
     assert f"Number: {number}" in text
     assert f"Title: {remote['title']}" in text
     assert remote["url"] in text
 
-    canvas = (tmp_path / "spdd" / "canvas" / f"{work_id}.md").read_text(encoding="utf-8")
+    canvas = (tmp_path / "sdlc-spdd" / "spdd" / "canvas" / f"{work_id}.md").read_text(encoding="utf-8")
     assert f"#{number}" in canvas or number in canvas
 
 
@@ -168,7 +168,7 @@ def test_github_push_create_pull_roundtrip(tmp_path: Path, gh_ready: str, monkey
     work_id = "FEAT-911-gh-create-live"
     _seed(tmp_path, work_id, number="TBD")
     # Avoid labels — repos may not have them.
-    req = tmp_path / "requirements" / "milestones" / f"{work_id}.md"
+    req = tmp_path / "sdlc-spdd" / "requirements" / "milestones" / f"{work_id}.md"
     text = req.read_text(encoding="utf-8")
     req.write_text(text.replace("- Labels: sdlc\n", "- Labels:\n"), encoding="utf-8")
     # ensure title present without labels section issues
