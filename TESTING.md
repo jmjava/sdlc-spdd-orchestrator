@@ -16,10 +16,10 @@ what can be proven automatically, then run a short manual smoke for the rest.
 
 ## Engine test suites (3 packages)
 
-**Milestone 2 system under test:** Python `WorkflowEngine.gate_check`
-(`SDLC_ENGINE=auto` or `python`). See
-[engine-sut.md](sdlc-spdd/docs/research/engine-sut.md). `SDLC_GATE_ENGINE=shell`
-is a labeled fallback, not an evaluation condition.
+**System under test:** Python `WorkflowEngine.gate_check`. See
+[engine-sut.md](sdlc-spdd/docs/research/engine-sut.md). The Python engine is the
+only lifecycle implementation; `SDLC_ENGINE=shell` and `SDLC_GATE_ENGINE=shell`
+are rejected rather than selecting a second behavior (REF-003).
 
 | Suite | Path | Command | CI |
 |-------|------|---------|-----|
@@ -101,7 +101,7 @@ Then: `./scripts/setup-engine-venv.sh --e2e`
 | Guide not up | `preflight e2e --guide` first | bare `curl …/sse` |
 | Stale background pytest | `unit --clean-stale` | start another full run |
 
-Shell workflow harness (separate from engine pytest): `./tests/test-sdlc-workflow.sh` — run only when touching `scripts/sdlc.sh` or workflow gates.
+Shell dispatcher harness (separate from engine pytest): `./tests/test-sdlc-engine-shim.sh` — run only when touching `scripts/sdlc.sh`. Workflow and gate behavior itself lives in `engine/tests_unit/`.
 
 **Suite 1** — fast, isolated: mocks, `tmp_path`, no browser, no network. (Three
 installer/console files still use a Flask `test_client`; TEST-004 moves them to Suite 2.)
@@ -198,36 +198,26 @@ Run it locally before changing any install/upgrade script or command template.
 The CI workflow also runs `bash -n` over shell scripts before executing the
 regression harness.
 
-### SDLC pointer harness
+### Pointer, workflow, registry, and archive coverage
 
-`./tests/test-sdlc-pointer.sh` exercises `templates/agent-context/sdlc-pointer.sh`:
+REF-003 retired the bash twins (`sdlc-pointer.sh`, `sdlc-workflow.sh`,
+`sdlc-team-registry.sh`) and the shell harnesses that exercised them
+(`test-sdlc-pointer.sh`, `test-sdlc-workflow.sh`, `test-archive-work.sh`).
+The same behavior is now covered in Suite 1:
 
-- CLI round-trip (`set`/`get`/`reset`)
-- Guarded run (`run_against_pointer`) refusal on mismatch
-- `SDLC_POINTER_OVERRIDE` bootstrap
-- Integration with `start-agent-session.sh` pointer auto-set
-- Install path copies the script to target projects
+- `engine/tests_unit/test_pointer.py` — pointer round-trip, guarded run refusal
+  on mismatch, `start-agent-session.sh` auto-set
+- `engine/tests_unit/test_workflow.py`, `test_workflow_gates.py` — phase/gate
+  tracking, `next`/`advance`/`skip`/`shelf`/`resume`/`sync`, guarded `capture`
+- `engine/tests_unit/test_registry_archive.py` — team `claim`/`release`, stale
+  TTL, branch/PR/Jira notes in `spdd/memory/registry.jsonl`, Jira Key auto-link
+  on claim, and `archive` / `archive --all` (refuses In Progress without
+  `--force`, leaves `requirements/milestones/<WORK-ID>.md` in place, clears a
+  matching pointer, marks registry status `archived`)
+- `engine/tests_unit/test_cli_shell.py` — the retained `sdlc-engine shell`
+  bridge resolves utilities in both orchestrator and installed layouts
 
-### SDLC workflow + team registry harness
-
-`./tests/test-sdlc-workflow.sh` exercises `templates/agent-context/sdlc-workflow.sh` and team registry:
-
-- Phase/gate tracking, `next`/`advance`/`skip`/`shelf`/`resume`/`sync`
-- `sdlc.sh` wrapper delegation
-- Guarded `capture` (pointer must match)
-- Team `claim`/`release`, stale TTL, branch/PR/Jira notes in `spdd/memory/registry.jsonl`
-- Jira Key auto-link from `requirements/milestones/<WORK-ID>.md` on claim
-
-### Archive completed/cancelled work harness
-
-`./tests/test-archive-work.sh` exercises `sdlc.sh archive` / `archive --all`:
-
-- Refuses In Progress work unless `--force`
-- **Deletes** Complete/Cancelled canvases, analysis/review/sync artifacts, and matching session briefs from the working tree (git history retains them; storage v3 has no `spdd/*/archive/` folders)
-- Leaves `requirements/milestones/<WORK-ID>.md` in place
-- Clears the local pointer when it matches the archived Work ID
-- Marks `spdd/memory/registry.jsonl` status `archived` (and `sync-team` can mark `cancelled` without removing files)
-- `list-work` ignores removed Work IDs (no committed archive directories)
+Dispatcher delegation stays in `./tests/test-sdlc-engine-shim.sh`.
 
 ### Shared scripts/lib harness
 
@@ -298,7 +288,7 @@ source .venv/bin/activate
 ./scripts/run-test-suites.sh integration
 ./scripts/run-test-suites.sh e2e          # Playwright + GitHub (needs gh auth)
 ./scripts/run-test-suites.sh e2e --guide  # + Guide + Neo4j stack
-SDLC_ENGINE=python ./scripts/sdlc.sh version
+./scripts/sdlc.sh version
 ./tests/test-sdlc-engine-shim.sh
 ```
 
@@ -353,10 +343,10 @@ Issue sync confidence:
 | CI | Same, with `issues: write` for create/close cleanup | `test-github-issue-sync` job in `test-sdlc-engine.yml` |
 
 ```bash
-SDLC_ENGINE=python ./scripts/sdlc.sh sync-links
-SDLC_ENGINE=python ./scripts/sdlc.sh sync-links --repair
-SDLC_ENGINE=python ./scripts/sdlc.sh sync-roadmap --dry-run
-SDLC_ENGINE=python ./scripts/sdlc.sh issues draft <WORK-ID> --system github
+./scripts/sdlc.sh sync-links
+./scripts/sdlc.sh sync-links --repair
+./scripts/sdlc.sh sync-roadmap --dry-run
+./scripts/sdlc.sh issues draft <WORK-ID> --system github
 ./scripts/sdlc.sh local start --name scratch --intent "offline explore"
 ./scripts/sdlc.sh local promote --type feature --name "Documented title" --dry-run
 
@@ -373,7 +363,7 @@ SDLC_ENGINE=python ./scripts/sdlc.sh issues draft <WORK-ID> --system github
 `./tests/test-canvas-readiness.sh` exercises `validate-reasons-canvas.sh` readiness
 normalization and a smoke path for `capture-session-memory.sh` staging records
 into `.sdlc/staged/lessons.jsonl` (storage v3). Workflow capture integration
-is covered by `./tests/test-sdlc-workflow.sh` (Test 7) and the live-consumer
+is covered by `engine/tests_unit/test_workflow.py` and the live-consumer
 matrix scenarios 03 and 08.
 
 ### Index SPDD analysis harness

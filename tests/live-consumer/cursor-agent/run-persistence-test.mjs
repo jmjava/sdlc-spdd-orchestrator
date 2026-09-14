@@ -330,8 +330,8 @@ async function main() {
       else bad(`resumed agent status=${result.status}`);
 
       const ptr = sh(
-        path.join(liveScripts(ROOT), "sdlc-pointer.sh"),
-        ["get"],
+        path.join(liveScripts(ROOT), "sdlc.sh"),
+        ["pointer", "get"],
         { env: { SDLC_ROOT: ROOT } },
       );
       if ((ptr.stdout || "").trim() === WORK_ID) ok("pointer still claimed after resume");

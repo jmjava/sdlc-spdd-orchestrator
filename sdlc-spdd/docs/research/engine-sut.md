@@ -11,7 +11,7 @@ This names the **system under test** for Milestone 2 evaluation. It is not a cla
 
 ```bash
 ./scripts/sdlc.sh gate --phase code --work-id <WID>
-# default SDLC_ENGINE=auto → Python when sdlc_engine is importable
+# the dispatcher requires sdlc_engine; there is no other gate implementation
 sdlc-engine gate --phase code --work-id <WID>
 ```
 
@@ -19,19 +19,26 @@ FEAT-014 semantic minima and FEAT-016 review/`Files:` checks live here. Shell `v
 
 ## Defaults
 
+REF-003 removed the second implementation, so there is no engine to select. The
+variables survive only as rejected or inert inputs.
+
 | Variable | Default | Meaning |
 |----------|---------|---------|
-| `SDLC_ENGINE` | `auto` | Prefer Python for the `sdlc.sh` CLI when importable |
-| `SDLC_ENGINE=python` | — | Require Python; fail if missing |
-| `SDLC_ENGINE=shell` | — | Bash workflow CLI (`next`/`claim`/…). **Gates still call Python** when importable |
-| `SDLC_GATE_ENGINE=shell` | unset | Force the bash substring fallback. **Not the SUT.** Used by `tests/test-sdlc-workflow.sh` |
+| unset | — | `sdlc.sh` runs the Python engine; missing Python 3.12 or `sdlc_engine` fails with a setup hint |
+| `SDLC_ENGINE=python` | — | Accepted as a no-op; it already names the only engine |
+| `SDLC_ENGINE=shell` | — | **Rejected** (non-zero, "no longer supported"); it cannot select a bash workflow CLI |
+| `SDLC_GATE_ENGINE=shell` | unset | **Rejected** (non-zero); the bash substring fallback is gone, so it is not an evaluation condition |
 
-`sdlc.sh capture`, `start`, and `accept` stay on the shell path under `auto`. Python equivalents are `local capture` and `context accept`.
+`sdlc.sh capture`, `start`, and `accept` are retained shell utilities that call
+the Python engine; they no longer host lifecycle semantics. Python equivalents
+are `local capture` and `context accept`.
+
+Before REF-003 the default was `SDLC_ENGINE=auto` (Python when importable) and
+`SDLC_GATE_ENGINE=shell` forced a pre-FEAT-014 `ready for coding` grep with no
+`Files:` mapping. Slice logs recorded before REF-003 must still name the frozen
+engine; a shell-fallback gate pass was never C-COMPLY.
 
 ## What is not the SUT
 
-- `SDLC_GATE_ENGINE=shell` fallback (pre-FEAT-014 `ready for coding` grep; no `Files:` mapping)
 - Adapter-text parity (`validate-command-adapters.sh`)
 - Live-consumer matrix (Cursor-oriented; not C-PORT)
-
-Until you freeze `SDLC_ENGINE=auto` or `python` in the slice log, do not treat a shell-fallback gate pass as C-COMPLY.

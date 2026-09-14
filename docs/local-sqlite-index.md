@@ -32,7 +32,7 @@ When enabled, `capture` / `accept` keep the cache in sync automatically, and
 
 ## Commands
 
-Always routed to the Python engine (even when `SDLC_ENGINE=shell`):
+Routed to the Python engine, like every other `sdlc.sh` command:
 
 ```bash
 ./scripts/sdlc.sh db rebuild

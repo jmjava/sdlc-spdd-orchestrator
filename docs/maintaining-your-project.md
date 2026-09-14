@@ -116,7 +116,7 @@ Keep the canvas Metadata current:
 
 For Jira updates:
 
-    SDLC_ENGINE=python ./scripts/sdlc.sh issues push <WORK-ID> --dry-run
+    ./scripts/sdlc.sh issues push <WORK-ID> --dry-run
 
 See [Jira runbook](jira-runbook.md) and [Issue sync and branching](issue-sync-and-branching.md).
 

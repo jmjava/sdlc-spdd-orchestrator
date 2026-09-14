@@ -4,14 +4,11 @@ set -euo pipefail
 # Leftover #6 proving test: I1 capture/complete without a verify receipt refuse.
 # LessonRecord title/body (or --validation prose) is not a receipt.
 
-export SDLC_GATE_ENGINE=shell
-export SDLC_ENGINE=shell
-
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-WORKFLOW="${REPO_ROOT}/templates/agent-context/sdlc-workflow.sh"
-POINTER="${REPO_ROOT}/templates/agent-context/sdlc-pointer.sh"
-TEAM_REG="${REPO_ROOT}/templates/agent-context/sdlc-team-registry.sh"
+# shellcheck source=lib/engine-python.sh
+source "${SCRIPT_DIR}/lib/engine-python.sh"
+HARNESS_PYTHON="$(sdlc_harness_python "${REPO_ROOT}")"
 CAPTURE="${REPO_ROOT}/scripts/capture-session-memory.sh"
 SDLC_SH="${REPO_ROOT}/scripts/sdlc.sh"
 
@@ -31,9 +28,6 @@ setup_feature() {
     "${t}/sdlc-spdd/spdd/analysis" \
     "${t}/sdlc-spdd/spdd/memory" \
     "${t}/sdlc-spdd/scripts/lib"
-  cp "${POINTER}" "${t}/sdlc-spdd/scripts/sdlc-pointer.sh"
-  cp "${WORKFLOW}" "${t}/sdlc-spdd/scripts/sdlc-workflow.sh"
-  cp "${TEAM_REG}" "${t}/sdlc-spdd/scripts/sdlc-team-registry.sh"
   : > "${t}/sdlc-spdd/spdd/memory/registry.jsonl"
   cp "${SDLC_SH}" "${t}/sdlc-spdd/scripts/sdlc.sh"
   cp "${CAPTURE}" "${t}/sdlc-spdd/scripts/capture-session-memory.sh"
@@ -46,14 +40,17 @@ setup_feature() {
 sdlc() {
   local t="$1"
   shift
-  SDLC_ROOT="${t}" SDLC_ENGINE=shell "${t}/sdlc-spdd/scripts/sdlc.sh" "$@"
+  SDLC_ROOT="${t}" \
+    PYTHON="${HARNESS_PYTHON}" \
+    PYTHONPATH="${REPO_ROOT}/engine/src" \
+    "${t}/sdlc-spdd/scripts/sdlc.sh" "$@"
 }
 
 echo "== test_capture_without_verify_receipt_refuses =="
 T="${WORK}/capture-refuse"
 work_id="FEAT-020-i1-receipt"
 setup_feature "${T}"
-sdlc "${T}" resume "${work_id}" --phase code >/dev/null
+sdlc "${T}" pointer set "${work_id}" >/dev/null
 if out="$(sdlc "${T}" capture --phase code --summary "T01 complete" --validation "looked fine" 2>&1)"; then
   bad "capture without receipt should refuse: ${out}"
 else
@@ -73,7 +70,7 @@ echo "== test_complete_without_verify_receipt_refuses =="
 T="${WORK}/complete-refuse"
 work_id="FEAT-021-i1-complete"
 setup_feature "${T}"
-sdlc "${T}" resume "${work_id}" --phase code >/dev/null
+sdlc "${T}" pointer set "${work_id}" >/dev/null
 if out="$(sdlc "${T}" complete --summary "T01 complete" 2>&1)"; then
   bad "complete without receipt should refuse: ${out}"
 else
@@ -88,7 +85,7 @@ echo "== test_complete_fail_receipt_refuses =="
 T="${WORK}/complete-fail"
 work_id="FEAT-022-i1-fail"
 setup_feature "${T}"
-sdlc "${T}" resume "${work_id}" --phase code >/dev/null
+sdlc "${T}" pointer set "${work_id}" >/dev/null
 if out="$(sdlc "${T}" complete --summary "T01 complete" \
   --verify-command "pytest" --verify-exit 1 --verify-result fail 2>&1)"; then
   bad "complete with fail receipt should refuse: ${out}"
@@ -104,7 +101,7 @@ echo "== test_capture_with_receipt_stages_verify_object =="
 T="${WORK}/capture-ok"
 work_id="FEAT-023-i1-ok"
 setup_feature "${T}"
-sdlc "${T}" resume "${work_id}" --phase code >/dev/null
+sdlc "${T}" pointer set "${work_id}" >/dev/null
 if sdlc "${T}" capture --phase code --summary "T01 complete" \
   --verify-command "pytest tests/test_foo.py" \
   --verify-exit 0 \
@@ -128,7 +125,7 @@ echo "== test_complete_with_pass_receipt_succeeds =="
 T="${WORK}/complete-ok"
 work_id="FEAT-024-i1-done"
 setup_feature "${T}"
-sdlc "${T}" resume "${work_id}" --phase code >/dev/null
+sdlc "${T}" pointer set "${work_id}" >/dev/null
 if sdlc "${T}" complete --summary "T01 complete" \
   --verify-command "true" \
   --verify-exit 0 \

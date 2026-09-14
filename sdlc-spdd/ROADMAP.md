@@ -223,7 +223,7 @@ Milestone 1 feature track is Complete on the integration branch.
 | CHORE-004-lint-and-complexity-gates-real | make it right | Complete (Milestone 3 P0, #308) |
 | CHORE-006-dogfood-adapters-and-quick-spec | make it right | Complete (Milestone 3 P0, #308 + #320) |
 | REF-002-purge-pre-v3-compat | make it right | Complete (Milestone 3 P0, #314; 25/25 merge checks) |
-| REF-003-retire-bash-workflow-dual-path | make it right | Milestone 3 P0 |
+| REF-003-retire-bash-workflow-dual-path | make it right | Complete (Milestone 3 P0, #321; 25/25 PR checks) |
 | REF-004…REF-011, CHORE-005, TEST-004 | make it right | Milestone 3 P1/P2 |
 | DOC-004…DOC-007, CHORE-007…CHORE-010 | make it right (docs) | Milestone 4 |
 

@@ -12,6 +12,8 @@ source "${_SCRIPT_DIR}/lib/areas.sh"
 source "${_SCRIPT_DIR}/lib/milestone.sh"
 # shellcheck source=/dev/null
 source "${_SCRIPT_DIR}/lib/readiness.sh"
+# shellcheck source=/dev/null
+source "${_SCRIPT_DIR}/lib/python.sh"
 
 usage() {
   cat <<'EOF'
@@ -112,12 +114,6 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ -z "${WORK_ID}" ]]; then
-  echo "Error: --work-id is required" >&2
-  usage >&2
-  exit 1
-fi
-
 if [[ -n "${SUMMARY_FILE}" ]]; then
   if [[ "${SUMMARY_FILE}" == "-" ]]; then
     SUMMARY="$(cat)"
@@ -131,6 +127,42 @@ if [[ -z "${SUMMARY}" ]]; then
   echo "Error: --summary or --summary-file is required" >&2
   usage >&2
   exit 1
+fi
+
+TARGET="$(sdlc_resolve_target "${TARGET}")"
+HOME="$(sdlc_home "${TARGET}")"
+if [[ "$(basename "$(dirname "${_SCRIPT_DIR}")")" == "sdlc-spdd" ]]; then
+  ENGINE_ROOT="$(cd "${_SCRIPT_DIR}/../.." && pwd)"
+else
+  ENGINE_ROOT="$(cd "${_SCRIPT_DIR}/.." && pwd)"
+fi
+SDLC_ROOT="${ENGINE_ROOT}" resolve_engine_python || exit 1
+export SDLC_ROOT="${TARGET}"
+
+_engine_cli() {
+  if [[ -d "${ENGINE_ROOT}/engine/src/sdlc_engine" ]]; then
+    PYTHONPATH="${ENGINE_ROOT}/engine/src${PYTHONPATH:+:${PYTHONPATH}}" \
+      "${SDLC_PY}" -m sdlc_engine --root "${TARGET}" "$@"
+  else
+    "${SDLC_PY}" -m sdlc_engine --root "${TARGET}" "$@"
+  fi
+}
+
+if [[ -z "${WORK_ID}" ]]; then
+  WORK_ID="$(_engine_cli pointer get)"
+fi
+if [[ -z "${WORK_ID}" ]]; then
+  echo "Error: --work-id is required (or claim/resume an active pointer)" >&2
+  usage >&2
+  exit 1
+fi
+if [[ "${PHASE}" == "resume" ]]; then
+  status_json="$(_engine_cli status --work-id "${WORK_ID}" --json)"
+  PHASE="$(
+    "${SDLC_PY}" -c \
+      'import json,sys; print(json.load(sys.stdin).get("phase", "resume"))' \
+      <<<"${status_json}"
+  )"
 fi
 
 # I1 machine artifact: code-phase capture and --complete need command/exit/result.
@@ -173,9 +205,6 @@ if [[ "${COMPLETE}" -eq 1 && "${VERIFY_RESULT}" != "pass" ]]; then
   exit 1
 fi
 
-TARGET="$(sdlc_resolve_target "${TARGET}")"
-export SDLC_ROOT="${TARGET}"
-HOME="$(sdlc_home "${TARGET}")"
 timestamp="$(sdlc_timestamp_iso)"
 session_day="$(sdlc_timestamp_day)"
 
@@ -353,7 +382,7 @@ METRICS_JSON="$(
   METRIC_CONTEXT_FILES="${METRIC_CONTEXT_FILES}" \
   METRIC_VALIDATE_CYCLES="${METRIC_VALIDATE_CYCLES}" \
   METRIC_REVIEW_CYCLES="${METRIC_REVIEW_CYCLES}" \
-  python3 - <<'PY'
+  "${SDLC_PY}" - <<'PY'
 import json, os
 m = {}
 r = os.environ.get("METRIC_READINESS", "").strip()
@@ -384,7 +413,7 @@ if [[ -n "${VERIFY_COMMAND}" ]]; then
     VERIFY_COMMAND="${VERIFY_COMMAND}" \
     VERIFY_EXIT="${VERIFY_EXIT}" \
     VERIFY_RESULT="${VERIFY_RESULT}" \
-    python3 - <<'PY'
+    "${SDLC_PY}" - <<'PY'
 import json, os
 print(json.dumps({
     "command": os.environ["VERIFY_COMMAND"],
@@ -482,14 +511,6 @@ if [[ -n "${ROADMAP_NOTE}" ]]; then
     echo "- Summary: ${SUMMARY}"
     echo "- Next: ${NEXT_STEP:-Not recorded}"
   } >> "${roadmap_file}"
-fi
-
-workflow_script="${HOME}/scripts/sdlc-workflow.sh"
-if [[ -f "${workflow_script}" ]]; then
-  SDLC_ROOT="${TARGET}"
-  # shellcheck source=/dev/null
-  source "${workflow_script}"
-  sdlc_workflow_record_capture "${WORK_ID}" "${PHASE}"
 fi
 
 echo "staged ${#staged_records[@]} records → ${stage_file#${TARGET}/}; run 'sdlc.sh accept --work-id ${WORK_ID}' at retro/sync"

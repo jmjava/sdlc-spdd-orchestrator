@@ -49,7 +49,7 @@ for path in "${CURSOR}" "${COPILOT}" "${CLAUDE}"; do
   assert_contains "${path}" "lessons.jsonl" "ledger destination (${path##*/})"
   assert_contains "${path}" "--apply" "apply stages snapshot (${path##*/})"
 done
-assert_contains "${SDLC_SH}" 'sunset)' "sdlc.sh routes sunset to Python engine"
+assert_contains "${SDLC_SH}" '_engine_args=("${cmd}" "$@")' "sdlc.sh routes commands to Python engine"
 
 echo "== Test 3: generator --check and adapter validation =="
 if "${REPO_ROOT}/scripts/generate-command-adapters.sh" --check >/dev/null; then

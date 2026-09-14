@@ -6,14 +6,15 @@ stage-then-accept, projections), issue sync, local sessions, and the ops console
 
 ![Engine components](diagrams/03-component-engine.svg)
 
-Shell scripts remain an install/upgrade entry point. **REF-001:** the default
-`sdlc.sh` engine is `auto` (Python when importable). Python
-`WorkflowEngine.gate_check` is the Milestone 2 system under test. Opt into
-legacy bash workflow CLI with `SDLC_ENGINE=shell`; gates still call Python
-unless `SDLC_GATE_ENGINE=shell`. `sdlc.sh capture`/`start`/`accept` stay on
-the shell path (Python has `local capture` / `context accept`). On-disk
-formats are shared: `.sdlc/`,
-`spdd/memory/lessons.jsonl`, `spdd/memory/registry.jsonl`, canvas paths.
+Shell scripts remain an install/upgrade entry point and host a few retained
+utilities, but they no longer implement lifecycle behavior. **REF-003:**
+`scripts/sdlc.sh` is a thin dispatcher that requires Python 3.12 and an
+importable `sdlc_engine`; it fails with a setup hint rather than falling back.
+`SDLC_ENGINE=shell` and `SDLC_GATE_ENGINE=shell` are rejected, and
+`SDLC_ENGINE=python` is accepted only as a no-op. Python
+`WorkflowEngine.gate_check` is the system under test. On-disk formats are
+`.sdlc/`, `spdd/memory/lessons.jsonl`, `spdd/memory/registry.jsonl`, and
+canvas paths.
 
 ## Layout
 
@@ -62,11 +63,9 @@ engine/
 # From orchestrator checkout (no install)
 PYTHONPATH=engine/src python3 -m sdlc_engine next --root .
 
-# Opt into the Python engine via the existing wrapper (default remains shell)
-SDLC_ENGINE=python ./scripts/sdlc.sh next
-SDLC_ENGINE=python ./scripts/sdlc.sh claim FEAT-001-demo
-SDLC_ENGINE=auto   ./scripts/sdlc.sh next   # python if importable, else shell
-./scripts/sdlc.sh next                      # bash default
+# Through the dispatcher (always the Python engine)
+./scripts/sdlc.sh next
+./scripts/sdlc.sh claim FEAT-001-demo
 
 # Editable install
 python3 -m pip install -e './engine[dev]'
@@ -90,16 +89,16 @@ sdlc-engine archive --all --dry-run
 ## Milestone / Jira / GitHub sync
 
 ```bash
-SDLC_ENGINE=python ./scripts/sdlc.sh links
-SDLC_ENGINE=python ./scripts/sdlc.sh sync-links [--repair]
-SDLC_ENGINE=python ./scripts/sdlc.sh sync-roadmap
+./scripts/sdlc.sh links
+./scripts/sdlc.sh sync-links [--repair]
+./scripts/sdlc.sh sync-roadmap
 
-SDLC_ENGINE=python ./scripts/sdlc.sh issues draft <WORK-ID> --system jira
-SDLC_ENGINE=python ./scripts/sdlc.sh issues push  <WORK-ID> --system jira --apply
-SDLC_ENGINE=python ./scripts/sdlc.sh issues pull  <WORK-ID> --system github --apply
+./scripts/sdlc.sh issues draft <WORK-ID> --system jira
+./scripts/sdlc.sh issues push  <WORK-ID> --system jira --apply
+./scripts/sdlc.sh issues pull  <WORK-ID> --system github --apply
 
-SDLC_ENGINE=python ./scripts/sdlc.sh issues upload-adf --issue-key PROJ-123 --file adf/PROJ-123.adf.json --apply
-SDLC_ENGINE=python ./scripts/sdlc.sh issues download-adf PROJ-123 --apply
+./scripts/sdlc.sh issues upload-adf --issue-key PROJ-123 --file adf/PROJ-123.adf.json --apply
+./scripts/sdlc.sh issues download-adf PROJ-123 --apply
 ```
 
 Jira Cloud descriptions use **ADF**. See [jira-runbook.md](jira-runbook.md#description-formatting-adf)
@@ -110,8 +109,6 @@ and [issue sync and branching](issue-sync-and-branching.md).
 Collect the change set the user is about to commit (staged → unstaged → commits
 since merge base) so `/sdlc-spdd-commit-message` can draft a message from a
 stable engine report. **Generate only** — never creates a commit.
-
-Always routed to the Python engine (even when `SDLC_ENGINE=shell`):
 
 ```bash
 ./scripts/sdlc.sh commit-message
@@ -128,8 +125,6 @@ Collect GitHub PR, GitHub issue, commit, and Jira state for a Work ID and option
 a `session` record (`source=sunset`) into the lesson ledger. Used by
 `/sdlc-spdd-sunset`. Remote pulls are best-effort (missing `gh` or Jira
 credentials become warnings).
-
-Always routed to the Python engine (even when `SDLC_ENGINE=shell`):
 
 ```bash
 ./scripts/sdlc.sh sunset --work-id FEAT-001-example

@@ -533,6 +533,37 @@ else
   ok "skip live python3.12 usable check (none on PATH)"
 fi
 
+# An unrunnable interpreter must say so, not report a truncated version.
+missing_py="${WORK}/absent/python"
+resolve_out="$(PYTHON="${missing_py}" resolve_engine_python 2>&1 || true)"
+assert_contains "${resolve_out}" "cannot run ${missing_py}" \
+  "resolve_engine_python reports an unrunnable interpreter"
+if grep -Fq -- " is 3. " <<< "${resolve_out}"; then
+  bad "resolve_engine_python must not print a truncated version"
+else
+  ok "resolve_engine_python prints no truncated version"
+fi
+cat > "${WORK}/python3.11" <<'EOF'
+#!/bin/sh
+echo "3 11"
+EOF
+chmod +x "${WORK}/python3.11"
+assert_contains "$(PYTHON="${WORK}/python3.11" resolve_engine_python 2>&1 || true)" \
+  "is 3.11 —" "resolve_engine_python reports the full found version"
+
+# ---------------------------------------------------------------------------
+echo "== tests/lib/engine-python.sh: harness interpreter resolution =="
+# shellcheck source=/dev/null
+source "${REPO_ROOT}/tests/lib/engine-python.sh"
+harness_root="${WORK}/harness-root"
+mkdir -p "${harness_root}"
+if command -v python3.12 >/dev/null 2>&1; then
+  assert_true "harness python resolves without a repo venv" \
+    _python_is_usable_312 "$(sdlc_harness_python "${harness_root}")"
+else
+  ok "skip harness python resolution (no python3.12 on PATH)"
+fi
+
 # ---------------------------------------------------------------------------
 echo "== verify-script-lib-duplicates.sh =="
 if "${REPO_ROOT}/scripts/verify-script-lib-duplicates.sh" >/dev/null; then

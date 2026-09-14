@@ -61,7 +61,7 @@ for path in "${CURSOR}" "${COPILOT}" "${CLAUDE}"; do
   assert_contains "${path}" "Paste-ready commit message" "paste-ready output (${path##*/})"
   assert_absent "${path}" "PR review comment" "not a PR review command (${path##*/})"
 done
-assert_contains "${SDLC_SH}" 'commit-message)' "sdlc.sh routes commit-message to Python engine"
+assert_contains "${SDLC_SH}" '_engine_args=("${cmd}" "$@")' "sdlc.sh routes commands to Python engine"
 
 echo "== Test 3: generator --check and adapter validation =="
 if "${REPO_ROOT}/scripts/generate-command-adapters.sh" --check >/dev/null; then

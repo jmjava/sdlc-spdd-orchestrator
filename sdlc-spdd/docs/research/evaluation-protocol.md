@@ -15,11 +15,11 @@ Guide is **fork-only**. This protocol does not depend on an Embabel upstream mer
 
 ## 1. Object of evaluation
 
-**Method (SUT after REF-001):** Planning artifacts + REASONS Canvas + phase commands/gates + ledger retrieval, as implemented by Python `WorkflowEngine.gate_check` (`SDLC_ENGINE=auto` or `python`) plus spec-generated assistant adapters. See [engine-sut.md](engine-sut.md).
+**Method (SUT after REF-001):** Planning artifacts + REASONS Canvas + phase commands/gates + ledger retrieval, as implemented by Python `WorkflowEngine.gate_check` plus spec-generated assistant adapters. See [engine-sut.md](engine-sut.md).
 
 **Not the object:** CLI unit tests, adapter-text parity, or SWE-bench agent competence. Those stay in `TESTING.md`.
 
-Treat **`SDLC_GATE_ENGINE=shell`** as a labeled harness fallback, **not** a second evaluation condition. Default `SDLC_ENGINE=auto` uses Python `gate_check` when importable, including when `SDLC_ENGINE=shell` but the package can be imported.
+Since REF-003 there is no second engine to confound a condition: `sdlc.sh` always runs Python `gate_check`, and **`SDLC_GATE_ENGINE=shell`** is rejected rather than selecting a fallback.
 
 ---
 
@@ -32,7 +32,7 @@ Every RQ that compares “the method” uses these four process conditions on th
 | **unstructured chat** | Solve the gold task in one assistant thread. No canvas, no phase commands, no ledger retrieve. | None (chat only) | None |
 | **canvas-only** | Write/follow a REASONS canvas (Fowler-like). Do not run SDLC phase commands or `gate_check`. | Canvas file | None |
 | **lifecycle-only** | Use analysis→…→sync commands / briefs (SDLC Agents-like). No REASONS canvas. | Planning files / briefs | Phases |
-| **full SDLC-SPDD** | Canvas + phase commands + optional `./scripts/sdlc.sh gate --phase …` (default `SDLC_ENGINE=auto` → Python `gate_check`) + `context retrieve` when the task is a follow-on | Canvas + phase artifacts | Phases + gates + retrieve |
+| **full SDLC-SPDD** | Canvas + phase commands + optional `./scripts/sdlc.sh gate --phase …` (always Python `gate_check`) + `context retrieve` when the task is a follow-on | Canvas + phase artifacts | Phases + gates + retrieve |
 
 Do not invent a fifth “prompt file dump” condition in TEST-002’s first slice.
 
@@ -159,7 +159,7 @@ Record ContextLoad on `record.metrics.context_files` (`sdlc-engine context metri
 | Gold task + canvas commit SHA | Assistant sampling | Assistant name |
 | Model id / version string the vendor exposes | Temperature if the product exposes it; else note “UI default” | Model id |
 | Operator instruction sheet per condition | Natural language in the thread | Date, n sessions |
-| `SDLC_ENGINE=auto` or `python` when gates are used (`SDLC_GATE_ENGINE=shell` forbidden) | Network / product drift | Engine SHA |
+| Python `gate_check` when gates are used (no engine selection exists to record) | Network / product drift | Engine SHA |
 
 **n:** first TEST-002 slice uses **n ≥ 3** independent runs per condition that is actually collected (not n=1 dressed as a study). If budget allows only n=1, the log must say **protocol incomplete**, not “result.”
 

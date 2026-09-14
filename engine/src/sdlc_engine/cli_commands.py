@@ -476,15 +476,24 @@ def cmd_version(_: argparse.Namespace) -> int:
     return 0
 
 
+def _shell_script_candidates(root: Path, script: str) -> list[Path]:
+    names = [script] if script.endswith(".sh") else [script, f"{script}.sh"]
+    directories = [root / "scripts", root / "sdlc-spdd" / "scripts"]
+    return [directory / name for directory in directories for name in names]
+
+
+def _resolve_shell_script(root: Path, script: str) -> Path | None:
+    for candidate in _shell_script_candidates(root, script):
+        if candidate.is_file():
+            return candidate
+    return None
+
+
 def cmd_shell(args: argparse.Namespace) -> int:
-    """Bridge to remaining v1 shell scripts under scripts/."""
+    """Bridge to retained shell utilities in source or installed layouts."""
     root = _project(args).root
-    script = root / "scripts" / args.script
-    if not script.is_file():
-        # also allow bare names that live in scripts/
-        candidate = root / "scripts" / f"{args.script}.sh"
-        script = candidate if candidate.is_file() else script
-    if not script.is_file():
+    script = _resolve_shell_script(root, args.script)
+    if script is None:
         print(f"shell bridge: script not found: {args.script}", file=sys.stderr)
         return 1
     return subprocess.call([str(script), *args.script_args], cwd=root)

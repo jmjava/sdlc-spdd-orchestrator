@@ -7,6 +7,13 @@ SEED_DIR="${LIVE_CONSUMER_DIR}/seed"
 WORK_ID="${LIVE_WORK_ID:-FEAT-001-hello-live}"
 DONE_WORK_ID="${LIVE_DONE_WORK_ID:-FEAT-002-done-live}"
 SDLC_USER="${SDLC_USER:-live-matrix}"
+if [[ -z "${PYTHON:-}" ]]; then
+  # shellcheck source=../lib/engine-python.sh
+  source "${REPO_ROOT}/tests/lib/engine-python.sh"
+  PYTHON="$(sdlc_harness_python "${REPO_ROOT}")"
+fi
+export PYTHON
+export PYTHONPATH="${REPO_ROOT}/engine/src${PYTHONPATH:+:${PYTHONPATH}}"
 
 # Default: ephemeral mktemp. For Cursor UI reopen, set:
 #   LIVE_CONSUMER_ROOT=/tmp/sdlc-spdd-live LIVE_CONSUMER_KEEP=1

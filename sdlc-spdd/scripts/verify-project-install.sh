@@ -103,6 +103,12 @@ check_path() {
         return 1
       fi
       ;;
+    absent)
+      if [[ ! -e "${full}" ]]; then
+        echo "  ok  ${label}: ${path} (absent)"
+        return 0
+      fi
+      ;;
     glob)
       shopt -s nullglob
       local matches=("${TARGET}"/${path})
@@ -178,9 +184,9 @@ run_part "Framework context (harness and skills)" \
 run_part "Workflow CLI and docs" \
   Runtime "workflow scripts directory" "${HOME_REL}/scripts" dir \
   Runtime "workflow helper script" "${HOME_REL}/scripts/sdlc.sh" executable \
-  Runtime "pointer manager script" "${HOME_REL}/scripts/sdlc-pointer.sh" executable \
-  Runtime "workflow manager script" "${HOME_REL}/scripts/sdlc-workflow.sh" executable \
-  Runtime "team registry script" "${HOME_REL}/scripts/sdlc-team-registry.sh" executable \
+  Runtime "retired pointer manager" "${HOME_REL}/scripts/sdlc-pointer.sh" absent \
+  Runtime "retired workflow manager" "${HOME_REL}/scripts/sdlc-workflow.sh" absent \
+  Runtime "retired team registry" "${HOME_REL}/scripts/sdlc-team-registry.sh" absent \
   Runtime "start session script" "${HOME_REL}/scripts/start-agent-session.sh" executable \
   Runtime "capture memory script" "${HOME_REL}/scripts/capture-session-memory.sh" executable \
   Runtime "accept lessons script" "${HOME_REL}/scripts/accept-lessons.sh" executable \

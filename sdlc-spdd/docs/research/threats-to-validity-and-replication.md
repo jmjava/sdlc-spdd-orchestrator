@@ -68,7 +68,7 @@ SPIKE-004’s earlier “file/regex/exact-keyword proxies” row is **partially 
 
 | Threat | Status after P2 |
 |--------|-----------------|
-| Dual engine (shell `sdlc.sh` vs Python `gate_check`) | Retired as a default confound (REF-001). The research SUT is Python `gate_check` (`SDLC_ENGINE=auto` or `python`). `SDLC_GATE_ENGINE=shell` is not an evaluation condition. |
+| Dual engine (shell `sdlc.sh` vs Python `gate_check`) | Retired as a default confound (REF-001), then removed outright (REF-003): the bash twin is deleted and `SDLC_ENGINE=shell` / `SDLC_GATE_ENGINE=shell` are rejected. The research SUT is Python `gate_check`. |
 | `--force` / skip | Still lets an operator complete a session that is not process-compliant. Log `--force` as invalid for C-COMPLY scoring. |
 | Chat can ignore the canvas | The method is advised process + optional CLI gates, not a causal sandbox. |
 | Operator is often the author | Hawthorne / demand characteristics. TEST-002 must say if the operator wrote the method. |
@@ -115,7 +115,7 @@ Assistant sampling **cannot be automated away**. TEST-001 §6 (Nondeterminism pl
 | Gold task + canvas commit SHA | Assistant sampling | Assistant name |
 | Model id / version string the vendor exposes | Temperature if the product exposes it; else “UI default” | Model id |
 | Operator instruction sheet per condition | Natural language in the thread | Date, n sessions |
-| `SDLC_ENGINE=auto` or `python` when gates are used (`SDLC_GATE_ENGINE=shell` forbidden) | Network / product drift | Engine SHA |
+| Python `gate_check` when gates are used (no engine selection exists to record) | Network / product drift | Engine SHA |
 
 **n ≥ 3** per collected condition, or the slice is **protocol incomplete**. Do not pool across model versions. This Work ID does not run those sessions.
 
@@ -132,7 +132,7 @@ The table below is the extra freeze if someone later runs a TEST-002 *slice*
 |------|------------|--------------------|
 | Engine commit | `git rev-parse HEAD` | this repo |
 | Engine version | `python3 -c "import sdlc_engine; print(sdlc_engine.__version__)"` | currently `2.0.0a6` at DOC-003 write time; re-print at run time |
-| Gate SUT | default `SDLC_ENGINE=auto` (or `python`); never `SDLC_GATE_ENGINE=shell` | [engine-sut.md](engine-sut.md); `sdlc-engine gate --phase code --work-id <WID>` |
+| Gate SUT | Python `gate_check`; `SDLC_GATE_ENGINE=shell` is rejected, not a condition | [engine-sut.md](engine-sut.md); `sdlc-engine gate --phase code --work-id <WID>` |
 | Capture metrics | structured fields, not body grep | `sdlc-engine context metrics --construct C-REWORK` ([capture-metrics-queries.md](capture-metrics-queries.md)) |
 | Construct spec | file SHA | `sdlc-spdd/docs/research/research-questions-and-constructs.md` |
 | Evaluation protocol | file SHA | `sdlc-spdd/docs/research/evaluation-protocol.md` |

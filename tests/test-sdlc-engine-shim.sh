@@ -30,28 +30,59 @@ else
   bad "python next output unexpected"
 fi
 
-echo "== default SDLC_ENGINE=auto uses python when importable =="
+echo "== default dispatcher uses mandatory Python engine =="
 out="$( "${REPO_ROOT}/scripts/sdlc.sh" version )"
 if [[ "${out}" == 2.0.0a* ]]; then
-  ok "default auto routes version to python engine (${out})"
+  ok "default routes version to Python engine (${out})"
 else
-  bad "default auto unexpected version: ${out}"
+  bad "default Python engine unexpected version: ${out}"
 fi
 
-echo "== explicit SDLC_ENGINE=shell still works =="
-out="$(SDLC_ENGINE=shell "${REPO_ROOT}/scripts/sdlc.sh" next)"
-if grep -Fq 'No active Work ID' <<< "${out}" || grep -Fq 'SDLC:' <<< "${out}" || grep -Fq 'resume' <<< "${out}"; then
-  ok "shell engine still works"
+echo "== retired shell engine overrides fail clearly =="
+if out="$(SDLC_ENGINE=shell "${REPO_ROOT}/scripts/sdlc.sh" next 2>&1)"; then
+  bad "SDLC_ENGINE=shell should fail"
+elif grep -Fq 'SDLC_ENGINE=shell is no longer supported' <<< "${out}"; then
+  ok "SDLC_ENGINE=shell rejected"
 else
-  bad "shell next unexpected"
+  bad "SDLC_ENGINE=shell rejection unclear: ${out}"
+fi
+if out="$(SDLC_GATE_ENGINE=shell "${REPO_ROOT}/scripts/sdlc.sh" next 2>&1)"; then
+  bad "SDLC_GATE_ENGINE=shell should fail"
+elif grep -Fq 'SDLC_GATE_ENGINE=shell is no longer supported' <<< "${out}"; then
+  ok "SDLC_GATE_ENGINE=shell rejected"
+else
+  bad "SDLC_GATE_ENGINE=shell rejection unclear: ${out}"
 fi
 
-echo "== local sessions route even when SDLC_ENGINE=shell =="
 tmp="$(mktemp -d)"
 trap 'rm -rf "${tmp}"' EXIT
-# Use --root via python engine; sdlc.sh local* always hits python.
+
+echo "== missing Python engine fails with install hint =="
+no_engine="${tmp}/no-engine"
+mkdir -p "${no_engine}/scripts/lib"
+cp "${REPO_ROOT}/scripts/sdlc.sh" "${no_engine}/scripts/sdlc.sh"
+cp "${REPO_ROOT}/scripts/lib/python.sh" "${no_engine}/scripts/lib/python.sh"
+cat > "${no_engine}/fake-python" <<'EOF'
+#!/usr/bin/env bash
+if [[ "${1:-}" == "-c" && "${2:-}" == *"sys.version_info"* ]]; then
+  echo "3 12"
+  exit 0
+fi
+exit 1
+EOF
+chmod +x "${no_engine}/scripts/sdlc.sh" "${no_engine}/fake-python"
+if out="$(PYTHON="${no_engine}/fake-python" "${no_engine}/scripts/sdlc.sh" next 2>&1)"; then
+  bad "missing sdlc_engine should fail"
+elif grep -Fq 'Python engine (sdlc_engine) is required' <<< "${out}" \
+  && grep -Fq 'setup-engine-venv.sh' <<< "${out}"; then
+  ok "missing engine reports Python 3.12 setup hint"
+else
+  bad "missing engine hint unclear: ${out}"
+fi
+
+echo "== local sessions use Python engine =="
 out="$(
-  SDLC_ENGINE=shell SDLC_USER=shim-test \
+  SDLC_USER=shim-test \
     PYTHONPATH="${REPO_ROOT}/engine/src" \
     python3 -m sdlc_engine --root "${tmp}" local start --name shim-local --intent "offline"
 )"
@@ -111,8 +142,7 @@ while IFS=$'\t' read -r alias_line wid; do
   # shellcheck disable=SC2086 # intentional word-splitting of alias tokens
   set -- ${alias_line}
   out="$(
-    SDLC_ENGINE=shell \
-      PYTHONPATH="${REPO_ROOT}/engine/src" \
+    PYTHONPATH="${REPO_ROOT}/engine/src" \
       "${REPO_ROOT}/scripts/sdlc.sh" "$@" \
         --path "${tmp}/adf/ORCH-8.adf.json" \
         --work-id "${wid}" \
@@ -144,8 +174,7 @@ if (( alias_ok == 1 && alias_n == 3 )); then
 fi
 
 help_out="$(
-  SDLC_ENGINE=shell \
-    PYTHONPATH="${REPO_ROOT}/engine/src" \
+  PYTHONPATH="${REPO_ROOT}/engine/src" \
     "${REPO_ROOT}/scripts/sdlc.sh" work init-from-adf --help 2>&1
 )"
 if grep -Fq -- '--path' <<< "${help_out}"; then
@@ -172,8 +201,7 @@ cat > "${tmp}/sdlc-spdd/spdd/canvas/FEAT-000-shim.md" <<'EOF'
 EOF
 cp "${tmp}/sdlc-spdd/spdd/canvas/FEAT-000-shim.md" "${tmp}/sdlc-spdd/requirements/milestones/FEAT-000-shim.md"
 out="$(
-  SDLC_ENGINE=shell \
-    PYTHONPATH="${REPO_ROOT}/engine/src" \
+  PYTHONPATH="${REPO_ROOT}/engine/src" \
     python3 -m sdlc_engine --root "${tmp}" db rebuild
 )"
 if grep -Fq 'Rebuilt SQLite index' <<< "${out}" && [[ -f "${tmp}/sdlc-spdd/.sdlc/index.sqlite" ]]; then
@@ -185,8 +213,7 @@ fi
 echo "== sdlc.sh --target db rebuild (not next / no pointer) =="
 rm -f "${tmp}/sdlc-spdd/.sdlc/index.sqlite"
 out="$(
-  SDLC_ENGINE=shell \
-    PYTHONPATH="${REPO_ROOT}/engine/src" \
+  PYTHONPATH="${REPO_ROOT}/engine/src" \
     "${REPO_ROOT}/scripts/sdlc.sh" db rebuild --target "${tmp}"
 )"
 if grep -Fq 'Rebuilt SQLite index' <<< "${out}" && [[ -f "${tmp}/sdlc-spdd/.sdlc/index.sqlite" ]]; then

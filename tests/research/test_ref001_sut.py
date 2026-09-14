@@ -1,9 +1,9 @@
-"""REF-001: Python gate_check is the SUT; shell CLI delegates when importable.
+"""REF-001/REF-003: Python gate_check is the sole workflow SUT.
 
 A headings-only canvas with a 'ready for coding' substring is the historical
-confound (shell grep pass / Python FEAT-014 fail). These tests prove the SUT
-path rejects it, and that SDLC_ENGINE=shell still delegates when Python can
-be imported. SDLC_GATE_ENGINE=shell is the labeled non-SUT fallback.
+confound (former shell grep pass / Python FEAT-014 fail). These tests prove the
+SUT path rejects it and retired shell-engine overrides cannot select another
+implementation.
 """
 
 from __future__ import annotations
@@ -21,7 +21,6 @@ SUT_DOC = ROOT / "sdlc-spdd" / "docs" / "research" / "engine-sut.md"
 TESTING = ROOT / "TESTING.md"
 ROADMAP = ROOT / "sdlc-spdd" / "ROADMAP.md"
 SDLC_SH = ROOT / "scripts" / "sdlc.sh"
-WORKFLOW = ROOT / "templates" / "agent-context" / "sdlc-workflow.sh"
 WID = "FEAT-REF001-headings"
 
 
@@ -68,8 +67,8 @@ class SutDocTests(unittest.TestCase):
         text = SUT_DOC.read_text(encoding="utf-8")
         blob = text.lower()
         self.assertIn("workflowengine.gate_check", blob)
-        self.assertIn("sdlc_engine=auto", blob)
         self.assertIn("sdlc_gate_engine=shell", blob)
+        self.assertIn("rejected", blob)
         self.assertIn("not the sut", blob)
 
     def test_testing_and_roadmap_name_sut(self) -> None:
@@ -97,49 +96,36 @@ class WeakCanvasGateTests(unittest.TestCase):
                 failures,
             )
 
-    def test_shell_engine_delegates_to_python_when_importable(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            _seed(root)
-            env = _env()
-            env["SDLC_ENGINE"] = "shell"
-            env["SDLC_ROOT"] = str(root)
-            env["SDLC_HOME"] = str(root / "sdlc-spdd")
-            proc = subprocess.run(
-                ["bash", str(WORKFLOW), "gate", "--phase", "code", "--work-id", WID],
-                cwd=str(ROOT),
-                env=env,
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-            self.assertNotEqual(proc.returncode, 0, proc.stdout + proc.stderr)
-            blob = (proc.stdout + proc.stderr).lower()
-            self.assertTrue(
-                "empty requirements" in blob or "files:" in blob or "no t##" in blob,
-                proc.stdout + proc.stderr,
-            )
+    def test_shell_engine_override_is_rejected(self) -> None:
+        env = _env()
+        env["SDLC_ENGINE"] = "shell"
+        proc = subprocess.run(
+            ["bash", str(SDLC_SH), "next"],
+            cwd=str(ROOT),
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertNotEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertIn("no longer supported", (proc.stdout + proc.stderr).lower())
 
-    def test_gate_engine_shell_fallback_is_not_sut(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            _seed(root)
-            env = _env()
-            env["SDLC_GATE_ENGINE"] = "shell"
-            env["SDLC_ROOT"] = str(root)
-            env["SDLC_HOME"] = str(root / "sdlc-spdd")
-            proc = subprocess.run(
-                ["bash", str(WORKFLOW), "gate", "--phase", "code", "--work-id", WID],
-                cwd=str(ROOT),
-                env=env,
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-            self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+    def test_gate_engine_shell_override_is_rejected(self) -> None:
+        env = _env()
+        env["SDLC_GATE_ENGINE"] = "shell"
+        proc = subprocess.run(
+            ["bash", str(SDLC_SH), "next"],
+            cwd=str(ROOT),
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertNotEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertIn("python gate semantics", (proc.stdout + proc.stderr).lower())
 
-    def test_sdlc_sh_default_auto_uses_python(self) -> None:
-        self.assertIn("SDLC_ENGINE:-auto", SDLC_SH.read_text(encoding="utf-8"))
+    def test_sdlc_sh_default_uses_python(self) -> None:
+        self.assertIn("Python engine is required", SDLC_SH.read_text(encoding="utf-8"))
         env = _env()
         env.pop("SDLC_ENGINE", None)
         proc = subprocess.run(
@@ -154,8 +140,8 @@ class WeakCanvasGateTests(unittest.TestCase):
         self.assertTrue(proc.stdout.strip().startswith("2.0.0a"), proc.stdout)
 
     def test_python_parser_has_no_top_level_capture(self) -> None:
-        # sdlc.sh capture stages lessons; Python only has `local capture`.
-        # Default auto must not route the shell verb into argparse.
+        # sdlc.sh capture bridges the retained capture utility explicitly;
+        # lifecycle parsing itself has no ambiguous top-level capture verb.
         from io import StringIO
         from contextlib import redirect_stderr
 
@@ -165,7 +151,7 @@ class WeakCanvasGateTests(unittest.TestCase):
         with redirect_stderr(StringIO()), self.assertRaises(SystemExit):
             parser.parse_args(["capture", "--summary", "ok"])
         text = SDLC_SH.read_text(encoding="utf-8")
-        self.assertIn("capture|complete|start|accept", text)
+        self.assertIn("capture|/sdlc-workflow-capture", text)
 
 
 if __name__ == "__main__":

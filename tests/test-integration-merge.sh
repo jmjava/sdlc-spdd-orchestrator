@@ -3,6 +3,11 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=lib/engine-python.sh
+source "${REPO_ROOT}/tests/lib/engine-python.sh"
+PYTHON="$(sdlc_harness_python "${REPO_ROOT}")"
+export PYTHON
+export PYTHONPATH="${REPO_ROOT}/engine/src${PYTHONPATH:+:${PYTHONPATH}}"
 SETUP="${REPO_ROOT}/scripts/setup-agent-prompts.sh"
 UPGRADE="${REPO_ROOT}/scripts/upgrade-project.sh"
 VALIDATE="${REPO_ROOT}/scripts/validate-command-adapters.sh"
@@ -124,9 +129,7 @@ fi
 echo "== F. Nested harnesses =="
 for t in \
   test-scripts-lib.sh \
-  test-resolve-agent-context.sh \
-  test-archive-work.sh \
-  test-sdlc-pointer.sh; do
+  test-resolve-agent-context.sh; do
   if "${REPO_ROOT}/tests/${t}" >/dev/null; then
     ok "nested ${t}"
   else
