@@ -4,14 +4,8 @@ set -euo pipefail
 # Leftover #6 proving test: I1 capture/complete without a verify receipt refuse.
 # LessonRecord title/body (or --validation prose) is not a receipt.
 
-export SDLC_GATE_ENGINE=shell
-export SDLC_ENGINE=shell
-
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-WORKFLOW="${REPO_ROOT}/templates/agent-context/sdlc-workflow.sh"
-POINTER="${REPO_ROOT}/templates/agent-context/sdlc-pointer.sh"
-TEAM_REG="${REPO_ROOT}/templates/agent-context/sdlc-team-registry.sh"
 CAPTURE="${REPO_ROOT}/scripts/capture-session-memory.sh"
 SDLC_SH="${REPO_ROOT}/scripts/sdlc.sh"
 
@@ -31,9 +25,6 @@ setup_feature() {
     "${t}/sdlc-spdd/spdd/analysis" \
     "${t}/sdlc-spdd/spdd/memory" \
     "${t}/sdlc-spdd/scripts/lib"
-  cp "${POINTER}" "${t}/sdlc-spdd/scripts/sdlc-pointer.sh"
-  cp "${WORKFLOW}" "${t}/sdlc-spdd/scripts/sdlc-workflow.sh"
-  cp "${TEAM_REG}" "${t}/sdlc-spdd/scripts/sdlc-team-registry.sh"
   : > "${t}/sdlc-spdd/spdd/memory/registry.jsonl"
   cp "${SDLC_SH}" "${t}/sdlc-spdd/scripts/sdlc.sh"
   cp "${CAPTURE}" "${t}/sdlc-spdd/scripts/capture-session-memory.sh"
@@ -46,7 +37,10 @@ setup_feature() {
 sdlc() {
   local t="$1"
   shift
-  SDLC_ROOT="${t}" SDLC_ENGINE=shell "${t}/sdlc-spdd/scripts/sdlc.sh" "$@"
+  SDLC_ROOT="${t}" \
+    PYTHON="${REPO_ROOT}/.venv/bin/python" \
+    PYTHONPATH="${REPO_ROOT}/engine/src" \
+    "${t}/sdlc-spdd/scripts/sdlc.sh" "$@"
 }
 
 echo "== test_capture_without_verify_receipt_refuses =="
