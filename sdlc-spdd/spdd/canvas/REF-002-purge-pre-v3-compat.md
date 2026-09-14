@@ -270,7 +270,7 @@ text). `installer/rollback.py` stays because upgrade backups are v3.
 
 ### T07 - Docs describe only v3; CHANGELOG
 
-- Status: Pending
+- Status: Complete
 - Description: Remove the "legacy layouts / migrating a legacy install"
   sections from `docs/storage-v3.md`; the "Storage migration and
   consolidation" section from `docs/framework-upgrade.md`; the migration
@@ -304,9 +304,8 @@ text). `installer/rollback.py` stays because upgrade backups are v3.
 - Never truncate, filter, or delete `spdd/memory/lessons.jsonl`
   (`pattern:CHORE-003-dogfood-ledger:memory:chore-003-restore`).
 - Never hand-edit `spdd/memory/registry.jsonl`; only `sdlc.sh claim/release`.
-- Do not touch `templates/agent-context/sdlc-{workflow,team-registry,pointer}.sh`,
-  `scripts/sdlc.sh`, or `SDLC_ENGINE` handling — REF-003 owns them; REF-002
-  must not break `SDLC_ENGINE=shell` harnesses in the meantime.
+- Keep the bash workflow twin and `SDLC_ENGINE` behavior for REF-003, but its
+  executable paths are v3-only (owner direction, 2026-09-14).
 - Do not rewrite template grounding text (DOC-005) or remove
   `framework_rewrite_adapter_paths`.
 - Keep `installer/rollback.py` and `/api/rollback`.
@@ -327,6 +326,9 @@ text). `installer/rollback.py` stays because upgrade backups are v3.
   `recommendation` keys unchanged).
 - Owner decision 2026-09-14: no refusal / detection helper. A first draft of
   T02 added one; it was removed before commit. Breaking change accepted.
+- Owner follow-up 2026-09-14: finish v3-only behavior now. This supersedes the
+  earlier defer for path fallbacks in the retained bash twin; the twin remains,
+  but root-layout lookups and duplicate-canvas synchronization are deleted.
 - T06 is the only operation with a wide test diff; the measured baseline is
   72 failing tests across 22 files with strict home, so the fixture-first
   approach (conftest, then mechanical path moves) is required, not optional.
@@ -345,8 +347,8 @@ text). `installer/rollback.py` stays because upgrade backups are v3.
 - [x] T04 registry JSONL only
 - [x] T05 detect / adf / quiet v3-only
 - [x] T06 strict home + fixture
-- [ ] T07 docs + CHANGELOG
-- [ ] Acceptance grep (refined) clean
+- [x] T07 docs + CHANGELOG
+- [x] Acceptance grep (refined) clean
 - [ ] Full suite green
 
 ## Sync Notes

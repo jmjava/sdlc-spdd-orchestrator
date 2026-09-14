@@ -302,7 +302,6 @@ for file in \
   create-work-from-milestone.sh \
   sync-roadmap-from-spdd.sh \
   summarize-session-notes.sh \
-  sync-agent-context.sh \
   detect-stack.sh \
   validate-command-adapters.sh \
   verify-agent-command-effects.sh \

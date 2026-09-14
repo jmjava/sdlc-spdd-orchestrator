@@ -86,7 +86,7 @@ def test_health_reports_playground(tmp_path: Path) -> None:
 
 def test_fake_guide_start_stop_and_ingest(tmp_path: Path) -> None:
     dest = materialize_playground(tmp_path / "play")
-    cfg = {"guide_home": str(dest / ".sdlc" / "fake-guide"), "host": "127.0.0.1", "port": 21337}
+    cfg = {"guide_home": str(dest / "sdlc-spdd" / ".sdlc" / "fake-guide"), "host": "127.0.0.1", "port": 21337}
     payload = fake_guide_payload(dest, cfg, orch=tmp_path)
     assert payload["playground"] is True
     assert payload["probe"]["tcp_open"] is True

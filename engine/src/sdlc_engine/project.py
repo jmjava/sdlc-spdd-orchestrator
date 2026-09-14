@@ -89,7 +89,7 @@ class Project:
 
     @property
     def registry_jsonl_path(self) -> Path:
-        """Committed claim/release event log (replaces the legacy TSV registry)."""
+        """Committed append-only claim/release event log."""
         return self.memory_dir / "registry.jsonl"
 
     # Kept name for compatibility with existing callers; now points at the

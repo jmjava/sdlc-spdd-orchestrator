@@ -31,6 +31,15 @@ All notable changes to this project will be documented in this file.
   `db_query.py` imports `utc_now`, the uncalled `context_linked_to_section`
   (sole user of the graph constants) is removed, and an `export_sql`
   round-trip test covers the CLI path (#308).
+- REF-002: unit, integration, E2E, and shell CI fixtures now create and inspect
+  framework state under `<root>/sdlc-spdd/`; installer configs and runtime
+  state resolve through `Project.sdlc_dir`.
+
+### Removed
+
+- REF-002: pre-v3 consolidation, layout migration, TSV registry fallback,
+  migration-only parsers and CLI verbs, duplicate-canvas synchronization, and
+  executable root-layout fallbacks. Storage v3 is the only runtime layout.
 
 ### Changed
 
@@ -47,6 +56,9 @@ All notable changes to this project will be documented in this file.
   registry event. No `spdd/*/archive/` folders and no `agent-context/sessions`
   sweep; git history is the record. Requirements and `lessons.jsonl` are
   untouched (#308).
+- REF-002: `Project.home` and the shell path helpers resolve only
+  `SDLC_HOME` or `<root>/sdlc-spdd`; ADF, local session, issue, roadmap,
+  playground, Guide, viewer, and integration runtime paths follow that home.
 - CHORE-006: `.cursor/commands`, `.claude/commands`, and `.github/prompts`
   regenerated from `templates/`; `tests/test-command-specs.sh` diffs every slug
   in all three dogfood packs (#308).

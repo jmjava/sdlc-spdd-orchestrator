@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import Any
-from unittest.mock import MagicMock
 
 import pytest
 
@@ -86,7 +85,7 @@ def test_api_adf_start_stop_restart(tmp_path: Path, monkeypatch: pytest.MonkeyPa
     assert body["ok"] is True
     assert body["result"]["ok"] is True
     assert calls and "sdlc_engine.viewer" in calls[0]
-    assert (tmp_path / ".sdlc" / "adf-viewer-runtime.json").is_file()
+    assert (tmp_path / "sdlc-spdd" / ".sdlc" / "adf-viewer-runtime.json").is_file()
 
     # Already running → 400
     again = client.post(
@@ -99,7 +98,7 @@ def test_api_adf_start_stop_restart(tmp_path: Path, monkeypatch: pytest.MonkeyPa
     stop = client.post("/api/adf/stop", json={"target": str(tmp_path)})
     assert stop.status_code == 200
     assert stop.get_json()["ok"] is True
-    assert not (tmp_path / ".sdlc" / "adf-viewer-runtime.json").is_file()
+    assert not (tmp_path / "sdlc-spdd" / ".sdlc" / "adf-viewer-runtime.json").is_file()
 
     # Restart after stop
     monkeypatch.setattr(vr, "_pid_alive", lambda pid: False)
@@ -178,9 +177,9 @@ def test_api_adf_init_work_with_claim(tmp_path: Path, monkeypatch: pytest.Monkey
     body = res.get_json()
     assert body["ok"] is True
     assert body["work_id"] == "FEAT-013-api-claim"
-    reg = (tmp_path / "spdd" / "memory" / "registry.jsonl").read_text(encoding="utf-8")
+    reg = (tmp_path / "sdlc-spdd" / "spdd" / "memory" / "registry.jsonl").read_text(encoding="utf-8")
     assert "console-claim" in reg
-    assert (tmp_path / ".sdlc" / "pointer").read_text(encoding="utf-8").strip() == (
+    assert (tmp_path / "sdlc-spdd" / ".sdlc" / "pointer").read_text(encoding="utf-8").strip() == (
         "FEAT-013-api-claim"
     )
 
@@ -188,8 +187,8 @@ def test_api_adf_init_work_with_claim(tmp_path: Path, monkeypatch: pytest.Monkey
 def test_api_adf_init_work_claim_conflict(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("SDLC_USER", "bob")
     wid = "FEAT-013-api-conflict"
-    (tmp_path / "spdd" / "memory").mkdir(parents=True, exist_ok=True)
-    (tmp_path / "spdd" / "memory" / "registry.jsonl").write_text(
+    (tmp_path / "sdlc-spdd" / "spdd" / "memory").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "sdlc-spdd" / "spdd" / "memory" / "registry.jsonl").write_text(
         json.dumps(
             {
                 "event": "claim",
@@ -214,7 +213,7 @@ def test_api_adf_init_work_claim_conflict(tmp_path: Path, monkeypatch: pytest.Mo
     )
     assert res.status_code == 400
     assert "alice" in res.get_json()["error"]
-    assert not (tmp_path / "spdd" / "canvas" / f"{wid}.md").exists()
+    assert not (tmp_path / "sdlc-spdd" / "spdd" / "canvas" / f"{wid}.md").exists()
 
 
 def test_api_adf_init_work_validation(tmp_path: Path) -> None:
@@ -300,7 +299,7 @@ def test_api_adf_browse_and_init_work(tmp_path: Path) -> None:
     assert body["ok"] is True
     assert body["work_id"] == "FEAT-013-console-adf-init"
     assert body["source_issue"] == "ORCH-7"
-    assert (tmp_path / "spdd" / "canvas" / "FEAT-013-console-adf-init.md").is_file()
+    assert (tmp_path / "sdlc-spdd" / "spdd" / "canvas" / "FEAT-013-console-adf-init.md").is_file()
     assert "sdlc-spdd-analysis" in body["next_command"]
     assert "work init-from-adf" in body["cli"]
 
@@ -318,7 +317,7 @@ def test_api_adf_browse_and_init_work(tmp_path: Path) -> None:
     dry_body = dry.get_json()
     assert dry_body["ok"] is True
     assert dry_body["dry_run"] is True
-    assert not (tmp_path / "spdd" / "canvas" / "FEAT-014-dry-only.md").exists()
+    assert not (tmp_path / "sdlc-spdd" / "spdd" / "canvas" / "FEAT-014-dry-only.md").exists()
 
 
 def test_console_page_includes_adf_init_ui(tmp_path: Path) -> None:

@@ -86,7 +86,7 @@ def vue_dist() -> Path:
 
 
 def _seed_work(root: Path, work_id: str, summary: str) -> None:
-    milestones = root / "requirements" / "milestones"
+    milestones = root / "sdlc-spdd" / "requirements" / "milestones"
     milestones.mkdir(parents=True, exist_ok=True)
     (milestones / f"{work_id}.md").write_text(
         f"## Summary\n\n{summary}\n",
@@ -95,7 +95,7 @@ def _seed_work(root: Path, work_id: str, summary: str) -> None:
 
 
 def _seed_issue_work(root: Path, work_id: str) -> None:
-    req = root / "requirements" / "milestones" / f"{work_id}.md"
+    req = root / "sdlc-spdd" / "requirements" / "milestones" / f"{work_id}.md"
     req.parent.mkdir(parents=True, exist_ok=True)
     req.write_text(
         f"""---
@@ -125,7 +125,7 @@ Local description
 """,
         encoding="utf-8",
     )
-    canvas = root / "spdd" / "canvas" / f"{work_id}.md"
+    canvas = root / "sdlc-spdd" / "spdd" / "canvas" / f"{work_id}.md"
     canvas.parent.mkdir(parents=True, exist_ok=True)
     canvas.write_text(
         f"""# REASONS Canvas: {work_id} - Demo
@@ -139,8 +139,8 @@ Local description
 """,
         encoding="utf-8",
     )
-    (root / "spdd" / "memory").mkdir(parents=True, exist_ok=True)
-    reg = root / "spdd" / "memory" / "registry.jsonl"
+    (root / "sdlc-spdd" / "spdd" / "memory").mkdir(parents=True, exist_ok=True)
+    reg = root / "sdlc-spdd" / "spdd" / "memory" / "registry.jsonl"
     if not reg.is_file():
         reg.write_text("", encoding="utf-8")
 
@@ -162,7 +162,7 @@ def live_vue_console(tmp_path: Path, vue_dist: Path, monkeypatch: pytest.MonkeyP
 
     def _save(target: Path | str, host: str, port: int) -> None:
         root = Path(target).expanduser().resolve()
-        (root / ".sdlc").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-spdd" / ".sdlc").mkdir(parents=True, exist_ok=True)
         vr._save_runtime(
             root,
             {

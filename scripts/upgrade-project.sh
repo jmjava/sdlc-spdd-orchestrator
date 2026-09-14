@@ -14,7 +14,7 @@ Upgrade SDLC-SPDD framework files in a target project that was initialized by
 an earlier version of this scaffold.
 
 Storage v3: all framework assets live under one folder — <target>/sdlc-spdd/
-(the home). It is the only supported layout; pre-v3 layouts are not read,
+(the home). It is the only supported layout; no alternate layout is read,
 migrated, or archived.
 
 The upgrade is framework-only and idempotent:
@@ -421,7 +421,7 @@ copy_framework_file \
   "${HOME_DIR}/docs/README.md"
 
 if [[ "${UPGRADE_CURSOR}" -eq 1 && "${UPGRADE_COPILOT}" -eq 1 ]]; then
-  # Framework-owned CI: refresh stale pre-v3 workflows (sdlc-spdd-* only,
+  # Framework-owned CI: refresh stale framework workflows (sdlc-spdd-* only,
   # ./ execute bit) so claim/next/Claude/rules are watched.
   copy_framework_file \
     "${REPO_ROOT}/templates/project-github-workflows/validate-sdlc-spdd-adapters.yml" \
@@ -459,7 +459,6 @@ for file in \
   create-work-from-milestone.sh \
   sync-roadmap-from-spdd.sh \
   summarize-session-notes.sh \
-  sync-agent-context.sh \
   detect-stack.sh \
   validate-command-adapters.sh \
   verify-agent-command-effects.sh \

@@ -107,7 +107,7 @@ def test_guide_runtime_start_stop_guide(
     started = gr.start_guide(tmp_path, cfg, ingest=False, ensure_neo4j=True)
     assert started["ok"] is True
     assert started["pid"] == 5555
-    assert (tmp_path / ".sdlc" / "guide-runtime.json").is_file()
+    assert (tmp_path / "sdlc-spdd" / ".sdlc" / "guide-runtime.json").is_file()
 
     again = gr.start_guide(tmp_path, cfg, ingest=False, ensure_neo4j=False)
     assert again["ok"] is False
@@ -361,8 +361,8 @@ def test_viewer_runtime_probe_http_and_kill_paths(
     assert probe["http_ok"] is True
 
     # Corrupt runtime file
-    rt = tmp_path / ".sdlc"
-    rt.mkdir()
+    rt = tmp_path / "sdlc-spdd" / ".sdlc"
+    rt.mkdir(parents=True)
     (rt / "adf-viewer-runtime.json").write_text("{not-json", encoding="utf-8")
     assert vr._load_runtime(tmp_path) == {}
 
@@ -462,8 +462,8 @@ def test_viewer_runtime_probe_http_and_kill_paths(
     assert failed_neo["ok"] is False
 
     # stop_guide killpg/kill branches
-    (tmp_path / ".sdlc").mkdir(exist_ok=True)
-    (tmp_path / ".sdlc" / "guide-runtime.json").write_text(
+    (tmp_path / "sdlc-spdd" / ".sdlc").mkdir(exist_ok=True)
+    (tmp_path / "sdlc-spdd" / ".sdlc" / "guide-runtime.json").write_text(
         json.dumps({"pid": 7777, "port": 21339}), encoding="utf-8"
     )
     state = {"n": 0}

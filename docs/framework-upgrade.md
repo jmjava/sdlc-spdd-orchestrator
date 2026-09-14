@@ -53,14 +53,11 @@ managed grounding block inside `CLAUDE.md`:
     ...
     <!-- END SDLC-SPDD MANAGED CLAUDE GROUNDING -->
 
-## Storage v3 is the only layout
+## Storage v3 layout
 
-The upgrade assumes the target already uses storage v3: one `sdlc-spdd/` home,
-`spdd/memory/lessons.jsonl` + `spdd/memory/registry.jsonl` committed, runtime
-gitignored under `sdlc-spdd/.sdlc/`. Pre-v3 layouts (root-level framework
-folders, `agent-context/` trees, `work-registry.tsv`) are not detected,
-migrated, or consolidated; there is no `storage migrate` verb. Move such
-content by hand or re-init. Full model: [Storage v3](storage-v3.md).
+Upgrade operates on one `sdlc-spdd/` home. The lessons and registry JSONL files
+are committed under `spdd/memory/`; runtime stays gitignored under `.sdlc/`.
+Full model: [Storage v3](storage-v3.md).
 
 Verify parity after upgrading:
 
@@ -75,8 +72,7 @@ Run from the SDLC-SPDD orchestrator repository:
 
     ./scripts/upgrade-project.sh --target /path/to/app --all
 
-For backward compatibility, omitting assistant flags upgrades Cursor and GitHub
-Copilot only. Use `--all` or `--claude` when you want Claude Code files.
+By default, omitting assistant flags upgrades Cursor and GitHub Copilot only. Use `--all` or `--claude` when you want Claude Code files.
 
 Upgrade only Cursor prompts:
 

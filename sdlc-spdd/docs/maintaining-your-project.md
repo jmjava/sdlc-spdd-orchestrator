@@ -31,8 +31,7 @@ From the orchestrator repository:
     ./scripts/upgrade-project.sh --target /path/to/app --all
 
 The upgrade preserves application work, requirements, canvases, and the committed
-lessons ledger. Pre-v3 layouts are not migrated — see
-[Framework upgrade](framework-upgrade.md).
+lessons ledger. See [Framework upgrade](framework-upgrade.md).
 
 Review backups under:
 

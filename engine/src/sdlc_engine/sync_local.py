@@ -25,6 +25,15 @@ START_MARKER = "<!-- SDLC-SPDD-ROADMAP-SUMMARY:START -->"
 END_MARKER = "<!-- SDLC-SPDD-ROADMAP-SUMMARY:END -->"
 
 
+def _roadmap_path(project: Project, raw: str) -> Path:
+    if not raw:
+        return project.roadmap_path
+    path = Path(raw)
+    if path.is_absolute():
+        return path
+    return project.root / path
+
+
 @dataclass
 class DriftFinding:
     work_id: str
@@ -39,9 +48,7 @@ class LocalSyncService:
         self.registry = registry or TeamRegistry(self.project)
 
     def sync_roadmap(self, *, roadmap: str = "", dry_run: bool = False) -> str:
-        roadmap_path = Path(roadmap) if roadmap else self.project.roadmap_path
-        if not roadmap_path.is_absolute():
-            roadmap_path = self.project.root / roadmap_path
+        roadmap_path = _roadmap_path(self.project, roadmap)
         canvas_dir = self.project.spdd_dir / "canvas"
         rows: list[str] = []
         files = sorted(canvas_dir.glob("*.md")) if canvas_dir.is_dir() else []

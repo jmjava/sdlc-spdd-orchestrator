@@ -303,9 +303,6 @@ your-app/
   adf/                       Optional checked-in ADF JSON
 ```
 
-Pre-v3 layouts (framework folders at the repo root, `agent-context/` trees,
-`work-registry.tsv`) are unsupported: nothing detects, migrates, or consolidates
-them.
 
 | Path (this repo) | Purpose |
 | ---------------- | ------- |

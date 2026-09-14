@@ -40,7 +40,7 @@ def test_persistence_status_and_save(tmp_path: Path) -> None:
     assert saved["notes"] == "installer-api"
     assert saved.get("config_path")
     assert saved.get("saved") is True
-    assert (tmp_path / ".sdlc" / "persistence-config.json").is_file()
+    assert (tmp_path / "sdlc-spdd" / ".sdlc" / "persistence-config.json").is_file()
 
     # Second save from the returned shape must not silently drop backends.
     res = client.post(
@@ -126,7 +126,7 @@ def test_persistence_parity_endpoint(tmp_path: Path) -> None:
     # Corrupt the cache to force drift (a missing db would just be rebuilt).
     import sqlite3
 
-    with sqlite3.connect(tmp_path / ".sdlc" / "index.sqlite") as conn:
+    with sqlite3.connect(tmp_path / "sdlc-spdd" / ".sdlc" / "index.sqlite") as conn:
         conn.execute("DELETE FROM lessons")
     res = client.post("/api/persistence/parity", json={"target": str(tmp_path)})
     assert res.status_code == 200

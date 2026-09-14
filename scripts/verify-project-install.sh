@@ -10,8 +10,6 @@ storage v3 single-folder layout: every framework asset under <target>/sdlc-spdd/
 (requirements, spdd + memory ledgers, harness/skills, workflow
 scripts, docs) plus IDE adapter stubs at the target repo root.
 
-Also asserts that no legacy sprawled-layout paths remain (agent-context memory
-trees, the legacy registry TSV, root-level spdd/, scripts/sdlc-spdd/).
 
 Options:
   --target <path>       Target project path (default: .)
@@ -104,15 +102,6 @@ check_path() {
         failures=$((failures + 1))
         return 1
       fi
-      ;;
-    absent)
-      if [[ ! -e "${full}" ]]; then
-        echo "  ok  ${label}: ${path} absent"
-        return 0
-      fi
-      echo "  fail ${label}: legacy path still present: ${path}"
-      failures=$((failures + 1))
-      return 1
       ;;
     glob)
       shopt -s nullglob
@@ -222,27 +211,6 @@ else
 fi
 echo
 
-# Legacy layout names are assembled from parts so the repo-wide
-# no-legacy-reference sweep over scripts/ stays clean.
-legacy_ac="agent-context"
-legacy_wr="work-registry"
-# Install source is templates/agent-context/; root agent-context/ is always legacy.
-legacy_checks=(
-  Legacy "legacy memory tree" "${legacy_ac}/memory" absent
-  Legacy "legacy feature mirrors" "${legacy_ac}/features" absent
-  Legacy "legacy session briefs" "${legacy_ac}/sessions" absent
-  Legacy "legacy work registry" "${legacy_ac}/${legacy_wr}.tsv" absent
-  Legacy "legacy workflow manager" "${legacy_ac}/sdlc-workflow.sh" absent
-  Legacy "legacy agent-context tree" "${legacy_ac}" absent
-  Legacy "legacy runtime scripts" "scripts/sdlc-spdd" absent
-  Legacy "legacy root requirements" "requirements" absent
-  Legacy "legacy root spdd" "spdd" absent
-  Legacy "legacy root session-notes" "session-notes" absent
-  Legacy "legacy root ROADMAP" "ROADMAP.md" absent
-  Legacy "legacy root harness" "harness" absent
-  Legacy "legacy root .sdlc" ".sdlc" absent
-)
-run_part "No legacy sprawled layout" "${legacy_checks[@]}"
 
 if [[ "${REQUIRE_CURSOR}" -eq 1 && "${REQUIRE_COPILOT}" -eq 1 ]]; then
   run_part "Adapter parity workflow" \
@@ -285,7 +253,7 @@ if [[ "${failures}" -gt 0 ]]; then
   echo "Install verification failed (${failures} missing or invalid items)." >&2
   echo "Re-run init or upgrade from the orchestrator repository:" >&2
   echo "  ./scripts/setup-agent-prompts.sh --target ${TARGET} --all" >&2
-  echo "  ./scripts/upgrade-project.sh --target ${TARGET} --all   # consolidates legacy layouts" >&2
+  echo "  ./scripts/upgrade-project.sh --target ${TARGET} --all" >&2
   echo "See sdlc-spdd/docs/installing-into-your-project.md" >&2
   exit 1
 fi

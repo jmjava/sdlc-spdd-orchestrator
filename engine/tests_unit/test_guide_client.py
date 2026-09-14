@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 from unittest.mock import MagicMock, patch
 
-import pytest
 
 from sdlc_engine.guide_client import GuideClient, SPDD_MCP_TOOLS
 

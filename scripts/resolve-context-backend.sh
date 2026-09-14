@@ -166,7 +166,7 @@ for b in "${backends[@]}"; do
 done
 
 # Probe Guide only when the active backend set asks for it, or (defaults only)
-# when the legacy harness marker opts in.
+# when the harness marker opts in.
 should_probe=0
 if [[ "${want_guide}" -eq 1 ]]; then
   should_probe=1

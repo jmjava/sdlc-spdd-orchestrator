@@ -13,7 +13,7 @@ quietly and accepted at gates.**
 - **One home.** Framework-owned paths live under `<repo>/sdlc-spdd/`. Contracts,
   harness, scripts, and ledgers share one install layout (this orchestrator
   dogfoods the same layout). Install *source* lives under `templates/`; root
-  `scripts/` is orchestrator tooling only. Leftover `agent-context/` is archived.
+  `scripts/` is orchestrator tooling only.
 - **Ledger-first.** One committed JSONL lessons file is the system of record;
   the work registry is a separate append-only event log. Neither is hand-edited.
 - **Stage-then-accept.** Captures land in gitignored `.sdlc/staged/`; accept at
@@ -27,9 +27,6 @@ quietly and accepted at gates.**
 - **Projections are regenerable.** SQLite cache and Guide are pure projections
   of the ledger — one write path, parity by construction.
 
-Storage v3 is the only supported layout; there is no migration path from
-older scattered memory trees ([details](#pre-v3-installs)).
-
 ## The model at a glance
 
 | Store | Path | Git? | Role |
@@ -42,10 +39,8 @@ older scattered memory trees ([details](#pre-v3-installs)).
 | SQLite cache | `.sdlc/index.sqlite` | No (projection) | Opt-in local query cache, schema v5 |
 
 Everything the framework owns lives in a single folder, `<repo>/sdlc-spdd/`
-(the *home*; `SDLC_HOME` overrides). Older sprawled root layouts still resolve
-read-only until `upgrade-project.sh` consolidates them (leftovers are archived
-under `sdlc-spdd/.sdlc/legacy-layout-archive/`). See the
-[install layout diagram](diagrams/09-install-layout.svg) and
+(the *home*; `SDLC_HOME` overrides). See the [install layout diagram]
+(diagrams/09-install-layout.svg) and
 [installing into your project](installing-into-your-project.md).
 
 ## Guide DICE is the working store
@@ -204,14 +199,6 @@ Archive removes **contracts** (canvas, analysis, review, sync, matching session 
 Archive **never truncates**, filters, or deletes `spdd/memory/lessons.jsonl`. Decision, pitfall, pattern, session, and analysis records are the dogfood memory that survives Complete work leaving the working tree. The work registry stays append-only (an `archived` event is added).
 
 Policy: `sdlc-spdd/docs/research/dogfood-ledger-policy.md`.
-
-## Pre-v3 installs
-
-The engine and scripts read only the v3 layout. Root-level framework folders,
-`agent-context/` trees, markdown context indexes, and `work-registry.tsv` are
-not detected, migrated, or consolidated. Move any content you still need into
-`sdlc-spdd/` by hand (or re-init), then run `sdlc-engine context parity --repair`
-to rebuild projections. See [framework upgrade](framework-upgrade.md).
 
 ## Related
 

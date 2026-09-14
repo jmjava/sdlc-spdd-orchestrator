@@ -6,7 +6,6 @@ import json
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
 
 from sdlc_engine.cli import main
 from sdlc_engine.context_store import ContextStore

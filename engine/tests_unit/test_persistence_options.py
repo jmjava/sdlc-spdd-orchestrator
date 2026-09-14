@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pytest
 
 from sdlc_engine.cli import main
 from sdlc_engine.context_store import ContextStore

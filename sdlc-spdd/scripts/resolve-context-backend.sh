@@ -16,6 +16,10 @@
 #   resolve-context-backend.sh --project [--target <path>] [--work-id <id>]
 set -euo pipefail
 
+_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=/dev/null
+source "${_SCRIPT_DIR}/lib/paths.sh"
+
 TARGET="."
 MODE="probe"
 WORK_ID=""
@@ -46,9 +50,10 @@ while [[ $# -gt 0 ]]; do
 done
 
 TARGET="$(cd "${TARGET}" && pwd)"
-MARKER="${TARGET}/agent-context/harness/guide-dice.md"
-SQLITE="${TARGET}/.sdlc/index.sqlite"
-PERSIST_CFG="${TARGET}/.sdlc/persistence-config.json"
+SDLC_RUNTIME_DIR="$(sdlc_runtime_dir "${TARGET}")"
+MARKER="$(sdlc_harness_dir "${TARGET}")/guide-dice.md"
+SQLITE="${SDLC_RUNTIME_DIR}/index.sqlite"
+PERSIST_CFG="${SDLC_RUNTIME_DIR}/persistence-config.json"
 
 backends=("git-pointers")
 explicit_source=0
@@ -135,7 +140,7 @@ PY
   )
 else
   # Default probe: git always; sqlite when index/.sdlc exists; guide via marker+live
-  if [[ -f "${SQLITE}" || -d "${TARGET}/.sdlc" ]]; then
+  if [[ -f "${SQLITE}" || -d "${SDLC_RUNTIME_DIR}" ]]; then
     backends+=("sqlite")
   fi
 fi
@@ -161,7 +166,7 @@ for b in "${backends[@]}"; do
 done
 
 # Probe Guide only when the active backend set asks for it, or (defaults only)
-# when the legacy harness marker opts in.
+# when the harness marker opts in.
 should_probe=0
 if [[ "${want_guide}" -eq 1 ]]; then
   should_probe=1

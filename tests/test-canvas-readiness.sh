@@ -170,7 +170,7 @@ T="${WORK}/cap"; mkdir -p "${T}"
 "${CAPTURE}" --target "${T}" --work-id FEAT-005-cycles --phase review \
   --summary "cycle metrics" --areas "scripts/validate-reasons-canvas.sh" \
   --validate-cycles 2 --review-cycles 1 >/dev/null
-stage="${T}/.sdlc/staged/lessons.jsonl"
+stage="${T}/sdlc-spdd/.sdlc/staged/lessons.jsonl"
 if [[ -f "${stage}" ]] \
   && grep -q '"work_id": "FEAT-005-cycles"' "${stage}" \
   && grep -q '"kind": "session"' "${stage}" \

@@ -32,13 +32,13 @@ def test_detect_fresh_directory(tmp_path: Path) -> None:
 
 
 def test_detect_upgrade_markers(tmp_path: Path) -> None:
-    marker = tmp_path / "scripts" / "sdlc-spdd" / "sdlc.sh"
+    marker = tmp_path / "sdlc-spdd" / "scripts" / "sdlc.sh"
     marker.parent.mkdir(parents=True)
     marker.write_text("#!/bin/bash\n", encoding="utf-8")
     info = detect_target(tmp_path)
     assert info["mode"] == "upgrade"
     assert info["recommendation"] == "upgrade"
-    assert "scripts/sdlc-spdd/sdlc.sh" in info["markers"]
+    assert "sdlc-spdd/scripts/sdlc.sh" in info["markers"]
 
 
 def test_detect_missing(tmp_path: Path) -> None:
@@ -186,7 +186,7 @@ def test_guide_config_roundtrip(tmp_path: Path) -> None:
     )
     assert saved["profile"] == "menke-2"
     assert saved["neo4j_bolt_port"] == 17687
-    assert (tmp_path / ".sdlc" / "guide-config.json").is_file()
+    assert (tmp_path / "sdlc-spdd" / ".sdlc" / "guide-config.json").is_file()
     items = checklist(saved, {"tcp_open": False}, neo4j={"bolt_open": False})
     assert any(i["id"] == "tcp" and i["ok"] is False for i in items)
     assert any(i["id"] == "neo4j" and i["ok"] is False for i in items)

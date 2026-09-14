@@ -139,9 +139,8 @@ If the project already has SDLC-SPDD files from an older version:
     ./scripts/upgrade-project.sh --target /path/to/app --all
 
 The upgrade script updates framework-owned files and preserves application source,
-requirements, canvases, reviews, sync logs, and the lessons ledger. It expects the
-storage v3 layout (`sdlc-spdd/` home) and does not migrate or consolidate pre-v3
-trees — see [Framework upgrade](framework-upgrade.md).
+requirements, canvases, reviews, sync logs, and the lessons ledger. It updates the
+storage v3 home at `sdlc-spdd/`; see [Framework upgrade](framework-upgrade.md).
 
 Backups of overwritten framework files are stored under:
 

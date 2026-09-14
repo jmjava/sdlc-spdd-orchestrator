@@ -91,14 +91,14 @@ def _lesson(kind: str, work_id: str, ts: str, title: str, source: str = "retro")
 def _seed_project(root: Path) -> None:
     """Populated project: accepted + staged records, registry events, workflow history."""
     _write_jsonl(
-        root / "spdd" / "memory" / "lessons.jsonl",
+        root / "sdlc-spdd" / "spdd" / "memory" / "lessons.jsonl",
         [
             _lesson("decision", OLD_WID, "2026-08-01T10:00:00Z", "Old decision"),
             _lesson("pitfall", OLD_WID, "2026-08-03T10:00:00Z", "Old pitfall"),
         ],
     )
     _write_jsonl(
-        root / "spdd" / "memory" / "registry.jsonl",
+        root / "sdlc-spdd" / "spdd" / "memory" / "registry.jsonl",
         [
             {
                 "event": "claim",
@@ -123,23 +123,23 @@ def _seed_project(root: Path) -> None:
         ],
     )
     _write_jsonl(
-        root / ".sdlc" / "staged" / "lessons.jsonl",
+        root / "sdlc-spdd" / ".sdlc" / "staged" / "lessons.jsonl",
         [_lesson("session", WID, "2026-08-05T10:00:00Z", "Working session", source="capture")],
     )
-    workflows = root / ".sdlc" / "workflows"
+    workflows = root / "sdlc-spdd" / ".sdlc" / "workflows"
     workflows.mkdir(parents=True, exist_ok=True)
     (workflows / f"{WID}.history").write_text(
         "2026-08-02T09:00:00Z\tcreate\twork_id=" + WID + "\n"
         "2026-08-06T10:00:00Z\tadvance\tphase=plan\n",
         encoding="utf-8",
     )
-    (root / ".sdlc" / "pointer").write_text(WID, encoding="utf-8")
-    milestone = root / "requirements" / "milestones" / f"{WID}.md"
+    (root / "sdlc-spdd" / ".sdlc" / "pointer").write_text(WID, encoding="utf-8")
+    milestone = root / "sdlc-spdd" / "requirements" / "milestones" / f"{WID}.md"
     milestone.parent.mkdir(parents=True, exist_ok=True)
     milestone.write_text(
         f"# {WID}\n\n## Jira\n\n- PROJ-1\n\n## GitHub\n\n- #12\n", encoding="utf-8"
     )
-    analysis = root / "spdd" / "analysis" / f"{WID}-analysis.md"
+    analysis = root / "sdlc-spdd" / "spdd" / "analysis" / f"{WID}-analysis.md"
     analysis.parent.mkdir(parents=True, exist_ok=True)
     analysis.write_text(f"# {WID} analysis\n", encoding="utf-8")
 

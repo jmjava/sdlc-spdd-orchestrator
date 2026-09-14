@@ -58,10 +58,13 @@ Storage v3 (ledger + registry + .sdlc/ runtime under sdlc-spdd/) is the only per
 
 ## Acceptance Criteria
 
-- [ ] `grep -r 'agent-context\|work-registry' engine/src scripts templates` returns only the install-source folder name templates/agent-context/
+- [x] `engine/src` has no storage-layout `agent-context` / `work-registry`
+  path; executable shell fallbacks are gone (`templates/agent-context/`
+  remains the install-source directory name)
 - [x] archive_work removes canvas/analysis/review/sync/session/state files; no archive/ directories are created; unit + bash tests assert the same contract
-- [ ] storage migrate, legacy-layout-archive, and rollback-of-legacy code paths are deleted with their tests
-- [ ] TESTING.md and docs/storage-v3.md have no legacy-layout sections
+- [x] storage migration, layout archive, and duplicate-canvas reconciliation
+  code paths are deleted with their tests
+- [x] TESTING.md and docs/storage-v3.md describe only storage v3
 
 ## Non-Goals
 

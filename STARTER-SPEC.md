@@ -247,7 +247,6 @@ Create the repo with this structure:
     │   ├── install-cursor-commands.sh
     │   ├── create-feature.sh
     │   ├── validate-reasons-canvas.sh
-    │   ├── sync-agent-context.sh
     │   └── detect-stack.sh
     ├── examples/
     │   ├── spring-boot-order-api/
@@ -1418,33 +1417,6 @@ Detection rules:
 Output should be written to:
 
     spdd/memory/lessons.jsonl
-
-### scripts/sync-agent-context.sh
-
-Purpose:
-
-Synchronize canonical canvas, feature workspace, progress logs, reviews, and memory.
-
-Usage:
-
-    ./scripts/sync-agent-context.sh --work-id FEAT-001-order-status-api
-
-Behavior:
-
-- Ensure feature folder exists.
-- Ensure canonical canvas exists.
-- Compare feature canvas and canonical canvas.
-- Report drift.
-- Optionally copy canonical canvas to feature folder.
-- Optionally copy feature canvas to canonical canvas.
-- Do not overwrite without explicit option.
-
-Options:
-
-    --from-canvas
-    --from-feature
-    --dry-run
-    --force
 
 ## GitHub Project Setup
 
