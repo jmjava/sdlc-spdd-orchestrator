@@ -135,7 +135,7 @@ already means the only supported engine. `SDLC_ENGINE=shell` and any
 
 ### T02 - Make the dispatcher and retained utilities Python-only
 
-- Status: Pending
+- Status: Complete
 - Description: Remove workflow probing/fallback from both `sdlc.sh` copies;
   reject shell engine overrides; require resolved Python 3.12; route
   start/capture/complete/accept through Python or its shell bridge; stop
@@ -241,8 +241,8 @@ already means the only supported engine. `SDLC_ENGINE=shell` and any
 ## Review Checklist
 
 - [x] T01 bridge is covered for source and installed targets
-- [ ] T02 dispatcher has one mandatory engine
-- [ ] T02 retained utilities have no twin dependency
+- [x] T02 dispatcher has one mandatory engine
+- [x] T02 retained utilities have no twin dependency
 - [ ] T03 twin files are absent from source and installs
 - [ ] T03 shipped LOC reduction is at least 3,000
 - [ ] T04 current shell/pytest matrix is green
