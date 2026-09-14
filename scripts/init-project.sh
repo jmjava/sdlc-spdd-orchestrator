@@ -239,8 +239,6 @@ copy_if_missing \
   "${REPO_ROOT}/templates/agent-context/harness/validation-rules.md" \
   "${HOME_DIR}/harness/validation-rules.md"
 
-migrate_playbooks_extensions_to_skills "${TARGET}" "${DRY_RUN}"
-
 # Optional Guide DICE backend opt-in. The marker only enables runtime probing
 # (resolve-context-backend.sh); commands still fall back to file-based context
 # whenever Guide is unreachable.
@@ -271,24 +269,6 @@ if [[ "${INSTALL_CURSOR}" -eq 1 && "${INSTALL_COPILOT}" -eq 1 ]]; then
     "${TARGET}/.github/workflows/validate-sdlc-spdd-adapters.yml"
 fi
 
-# Workflow CLI: sdlc.sh + pointer/workflow/team-registry managers live together
-# under <home>/scripts/.
-for file in \
-  sdlc-pointer.sh \
-  sdlc-workflow.sh \
-  sdlc-team-registry.sh; do
-  copy_if_missing \
-    "${REPO_ROOT}/templates/agent-context/${file}" \
-    "${HOME_DIR}/scripts/${file}"
-  if [[ "${DRY_RUN}" -eq 0 && -f "${HOME_DIR}/scripts/${file}" ]]; then
-    chmod +x "${HOME_DIR}/scripts/${file}"
-  fi
-done
-
-copy_if_missing \
-  "${REPO_ROOT}/templates/agent-context/hooks/notify-team-registry.example.sh" \
-  "${HOME_DIR}/scripts/hooks/notify-team-registry.example.sh"
-
 # Kasana I3 — optional verify sample. Never install as .git/hooks/pre-commit.
 copy_if_missing \
   "${REPO_ROOT}/templates/agent-context/hooks/pre-commit.sample" \
@@ -299,7 +279,6 @@ for file in \
   start-agent-session.sh \
   resync-agent-session.sh \
   capture-session-memory.sh \
-  accept-lessons.sh \
   index-spdd-analysis.sh \
   resolve-agent-context.sh \
   resolve-context-backend.sh \

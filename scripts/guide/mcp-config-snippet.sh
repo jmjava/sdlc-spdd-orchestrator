@@ -34,7 +34,7 @@ cat <<EOF
 #
 # CLI fallback (same data, no MCP in IDE):
 #   ./scripts/guide/query-guide.sh --work-id <WORK-ID>
-#   SDLC_ENGINE=python ./scripts/sdlc.sh context guide-query --work-id <WORK-ID> --text
+#   ./scripts/sdlc.sh context guide-query --work-id <WORK-ID> --text
 EOF
 
 if [[ "${MODE}" == "cursor" ]]; then

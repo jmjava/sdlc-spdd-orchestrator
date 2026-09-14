@@ -127,8 +127,7 @@ for t in \
   test-resolve-agent-context.sh \
   test-archive-work.sh \
   test-sdlc-pointer.sh \
-  test-framework-install-consolidate.sh \
-  test-upgrade-consolidate.sh; do
+  test-upgrade-layout.sh; do
   if "${REPO_ROOT}/tests/${t}" >/dev/null; then
     ok "nested ${t}"
   else
