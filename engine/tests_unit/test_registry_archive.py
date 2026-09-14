@@ -12,9 +12,6 @@ def _seed(root: Path, work_id: str, status: str) -> None:
         f"# {work_id}\n\n## Final Status\n\n- Status: {status}\n",
         encoding="utf-8",
     )
-    feat = root / "agent-context" / "features" / work_id
-    feat.mkdir(parents=True, exist_ok=True)
-    (feat / "requirement.md").write_text("# req\n", encoding="utf-8")
     (root / "requirements" / "milestones").mkdir(parents=True, exist_ok=True)
     (root / "requirements" / "milestones" / f"{work_id}.md").write_text("# m\n", encoding="utf-8")
     (root / "spdd" / "analysis").mkdir(parents=True, exist_ok=True)
@@ -35,7 +32,8 @@ def test_claim_and_list_work(tmp_path: Path, monkeypatch) -> None:
     assert "tester" in team
 
 
-def test_archive_complete_keeps_milestone(tmp_path: Path, monkeypatch) -> None:
+def test_archive_complete_removes_contracts_keeps_requirement(tmp_path: Path, monkeypatch) -> None:
+    """Storage v3 (REF-002): archive deletes contract artifacts; git history is the record."""
     monkeypatch.setenv("SDLC_USER", "archiver")
     work_id = "FEAT-021-done"
     _seed(tmp_path, work_id, "Complete")
@@ -44,12 +42,22 @@ def test_archive_complete_keeps_milestone(tmp_path: Path, monkeypatch) -> None:
     svc = ArchiveService(Project(tmp_path), reg)
     svc.archive_work(work_id)
     assert not (tmp_path / "spdd" / "canvas" / f"{work_id}.md").exists()
-    assert (tmp_path / "spdd" / "canvas" / "archive" / f"{work_id}.md").is_file()
-    # Feature mirrors are legacy; archive no longer moves them (storage v3).
-    assert (tmp_path / "agent-context" / "features" / work_id).is_dir()
+    assert not (tmp_path / "spdd" / "analysis" / f"{work_id}-analysis.md").exists()
+    assert not (tmp_path / "spdd" / "canvas" / "archive").exists()
+    assert not (tmp_path / "spdd" / "analysis" / "archive").exists()
     assert (tmp_path / "requirements" / "milestones" / f"{work_id}.md").is_file()
     rows = {r.work_id: r for r in reg.rows()}
     assert rows[work_id].status == "archived"
+
+
+def test_archive_dry_run_removes_nothing(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setenv("SDLC_USER", "archiver")
+    work_id = "FEAT-025-dry"
+    _seed(tmp_path, work_id, "Complete")
+    svc = ArchiveService(Project(tmp_path))
+    svc.archive_work(work_id, dry_run=True)
+    assert (tmp_path / "spdd" / "canvas" / f"{work_id}.md").is_file()
+    assert (tmp_path / "spdd" / "analysis" / f"{work_id}-analysis.md").is_file()
 
 
 def test_archive_does_not_touch_lessons_ledger(tmp_path: Path, monkeypatch) -> None:
@@ -74,7 +82,7 @@ def test_archive_does_not_touch_lessons_ledger(tmp_path: Path, monkeypatch) -> N
     assert ledger.read_text(encoding="utf-8") == before
 
 
-def test_archive_v3_home_moves_canvas_under_sdlc_spdd(tmp_path: Path, monkeypatch) -> None:
+def test_archive_v3_home_removes_canvas_under_sdlc_spdd(tmp_path: Path, monkeypatch) -> None:
     """Default auto (REF-001) routes archive to Python; storage v3 lives under sdlc-spdd/."""
     monkeypatch.setenv("SDLC_USER", "archiver")
     work_id = "FEAT-002-done-live"
@@ -93,7 +101,7 @@ def test_archive_v3_home_moves_canvas_under_sdlc_spdd(tmp_path: Path, monkeypatc
     svc = ArchiveService(proj)
     svc.archive_work(work_id)
     assert not canvas.exists()
-    assert (home / "spdd" / "canvas" / "archive" / f"{work_id}.md").is_file()
+    assert not (home / "spdd" / "canvas" / "archive").exists()
     assert (req / f"{work_id}.md").is_file()
 
 

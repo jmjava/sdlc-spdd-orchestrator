@@ -559,6 +559,6 @@ def run_viewer(
     root_p = Path(root).expanduser().resolve()
     print(f"Start directory: {root_p}")
     print(f"Default ADF folder: {root_p / 'adf'}")
-    print(f"Browse: any local path (local-only tool)")
+    print("Browse: any local path (local-only tool)")
     print(f"Open: http://{host}:{port}/")
     app.run(host=host, port=port, debug=debug)

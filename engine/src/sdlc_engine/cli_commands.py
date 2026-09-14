@@ -795,7 +795,7 @@ def cmd_quick(args: argparse.Namespace) -> int:
     session = svc.start(intent=intent, title=intent)
     print(f"Started local session {session.id}")
     print(f"Pointer set. Artifacts: .sdlc/local-sessions/{session.id}/")
-    print(f"Brief: .sdlc/current-local-session.md")
+    print("Brief: .sdlc/current-local-session.md")
     print("This work stays offline until: ./scripts/sdlc.sh local promote --type feature --name \"...\"")
     return 0
 

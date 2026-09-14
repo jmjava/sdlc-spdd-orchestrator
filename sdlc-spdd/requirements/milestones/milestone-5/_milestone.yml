@@ -1,0 +1,7 @@
+name: "Milestone 5 — Make it fast"
+number: 5
+start_date: ""
+end_date: ""
+status: "planned"
+related_epics: []
+notes: "Outline only. Act on FEAT-004/005/015 metrics, context-budget telemetry, Vue3 parity, SPIKE-001/002 go/no-go. Opens after Milestone 3 P0/P1 and Milestone 4 P0."

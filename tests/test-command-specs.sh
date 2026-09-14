@@ -227,8 +227,31 @@ assert_dogfood_matches_rewritten_template() {
   rm -f "${expected}"
 }
 
-assert_dogfood_matches_rewritten_template sdlc-spdd-code
-assert_dogfood_matches_rewritten_template sdlc-spdd-review
+# CHORE-006: every dogfood pack must equal its path-rewritten template. Content lag
+# (missing I1/DIF steps) is a failure, not a warning.
+assert_dogfood_pack_matches() {
+  local tdir="$1" ddir="$2" ext="$3" f b expected
+  for f in "${REPO_ROOT}/${tdir}"/*"${ext}"; do
+    b="$(basename "${f}")"
+    if [[ ! -f "${REPO_ROOT}/${ddir}/${b}" ]]; then
+      bad "dogfood ${ddir}/${b} missing (template exists)"
+      continue
+    fi
+    expected="$(mktemp)"
+    cp "${f}" "${expected}"
+    framework_rewrite_adapter_paths "${expected}"
+    if diff -q "${expected}" "${REPO_ROOT}/${ddir}/${b}" >/dev/null 2>&1; then
+      ok "dogfood ${ddir}/${b} matches rewritten template"
+    else
+      bad "dogfood ${ddir}/${b} drifted from ${tdir}/${b} beyond rewrite allowlist"
+      diff -u "${expected}" "${REPO_ROOT}/${ddir}/${b}" | head -20 >&2 || true
+    fi
+    rm -f "${expected}"
+  done
+}
+assert_dogfood_pack_matches templates/cursor .cursor/commands .md
+assert_dogfood_pack_matches templates/claude/commands .claude/commands .md
+assert_dogfood_pack_matches templates/copilot/prompts .github/prompts .prompt.md
 assert_contains "${REPO_ROOT}/.cursor/commands/sdlc-spdd-code.md" "Optional DIF check" \
   "dogfood code has Optional DIF"
 assert_contains "${REPO_ROOT}/.cursor/commands/sdlc-spdd-review.md" "Optional DIF check" \
@@ -322,10 +345,11 @@ expect_pass "validate-command-adapters clean" "${VALIDATE}"
 
 # ---------------------------------------------------------------------------
 echo "== Validator catches stripped semantic contracts =="
+# restore_victim reads bak/victim at call time; defined once for all blocks below.
+restore_victim() { cp "${bak}" "${victim}"; rm -f "${bak}"; }
 victim="${REPO_ROOT}/templates/cursor/sdlc-spdd-whereami.md"
 bak="$(mktemp)"
 cp "${victim}" "${bak}"
-restore_victim() { cp "${bak}" "${victim}"; rm -f "${bak}"; }
 trap 'restore_victim' EXIT
 # Remove the jira-ask step while keeping file otherwise valid enough to parse.
 grep -Fv -- 'Jira as `missing` or `draft`' "${bak}" > "${victim}"
@@ -337,7 +361,6 @@ expect_pass "validate after restore" "${VALIDATE}"
 victim="${REPO_ROOT}/templates/cursor/sdlc-spdd-code.md"
 bak="$(mktemp)"
 cp "${victim}" "${bak}"
-restore_victim() { cp "${bak}" "${victim}"; rm -f "${bak}"; }
 trap 'restore_victim' EXIT
 grep -Fv -- 'Ready For Coding' "${bak}" > "${victim}"
 expect_fail "validate fails when code readiness stripped" "${VALIDATE}"
@@ -348,7 +371,6 @@ expect_pass "validate after code restore" "${VALIDATE}"
 victim="${REPO_ROOT}/templates/cursor/sdlc-spdd-code.md"
 bak="$(mktemp)"
 cp "${victim}" "${bak}"
-restore_victim() { cp "${bak}" "${victim}"; rm -f "${bak}"; }
 trap 'restore_victim' EXIT
 grep -Fv -- 'git diff --name-only' "${bak}" > "${victim}"
 expect_fail "validate fails when code Files: allowlist stripped" "${VALIDATE}"
@@ -359,7 +381,6 @@ expect_pass "validate after code I1 restore" "${VALIDATE}"
 victim="${REPO_ROOT}/templates/cursor/sdlc-spdd-review.md"
 bak="$(mktemp)"
 cp "${victim}" "${bak}"
-restore_victim() { cp "${bak}" "${victim}"; rm -f "${bak}"; }
 trap 'restore_victim' EXIT
 grep -Fv -- 'check-operation-diff-scope.sh' "${bak}" > "${victim}"
 expect_fail "validate fails when review Files: diff-scope check stripped" "${VALIDATE}"

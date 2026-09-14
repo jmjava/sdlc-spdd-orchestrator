@@ -99,8 +99,8 @@ fi
 echo "==> upgrading pip ($("$BIN/python" --version))"
 "$BIN/pip" install -U pip wheel setuptools
 
-echo "==> pip install -e '$ENGINE[$EXTRAS]'"
-"$BIN/pip" install -e "$ENGINE[$EXTRAS]"
+echo "==> pip install -e '${ENGINE}[${EXTRAS}]'"
+"$BIN/pip" install -e "${ENGINE}[${EXTRAS}]"
 
 if [[ "$EXTRAS" == *viewer-e2e* ]]; then
   echo "==> playwright install chromium (for E2E)"

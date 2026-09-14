@@ -1,0 +1,90 @@
+# Milestone 3 — One flow on storage v3
+
+## Goal
+
+There is exactly one engine (Python `sdlc-engine`), one persistence model (storage v3: committed `spdd/memory/lessons.jsonl` + `registry.jsonl`, gitignored `.sdlc/` runtime, single `sdlc-spdd/` home), and code, tests, and docs that all describe that one flow. Competing implementations (bash workflow twin, `SDLC_ENGINE=shell`), pre-v3 compatibility (legacy `agent-context/` layouts, `work-registry.tsv`, feature mirrors, `spdd/*/archive/` folders, migration shims) are removed, not maintained. Losing pre-v3 context is an accepted cost (owner decision, 2026-09-13).
+
+**Stage:** make it right. No new capability; the framework does the same job with one implementation, real quality gates, and honest test layers.
+
+Analysis that opened this milestone: `spdd/analysis/SPIKE-005-architecture-review-analysis.md`.
+
+## Outcome (definition of done)
+
+- `SDLC_ENGINE` and `SDLC_GATE_ENGINE` no longer exist; `sdlc.sh` is a thin dispatcher into the Python engine and errors clearly when it is missing.
+- `templates/agent-context/` ships no workflow/registry/pointer bash; shipped script LOC drops by ≥ 3 000.
+- No code path reads or writes pre-v3 layouts; `archive` deletes (git history is the record); no `spdd/*/archive/` directories.
+- Lint (full pyflakes), complexity (on the PR diff), and shellcheck gates run in CI and fail on regressions.
+- No function in `engine/src` exceeds CCN 15; `installer/app.py` and `cli_*` are split into units under 80 NLOC.
+- Unit suite is hermetic (no Flask, no subprocess to bash); every module has a focused test file; `TESTING.md` numbers are generated from the tree.
+- ≤ 10 GitHub workflows with one reusable setup.
+- Local web surfaces have a written threat model; `--lan` requires a token.
+
+## Scope
+
+P0 — one flow (do first, in order):
+
+- [x] SPIKE-005-architecture-review — review + this program (canvas pending)
+- [ ] BUG-001-db-query-undefined-names — live `NameError` in `db export`
+- [ ] CHORE-004-lint-and-complexity-gates-real — gates run on the real diff
+- [ ] CHORE-006-dogfood-adapters-and-quick-spec — dogfood packs regenerate from spec
+- [ ] REF-002-purge-pre-v3-compat — one data model; archive deletes; no migrations
+- [ ] REF-003-retire-bash-workflow-dual-path — one engine; no shell twin
+
+P1 — make the one flow maintainable:
+
+- [ ] REF-004-split-installer-blueprints
+- [ ] REF-005-cli-command-modules
+- [ ] REF-006-storage-records-and-atomic-appends
+- [ ] REF-007-single-guide-transport
+- [ ] REF-008-console-viewer-hardening
+- [ ] CHORE-005-ci-reusable-workflows
+- [ ] TEST-004-hermetic-unit-suite-and-fixtures
+
+P2 — finish the consolidation:
+
+- [ ] REF-009-adf-codec-and-viewer-assets
+- [ ] REF-010-pythonize-session-and-capture
+- [ ] REF-011-split-issue-sync-adapters
+
+## Linked Work
+
+| Work ID | Pri | Size | Requirement | Status | Notes |
+|---------|-----|------|-------------|--------|-------|
+| SPIKE-005-architecture-review | P0 | M | [requirement](SPIKE-005-architecture-review.md) | In Progress | Full architectural review and Milestone 3/4/5 program |
+| BUG-001-db-query-undefined-names | P0 | S | [requirement](BUG-001-db-query-undefined-names.md) | To Do | Fix undefined names in db_query.py (export_sql NameError) |
+| CHORE-004-lint-and-complexity-gates-real | P0 | M | [requirement](CHORE-004-lint-and-complexity-gates-real.md) | To Do | Lint, complexity, shellcheck gates on the real diff |
+| CHORE-006-dogfood-adapters-and-quick-spec | P0 | S | [requirement](CHORE-006-dogfood-adapters-and-quick-spec.md) | To Do | Regenerate dogfood adapters; spec for `/sdlc-spdd-quick` |
+| REF-002-purge-pre-v3-compat | P0 | L | [requirement](REF-002-purge-pre-v3-compat.md) | To Do | Purge pre-v3 persistence compatibility; one data model |
+| REF-003-retire-bash-workflow-dual-path | P0 | L | [requirement](REF-003-retire-bash-workflow-dual-path.md) | To Do | Retire the bash workflow twin; Python is the only flow |
+| REF-004-split-installer-blueprints | P1 | M | [requirement](REF-004-split-installer-blueprints.md) | To Do | Split `installer/app.py` `create_app` into blueprints |
+| REF-005-cli-command-modules | P1 | M | [requirement](REF-005-cli-command-modules.md) | To Do | One module per CLI command; result objects, not prints |
+| REF-006-storage-records-and-atomic-appends | P1 | M | [requirement](REF-006-storage-records-and-atomic-appends.md) | To Do | Typed storage records; atomic, locked JSONL appends |
+| REF-007-single-guide-transport | P1 | S | [requirement](REF-007-single-guide-transport.md) | To Do | `GuideClient` is the only Guide HTTP path |
+| REF-008-console-viewer-hardening | P1 | M | [requirement](REF-008-console-viewer-hardening.md) | To Do | Threat model and hardening for console and viewer |
+| CHORE-005-ci-reusable-workflows | P1 | M | [requirement](CHORE-005-ci-reusable-workflows.md) | To Do | 26 workflows → ~9 with a reusable setup |
+| TEST-004-hermetic-unit-suite-and-fixtures | P1 | M | [requirement](TEST-004-hermetic-unit-suite-and-fixtures.md) | To Do | Hermetic unit suite; shared installed-target fixture |
+| REF-009-adf-codec-and-viewer-assets | P2 | M | [requirement](REF-009-adf-codec-and-viewer-assets.md) | To Do | One ADF codec; viewer UI as assets or Vue tab |
+| REF-010-pythonize-session-and-capture | P2 | L | [requirement](REF-010-pythonize-session-and-capture.md) | To Do | Session, capture, resolve, create-work in Python |
+| REF-011-split-issue-sync-adapters | P2 | M | [requirement](REF-011-split-issue-sync-adapters.md) | To Do | Split `IssueSyncService` into Jira and GitHub adapters |
+
+## Iteration order
+
+1. BUG-001, CHORE-004, CHORE-006 — small, independent, test-first; they make every later PR safer.
+2. REF-002 then REF-003 — the purge first (fewer code paths to retire), then the engine twin. Each lands as a sequence of one-operation PRs; the acceptance greps are the stop rule.
+3. REF-004, REF-005, REF-006 in parallel once REF-003 is in (they no longer need shell parity).
+4. REF-007, REF-008, CHORE-005, TEST-004.
+5. P2 items.
+
+## Stop rules
+
+- A PR that adds a second implementation of anything already in Python is rejected.
+- A PR that keeps a legacy path "for safety" must name the user who needs it; otherwise the path is deleted.
+- Docs change in the same PR as the behavior they describe (`TESTING.md`, `docs/storage-v3.md`, `docs/engine-v2.md`).
+
+## SDLC-SPDD Flow
+
+For each work item: `/sdlc-spdd-analysis` on its requirement → `/sdlc-spdd-plan` → `/sdlc-spdd-architect` until Ready For Coding → one operation at a time with `/sdlc-spdd-code` → review, capture, accept, retro.
+
+## Session Updates
+
+2026-09-13 — Milestone opened from SPIKE-005. Owner decision: one engine, one persistence model; pre-v3 context may be lost. First P0 fixes started in the SPIKE-005 branch.

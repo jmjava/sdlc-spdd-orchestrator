@@ -1,0 +1,37 @@
+name: Shellcheck
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/**/*.sh'
+      - 'templates/agent-context/**/*.sh'
+      - 'tests/**/*.sh'
+      - '.cursor/install.sh'
+      - '.github/workflows/shellcheck.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/**/*.sh'
+      - 'templates/agent-context/**/*.sh'
+      - 'tests/**/*.sh'
+      - '.cursor/install.sh'
+      - '.github/workflows/shellcheck.yml'
+
+jobs:
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install shellcheck
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
+      - name: Syntax (bash -n)
+        run: |
+          set -euo pipefail
+          find scripts templates/agent-context tests .cursor -name '*.sh' -print0 \
+            | xargs -0 -n1 bash -n
+      - name: Shellcheck (errors fail; warnings reported)
+        run: |
+          set -euo pipefail
+          mapfile -d '' files < <(find scripts templates/agent-context tests .cursor -name '*.sh' -print0)
+          shellcheck -S warning -f gcc "${files[@]}" || true
+          shellcheck -S error -f gcc "${files[@]}"

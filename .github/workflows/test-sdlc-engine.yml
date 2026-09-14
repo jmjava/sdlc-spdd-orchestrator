@@ -41,10 +41,15 @@ jobs:
           python-version: '3.12'
       - name: Install engine
         run: python3 -m pip install -e './engine[dev,viewer]'
-      - name: Ruff unused imports
-        run: python3 -m ruff check --select F401,F811 engine/src scripts
+      - name: Ruff (full pyflakes + E9, mirrors engine/pyproject.toml)
+        run: python3 -m ruff check --select F,E9 engine/src scripts
       - name: Complexity proving test
         run: bash scripts/test-check-complexity.sh
+      - name: Complexity gate on this diff (CCN>10 / NLOC>80 / CCN rise)
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch --no-tags origin "${{ github.base_ref }}"
+          python3 scripts/check-complexity.py --base "origin/${{ github.base_ref }}" --paths engine/src scripts
       - name: Suite 1 — unit
         run: PYTHONPATH=engine/src pytest -q engine/tests_unit
 

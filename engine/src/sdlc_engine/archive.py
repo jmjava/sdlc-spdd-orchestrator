@@ -1,8 +1,14 @@
-"""Archive completed/cancelled Work ID artifacts."""
+"""Archive completed/cancelled Work ID artifacts.
+
+Storage v3 contract: archive *removes* the Work ID's contract artifacts from the
+working tree (canvas, analysis, review, sync, hot session briefs, workflow
+state) and appends an ``archived`` event to ``spdd/memory/registry.jsonl``.
+Git history is the audit trail; there are no ``spdd/*/archive/`` folders.
+Requirements and the lessons ledger are never touched.
+"""
 
 from __future__ import annotations
 
-import shutil
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -24,18 +30,14 @@ class ArchiveService:
         self.workflow = self.workflow or WorkflowEngine(self.project)
         self.registry = self.registry or TeamRegistry(self.project, self.workflow)
 
-    def _move(self, src: Path, dest: Path, dry_run: bool) -> bool:
-        if not src.exists():
+    def _remove(self, path: Path, dry_run: bool) -> bool:
+        if not path.exists():
             return False
         if dry_run:
-            print(f"[dry-run] would move {self.project.rel(src)} -> {self.project.rel(dest)}")
+            print(f"[dry-run] would remove {self.project.rel(path)}")
             return True
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        if dest.exists():
-            print(f"archive: destination already exists, skipping {self.project.rel(dest)}")
-            return False
-        shutil.move(str(src), str(dest))
-        print(f"Moved {self.project.rel(src)} -> {self.project.rel(dest)}")
+        path.unlink()
+        print(f"Removed {self.project.rel(path)}")
         return True
 
     def archive_work(self, work_id: str, *, dry_run: bool = False, force: bool = False) -> None:
@@ -56,48 +58,24 @@ class ArchiveService:
                 self.workflow.pointer.reset()
                 print(f"Cleared local pointer (was {work_id})")
 
-        home = self.project.home
-        moved = False
-        for src, dest in [
-            (
-                self.project.canvas_path(work_id),
-                self.project.spdd_dir / "canvas" / "archive" / f"{work_id}.md",
-            ),
-            (
-                self.project.analysis_path(work_id),
-                self.project.spdd_dir / "analysis" / "archive" / f"{work_id}-analysis.md",
-            ),
-            (
-                self.project.review_path(work_id),
-                self.project.spdd_dir / "reviews" / "archive" / f"{work_id}-review.md",
-            ),
-            (
-                self.project.sync_path(work_id),
-                self.project.spdd_dir / "sync" / "archive" / f"{work_id}-sync.md",
-            ),
-        ]:
-            moved |= self._move(src, dest, dry_run)
+        removed = False
+        for src in (
+            self.project.canvas_path(work_id),
+            self.project.analysis_path(work_id),
+            self.project.review_path(work_id),
+            self.project.sync_path(work_id),
+        ):
+            removed |= self._remove(src, dry_run)
 
-        session_dirs = [self.project.hot_session_dir(), home / "agent-context" / "sessions"]
-        if home != self.project.root:
-            session_dirs.append(self.project.root / "agent-context" / "sessions")
-        seen_sessions: set[Path] = set()
-        for sessions in session_dirs:
-            if not sessions.is_dir() or sessions in seen_sessions:
-                continue
-            seen_sessions.add(sessions)
-            for sess in sessions.iterdir():
+        sessions = self.project.hot_session_dir()
+        if sessions.is_dir():
+            for sess in sorted(sessions.iterdir()):
                 if not sess.is_file() or sess.name == "current-session.md":
                     continue
                 if work_id in sess.name:
-                    moved |= self._move(sess, sessions / "archive" / sess.name, dry_run)
+                    removed |= self._remove(sess, dry_run)
 
-        state_src = self.project.workflows_dir / f"{work_id}.state"
-        moved |= self._move(
-            state_src,
-            self.project.workflows_dir / "archive" / f"{work_id}.state",
-            dry_run,
-        )
+        removed |= self._remove(self.project.workflows_dir / f"{work_id}.state", dry_run)
 
         if dry_run:
             print(f"[dry-run] would mark {work_id} archived in registry.jsonl")
@@ -114,10 +92,10 @@ class ArchiveService:
                 note=note,
             )
         )
-        if not moved:
-            print(f"archive: {work_id} marked archived (no movable artifacts found; milestone left in place)")
+        if not removed:
+            print(f"archive: {work_id} marked archived (no artifacts found; requirement left in place)")
         else:
-            print(f"Archived {work_id} ({kind}). Commit moved paths + spdd/memory/registry.jsonl.")
+            print(f"Archived {work_id} ({kind}). Commit the removals + spdd/memory/registry.jsonl.")
         print(f"Left in place: requirements/milestones/{work_id}.md (if present).")
         print("Left in place: spdd/memory/lessons.jsonl (archive never truncates the lessons ledger).")
 

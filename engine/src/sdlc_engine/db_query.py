@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from .db_schema import SCHEMA_VERSION
+from .timeutil import utc_now as _utc_now
 
 
 _SELECT_RE = re.compile(r"^\s*select\b", re.IGNORECASE | re.DOTALL)
@@ -146,71 +147,6 @@ class IndexQueryMixin:
                 "context_entries": entries,
                 "sessions": sessions,
                 "edges": edges,
-            }
-
-    def context_linked_to_section(
-        self, *, section_kind: str, section_id: str
-    ) -> dict[str, Any]:
-        """Context parts (areas/lessons) linked to a requirement or REASONS canvas."""
-        self.ensure_schema()
-        kind = (section_kind or "").strip().lower()
-        sid = (section_id or "").strip()
-        with self.connect() as conn:
-            area_ids = [
-                r["dst_id"]
-                for r in conn.execute(
-                    "SELECT dst_id FROM edges WHERE src_kind = ? AND src_id = ? "
-                    "AND rel = ? AND dst_kind = ?",
-                    (kind, sid, REL_AREA, NODE_AREA),
-                ).fetchall()
-            ]
-            lesson_ids = [
-                r["src_id"]
-                for r in conn.execute(
-                    "SELECT src_id FROM edges WHERE src_kind = ? AND rel = ? "
-                    "AND dst_kind = ? AND dst_id = ?",
-                    (NODE_LESSON, REL_ABOUT, kind, sid),
-                ).fetchall()
-            ]
-            areas = []
-            if area_ids:
-                placeholders = ",".join("?" * len(area_ids))
-                areas = [
-                    dict(r)
-                    for r in conn.execute(
-                        f"SELECT * FROM areas WHERE id IN ({placeholders})",
-                        area_ids,
-                    ).fetchall()
-                ]
-            lessons = []
-            if lesson_ids:
-                placeholders = ",".join("?" * len(lesson_ids))
-                lessons = [
-                    dict(r)
-                    for r in conn.execute(
-                        f"SELECT * FROM lessons WHERE id IN ({placeholders}) "
-                        "ORDER BY ts DESC, id",
-                        lesson_ids,
-                    ).fetchall()
-                ]
-            reasons = []
-            if kind == NODE_REQUIREMENT:
-                reasons = [
-                    dict(r)
-                    for r in conn.execute(
-                        "SELECT c.* FROM canvases c "
-                        "JOIN edges e ON e.dst_id = c.id "
-                        "WHERE e.src_kind = ? AND e.src_id = ? AND e.rel = ? "
-                        "AND e.dst_kind = ?",
-                        (NODE_REQUIREMENT, sid, REL_REASONS, NODE_CANVAS),
-                    ).fetchall()
-                ]
-            return {
-                "section_kind": kind,
-                "section_id": sid,
-                "areas": areas,
-                "lessons": lessons,
-                "reasons_canvases": reasons,
             }
 
     LOOKUP_COLUMNS = (
