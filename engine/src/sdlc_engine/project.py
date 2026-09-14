@@ -196,4 +196,3 @@ class Project:
         self.workflows_dir.mkdir(parents=True, exist_ok=True)
         self.hot_session_dir().mkdir(parents=True, exist_ok=True)
         self.staged_ledger_path.parent.mkdir(parents=True, exist_ok=True)
-        (self.home / "spdd" / "memory" / "entries").mkdir(parents=True, exist_ok=True)
