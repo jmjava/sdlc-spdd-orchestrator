@@ -47,7 +47,7 @@ echo "== test_capture_without_verify_receipt_refuses =="
 T="${WORK}/capture-refuse"
 work_id="FEAT-020-i1-receipt"
 setup_feature "${T}"
-sdlc "${T}" resume "${work_id}" --phase code >/dev/null
+sdlc "${T}" pointer set "${work_id}" >/dev/null
 if out="$(sdlc "${T}" capture --phase code --summary "T01 complete" --validation "looked fine" 2>&1)"; then
   bad "capture without receipt should refuse: ${out}"
 else
@@ -67,7 +67,7 @@ echo "== test_complete_without_verify_receipt_refuses =="
 T="${WORK}/complete-refuse"
 work_id="FEAT-021-i1-complete"
 setup_feature "${T}"
-sdlc "${T}" resume "${work_id}" --phase code >/dev/null
+sdlc "${T}" pointer set "${work_id}" >/dev/null
 if out="$(sdlc "${T}" complete --summary "T01 complete" 2>&1)"; then
   bad "complete without receipt should refuse: ${out}"
 else
@@ -82,7 +82,7 @@ echo "== test_complete_fail_receipt_refuses =="
 T="${WORK}/complete-fail"
 work_id="FEAT-022-i1-fail"
 setup_feature "${T}"
-sdlc "${T}" resume "${work_id}" --phase code >/dev/null
+sdlc "${T}" pointer set "${work_id}" >/dev/null
 if out="$(sdlc "${T}" complete --summary "T01 complete" \
   --verify-command "pytest" --verify-exit 1 --verify-result fail 2>&1)"; then
   bad "complete with fail receipt should refuse: ${out}"
@@ -98,7 +98,7 @@ echo "== test_capture_with_receipt_stages_verify_object =="
 T="${WORK}/capture-ok"
 work_id="FEAT-023-i1-ok"
 setup_feature "${T}"
-sdlc "${T}" resume "${work_id}" --phase code >/dev/null
+sdlc "${T}" pointer set "${work_id}" >/dev/null
 if sdlc "${T}" capture --phase code --summary "T01 complete" \
   --verify-command "pytest tests/test_foo.py" \
   --verify-exit 0 \
@@ -122,7 +122,7 @@ echo "== test_complete_with_pass_receipt_succeeds =="
 T="${WORK}/complete-ok"
 work_id="FEAT-024-i1-done"
 setup_feature "${T}"
-sdlc "${T}" resume "${work_id}" --phase code >/dev/null
+sdlc "${T}" pointer set "${work_id}" >/dev/null
 if sdlc "${T}" complete --summary "T01 complete" \
   --verify-command "true" \
   --verify-exit 0 \
