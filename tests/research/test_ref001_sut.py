@@ -151,7 +151,7 @@ class WeakCanvasGateTests(unittest.TestCase):
         with redirect_stderr(StringIO()), self.assertRaises(SystemExit):
             parser.parse_args(["capture", "--summary", "ok"])
         text = SDLC_SH.read_text(encoding="utf-8")
-        self.assertIn("capture|complete|start|accept", text)
+        self.assertIn("capture|/sdlc-workflow-capture", text)
 
 
 if __name__ == "__main__":

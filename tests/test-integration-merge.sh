@@ -3,6 +3,14 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+if [[ -x "${REPO_ROOT}/.venv/bin/python" ]]; then
+  export PYTHON="${REPO_ROOT}/.venv/bin/python"
+elif command -v python3.12 >/dev/null 2>&1; then
+  export PYTHON="$(command -v python3.12)"
+else
+  export PYTHON="$(command -v python3)"
+fi
+export PYTHONPATH="${REPO_ROOT}/engine/src${PYTHONPATH:+:${PYTHONPATH}}"
 SETUP="${REPO_ROOT}/scripts/setup-agent-prompts.sh"
 UPGRADE="${REPO_ROOT}/scripts/upgrade-project.sh"
 VALIDATE="${REPO_ROOT}/scripts/validate-command-adapters.sh"

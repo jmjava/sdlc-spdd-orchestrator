@@ -77,7 +77,7 @@ if ! sdlc "${T}" skip api-test --reason "skip tests" >/dev/null; then
 else
   ok "skipped tests (api-test)"
 fi
-if out="$(sdlc "${T}" gate review --work-id "${work_id}" 2>&1)"; then
+if out="$(sdlc "${T}" gate --phase review --work-id "${work_id}" 2>&1)"; then
   bad "gate review must fail after dummy lesson + skip tests: ${out}"
 else
   if grep -q 'Validation receipt' <<< "${out}"; then
@@ -101,7 +101,7 @@ if sdlc "${T}" capture --phase code --summary "T01 complete" \
 else
   bad "code capture with receipt should succeed"
 fi
-if out="$(sdlc "${T}" gate review --work-id "${work_id}" 2>&1)"; then
+if out="$(sdlc "${T}" gate --phase review --work-id "${work_id}" 2>&1)"; then
   ok "gate review passes with Validation receipt"
 else
   bad "gate review should pass with receipt: ${out}"
