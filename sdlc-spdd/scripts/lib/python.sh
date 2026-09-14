@@ -74,3 +74,18 @@ resolve_engine_python() {
   export SDLC_PY
   return 0
 }
+
+# Run the engine against a project root: sdlc_engine_run <root> <verb> [args...]
+# Uses the orchestrator's engine source when present (dogfood), else the
+# installed package. Callers decide whether a failure is fatal.
+sdlc_engine_run() {
+  local root="$1"
+  shift
+  SDLC_ROOT="${root}" resolve_engine_python || return 1
+  if [[ -d "${root}/engine/src/sdlc_engine" ]]; then
+    PYTHONPATH="${root}/engine/src${PYTHONPATH:+:${PYTHONPATH}}" \
+      "${SDLC_PY}" -m sdlc_engine --root "${root}" "$@"
+    return $?
+  fi
+  "${SDLC_PY}" -m sdlc_engine --root "${root}" "$@"
+}
