@@ -38,8 +38,14 @@ def _require_guide() -> GuideClient:
 
 @pytest.fixture()
 def seeded_project() -> tuple[Path, str, str, str]:
-    """Seed under repo .sdlc/test-fixtures (Guide allowed-roots rejects /tmp)."""
-    root = _repo_root() / ".sdlc" / "test-fixtures" / f"guide-rt-{uuid.uuid4().hex[:8]}"
+    """Seed under the repo v3 runtime tree (Guide allowed-roots rejects /tmp)."""
+    root = (
+        _repo_root()
+        / "sdlc-spdd"
+        / ".sdlc"
+        / "test-fixtures"
+        / f"guide-rt-{uuid.uuid4().hex[:8]}"
+    )
     root.mkdir(parents=True, exist_ok=True)
     work_id = f"{WORK_PREFIX}-{uuid.uuid4().hex[:8]}"
     area = "engine-tests"
@@ -93,7 +99,7 @@ def test_guide_load_read_subgraph_and_lesson(seeded_project) -> None:
     root, work_id, lesson_id, body = seeded_project
     client = GuideClient(resolve_guide_base_url())
 
-    loaded = client.project_load(str(root))
+    loaded = client.project_load(str(Project(root).home))
     assert loaded["ok"] is True, loaded
 
     subgraph = client.work_subgraph(work_id)
@@ -122,7 +128,7 @@ def test_guide_parity_ledger_ids_in_graph(seeded_project) -> None:
     _require_guide()
     root, work_id, lesson_id, _body = seeded_project
     client = GuideClient(resolve_guide_base_url())
-    assert client.project_load(str(root))["ok"] is True
+    assert client.project_load(str(Project(root).home))["ok"] is True
 
     store = ContextStore(Project(root), guide_base_url=resolve_guide_base_url())
     parity = store.parity(repair=False)
@@ -142,7 +148,7 @@ def test_cli_guide_query_work_subgraph(seeded_project, capsys) -> None:
 
     root, work_id, _lesson_id, _body = seeded_project
     client = GuideClient(resolve_guide_base_url())
-    assert client.project_load(str(root))["ok"] is True
+    assert client.project_load(str(Project(root).home))["ok"] is True
 
     os.environ["GUIDE_BASE_URL"] = resolve_guide_base_url()
     rc = main(

@@ -339,8 +339,8 @@ def test_vue3_dashboard_configure_opens_issues(page, live_vue_console) -> None: 
 def test_vue3_dashboard_jumps_to_templates_with_work_id(page, live_vue_console) -> None:  # type: ignore[no-untyped-def]
     target = Path(live_vue_console["target"])
     work_id = live_vue_console["works"]["feature"]
-    (target / ".sdlc").mkdir(parents=True, exist_ok=True)
-    (target / ".sdlc" / "pointer").write_text(work_id + "\n", encoding="utf-8")
+    (target / "sdlc-spdd" / ".sdlc").mkdir(parents=True, exist_ok=True)
+    (target / "sdlc-spdd" / ".sdlc" / "pointer").write_text(work_id + "\n", encoding="utf-8")
     _goto_vue(page, live_vue_console)
     page.get_by_test_id("dashboard-panel").wait_for(state="visible")
     page.wait_for_function(
@@ -385,7 +385,7 @@ def test_vue3_persistence_load_and_save(page, live_vue_console) -> None:  # type
         }"""
     )
     assert page.get_by_test_id("ps-guide").inner_text().strip() == "OFF"
-    cfg = json.loads((target / ".sdlc" / "persistence-config.json").read_text(encoding="utf-8"))
+    cfg = json.loads((target / "sdlc-spdd" / ".sdlc" / "persistence-config.json").read_text(encoding="utf-8"))
     assert "git-pointers" in cfg["backends"]
     assert "sqlite" in cfg["backends"]
     assert "guide-dice" not in cfg["backends"]
@@ -713,7 +713,7 @@ def test_vue3_issues_integrations_save_and_tracker_toggle(page, live_vue_console
     assert page.get_by_test_id("issues-link-github").is_visible()
     assert not page.get_by_test_id("issues-link-jira").is_visible()
     cfg = json.loads(
-        (Path(live_vue_console["target"]) / ".sdlc" / "integrations-config.json").read_text(
+        (Path(live_vue_console["target"]) / "sdlc-spdd" / ".sdlc" / "integrations-config.json").read_text(
             encoding="utf-8"
         )
     )
@@ -816,7 +816,7 @@ def test_vue3_guide_save_writes_config(page, live_vue_console) -> None:  # type:
         """() => (document.querySelector('[data-testid="guide-action-status"]')?.textContent || '')
           .includes('Config saved')"""
     )
-    cfg = json.loads((target / ".sdlc" / "guide-config.json").read_text(encoding="utf-8"))
+    cfg = json.loads((target / "sdlc-spdd" / ".sdlc" / "guide-config.json").read_text(encoding="utf-8"))
     assert cfg["notes"] == "vue3-playwright-guide"
     assert int(cfg["port"]) == 21338
 
@@ -954,14 +954,14 @@ def test_vue3_adf_browse_select_and_init(page, live_vue_console, monkeypatch) ->
         """() => (document.querySelector('[data-testid="adf-init-status"]')?.textContent || '')
           .includes('Would create FEAT-013-playwright-adf-init')"""
     )
-    assert not (target / "spdd" / "canvas" / "FEAT-013-playwright-adf-init.md").exists()
+    assert not (target / "sdlc-spdd" / "spdd" / "canvas" / "FEAT-013-playwright-adf-init.md").exists()
 
     page.get_by_test_id("btn-adf-init").click()
     page.wait_for_function(
         """() => (document.querySelector('[data-testid="adf-init-status"]')?.textContent || '')
           .includes('Created FEAT-013-playwright-adf-init')"""
     )
-    canvas = target / "spdd" / "canvas" / "FEAT-013-playwright-adf-init.md"
+    canvas = target / "sdlc-spdd" / "spdd" / "canvas" / "FEAT-013-playwright-adf-init.md"
     assert canvas.is_file()
     text = canvas.read_text(encoding="utf-8")
     assert "Playwright title" in text
