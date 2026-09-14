@@ -44,10 +44,10 @@ def seeded_project() -> tuple[Path, str, str, str]:
     work_id = f"{WORK_PREFIX}-{uuid.uuid4().hex[:8]}"
     area = "engine-tests"
     body = f"{MARKER}-{uuid.uuid4().hex[:8]}"
-    req = root / "requirements" / "milestones" / f"{work_id}.md"
+    req = root / "sdlc-spdd" / "requirements" / "milestones" / f"{work_id}.md"
     req.parent.mkdir(parents=True, exist_ok=True)
     req.write_text(f"# Requirement: {work_id}\n\n## Summary\nRoundtrip seed.\n", encoding="utf-8")
-    canvas = root / "spdd" / "canvas" / f"{work_id}.md"
+    canvas = root / "sdlc-spdd" / "spdd" / "canvas" / f"{work_id}.md"
     canvas.parent.mkdir(parents=True, exist_ok=True)
     canvas.write_text(
         f"""# REASONS Canvas: {work_id}
@@ -64,7 +64,7 @@ Roundtrip canvas body for Guide projection.
 """,
         encoding="utf-8",
     )
-    (root / "spdd" / "memory").mkdir(parents=True, exist_ok=True)
+    (root / "sdlc-spdd" / "spdd" / "memory").mkdir(parents=True, exist_ok=True)
     save_config(
         root,
         {
