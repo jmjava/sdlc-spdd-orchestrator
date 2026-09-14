@@ -123,7 +123,7 @@ already means the only supported engine. `SDLC_ENGINE=shell` and any
 
 ### T01 - Bridge retained shell utilities in source and installed targets
 
-- Status: Pending
+- Status: Complete
 - Description: Extend Python `cmd_shell` resolution to executable utilities in
   orchestrator `scripts/` or installed `<target>/sdlc-spdd/scripts/`, with
   stable missing-script, argument-forwarding, and working-directory behavior.
@@ -240,7 +240,7 @@ already means the only supported engine. `SDLC_ENGINE=shell` and any
 
 ## Review Checklist
 
-- [ ] T01 bridge is covered for source and installed targets
+- [x] T01 bridge is covered for source and installed targets
 - [ ] T02 dispatcher has one mandatory engine
 - [ ] T02 retained utilities have no twin dependency
 - [ ] T03 twin files are absent from source and installs
