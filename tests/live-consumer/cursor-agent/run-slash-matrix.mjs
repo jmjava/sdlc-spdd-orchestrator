@@ -241,8 +241,8 @@ function runVerify(step) {
 
 function checkPointerClaimed() {
   const r = spawnSync(
-    path.join(liveScripts(ROOT), "sdlc-pointer.sh"),
-    ["get"],
+    path.join(liveScripts(ROOT), "sdlc.sh"),
+    ["pointer", "get"],
     { encoding: "utf8", env: { ...process.env, SDLC_ROOT: ROOT } },
   );
   return (r.stdout || "").trim() === WORK_ID;
