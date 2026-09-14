@@ -35,7 +35,7 @@ def _init_repo(tmp_path: Path) -> Path:
 
 
 def _seed_work(root: Path, work_id: str) -> None:
-    req = root / "requirements" / "milestones" / f"{work_id}.md"
+    req = root / "sdlc-spdd" / "requirements" / "milestones" / f"{work_id}.md"
     req.parent.mkdir(parents=True, exist_ok=True)
     req.write_text(
         f"""# Requirement: {work_id}
@@ -58,7 +58,7 @@ Sunset demo for {work_id}.
 """,
         encoding="utf-8",
     )
-    canvas = root / "spdd" / "canvas" / f"{work_id}.md"
+    canvas = root / "sdlc-spdd" / "spdd" / "canvas" / f"{work_id}.md"
     canvas.parent.mkdir(parents=True, exist_ok=True)
     canvas.write_text(
         f"""# REASONS Canvas: {work_id} - Sunset demo
@@ -75,8 +75,8 @@ Sunset demo for {work_id}.
 """,
         encoding="utf-8",
     )
-    (root / "spdd" / "memory").mkdir(parents=True, exist_ok=True)
-    (root / "spdd" / "memory" / "registry.jsonl").write_text(
+    (root / "sdlc-spdd" / "spdd" / "memory").mkdir(parents=True, exist_ok=True)
+    (root / "sdlc-spdd" / "spdd" / "memory" / "registry.jsonl").write_text(
         json.dumps(
             {
                 "event": "claim",
@@ -255,7 +255,7 @@ def test_missing_work_id_fails(tmp_path: Path) -> None:
 def test_cli_sunset_text_and_json(tmp_path: Path, capsys) -> None:
     root = _init_repo(tmp_path)
     work_id = "FEAT-014-feature-sunset"
-    req = root / "requirements" / "milestones" / f"{work_id}.md"
+    req = root / "sdlc-spdd" / "requirements" / "milestones" / f"{work_id}.md"
     req.parent.mkdir(parents=True, exist_ok=True)
     req.write_text(
         f"# Requirement: {work_id}\n\n## Jira\n\n- Key: ORCH-42\n- Summary: CLI sunset\n",

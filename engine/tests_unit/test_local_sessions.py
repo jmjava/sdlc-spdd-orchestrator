@@ -15,14 +15,14 @@ def test_local_start_capture_promote(tmp_path: Path, monkeypatch) -> None:
     session = svc.start(name="scratch-sync", intent="Explore detached agent capture")
     assert is_local_id(session.id)
     assert session.id.startswith("LOCAL-")
-    assert (tmp_path / ".sdlc" / "pointer").read_text(encoding="utf-8").strip() == session.id
-    assert (tmp_path / ".sdlc" / "local-sessions" / session.id / "session.json").is_file()
-    assert (tmp_path / ".sdlc" / "current-local-session.md").is_file()
-    assert not (tmp_path / ".sdlc" / "local-sessions" / session.id / "brief.md").is_file()
+    assert (tmp_path / "sdlc-spdd" / ".sdlc" / "pointer").read_text(encoding="utf-8").strip() == session.id
+    assert (tmp_path / "sdlc-spdd" / ".sdlc" / "local-sessions" / session.id / "session.json").is_file()
+    assert (tmp_path / "sdlc-spdd" / ".sdlc" / "current-local-session.md").is_file()
+    assert not (tmp_path / "sdlc-spdd" / ".sdlc" / "local-sessions" / session.id / "brief.md").is_file()
     assert not (tmp_path / "agent-context" / "sessions" / "current-session.md").is_file()
 
     svc.capture("Tried a detached approach")
-    notes = (tmp_path / ".sdlc" / "local-sessions" / session.id / "notes.md").read_text(
+    notes = (tmp_path / "sdlc-spdd" / ".sdlc" / "local-sessions" / session.id / "notes.md").read_text(
         encoding="utf-8"
     )
     assert "Tried a detached approach" in notes
@@ -36,18 +36,18 @@ def test_local_start_capture_promote(tmp_path: Path, monkeypatch) -> None:
     assert session.status == "promoted"
     assert session.promoted_to == work_id
     assert work_id.startswith("FEAT-")
-    assert (tmp_path / "spdd" / "canvas" / f"{work_id}.md").is_file()
-    assert (tmp_path / "requirements" / "milestones" / f"{work_id}.md").is_file()
+    assert (tmp_path / "sdlc-spdd" / "spdd" / "canvas" / f"{work_id}.md").is_file()
+    assert (tmp_path / "sdlc-spdd" / "requirements" / "milestones" / f"{work_id}.md").is_file()
     # Stay-set only (#86) — promote must not create feature mirrors.
     assert not (tmp_path / "agent-context" / "features" / work_id).exists()
-    progress = (tmp_path / ".sdlc" / "staged" / "lessons.jsonl").read_text(
+    progress = (tmp_path / "sdlc-spdd" / ".sdlc" / "staged" / "lessons.jsonl").read_text(
         encoding="utf-8"
     )
     assert work_id in progress
     assert session.id in progress
-    pointer = (tmp_path / ".sdlc" / "pointer").read_text(encoding="utf-8").strip()
+    pointer = (tmp_path / "sdlc-spdd" / ".sdlc" / "pointer").read_text(encoding="utf-8").strip()
     assert pointer == work_id
-    reg = (tmp_path / "spdd" / "memory" / "registry.jsonl").read_text(encoding="utf-8")
+    reg = (tmp_path / "sdlc-spdd" / "spdd" / "memory" / "registry.jsonl").read_text(encoding="utf-8")
     assert work_id in reg
     assert f"promoted-from:{session.id}" in reg
 
@@ -80,9 +80,9 @@ def test_next_without_pointer_hints_local_start(tmp_path: Path) -> None:
 def test_cli_quick_start(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setenv("SDLC_USER", "cli")
     assert main(["--root", str(tmp_path), "quick", "fix the flaky test"]) == 0
-    pointer = (tmp_path / ".sdlc" / "pointer").read_text(encoding="utf-8").strip()
+    pointer = (tmp_path / "sdlc-spdd" / ".sdlc" / "pointer").read_text(encoding="utf-8").strip()
     assert pointer.startswith("LOCAL-")
-    brief = (tmp_path / ".sdlc" / "current-local-session.md").read_text(encoding="utf-8")
+    brief = (tmp_path / "sdlc-spdd" / ".sdlc" / "current-local-session.md").read_text(encoding="utf-8")
     assert "fix the flaky test" in brief
 
 
@@ -114,11 +114,11 @@ def test_promote_from_git_backfill(tmp_path: Path, monkeypatch) -> None:
         from_git="main..HEAD",
         claim=False,
     )
-    notes = (root / ".sdlc" / "local-sessions" / session.id / "notes.md").read_text(
+    notes = (root / "sdlc-spdd" / ".sdlc" / "local-sessions" / session.id / "notes.md").read_text(
         encoding="utf-8"
     )
     assert "add feat file" in notes
-    canvas = (root / "spdd" / "canvas" / f"{work_id}.md").read_text(encoding="utf-8")
+    canvas = (root / "sdlc-spdd" / "spdd" / "canvas" / f"{work_id}.md").read_text(encoding="utf-8")
     assert "add feat file" in canvas
 
 

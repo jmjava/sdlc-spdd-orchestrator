@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Team-visible Work ID registry — committed coordination layer on top of local .sdlc/ state.
 #
-# Local pointer (.sdlc/pointer) stays machine-private.
+# Local pointer (sdlc-spdd/.sdlc/pointer) stays machine-private.
 # spdd/memory/registry.jsonl is committed so teammates see claims, phase, and shelf notes.
 #
 # Usage (via sdlc-workflow.sh / scripts/sdlc.sh):
@@ -14,20 +14,14 @@ fi
 _TEAM_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=/dev/null
 source "${_TEAM_SCRIPT_DIR}/sdlc-pointer.sh"
-_paths_lib="${SDLC_ROOT}/scripts/lib/paths.sh"
-if [[ ! -f "${_paths_lib}" ]]; then
-  _paths_lib="${SDLC_ROOT}/sdlc-spdd/scripts/lib/paths.sh"
-fi
-if [[ ! -f "${_paths_lib}" ]]; then
-  _paths_lib="${SDLC_ROOT}/scripts/sdlc-spdd/lib/paths.sh"
-fi
+_paths_lib="${SDLC_ROOT}/sdlc-spdd/scripts/lib/paths.sh"
 if [[ -f "${_paths_lib}" ]]; then
   # shellcheck source=/dev/null
   source "${_paths_lib}"
 fi
 
-SDLC_TEAM_REGISTRY_JSONL="$(sdlc_registry "${SDLC_ROOT}" 2>/dev/null || printf '%s/spdd/memory/registry.jsonl' "${SDLC_ROOT}")"
-SDLC_TEAM_REGISTRY_LOCK="${SDLC_DIR:-${SDLC_ROOT}/.sdlc}/registry.lock"
+SDLC_TEAM_REGISTRY_JSONL="$(sdlc_registry "${SDLC_ROOT}" 2>/dev/null || printf '%s/spdd/memory/registry.jsonl' "${SDLC_HOME:-${SDLC_ROOT}/sdlc-spdd}")"
+SDLC_TEAM_REGISTRY_LOCK="${SDLC_DIR:-${SDLC_HOME:-${SDLC_ROOT}/sdlc-spdd}/.sdlc}/registry.lock"
 
 _team_stale_days() {
   printf '%s' "${SDLC_TEAM_STALE_DAYS:-7}"
@@ -62,7 +56,7 @@ _team_canvas_path() {
   if declare -F sdlc_home >/dev/null 2>&1; then
     home="$(sdlc_home "${root}")"
   else
-    home="${root}"
+    home="${SDLC_HOME:-${root}/sdlc-spdd}"
   fi
   canvas="${home}/spdd/canvas/${work_id}.md"
   [[ -f "${canvas}" ]] && printf '%s' "${canvas}"
@@ -355,7 +349,7 @@ _team_owner() {
 }
 
 _team_registry_init() {
-  mkdir -p "$(dirname "${SDLC_TEAM_REGISTRY_JSONL}")" "${SDLC_DIR:-${SDLC_ROOT}/.sdlc}"
+  mkdir -p "$(dirname "${SDLC_TEAM_REGISTRY_JSONL}")" "${SDLC_DIR:-${SDLC_HOME:-${SDLC_ROOT}/sdlc-spdd}/.sdlc}"
   if [[ ! -f "${SDLC_TEAM_REGISTRY_JSONL}" ]]; then
     : > "${SDLC_TEAM_REGISTRY_JSONL}"
   fi
@@ -524,7 +518,7 @@ sdlc_team_sync_from_workflow() {
   local status="$2"
   local note="${3:-}"
   local phase="" operation="" file event="update"
-  file="${SDLC_DIR:-${SDLC_ROOT}/.sdlc}/workflows/${work_id}.state"
+  file="${SDLC_DIR:-${SDLC_HOME:-${SDLC_ROOT}/sdlc-spdd}/.sdlc}/workflows/${work_id}.state"
   if [[ -f "${file}" ]]; then
     phase="$(grep -m1 '^phase=' "${file}" 2>/dev/null | cut -d= -f2- || true)"
     operation="$(grep -m1 '^operation=' "${file}" 2>/dev/null | cut -d= -f2- || true)"
@@ -544,7 +538,7 @@ sdlc_team_discover_work_ids() {
   if declare -F sdlc_home >/dev/null 2>&1; then
     home="$(sdlc_home "${root}")"
   else
-    home="${root}"
+    home="${SDLC_HOME:-${root}/sdlc-spdd}"
   fi
   local -A seen=()
   local path base
@@ -608,13 +602,13 @@ sdlc_team_archive_work() {
   fi
 
   local feature_src="" feature_dest=""
-  # No agent-context/features moves (storage v3).
+  # Storage v3 has no per-feature mirror tree.
 
   local canvas_src review_src analysis_src sync_src home
   if declare -F sdlc_home >/dev/null 2>&1; then
     home="$(sdlc_home "${root}")"
   else
-    home="${root}"
+    home="${SDLC_HOME:-${root}/sdlc-spdd}"
   fi
   canvas_src="${home}/spdd/canvas/${work_id}.md"
   analysis_src="${home}/spdd/analysis/${work_id}-analysis.md"
@@ -642,7 +636,7 @@ sdlc_team_archive_work() {
     shopt -u nullglob
   fi
 
-  local state_src="${root}/.sdlc/workflows/${work_id}.state"
+  local state_src="${SDLC_DIR:-${home}/.sdlc}/workflows/${work_id}.state"
   if [[ -f "${state_src}" ]]; then
     _team_remove_path "${state_src}" "${dry}" && moved=1
   fi
@@ -688,7 +682,7 @@ sdlc_team_infer_work_summary() {
   if declare -F sdlc_home >/dev/null 2>&1; then
     home="$(sdlc_home "${root}")"
   else
-    home="${root}"
+    home="${SDLC_HOME:-${root}/sdlc-spdd}"
   fi
   [[ -f "${home}/spdd/canvas/${work_id}.md" ]] && parts+=("canvas")
   if [[ -n "$(_team_milestone_path "${work_id}" || true)" ]]; then

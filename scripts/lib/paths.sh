@@ -49,18 +49,14 @@ sdlc_root() {
   git -C "${PWD}" rev-parse --show-toplevel 2>/dev/null || pwd
 }
 
-# Framework home: SDLC_HOME > <root>/sdlc-spdd if dir > root.
+# Framework home: SDLC_HOME, else <root>/sdlc-spdd. No fallback to root.
 sdlc_home() {
   local root="${1:-$(sdlc_root)}"
   if [[ -n "${SDLC_HOME:-}" ]]; then
     printf '%s' "${SDLC_HOME}"
     return 0
   fi
-  if [[ -d "${root}/sdlc-spdd" ]]; then
-    printf '%s' "${root}/sdlc-spdd"
-  else
-    printf '%s' "${root}"
-  fi
+  printf '%s' "${root}/sdlc-spdd"
 }
 
 sdlc_runtime_dir() {

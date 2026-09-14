@@ -21,15 +21,15 @@ REPO = Path(__file__).resolve().parents[2]
 
 
 def _seed_stay_set(root: Path, work_id: str, *, ready_for_coding: bool = False) -> None:
-    (root / "requirements" / "milestones").mkdir(parents=True, exist_ok=True)
-    (root / "requirements" / "milestones" / f"{work_id}.md").write_text(
+    (root / "sdlc-spdd" / "requirements" / "milestones").mkdir(parents=True, exist_ok=True)
+    (root / "sdlc-spdd" / "requirements" / "milestones" / f"{work_id}.md").write_text(
         f"# Requirement: {work_id}\n\n## Summary\nHard review.\n",
         encoding="utf-8",
     )
     status = "Ready For Coding" if ready_for_coding else "In Progress"
     readiness = "Ready For Coding" if ready_for_coding else "Needs Analysis"
-    (root / "spdd" / "canvas").mkdir(parents=True, exist_ok=True)
-    (root / "spdd" / "canvas" / f"{work_id}.md").write_text(
+    (root / "sdlc-spdd" / "spdd" / "canvas").mkdir(parents=True, exist_ok=True)
+    (root / "sdlc-spdd" / "spdd" / "canvas" / f"{work_id}.md").write_text(
         f"""# REASONS Canvas: {work_id}
 
 ## Metadata
@@ -55,7 +55,7 @@ Hard-review seed requirement for {work_id}.
 
 
 def _staged_records(root: Path) -> list[dict]:
-    staged = root / ".sdlc" / "staged" / "lessons.jsonl"
+    staged = root / "sdlc-spdd" / ".sdlc" / "staged" / "lessons.jsonl"
     if not staged.is_file():
         return []
     return [
@@ -68,7 +68,7 @@ def _staged_records(root: Path) -> list[dict]:
 def test_capture_stages_session_record_only(tmp_path: Path) -> None:
     wid = "FEAT-940-capture-lean"
     _seed_stay_set(tmp_path, wid)
-    hot = tmp_path / ".sdlc" / "sessions"
+    hot = tmp_path / "sdlc-spdd" / ".sdlc" / "sessions"
     hot.mkdir(parents=True)
     (hot / "current-session.md").write_text(
         "# Hot brief\nTouching scripts/lib for capture.\n",
@@ -102,9 +102,9 @@ def test_capture_stages_session_record_only(tmp_path: Path) -> None:
     assert sessions
     assert sessions[-1]["area"] == "scripts/lib"
     # Committed ledger untouched; no index/mirror trees created.
-    assert not (tmp_path / "spdd" / "memory" / "lessons.jsonl").exists()
-    assert not (tmp_path / "spdd" / "memory" / "context-index.md").exists()
-    assert not (tmp_path / "spdd" / "memory" / "entries").exists()
+    assert not (tmp_path / "sdlc-spdd" / "spdd" / "memory" / "lessons.jsonl").exists()
+    assert not (tmp_path / "sdlc-spdd" / "spdd" / "memory" / "context-index.md").exists()
+    assert not (tmp_path / "sdlc-spdd" / "spdd" / "memory" / "entries").exists()
 
 
 def test_create_feature_stages_record_no_mirrors(tmp_path: Path) -> None:
@@ -126,11 +126,11 @@ def test_create_feature_stages_record_no_mirrors(tmp_path: Path) -> None:
         check=False,
     )
     assert proc.returncode == 0, proc.stderr + proc.stdout
-    canvases = list((tmp_path / "spdd" / "canvas").glob("FEAT-*.md"))
+    canvases = list((tmp_path / "sdlc-spdd" / "spdd" / "canvas").glob("FEAT-*.md"))
     assert len(canvases) == 1
     wid = canvases[0].stem
-    assert (tmp_path / "requirements" / "milestones" / f"{wid}.md").is_file()
-    assert not (tmp_path / "spdd" / "memory" / "entries").exists()
+    assert (tmp_path / "sdlc-spdd" / "requirements" / "milestones" / f"{wid}.md").is_file()
+    assert not (tmp_path / "sdlc-spdd" / "spdd" / "memory" / "entries").exists()
     records = _staged_records(tmp_path)
     assert any(r["kind"] == "session" and r["work_id"] == wid for r in records)
 
@@ -184,7 +184,7 @@ def test_registry_lean_jsonl_and_sqlite_on_claim(tmp_path: Path, monkeypatch) ->
     reg = TeamRegistry(Project(tmp_path))
     row = reg.claim(wid, phase="code", note="lean registry proof")
     assert row.status == "active"
-    lean = tmp_path / "spdd" / "memory" / "registry.jsonl"
+    lean = tmp_path / "sdlc-spdd" / "spdd" / "memory" / "registry.jsonl"
     assert lean.is_file()
     events = reg.lean_events(work_id=wid)
     assert len(events) >= 1

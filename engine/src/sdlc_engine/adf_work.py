@@ -178,8 +178,10 @@ class AdfWorkService:
         except ValueError:
             rel_adf = str(path)
 
-        canvas_rel = f"spdd/canvas/{wid}.md"
-        req_rel = f"requirements/milestones/{wid}.md"
+        canvas_path = self.project.canvas_path(wid)
+        req_path = self.project.milestone_path(wid)
+        canvas_rel = self.project.rel(canvas_path)
+        req_rel = self.project.rel(req_path)
         next_cmd = f"/sdlc-spdd-analysis @{req_rel}"
 
         if dry_run:
@@ -195,8 +197,7 @@ class AdfWorkService:
                 dry_run=True,
             )
 
-        existing_canvas = self.project.root / canvas_rel
-        if existing_canvas.is_file():
+        if canvas_path.is_file():
             raise FileExistsError(f"Canvas already exists: {canvas_rel}")
 
         if claim and not dry_run:
@@ -429,12 +430,10 @@ class AdfWorkService:
             ]
         )
 
-        canvas_path = self.project.root / canvas_rel
-        req_path = self.project.root / req_rel
         # Stay-set only (#86) — no committed per-feature mirror folders.
         canvas_path.parent.mkdir(parents=True, exist_ok=True)
         req_path.parent.mkdir(parents=True, exist_ok=True)
-        progress = self.project.root / "spdd" / "memory" / "entries" / "progress.md"
+        progress = self.project.progress_log_path(wid)
         progress.parent.mkdir(parents=True, exist_ok=True)
 
         canvas_path.write_text(canvas, encoding="utf-8")

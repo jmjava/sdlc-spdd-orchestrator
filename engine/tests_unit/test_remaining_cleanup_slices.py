@@ -15,16 +15,16 @@ from sdlc_engine.quiet import is_quiet, quiet_resume_blurb
 
 
 def _seed_stay_set(root: Path, work_id: str) -> None:
-    (root / "requirements" / "milestones").mkdir(parents=True, exist_ok=True)
-    (root / "requirements" / "milestones" / f"{work_id}.md").write_text(
+    (root / "sdlc-spdd" / "requirements" / "milestones").mkdir(parents=True, exist_ok=True)
+    (root / "sdlc-spdd" / "requirements" / "milestones" / f"{work_id}.md").write_text(
         f"# {work_id}\n", encoding="utf-8"
     )
-    (root / "spdd" / "canvas").mkdir(parents=True, exist_ok=True)
-    (root / "spdd" / "canvas" / f"{work_id}.md").write_text(
+    (root / "sdlc-spdd" / "spdd" / "canvas").mkdir(parents=True, exist_ok=True)
+    (root / "sdlc-spdd" / "spdd" / "canvas" / f"{work_id}.md").write_text(
         f"# REASONS\n\n## Metadata\n\n- Work ID: {work_id}\n",
         encoding="utf-8",
     )
-    (root / "harness" / "skills").mkdir(parents=True, exist_ok=True)
+    (root / "sdlc-spdd" / "harness" / "skills").mkdir(parents=True, exist_ok=True)
 
 
 def test_quiet_mode_env_and_harness(tmp_path: Path, monkeypatch) -> None:
@@ -45,7 +45,7 @@ def test_quiet_mode_env_and_harness(tmp_path: Path, monkeypatch) -> None:
 def test_hot_session_paths_prefer_sdlc(tmp_path: Path) -> None:
     project = Project(tmp_path)
     hot = project.hot_session_dir()
-    assert hot == tmp_path / ".sdlc" / "sessions"
+    assert hot == tmp_path / "sdlc-spdd" / ".sdlc" / "sessions"
     project.ensure_runtime_dirs()
     assert hot.is_dir()
     assert project.current_session_path() == hot / "current-session.md"
@@ -65,12 +65,12 @@ def test_persist_entry_does_not_write_feature_mirrors(tmp_path: Path) -> None:
         project_guide=False,
     )
     assert result.git.get("ok") is True
-    staged = tmp_path / ".sdlc" / "staged" / "lessons.jsonl"
+    staged = tmp_path / "sdlc-spdd" / ".sdlc" / "staged" / "lessons.jsonl"
     assert staged.is_file()
     assert "Lean progress only" in staged.read_text(encoding="utf-8")
     # Only the staged ledger receives the record; no committed mirror is written.
-    assert not (tmp_path / "spdd" / "memory" / "lessons.jsonl").exists()
-    progress = tmp_path / "spdd" / "memory" / "entries" / "progress.md"
+    assert not (tmp_path / "sdlc-spdd" / "spdd" / "memory" / "lessons.jsonl").exists()
+    progress = tmp_path / "sdlc-spdd" / "spdd" / "memory" / "entries" / "progress.md"
     assert not progress.exists() or "Lean progress only" not in progress.read_text(encoding="utf-8")
 
 
@@ -121,7 +121,7 @@ def test_start_agent_session_writes_hot_path_and_honors_quiet(tmp_path: Path) ->
         check=False,
     )
     assert proc.returncode == 0, proc.stderr + proc.stdout
-    hot = tmp_path / ".sdlc" / "sessions" / "current-session.md"
+    hot = tmp_path / "sdlc-spdd" / ".sdlc" / "sessions" / "current-session.md"
     assert hot.is_file()
     text = hot.read_text(encoding="utf-8")
     assert "Quiet/product-test mode" in text or "Quiet mode" in text

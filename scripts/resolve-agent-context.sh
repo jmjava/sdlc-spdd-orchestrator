@@ -419,10 +419,6 @@ add_phase_index_path() {
   fi
 
   case "${raw}" in
-    agent-context/harness/*)
-      add_path "$(sdlc_harness_dir "${TARGET}")/${raw#agent-context/harness/}"
-      return 0
-      ;;
     harness/*)
       add_path "$(sdlc_harness_dir "${TARGET}")/${raw#harness/}"
       return 0
@@ -489,9 +485,9 @@ emit_markdown() {
   echo "|------|------|"
   for p in "${resolved_paths[@]}"; do
     kind="file"
-    if [[ "${p}" == */harness/skills/* || "${p}" == agent-context/harness/skills/* ]]; then
+    if [[ "${p}" == */harness/skills/* ]]; then
       kind="skill"
-    elif [[ "${p}" == */harness/* || "${p}" == agent-context/harness/* ]]; then
+    elif [[ "${p}" == */harness/* ]]; then
       kind="harness"
     elif [[ "${p}" == spdd/* || "${p}" == */spdd/* ]]; then
       kind="spdd"

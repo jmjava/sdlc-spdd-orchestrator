@@ -264,22 +264,13 @@ today_note_rel="session-notes/$(sdlc_timestamp_day).md"
 
 # Command + docs hints in the brief must match the actual layout: v3 installs
 # use sdlc-spdd/scripts + sdlc-spdd/docs; the orchestrator repo keeps scripts/.
-if [[ "${HOME}" != "${TARGET}" ]]; then
-  scripts_hint="./sdlc-spdd/scripts"
-  sdlc_sh_hint="./sdlc-spdd/scripts/sdlc.sh"
-  docs_hint="sdlc-spdd/docs"
-else
-  scripts_hint="./scripts"
-  sdlc_sh_hint="./scripts/sdlc.sh"
-  docs_hint="docs/sdlc-spdd"
-  [[ -d "${TARGET}/docs/sdlc-spdd" ]] || docs_hint="docs"
-fi
+scripts_hint="./sdlc-spdd/scripts"
+sdlc_sh_hint="./sdlc-spdd/scripts/sdlc.sh"
+docs_hint="sdlc-spdd/docs"
 
 resolve_script=""
 if [[ -x "${HOME}/scripts/resolve-agent-context.sh" ]]; then
   resolve_script="${HOME}/scripts/resolve-agent-context.sh"
-elif [[ -x "${TARGET}/scripts/sdlc-spdd/resolve-agent-context.sh" ]]; then
-  resolve_script="${TARGET}/scripts/sdlc-spdd/resolve-agent-context.sh"
 elif [[ -x "$(dirname "${BASH_SOURCE[0]}")/resolve-agent-context.sh" ]]; then
   resolve_script="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/resolve-agent-context.sh"
 fi
@@ -312,10 +303,10 @@ sqlite_lookup_loaded=0
 if [[ -n "${WORK_ID}" ]]; then
   _run_db_lookup() {
     local out=""
-    if [[ -x "${TARGET}/scripts/sdlc-spdd/sdlc.sh" ]]; then
+    if [[ -x "${HOME}/scripts/sdlc.sh" ]]; then
       out="$(
         SDLC_ENGINE=python SDLC_ROOT="${TARGET}" \
-          "${TARGET}/scripts/sdlc-spdd/sdlc.sh" db lookup \
+          "${HOME}/scripts/sdlc.sh" db lookup \
           --work-id "${WORK_ID}" \
           --markdown 2>/dev/null || true
       )"

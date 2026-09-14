@@ -11,9 +11,8 @@ folder — ``<repo>/sdlc-spdd/`` — called the *home*:
         scripts/           installed workflow CLI
         .sdlc/             gitignored runtime (sessions, staged, sqlite)
 
-Legacy sprawled layouts (framework dirs at repo root) resolve ``home == root``
-so every path helper keeps working until ``upgrade-project.sh`` consolidates
-(and archives leftovers) into ``sdlc-spdd/``.
+``home`` is always ``SDLC_HOME`` or ``<root>/sdlc-spdd``; nothing probes the
+filesystem or falls back to the repo root.
 """
 
 from __future__ import annotations
@@ -54,18 +53,11 @@ class Project:
 
     @property
     def home(self) -> Path:
-        """Single framework folder; falls back to root for legacy layouts."""
+        """Single framework folder: ``SDLC_HOME`` or ``<root>/sdlc-spdd``."""
         env = os.environ.get("SDLC_HOME")
         if env:
             return Path(env).expanduser().resolve()
-        candidate = self.root / HOME_DIR_NAME
-        if candidate.is_dir():
-            return candidate
-        return self.root
-
-    @property
-    def is_single_folder(self) -> bool:
-        return self.home != self.root
+        return self.root / HOME_DIR_NAME
 
     @property
     def sdlc_dir(self) -> Path:
@@ -126,11 +118,7 @@ class Project:
 
     @property
     def harness_dir(self) -> Path:
-        """Install-time harness. Single-folder: <home>/harness; legacy: agent-context/harness."""
-        direct = self.home / "harness"
-        if direct.is_dir():
-            return direct
-        return self.home / "agent-context" / "harness"
+        return self.home / "harness"
 
     @property
     def skills_dir(self) -> Path:

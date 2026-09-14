@@ -44,16 +44,16 @@ Mentions ready for coding in prose so the old shell grep would pass.
 
 
 def _seed(root: Path) -> None:
-    req = root / "requirements" / "milestones"
+    req = root / "sdlc-spdd" / "requirements" / "milestones"
     req.mkdir(parents=True, exist_ok=True)
     (req / f"{WID}.md").write_text(f"# Requirement {WID}\n\nNeed a gated change.\n", encoding="utf-8")
-    analysis = root / "spdd" / "analysis"
+    analysis = root / "sdlc-spdd" / "spdd" / "analysis"
     analysis.mkdir(parents=True, exist_ok=True)
     (analysis / f"{WID}-analysis.md").write_text(f"# Analysis {WID}\n", encoding="utf-8")
-    canvas = root / "spdd" / "canvas"
+    canvas = root / "sdlc-spdd" / "spdd" / "canvas"
     canvas.mkdir(parents=True, exist_ok=True)
     (canvas / f"{WID}.md").write_text(WEAK_CANVAS, encoding="utf-8")
-    (root / ".sdlc" / "sessions").mkdir(parents=True, exist_ok=True)
+    (root / "sdlc-spdd" / ".sdlc" / "sessions").mkdir(parents=True, exist_ok=True)
 
 
 def _env() -> dict[str, str]:
@@ -104,6 +104,7 @@ class WeakCanvasGateTests(unittest.TestCase):
             env = _env()
             env["SDLC_ENGINE"] = "shell"
             env["SDLC_ROOT"] = str(root)
+            env["SDLC_HOME"] = str(root / "sdlc-spdd")
             proc = subprocess.run(
                 ["bash", str(WORKFLOW), "gate", "--phase", "code", "--work-id", WID],
                 cwd=str(ROOT),
@@ -126,6 +127,7 @@ class WeakCanvasGateTests(unittest.TestCase):
             env = _env()
             env["SDLC_GATE_ENGINE"] = "shell"
             env["SDLC_ROOT"] = str(root)
+            env["SDLC_HOME"] = str(root / "sdlc-spdd")
             proc = subprocess.run(
                 ["bash", str(WORKFLOW), "gate", "--phase", "code", "--work-id", WID],
                 cwd=str(ROOT),

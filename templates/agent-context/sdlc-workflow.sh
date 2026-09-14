@@ -2,7 +2,7 @@
 # Workflow state manager for SDLC-SPDD — tracks phase, gates, shelf/resume on top of sdlc-pointer.sh
 #
 # Usage:
-#   source agent-context/sdlc-workflow.sh
+#   source sdlc-spdd/scripts/sdlc-workflow.sh
 #   sdlc_workflow_status
 #   sdlc_workflow_resume WORK_ID [--phase PHASE]
 #   sdlc_workflow_advance [--to PHASE]
@@ -11,7 +11,7 @@
 #   sdlc_workflow_shelf [--reason TEXT]
 #   sdlc_workflow_sync [--work-id WORK_ID]
 #
-# State: .sdlc/workflows/<WORK-ID>.state and .sdlc/workflows/<WORK-ID>.history
+# State: sdlc-spdd/.sdlc/workflows/<WORK-ID>.state and history
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   set -euo pipefail
@@ -31,17 +31,9 @@ if [[ -f "${_SCRIPT_DIR}/sdlc-team-registry.sh" ]]; then
   source "${_SCRIPT_DIR}/sdlc-team-registry.sh"
 fi
 
-# Optional readiness helpers (installed sdlc-spdd/scripts/lib, legacy
-# scripts/sdlc-spdd/lib, or orchestrator scripts/lib).
-_wf_readiness_lib=""
-if [[ -f "${SDLC_ROOT}/sdlc-spdd/scripts/lib/readiness.sh" ]]; then
-  _wf_readiness_lib="${SDLC_ROOT}/sdlc-spdd/scripts/lib/readiness.sh"
-elif [[ -f "${SDLC_ROOT}/scripts/sdlc-spdd/lib/readiness.sh" ]]; then
-  _wf_readiness_lib="${SDLC_ROOT}/scripts/sdlc-spdd/lib/readiness.sh"
-elif [[ -f "${SDLC_ROOT}/scripts/lib/readiness.sh" ]]; then
-  _wf_readiness_lib="${SDLC_ROOT}/scripts/lib/readiness.sh"
-fi
-if [[ -n "${_wf_readiness_lib}" ]]; then
+# Optional readiness helper from the v3 home.
+_wf_readiness_lib="${SDLC_HOME:-${SDLC_ROOT}/sdlc-spdd}/scripts/lib/readiness.sh"
+if [[ -f "${_wf_readiness_lib}" ]]; then
   # shellcheck source=/dev/null
   source "${_wf_readiness_lib}"
 fi
@@ -241,7 +233,7 @@ _wf_is_quiet() {
   local q
   q="$(printf '%s' "${SDLC_QUIET:-}" | tr '[:upper:]' '[:lower:]')"
   [[ "${q}" == "1" || "${q}" == "true" || "${q}" == "yes" || "${q}" == "on" ]] \
-    || [[ -f "${SDLC_ROOT:-.}/agent-context/harness/quiet-mode.md" ]]
+    || [[ -f "${SDLC_HOME:-${SDLC_ROOT:-.}/sdlc-spdd}/harness/quiet-mode.md" ]]
 }
 
 _wf_quiet_blurb() {
@@ -303,13 +295,7 @@ sdlc_workflow_shell_start() {
   if [[ -z "${phase}" ]]; then
     phase="$(_wf_read_state_var "$(_wf_state_file "${work_id}")" phase init)"
   fi
-  if [[ -x "${root}/sdlc-spdd/scripts/start-agent-session.sh" ]]; then
-    echo "./sdlc-spdd/scripts/start-agent-session.sh --target . --work-id ${work_id} --phase ${phase}"
-  elif [[ -x "${root}/scripts/sdlc-spdd/start-agent-session.sh" ]]; then
-    echo "./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id ${work_id} --phase ${phase}"
-  else
-    echo "./scripts/start-agent-session.sh --target . --work-id ${work_id} --phase ${phase}"
-  fi
+  echo "./sdlc-spdd/scripts/start-agent-session.sh --target . --work-id ${work_id} --phase ${phase}"
 }
 
 sdlc_workflow_shell_capture() {
@@ -602,13 +588,7 @@ sdlc_workflow_start() {
   sdlc_workflow_sync "${work_id}" >/dev/null
   local phase start_script
   phase="$(_wf_read_state_var "$(_wf_state_file "${work_id}")" phase init)"
-  start_script="${SDLC_ROOT}/sdlc-spdd/scripts/start-agent-session.sh"
-  if [[ ! -x "${start_script}" ]]; then
-    start_script="${SDLC_ROOT}/scripts/sdlc-spdd/start-agent-session.sh"
-  fi
-  if [[ ! -x "${start_script}" ]]; then
-    start_script="${SDLC_ROOT}/scripts/start-agent-session.sh"
-  fi
+  start_script="${SDLC_HOME:-${SDLC_ROOT}/sdlc-spdd}/scripts/start-agent-session.sh"
   if [[ ! -x "${start_script}" ]]; then
     echo "sdlc_workflow_start: start-agent-session.sh not found" >&2
     return 1
@@ -789,13 +769,8 @@ _wf_ledger_section_for_work() {
 
 _wf_paths_lib() {
   local root="${SDLC_ROOT}"
-  if [[ -f "${root}/scripts/lib/paths.sh" ]]; then
-    printf '%s' "${root}/scripts/lib/paths.sh"
-  elif [[ -f "${root}/sdlc-spdd/scripts/lib/paths.sh" ]]; then
-    printf '%s' "${root}/sdlc-spdd/scripts/lib/paths.sh"
-  elif [[ -f "${root}/scripts/sdlc-spdd/lib/paths.sh" ]]; then
-    printf '%s' "${root}/scripts/sdlc-spdd/lib/paths.sh"
-  fi
+  local home="${SDLC_HOME:-${root}/sdlc-spdd}"
+  [[ -f "${home}/scripts/lib/paths.sh" ]] && printf '%s' "${home}/scripts/lib/paths.sh"
 }
 
 _wf_ensure_paths_lib() {
@@ -1071,7 +1046,7 @@ PY
 }
 
 _wf_home_path() {
-  _wf_ensure_paths_lib || { printf '%s' "${SDLC_ROOT}"; return; }
+  _wf_ensure_paths_lib || { printf '%s' "${SDLC_HOME:-${SDLC_ROOT}/sdlc-spdd}"; return; }
   sdlc_home "${SDLC_ROOT}"
 }
 
@@ -1315,13 +1290,7 @@ _wf_resolve_operation() {
 }
 
 _wf_shell_helper_path() {
-  if [[ -x "${SDLC_ROOT}/sdlc-spdd/scripts/sdlc.sh" ]]; then
-    echo "./sdlc-spdd/scripts/sdlc.sh"
-  elif [[ -x "${SDLC_ROOT}/scripts/sdlc-spdd/sdlc.sh" ]]; then
-    echo "./scripts/sdlc-spdd/sdlc.sh"
-  else
-    echo "./scripts/sdlc.sh"
-  fi
+  echo "./sdlc-spdd/scripts/sdlc.sh"
 }
 
 _wf_sync_impl() {
@@ -1443,13 +1412,7 @@ sdlc_workflow_capture() {
     phase="$(_wf_read_state_var "$(_wf_state_file "${work_id}")" phase resume)"
   fi
 
-  local capture_script="${SDLC_ROOT}/sdlc-spdd/scripts/capture-session-memory.sh"
-  if [[ ! -x "${capture_script}" ]]; then
-    capture_script="${SDLC_ROOT}/scripts/sdlc-spdd/capture-session-memory.sh"
-  fi
-  if [[ ! -x "${capture_script}" ]]; then
-    capture_script="${SDLC_ROOT}/scripts/capture-session-memory.sh"
-  fi
+  local capture_script="${SDLC_HOME:-${SDLC_ROOT}/sdlc-spdd}/scripts/capture-session-memory.sh"
   if [[ ! -x "${capture_script}" ]]; then
     echo "sdlc_workflow_capture: capture-session-memory.sh not found" >&2
     return 1
@@ -1972,13 +1935,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" && "${_SDLC_WORKFLOW_LOAD_DEPTH}" -eq 1 ]]; 
       sdlc_workflow_complete "$@"
       ;;
     accept|/sdlc-accept-lessons)
-      accept_script="${SDLC_ROOT}/sdlc-spdd/scripts/accept-lessons.sh"
-      if [[ ! -x "${accept_script}" ]]; then
-        accept_script="${SDLC_ROOT}/scripts/sdlc-spdd/accept-lessons.sh"
-      fi
-      if [[ ! -x "${accept_script}" ]]; then
-        accept_script="${SDLC_ROOT}/scripts/accept-lessons.sh"
-      fi
+      accept_script="${SDLC_HOME:-${SDLC_ROOT}/sdlc-spdd}/scripts/accept-lessons.sh"
       if [[ ! -x "${accept_script}" ]]; then
         echo "accept-lessons.sh not found" >&2
         exit 1

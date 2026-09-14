@@ -116,8 +116,8 @@ class IssueSyncService:
         summary = " ".join(summary.split())
         drafts: list[IssueDraft] = []
         systems = ["jira", "github"] if system == "both" else [system]
+        req_rel = self.project.rel(self.project.milestone_path(work_id))
         if "jira" in systems:
-            req_rel = f"requirements/milestones/{work_id}.md"
             body_md = build_jira_markdown(
                 work_id=work_id,
                 summary=summary,
@@ -154,7 +154,6 @@ class IssueSyncService:
                 )
             )
         if "github" in systems:
-            req_rel = f"requirements/milestones/{work_id}.md"
             summary = parsed.get("jira_summary") or parsed.get("summary") or work_id
             summary = " ".join(summary.split())
             title = parsed.get("github_title") or summary or work_id

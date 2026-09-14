@@ -253,7 +253,7 @@ text). `installer/rollback.py` stays because upgrade backups are v3.
 
 ### T06 - Strict `Project.home` and `harness_dir`; explicit test home
 
-- Status: Pending
+- Status: Complete
 - Description: `home` returns `SDLC_HOME` or `root / "sdlc-spdd"` with no
   directory probe; `harness_dir` returns `home / "harness"`; remove
   `is_single_folder` (no callers) and the legacy paragraph in the module
@@ -344,7 +344,7 @@ text). `installer/rollback.py` stays because upgrade backups are v3.
 - [x] T03 migration modules gone
 - [x] T04 registry JSONL only
 - [x] T05 detect / adf / quiet v3-only
-- [ ] T06 strict home + fixture
+- [x] T06 strict home + fixture
 - [ ] T07 docs + CHANGELOG
 - [ ] Acceptance grep (refined) clean
 - [ ] Full suite green

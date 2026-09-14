@@ -7,13 +7,13 @@ from sdlc_engine.workflow import WorkflowEngine
 
 
 def _write_requirement(root: Path, work_id: str) -> None:
-    req = root / "requirements" / "milestones" / f"{work_id}.md"
+    req = root / "sdlc-spdd" / "requirements" / "milestones" / f"{work_id}.md"
     req.parent.mkdir(parents=True, exist_ok=True)
     req.write_text(f"# Requirement: {work_id}\n\n## Summary\nWorkflow test seed.\n", encoding="utf-8")
 
 
 def _write_canvas(root: Path, work_id: str, status: str = "Ready For Coding") -> None:
-    canvas = root / "spdd" / "canvas" / f"{work_id}.md"
+    canvas = root / "sdlc-spdd" / "spdd" / "canvas" / f"{work_id}.md"
     canvas.parent.mkdir(parents=True, exist_ok=True)
     canvas.write_text(
         f"# {work_id}\n\n## Operations\n\n### T01 - First\n\n- Status: Not Started\n\n## Final Status\n\n- Status: {status}\n",

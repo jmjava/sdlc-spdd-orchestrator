@@ -144,7 +144,7 @@ def build_parser() -> argparse.ArgumentParser:
     sl.set_defaults(func=cmd_sync_links)
 
     sr = sub.add_parser("sync-roadmap", help="Refresh ROADMAP.md managed summary from canvases")
-    sr.add_argument("--roadmap", default="ROADMAP.md")
+    sr.add_argument("--roadmap", default="", help="Roadmap path (default: <home>/ROADMAP.md)")
     sr.add_argument("--dry-run", action="store_true")
     sr.set_defaults(func=cmd_sync_roadmap)
 
