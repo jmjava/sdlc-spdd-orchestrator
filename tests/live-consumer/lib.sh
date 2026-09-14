@@ -7,6 +7,17 @@ SEED_DIR="${LIVE_CONSUMER_DIR}/seed"
 WORK_ID="${LIVE_WORK_ID:-FEAT-001-hello-live}"
 DONE_WORK_ID="${LIVE_DONE_WORK_ID:-FEAT-002-done-live}"
 SDLC_USER="${SDLC_USER:-live-matrix}"
+if [[ -z "${PYTHON:-}" ]]; then
+  if [[ -x "${REPO_ROOT}/.venv/bin/python" ]]; then
+    PYTHON="${REPO_ROOT}/.venv/bin/python"
+  elif command -v python3.12 >/dev/null 2>&1; then
+    PYTHON="$(command -v python3.12)"
+  else
+    PYTHON="$(command -v python3)"
+  fi
+fi
+export PYTHON
+export PYTHONPATH="${REPO_ROOT}/engine/src${PYTHONPATH:+:${PYTHONPATH}}"
 
 # Default: ephemeral mktemp. For Cursor UI reopen, set:
 #   LIVE_CONSUMER_ROOT=/tmp/sdlc-spdd-live LIVE_CONSUMER_KEEP=1
