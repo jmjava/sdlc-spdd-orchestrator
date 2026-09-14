@@ -34,7 +34,7 @@ related:
 
 | Relationship | Work ID | Status | Notes |
 |--------------|---------|--------|-------|
-| Blocks | `REF-002-purge-pre-v3-compat` | To Do | See milestone-3 |
+| Blocks | `REF-002-purge-pre-v3-compat` | Complete | See milestone-3 |
 | Blocks | `REF-003-retire-bash-workflow-dual-path` | To Do | See milestone-3 |
 | Blocks | `BUG-001-db-query-undefined-names` | To Do | See milestone-3 |
 | Blocks | `CHORE-004-lint-and-complexity-gates-real` | To Do | See milestone-3 |

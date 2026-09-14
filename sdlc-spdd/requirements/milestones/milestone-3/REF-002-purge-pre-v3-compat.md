@@ -1,10 +1,10 @@
 ---
 work_id: "REF-002-purge-pre-v3-compat"
 jira_key: ""
-github_number: ""
+github_number: "314"
 jira_epic: ""
 jira_type: "Refactor"
-jira_status: "In Progress"
+jira_status: "Done"
 jira_assignee: ""
 jira_due_date: ""
 jira_sprint: ""
@@ -23,7 +23,7 @@ related:
 
 **Work ID:** REF-002-purge-pre-v3-compat  
 **Milestone:** Milestone 3 — One flow on storage v3  
-**Status:** In Progress  
+**Status:** Done
 **Priority / size:** P0 / L  
 **Date:** 2026-09-13  
 **Beck stage:** make it right (one engine, one persistence model, aligned docs/tests)
@@ -93,15 +93,21 @@ Storage v3 (ledger + registry + .sdlc/ runtime under sdlc-spdd/) is the only per
 
 Create the issue manually in GitHub UI, then set **Number** (and matching `github_number` frontmatter when used) and commit.
 
-- Number: TBD
+- Number: 314
 - Title: Purge pre-v3 persistence compatibility; one data model
 - Labels: sdlc-spdd, milestone-3, one-flow
-- URL:
+- URL: https://github.com/jmjava/sdlc-spdd-orchestrator/pull/314
 
 ### Description
 
 See this requirement and `spdd/analysis/SPIKE-005-architecture-review-analysis.md`.
 
+## Completion
+
+Completed in PR #314 (`06ddb23`) on 2026-09-14. All 25 merge-commit checks
+passed. Review, retro, and synchronization are recorded under
+`sdlc-spdd/spdd/reviews/` and `sdlc-spdd/spdd/sync/`.
+
 ## Next Step
 
-    /sdlc-spdd-analysis @sdlc-spdd/requirements/milestones/milestone-3/REF-002-purge-pre-v3-compat.md
+Continue Milestone 3 with `REF-003-retire-bash-workflow-dual-path`.

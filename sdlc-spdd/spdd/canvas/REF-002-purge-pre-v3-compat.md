@@ -4,8 +4,8 @@
 
 - Work ID: REF-002-purge-pre-v3-compat
 - Work Type: Refactor
-- Status: In Progress
-- Readiness: Ready For Coding
+- Status: Complete
+- Readiness: Complete
 - Created: 2026-09-14
 - Updated: 2026-09-14
 - Milestone: milestone-3
@@ -17,6 +17,7 @@
 - Analysis: `sdlc-spdd/spdd/analysis/REF-002-purge-pre-v3-compat-analysis.md`
 - Beck stage: make it right
 - Branch: `cursor/milestone-3-ref-002-purge-ebca`
+- Pull Request: https://github.com/jmjava/sdlc-spdd-orchestrator/pull/314
 - Skills: none requested (`#`/`!` markers absent)
 
 ## R - Requirements
@@ -40,18 +41,18 @@ between "move", "archive", and "delete".
 - [x] `archive_work` removes canvas / analysis / review / sync / session /
   state files; no `archive/` directories are created; unit + bash tests
   assert the same contract (T01, #308)
-- [ ] `storage migrate`, `agent-context detect|upgrade`, legacy-layout
+- [x] `storage migrate`, `agent-context detect|upgrade`, legacy-layout
   archive, and legacy consolidation code paths are deleted with their tests
-- [ ] `grep -rn 'agent-context\|work-registry' engine/src` returns nothing;
+- [x] `grep -rn 'agent-context\|work-registry' engine/src` returns nothing;
   in `scripts/` the only hits are the install-source path
   `templates/agent-context/` and the file name `resolve-agent-context.sh`
   (`verify-project-install.sh` keeps its parts-assembled legacy-absent checks)
-- [ ] `upgrade-project.sh` / `init-project.sh` contain no legacy detection,
+- [x] `upgrade-project.sh` / `init-project.sh` contain no legacy detection,
   migration, consolidation, or archive logic (owner 2026-09-14: no refusal
   helper either — pre-v3 trees are unsupported; breaking change accepted)
-- [ ] `Project.home` is `root/sdlc-spdd` (or `SDLC_HOME`) unconditionally;
+- [x] `Project.home` is `root/sdlc-spdd` (or `SDLC_HOME`) unconditionally;
   `Project.harness_dir` is `home/harness`
-- [ ] `TESTING.md`, `docs/storage-v3.md` (+ shipped copy), and the upgrade
+- [x] `TESTING.md`, `docs/storage-v3.md` (+ shipped copy), and the upgrade
   docs have no legacy-layout or migration sections; CHANGELOG updated
 
 ### Non-Goals
@@ -130,8 +131,6 @@ text). `installer/rollback.py` stays because upgrade backups are v3.
 
 ### Files to add
 
-- `engine/tests_unit/conftest.py` — `project_home` fixture: creates
-  `tmp_path/sdlc-spdd/` and returns `Project(tmp_path)`
 - `engine/tests_unit/test_project_home.py` — strict home / harness_dir /
   `SDLC_HOME` override
 
@@ -169,7 +168,7 @@ text). `installer/rollback.py` stays because upgrade backups are v3.
   event, never touches requirements or `lessons.jsonl`; unit and bash tests
   assert the same contract.
 - Files: `engine/src/sdlc_engine/archive.py`,
-  `engine/tests_unit/test_registry_archive.py`, `engine/tests_unit/test_cli.py`
+- Files: `engine/tests_unit/test_registry_archive.py`, `engine/tests_unit/test_cli.py`
 - Tests: `python -m pytest engine/tests_unit/test_registry_archive.py`
 - Validation: no `spdd/*/archive/` directory exists in the tree after archive
 
@@ -187,14 +186,14 @@ text). `installer/rollback.py` stays because upgrade backups are v3.
   the `agent-context/harness` fallbacks from `paths.sh`. Delete the two
   consolidation harnesses, their workflow, and the two playbook-migration tests
   in `test-resolve-agent-context.sh`. No detection or refusal logic is added.
-- Files: `scripts/upgrade-project.sh`, `scripts/init-project.sh`,
-  `scripts/lib/framework-install.sh`, `scripts/lib/skills.sh`,
-  `scripts/lib/paths.sh`, `tests/test-upgrade-consolidate.sh` (delete),
-  `tests/test-framework-install-consolidate.sh` (delete),
-  `.github/workflows/test-upgrade-consolidate.yml` (delete),
-  `tests/test-scripts-lib.sh`, `tests/test-resolve-agent-context.sh`,
-  `tests/test-sdlc-workflow.sh`, `scripts/start-agent-session.sh`,
-  `scripts/capture-session-memory.sh`, `scripts/resolve-context-backend.sh`
+- Files: `.github/workflows/test-upgrade-consolidate.yml` (delete)
+- Files: `scripts/capture-session-memory.sh`, `scripts/init-project.sh`
+- Files: `scripts/lib/framework-install.sh`, `scripts/lib/paths.sh`, `scripts/lib/skills.sh`
+- Files: `scripts/resolve-context-backend.sh`, `scripts/start-agent-session.sh`, `scripts/upgrade-project.sh`
+- Files: `sdlc-spdd/requirements/milestones/milestone-3/REF-002-purge-pre-v3-compat.md`
+- Files: `sdlc-spdd/spdd/canvas/REF-002-purge-pre-v3-compat.md`, `sdlc-spdd/spdd/memory/registry.jsonl`
+- Files: `tests/test-framework-install-consolidate.sh` (delete), `tests/test-upgrade-consolidate.sh` (delete)
+- Files: `tests/test-resolve-agent-context.sh`, `tests/test-scripts-lib.sh`, `tests/test-sdlc-workflow.sh`
 - Tests: `./tests/test-scripts-lib.sh`; `./tests/test-resolve-agent-context.sh`; `./tests/test-sdlc-workflow.sh`;
   `./tests/test-adapter-install.sh`; `shellcheck -S error` on touched shell files
 - Validation: `rg -n 'legacy-layout-archive|consolidate_into_home|framework_archive|migrate_playbooks' scripts tests .github` is empty; a v3 target still inits and upgrades
@@ -211,14 +210,20 @@ text). `installer/rollback.py` stays because upgrade backups are v3.
   legacy-seeding tests in `test_remaining_cleanup_slices.py` and
   `test_hard_review_gaps.py` to keep only the v3 assertions they also make
   (quiet mode, session brief location, ledger untouched).
-- Files: `engine/src/sdlc_engine/storage_migrate.py` (delete),
-  `engine/src/sdlc_engine/agent_context_upgrade.py` (delete),
-  `engine/src/sdlc_engine/context_model.py`, `engine/src/sdlc_engine/cli_parser.py`,
-  `engine/src/sdlc_engine/cli_commands.py`,
-  `engine/tests_unit/test_storage_migrate.py` (delete),
-  `engine/tests_unit/test_remaining_cleanup_slices.py`,
-  `engine/tests_unit/test_hard_review_gaps.py`, `docs/engine-v2.md`,
-  `docs/framework-upgrade.md`, `sdlc-spdd/docs/framework-upgrade.md`
+- Files: `README.md`
+- Files: `docs/agent-session-scripts.md`, `docs/engine-v2.md`, `docs/framework-upgrade.md`
+- Files: `docs/installing-into-your-project.md`, `docs/maintaining-your-project.md`, `docs/quiet-mode.md`, `docs/storage-v3.md`
+- Files: `docs/diagrams/02-container.puml`, `docs/diagrams/02-container.svg`
+- Files: `docs/diagrams/03-component-engine.puml`, `docs/diagrams/03-component-engine.svg`
+- Files: `engine/src/sdlc_engine/agent_context_upgrade.py` (delete), `engine/src/sdlc_engine/storage_migrate.py` (delete)
+- Files: `engine/src/sdlc_engine/cli.py`, `engine/src/sdlc_engine/cli_commands.py`, `engine/src/sdlc_engine/cli_parser.py`
+- Files: `engine/src/sdlc_engine/context_model.py`, `engine/src/sdlc_engine/quiet.py`
+- Files: `engine/tests_unit/test_hard_review_gaps.py`, `engine/tests_unit/test_remaining_cleanup_slices.py`
+- Files: `engine/tests_unit/test_storage_migrate.py` (delete)
+- Files: `sdlc-spdd/docs/agent-session-scripts.md`, `sdlc-spdd/docs/framework-upgrade.md`
+- Files: `sdlc-spdd/docs/installing-into-your-project.md`, `sdlc-spdd/docs/maintaining-your-project.md`
+- Files: `sdlc-spdd/docs/quiet-mode.md`, `sdlc-spdd/docs/storage-v3.md`
+- Files: `sdlc-spdd/spdd/canvas/REF-002-purge-pre-v3-compat.md`
 - Tests: `python -m pytest engine/tests_unit -q`; `ruff check --select F,E9 engine/src`
 - Validation: `sdlc-engine storage status` and `sdlc-engine agent-context detect` exit 2 (argparse unknown command); `sdlc-engine quiet-status` exits 0; `rg -n 'storage_migrate|agent_context_upgrade|StorageMigration' engine scripts docs` is empty
 
@@ -229,8 +234,11 @@ text). `installer/rollback.py` stays because upgrade backups are v3.
   synthetic `legacy-tsv` event, and the module docstring paragraph. Add a
   unit test that seeds `agent-context/work-registry.tsv` without
   `registry.jsonl` and asserts `rows() == []`.
-- Files: `engine/src/sdlc_engine/registry.py`,
-  `engine/tests_unit/test_registry_archive.py`
+- Files: `TESTING.md`
+- Files: `docs/diagrams/03-component-engine.puml`, `docs/diagrams/03-component-engine.svg`, `docs/engine-v2.md`
+- Files: `engine/src/sdlc_engine/registry.py`, `engine/tests_unit/test_registry_archive.py`
+- Files: `sdlc-spdd/spdd/canvas/REF-002-purge-pre-v3-compat.md`
+- Files: `templates/agent-context/sdlc-team-registry.sh`
 - Tests: `python -m pytest engine/tests_unit/test_registry_archive.py engine/tests_unit/test_cli.py -q`
 - Validation: `rg -n 'tsv|legacy' engine/src/sdlc_engine/registry.py` is empty
 
@@ -244,10 +252,11 @@ text). `installer/rollback.py` stays because upgrade backups are v3.
   `quiet.is_quiet` read `project.harness_dir / "quiet-mode.md"`. Update the
   affected unit tests; check `console-ui` for a consumer of the removed
   detect field.
-- Files: `engine/src/sdlc_engine/installer/detect.py`,
-  `engine/src/sdlc_engine/adf_work.py`, `engine/src/sdlc_engine/quiet.py`,
-  `engine/tests_unit/test_remaining_cleanup_slices.py`,
-  `engine/tests_unit/test_adf_work.py`, `engine/tests_unit/test_installer_*.py`
+- Files: `engine/src/sdlc_engine/adf_work.py`
+- Files: `engine/src/sdlc_engine/db.py`, `engine/src/sdlc_engine/db_query.py`, `engine/src/sdlc_engine/db_schema.py`
+- Files: `engine/src/sdlc_engine/installer/detect.py`
+- Files: `engine/tests_unit/test_adf_work.py`, `engine/tests_unit/test_db.py`, `engine/tests_unit/test_installer_runtime_units.py`
+- Files: `sdlc-spdd/spdd/canvas/REF-002-purge-pre-v3-compat.md`
 - Tests: `python -m pytest engine/tests_unit -q`
 - Validation: `rg -n 'agent-context' engine/src` is empty
 
@@ -257,36 +266,81 @@ text). `installer/rollback.py` stays because upgrade backups are v3.
 - Description: `home` returns `SDLC_HOME` or `root / "sdlc-spdd"` with no
   directory probe; `harness_dir` returns `home / "harness"`; remove
   `is_single_folder` (no callers) and the legacy paragraph in the module
-  docstring. Add `engine/tests_unit/conftest.py` with a `project_home`
-  fixture and move the 22 test files that relied on `home == root` onto it
-  (or onto `project.home`-relative paths). Run `tests/research/` and the bash
-  harnesses that drive the Python engine to confirm no hidden dependency.
-- Files: `engine/src/sdlc_engine/project.py`,
-  `engine/tests_unit/conftest.py` (add), `engine/tests_unit/test_project_home.py` (add),
-  the 22 unit test files listed in the analysis measurement,
-  `tests/research/test_ref001_sut.py`, `tests/research/test_cretrieve.py` (verify only)
+  docstring. Add focused `test_project_home.py`; move affected fixtures and
+  runtime consumers onto explicit `sdlc-spdd/` homes or `project.home`.
+  Run `tests/research/` and the bash harnesses that drive the Python engine
+  to confirm no hidden dependency.
+- Files: `engine/src/sdlc_engine/adf_templates.py`, `engine/src/sdlc_engine/adf_work.py`
+- Files: `engine/src/sdlc_engine/cli_parser.py`, `engine/src/sdlc_engine/issues.py`, `engine/src/sdlc_engine/local_sessions.py`
+- Files: `engine/src/sdlc_engine/installer/playground.py`, `engine/src/sdlc_engine/installer/playground_fakes.py`
+- Files: `engine/src/sdlc_engine/project.py`, `engine/src/sdlc_engine/sync_local.py`
+- Files: `scripts/lib/paths.sh`, `scripts/resolve-agent-context.sh`, `scripts/sdlc.sh`, `scripts/start-agent-session.sh`
+- Files: `templates/agent-context/harness/phase-index.md`, `templates/agent-context/harness/skills`
+- Files: `templates/agent-context/hooks/notify-team-registry.example.sh`
+- Files: `templates/agent-context/sdlc-pointer.sh`, `templates/agent-context/sdlc-team-registry.sh`, `templates/agent-context/sdlc-workflow.sh`
+- Files: `engine/tests_unit/test_project_home.py` (add), affected unit tests listed in the merged commit
+- Files: `tests/research/cretrieve_context_select.py`, `tests/research/test_cretrieve.py`, `tests/research/test_ref001_sut.py`
+- Files: `tests/test-resolve-agent-context.sh`, `tests/test-sdlc-workflow.sh`
 - Tests: `python -m pytest engine/tests_unit -q`; `python -m pytest tests/research -q`; `./scripts/run-test-suites.sh`
 - Validation: unit count unchanged minus deleted legacy tests; `rg -n 'is_single_folder|agent-context' engine/src` is empty
 
-### T07 - Docs describe only v3; CHANGELOG
+### T07 - Finish the v3-only runtime, docs, and CI fixtures
 
 - Status: Complete
-- Description: Remove the "legacy layouts / migrating a legacy install"
-  sections from `docs/storage-v3.md`; the "Storage migration and
-  consolidation" section from `docs/framework-upgrade.md`; the migration
-  sentences in `installing-into-your-project.md`, `maintaining-your-project.md`,
-  `agent-session-scripts.md`, `README.md:307-308`; the `storage` verbs from
-  `docs/engine-v2.md`; the `legacy-layout-archive` paragraph and consolidate
-  harness rows from `TESTING.md`. State in `framework-upgrade.md` that v3 is
-  the only layout and older installs are unsupported. Sync shipped copies under `sdlc-spdd/docs/`.
-  CHANGELOG `[Unreleased]` → Removed / Changed entries.
-- Files: `docs/storage-v3.md`, `docs/framework-upgrade.md`,
-  `docs/installing-into-your-project.md`, `docs/maintaining-your-project.md`,
-  `docs/agent-session-scripts.md`, `docs/engine-v2.md`, matching
-  `sdlc-spdd/docs/*.md`, `README.md`, `TESTING.md`, `CHANGELOG.md`
+- Description: Finish strict-home handling in retained installer/runtime
+  consumers and dogfood scripts; move unit, integration, E2E, research,
+  live-consumer, and shell fixtures to storage-v3 homes. Remove the remaining
+  legacy-layout language from operator docs and `STARTER-SPEC.md`; sync shipped
+  docs under `sdlc-spdd/docs/`; update `CHANGELOG.md`.
+- Files: `CHANGELOG.md`, `README.md`, `STARTER-SPEC.md`, `TESTING.md`
+- Files: `docs/agent-session-scripts.md`, `docs/framework-upgrade.md`
+- Files: `docs/installing-into-your-project.md`, `docs/maintaining-your-project.md`
+- Files: `docs/spdd-prompt-standard.md`, `docs/storage-v3.md`
+- Files: `engine/src/sdlc_engine/installer/guide.py`, `engine/src/sdlc_engine/installer/guide_runtime.py`
+- Files: `engine/src/sdlc_engine/installer/runner.py`, `engine/src/sdlc_engine/installer/viewer_runtime.py`
+- Files: `engine/src/sdlc_engine/project.py`, `engine/src/sdlc_engine/sync_local.py`, `engine/src/sdlc_engine/workflow.py`
+- Files: `scripts/capture-session-memory.sh`, `scripts/init-project.sh`
+- Files: `scripts/resolve-agent-context.sh`, `scripts/resolve-context-backend.sh`, `scripts/resync-agent-session.sh`
+- Files: `scripts/sync-agent-context.sh` (delete), `scripts/upgrade-project.sh`, `scripts/verify-project-install.sh`
+- Files: `sdlc-spdd/docs/agent-session-scripts.md`, `sdlc-spdd/docs/framework-upgrade.md`
+- Files: `sdlc-spdd/docs/installing-into-your-project.md`, `sdlc-spdd/docs/maintaining-your-project.md`
+- Files: `sdlc-spdd/docs/spdd-prompt-standard.md`, `sdlc-spdd/docs/storage-v3.md`
+- Files: `sdlc-spdd/requirements/milestones/milestone-3/REF-002-purge-pre-v3-compat.md`
+- Files: `sdlc-spdd/scripts/capture-session-memory.sh`, `sdlc-spdd/scripts/lib/paths.sh`
+- Files: `sdlc-spdd/scripts/resolve-agent-context.sh`, `sdlc-spdd/scripts/resolve-context-backend.sh`
+- Files: `sdlc-spdd/scripts/resync-agent-session.sh`, `sdlc-spdd/scripts/sdlc-pointer.sh`
+- Files: `sdlc-spdd/scripts/sdlc-team-registry.sh`, `sdlc-spdd/scripts/sdlc-workflow.sh`, `sdlc-spdd/scripts/sdlc.sh`
+- Files: `sdlc-spdd/scripts/start-agent-session.sh`, `sdlc-spdd/scripts/sync-agent-context.sh` (delete)
+- Files: `sdlc-spdd/scripts/verify-project-install.sh`
+- Files: `sdlc-spdd/spdd/canvas/REF-002-purge-pre-v3-compat.md`
+- Files: `engine/tests_unit`, `engine/tests_integration`, `engine/tests_e2e`, `tests`
 - Tests: `./scripts/verify-docgen-dev-boundary.sh` (if applicable); the docs
   link check used in CI
 - Validation: `rg -n -i 'storage migrate|legacy-layout-archive|consolidat' docs sdlc-spdd/docs README.md TESTING.md` returns only historical CHANGELOG lines
+
+### T08 - Post-merge review, retro, and documentation sync
+
+- Status: Complete
+- Description: Reconcile the canvas's planned file scope with the merged
+  implementation; record review and sync artifacts; capture and accept reusable
+  close-out lessons; mark requirement, milestone, and roadmap records Complete.
+- Files: `sdlc-spdd/ROADMAP.md`
+- Files: `sdlc-spdd/requirements/milestones/milestone-3/MILESTONE-3.md`
+- Files: `sdlc-spdd/requirements/milestones/milestone-3/REF-002-purge-pre-v3-compat.md`
+- Files: `sdlc-spdd/requirements/milestones/milestone-3/REF-003-retire-bash-workflow-dual-path.md`
+- Files: `sdlc-spdd/requirements/milestones/milestone-3/REF-006-storage-records-and-atomic-appends.md`
+- Files: `sdlc-spdd/requirements/milestones/milestone-3/SPIKE-005-architecture-review.md`
+- Files: `sdlc-spdd/requirements/milestones/milestone-3/TEST-004-hermetic-unit-suite-and-fixtures.md`
+- Files: `sdlc-spdd/requirements/milestones/milestone-4/DOC-006-design-decisions-v3-and-starter-spec-archive.md`
+- Files: `sdlc-spdd/spdd/canvas/REF-002-purge-pre-v3-compat.md`
+- Files: `sdlc-spdd/spdd/memory/context-index.md`, `sdlc-spdd/spdd/memory/lessons.jsonl`
+- Files: `sdlc-spdd/spdd/memory/registry.jsonl`
+- Files: `sdlc-spdd/spdd/reviews/REF-002-purge-pre-v3-compat-review.md`
+- Files: `sdlc-spdd/spdd/sync/REF-002-purge-pre-v3-compat-sync.md`
+- Tests: requirement and canvas validators; operation-diff-scope checks for
+  the implementation and T08; docs mirror/stale-wording checks; lifecycle gates
+- Validation: PR #314 is merged; merge commit `06ddb23` has 25/25 successful
+  checks; all lifecycle records name the same Complete state
 
 ## N - Norms
 
@@ -349,14 +403,24 @@ text). `installer/rollback.py` stays because upgrade backups are v3.
 - [x] T06 strict home + fixture
 - [x] T07 docs + CHANGELOG
 - [x] Acceptance grep (refined) clean
-- [ ] Full suite green
+- [x] Full suite green (25/25 merge-commit checks)
+- [x] T08 review, retro, and lifecycle sync
 
 ## Sync Notes
 
 - 2026-09-14 — Canvas created after T01 had already landed in #308 ahead of
   the canvas; T01 recorded Complete from the merged commit.
+- 2026-09-14 — T02–T07 merged in #314 (`06ddb23`). Sync reconciled the
+  operation file lists with the implementation, recorded the added T08
+  close-out operation, and confirmed product/shipped docs are byte-identical.
+- 2026-09-14 — Implementation drift was limited to a different T06 test
+  strategy (focused test plus explicit homes rather than a shared conftest)
+  and T07's wider runtime/CI-fixture repair. Both preserve the approved
+  v3-only contract; no behavior follow-up remains.
 
 ## Final Status
 
-- Readiness: Ready For Coding
-- Status: In Progress
+- Readiness: Complete
+- Status: Complete
+- Completed: 2026-09-14
+- Pull Request: https://github.com/jmjava/sdlc-spdd-orchestrator/pull/314
