@@ -224,7 +224,7 @@ text). `installer/rollback.py` stays because upgrade backups are v3.
 
 ### T04 - `TeamRegistry` reads `registry.jsonl` only
 
-- Status: Pending
+- Status: Complete
 - Description: Remove `legacy_tsv_path`, the TSV branch in `rows()`, the
   synthetic `legacy-tsv` event, and the module docstring paragraph. Add a
   unit test that seeds `agent-context/work-registry.tsv` without
@@ -342,7 +342,7 @@ text). `installer/rollback.py` stays because upgrade backups are v3.
 - [x] T01 archive contract
 - [x] T02 consolidation / migration deletion
 - [x] T03 migration modules gone
-- [ ] T04 registry JSONL only
+- [x] T04 registry JSONL only
 - [ ] T05 detect / adf / quiet v3-only
 - [ ] T06 strict home + fixture
 - [ ] T07 docs + CHANGELOG

@@ -237,7 +237,7 @@ real upgrade. CI: `.github/workflows/test-upgrade-consolidate.yml`.
 - Phase/gate tracking, `next`/`advance`/`skip`/`shelf`/`resume`/`sync`
 - `sdlc.sh` wrapper delegation
 - Guarded `capture` (pointer must match)
-- Team `claim`/`release`, stale TTL, branch/PR/Jira notes in `work-registry.tsv`
+- Team `claim`/`release`, stale TTL, branch/PR/Jira notes in `spdd/memory/registry.jsonl`
 - Jira Key auto-link from `requirements/milestones/<WORK-ID>.md` on claim
 
 ### Archive completed/cancelled work harness

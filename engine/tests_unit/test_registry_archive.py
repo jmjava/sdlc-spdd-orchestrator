@@ -124,3 +124,17 @@ def test_sync_team_marks_cancelled(tmp_path: Path) -> None:
     rows = {r.work_id: r for r in reg.rows()}
     assert rows[work_id].status == "cancelled"
     assert (tmp_path / "spdd" / "canvas" / f"{work_id}.md").is_file()
+
+
+def test_registry_ignores_pre_v3_tsv(tmp_path: Path) -> None:
+    tsv = tmp_path / "agent-context" / "work-registry.tsv"
+    tsv.parent.mkdir(parents=True)
+    tsv.write_text(
+        "work_id\tstatus\tphase\toperation\towner\tupdated_at\tnote\n"
+        "FEAT-099-old\tactive\tcode\tT01\talice\t2026-01-01T00:00:00Z\tstale\n",
+        encoding="utf-8",
+    )
+    reg = TeamRegistry(Project(tmp_path))
+    assert not hasattr(reg, "legacy_tsv_path")
+    assert reg.rows() == []
+    assert reg.path == tmp_path / "spdd" / "memory" / "registry.jsonl"

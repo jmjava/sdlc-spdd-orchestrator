@@ -27,7 +27,6 @@ if [[ -f "${_paths_lib}" ]]; then
 fi
 
 SDLC_TEAM_REGISTRY_JSONL="$(sdlc_registry "${SDLC_ROOT}" 2>/dev/null || printf '%s/spdd/memory/registry.jsonl' "${SDLC_ROOT}")"
-SDLC_TEAM_REGISTRY_LEGACY="${SDLC_ROOT}/agent-context/work-registry.tsv"
 SDLC_TEAM_REGISTRY_LOCK="${SDLC_DIR:-${SDLC_ROOT}/.sdlc}/registry.lock"
 
 _team_stale_days() {
@@ -259,7 +258,7 @@ sdlc_team_jira_status() {
   local work_id="${1:-}"
   [[ -n "${work_id}" ]] || { printf 'missing'; return 0; }
   local note="" key=""
-  if [[ -f "${SDLC_TEAM_REGISTRY_JSONL}" ]] || [[ -f "${SDLC_TEAM_REGISTRY_LEGACY}" ]]; then
+  if [[ -f "${SDLC_TEAM_REGISTRY_JSONL}" ]]; then
     note="$(_team_registry_note_for "${work_id}" || true)"
     key="$(_team_jira_from_note "${note}")"
   fi
@@ -381,32 +380,6 @@ for line in Path(${SDLC_TEAM_REGISTRY_JSONL@Q}).read_text(encoding="utf-8").spli
 PY
     return 0
   fi
-  # Read-only TSV fallback (never written).
-  if [[ ! -f "${SDLC_TEAM_REGISTRY_LEGACY}" ]]; then
-    return 0
-  fi
-  python3 - <<PY
-import json
-from pathlib import Path
-tsv = Path(${SDLC_TEAM_REGISTRY_LEGACY@Q})
-for line in tsv.read_text(encoding="utf-8").splitlines():
-    if not line or line.startswith("#") or line.startswith("work_id"):
-        continue
-    parts = line.split("\t")
-    while len(parts) < 7:
-        parts.append("")
-    ev = {
-        "event": "legacy-tsv",
-        "work_id": parts[0],
-        "status": parts[1],
-        "phase": parts[2],
-        "operation": parts[3],
-        "owner": parts[4],
-        "ts": parts[5],
-        "note": parts[6],
-    }
-    print(json.dumps(ev, ensure_ascii=False))
-PY
 }
 
 _team_registry_rows() {
@@ -429,26 +402,6 @@ if jsonl.is_file() and jsonl.stat().st_size:
         wid = ev.get("work_id", "")
         if wid:
             by_id[wid] = ev
-legacy = Path(${SDLC_TEAM_REGISTRY_LEGACY@Q})
-if not by_id and legacy.is_file():
-    for line in legacy.read_text(encoding="utf-8").splitlines():
-        if not line or line.startswith("#") or line.startswith("work_id"):
-            continue
-        parts = line.split("\t")
-        while len(parts) < 7:
-            parts.append("")
-        wid = parts[0]
-        if not wid:
-            continue
-        by_id[wid] = {
-            "work_id": wid,
-            "status": parts[1],
-            "phase": parts[2],
-            "operation": parts[3],
-            "owner": parts[4],
-            "ts": parts[5],
-            "note": parts[6],
-        }
 for wid in sorted(by_id):
     ev = by_id[wid]
     print("\t".join([
@@ -832,20 +785,19 @@ sdlc_team_status() {
     echo "  (empty — claim work with ./scripts/sdlc.sh claim <WORK-ID>)"
   fi
   echo
-  echo "Hooks: set SDLC_TEAM_REGISTRY_HOOK to agent-context/hooks/notify-team-registry.sh"
+  echo "Hooks: set SDLC_TEAM_REGISTRY_HOOK to sdlc-spdd/scripts/hooks/notify-team-registry.sh"
   echo "Discover all Work IDs: ./scripts/sdlc.sh list-work"
 }
 
 # Locate the workflow manager: same dir as this script (v3 installs place both
-# under <home>/scripts/), then <home>/scripts/, then legacy agent-context/.
+# under <home>/scripts/), then <home>/scripts/.
 _team_workflow_script() {
   local self_dir
   self_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
   local candidate
   for candidate in \
     "${self_dir}/sdlc-workflow.sh" \
-    "${SDLC_ROOT}/sdlc-spdd/scripts/sdlc-workflow.sh" \
-    "${SDLC_ROOT}/agent-context/sdlc-workflow.sh"; do
+    "${SDLC_ROOT}/sdlc-spdd/scripts/sdlc-workflow.sh"; do
     if [[ -f "${candidate}" ]]; then
       printf '%s' "${candidate}"
       return 0
