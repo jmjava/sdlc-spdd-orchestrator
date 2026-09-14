@@ -236,7 +236,7 @@ text). `installer/rollback.py` stays because upgrade backups are v3.
 
 ### T05 - Detect, ADF, and quiet-mode paths are v3-only
 
-- Status: Pending
+- Status: Complete (quiet.py landed in T03; `harness_dir` fallback removal stays in T06 with strict home)
 - Description: Drop `LEGACY_MARKERS` and the two sprawled entries in
   `MARKERS` (`spdd/memory/lessons.jsonl`, `scripts/sdlc-spdd/sdlc.sh`) from
   `installer/detect.py`; only v3 and adapter markers remain. Drop the
@@ -343,7 +343,7 @@ text). `installer/rollback.py` stays because upgrade backups are v3.
 - [x] T02 consolidation / migration deletion
 - [x] T03 migration modules gone
 - [x] T04 registry JSONL only
-- [ ] T05 detect / adf / quiet v3-only
+- [x] T05 detect / adf / quiet v3-only
 - [ ] T06 strict home + fixture
 - [ ] T07 docs + CHANGELOG
 - [ ] Acceptance grep (refined) clean

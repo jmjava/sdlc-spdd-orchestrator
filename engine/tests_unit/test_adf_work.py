@@ -48,7 +48,6 @@ def test_infer_issue_key() -> None:
 def test_init_from_adf_creates_artifacts(tmp_path: Path) -> None:
     root = tmp_path / "app"
     root.mkdir()
-    (root / "agent-context").mkdir()
     adf = root / "adf" / "ORCH-99-demo.adf.json"
     _write_adf(adf, heading="Ship ADF init", body="Browse ADF and create a canvas.")
 

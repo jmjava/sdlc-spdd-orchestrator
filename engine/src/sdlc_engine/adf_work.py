@@ -101,9 +101,8 @@ class AdfWorkService:
         max_n = 0
         pattern = re.compile(rf"^{re.escape(prefix)}-(\d+)-", re.IGNORECASE)
         roots = [
-            self.project.root / "agent-context" / "features",
-            self.project.root / "spdd" / "canvas",
-            self.project.root / "requirements" / "milestones",
+            self.project.spdd_dir / "canvas",
+            self.project.requirements_dir / "milestones",
         ]
         for base in roots:
             if not base.is_dir():

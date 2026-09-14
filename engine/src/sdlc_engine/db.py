@@ -586,7 +586,7 @@ class LocalIndex(IndexRebuildMixin, IndexQueryMixin):
         ts: str = "",
         entry_id: str = "",
     ) -> str:
-        """Upsert any agent-context capability row + section/area edges."""
+        """Upsert any context capability row + section/area edges."""
         from .context_model import CONTEXT_KINDS
 
         kind_n = (kind or "").strip().lower()

@@ -47,9 +47,6 @@ Body for search.
 """,
         encoding="utf-8",
     )
-    feat = root / "agent-context" / "features" / work_id
-    feat.mkdir(parents=True, exist_ok=True)
-    (feat / "requirement.md").write_text(f"# {work_id}\n", encoding="utf-8")
 
 
 def test_rebuild_and_query(tmp_path: Path, monkeypatch) -> None:

@@ -75,7 +75,7 @@ class IndexQueryMixin:
         }
 
     def graph_for_work(self, work_id: str) -> dict[str, Any]:
-        """Full subgraph: sections + all agent-context entries + typed edges."""
+        """Full subgraph: sections + all context entries + typed edges."""
         self.ensure_schema()
         wid = (work_id or "").strip()
         with self.connect() as conn:
