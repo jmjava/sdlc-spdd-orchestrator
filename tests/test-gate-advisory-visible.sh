@@ -26,8 +26,8 @@ bad() { echo "  FAIL $1" >&2; fail=$((fail + 1)); }
 write_canvas() {
   local t="$1"
   local work_id="$2"
-  mkdir -p "${t}/spdd/canvas"
-  cat > "${t}/spdd/canvas/${work_id}.md" <<EOF
+  mkdir -p "${t}/sdlc-spdd/spdd/canvas"
+  cat > "${t}/sdlc-spdd/spdd/canvas/${work_id}.md" <<EOF
 # REASONS Canvas: ${work_id}
 
 ## Metadata
@@ -43,35 +43,35 @@ EOF
 write_requirement() {
   local t="$1"
   local work_id="$2"
-  mkdir -p "${t}/requirements/milestones"
-  printf '# Requirement: %s\n' "${work_id}" > "${t}/requirements/milestones/${work_id}.md"
+  mkdir -p "${t}/sdlc-spdd/requirements/milestones"
+  printf '# Requirement: %s\n' "${work_id}" > "${t}/sdlc-spdd/requirements/milestones/${work_id}.md"
 }
 
 setup_feature() {
   local t="$1"
-  mkdir -p "${t}/.sdlc/sessions" \
-    "${t}/agent-context" \
-    "${t}/spdd/canvas" \
-    "${t}/spdd/analysis" \
-    "${t}/spdd/memory" \
-    "${t}/scripts/sdlc-spdd/lib"
-  cp "${POINTER}" "${t}/agent-context/sdlc-pointer.sh"
-  cp "${WORKFLOW}" "${t}/agent-context/sdlc-workflow.sh"
-  cp "${TEAM_REG}" "${t}/agent-context/sdlc-team-registry.sh"
-  : > "${t}/spdd/memory/registry.jsonl"
-  cp "${SDLC_SH}" "${t}/scripts/sdlc-spdd/sdlc.sh"
-  cp "${CAPTURE}" "${t}/scripts/sdlc-spdd/capture-session-memory.sh"
-  cp "${REPO_ROOT}/scripts/lib/"*.sh "${t}/scripts/sdlc-spdd/lib/"
-  chmod +x "${t}/agent-context/"*.sh \
-    "${t}/scripts/sdlc-spdd/sdlc.sh" \
-    "${t}/scripts/sdlc-spdd/capture-session-memory.sh"
+  mkdir -p "${t}/sdlc-spdd/.sdlc/sessions" \
+    "${t}/sdlc-spdd/scripts" \
+    "${t}/sdlc-spdd/spdd/canvas" \
+    "${t}/sdlc-spdd/spdd/analysis" \
+    "${t}/sdlc-spdd/spdd/memory" \
+    "${t}/sdlc-spdd/scripts/lib"
+  cp "${POINTER}" "${t}/sdlc-spdd/scripts/sdlc-pointer.sh"
+  cp "${WORKFLOW}" "${t}/sdlc-spdd/scripts/sdlc-workflow.sh"
+  cp "${TEAM_REG}" "${t}/sdlc-spdd/scripts/sdlc-team-registry.sh"
+  : > "${t}/sdlc-spdd/spdd/memory/registry.jsonl"
+  cp "${SDLC_SH}" "${t}/sdlc-spdd/scripts/sdlc.sh"
+  cp "${CAPTURE}" "${t}/sdlc-spdd/scripts/capture-session-memory.sh"
+  cp "${REPO_ROOT}/scripts/lib/"*.sh "${t}/sdlc-spdd/scripts/lib/"
+  chmod +x "${t}/sdlc-spdd/scripts/"*.sh \
+    "${t}/sdlc-spdd/scripts/sdlc.sh" \
+    "${t}/sdlc-spdd/scripts/capture-session-memory.sh"
 }
 
 sdlc() {
   local t="$1"
   shift
   SDLC_ROOT="${t}" SDLC_ENGINE=shell SDLC_GATE_ENGINE=shell \
-    "${t}/scripts/sdlc-spdd/sdlc.sh" "$@"
+    "${t}/sdlc-spdd/scripts/sdlc.sh" "$@"
 }
 
 echo "== test_gate_architect_ok_shows_advisory_did_not_run =="

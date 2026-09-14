@@ -60,7 +60,7 @@ if grep -Fq 'Started local session LOCAL-' <<< "${out}"; then
 else
   bad "local start unexpected: ${out}"
 fi
-if find "${tmp}/.sdlc/local-sessions" -path '*/LOCAL-*/session.json' 2>/dev/null | grep -q .; then
+if find "${tmp}/sdlc-spdd/.sdlc/local-sessions" -path '*/LOCAL-*/session.json' 2>/dev/null | grep -q .; then
   ok "local session artifacts under .sdlc/local-sessions"
 else
   bad "missing local session artifacts"
@@ -94,9 +94,9 @@ out="$(
       --no-claim
 )"
 if grep -Fq 'Created FEAT-013-shim-adf-init' <<< "${out}" \
-  && [[ -f "${tmp}/spdd/canvas/FEAT-013-shim-adf-init.md" ]] \
-  && [[ -f "${tmp}/requirements/milestones/FEAT-013-shim-adf-init.md" ]] \
-  && grep -Fq 'Source System: ADF' "${tmp}/spdd/canvas/FEAT-013-shim-adf-init.md"; then
+  && [[ -f "${tmp}/sdlc-spdd/spdd/canvas/FEAT-013-shim-adf-init.md" ]] \
+  && [[ -f "${tmp}/sdlc-spdd/requirements/milestones/FEAT-013-shim-adf-init.md" ]] \
+  && grep -Fq 'Source System: ADF' "${tmp}/sdlc-spdd/spdd/canvas/FEAT-013-shim-adf-init.md"; then
   ok "work init-from-adf creates canvas + requirement"
 else
   bad "work init-from-adf unexpected: ${out}"
@@ -130,7 +130,7 @@ while IFS=$'\t' read -r alias_line wid; do
     alias_ok=0
   fi
   # Ensure dry-run did not write into the orchestrator checkout.
-  if [[ -f "${REPO_ROOT}/spdd/canvas/${wid}.md" ]]; then
+  if [[ -f "${REPO_ROOT}/sdlc-spdd/spdd/canvas/${wid}.md" ]]; then
     bad "sdlc.sh dry-run wrote canvas for ${wid}"
     alias_ok=0
   fi
@@ -156,8 +156,8 @@ fi
 
 echo "== db index rebuild via python engine =="
 # Seed a tiny work item so rebuild has something to index.
-mkdir -p "${tmp}/spdd/canvas" "${tmp}/requirements/milestones"
-cat > "${tmp}/spdd/canvas/FEAT-000-shim.md" <<'EOF'
+mkdir -p "${tmp}/sdlc-spdd/spdd/canvas" "${tmp}/sdlc-spdd/requirements/milestones"
+cat > "${tmp}/sdlc-spdd/spdd/canvas/FEAT-000-shim.md" <<'EOF'
 # REASONS Canvas: FEAT-000-shim - Shim
 
 ## Metadata
@@ -170,26 +170,26 @@ cat > "${tmp}/spdd/canvas/FEAT-000-shim.md" <<'EOF'
 
 - Status: Draft
 EOF
-cp "${tmp}/spdd/canvas/FEAT-000-shim.md" "${tmp}/requirements/milestones/FEAT-000-shim.md"
+cp "${tmp}/sdlc-spdd/spdd/canvas/FEAT-000-shim.md" "${tmp}/sdlc-spdd/requirements/milestones/FEAT-000-shim.md"
 out="$(
   SDLC_ENGINE=shell \
     PYTHONPATH="${REPO_ROOT}/engine/src" \
     python3 -m sdlc_engine --root "${tmp}" db rebuild
 )"
-if grep -Fq 'Rebuilt SQLite index' <<< "${out}" && [[ -f "${tmp}/.sdlc/index.sqlite" ]]; then
+if grep -Fq 'Rebuilt SQLite index' <<< "${out}" && [[ -f "${tmp}/sdlc-spdd/.sdlc/index.sqlite" ]]; then
   ok "db rebuild creates .sdlc/index.sqlite"
 else
   bad "db rebuild unexpected: ${out}"
 fi
 
 echo "== sdlc.sh --target db rebuild (not next / no pointer) =="
-rm -f "${tmp}/.sdlc/index.sqlite"
+rm -f "${tmp}/sdlc-spdd/.sdlc/index.sqlite"
 out="$(
   SDLC_ENGINE=shell \
     PYTHONPATH="${REPO_ROOT}/engine/src" \
     "${REPO_ROOT}/scripts/sdlc.sh" db rebuild --target "${tmp}"
 )"
-if grep -Fq 'Rebuilt SQLite index' <<< "${out}" && [[ -f "${tmp}/.sdlc/index.sqlite" ]]; then
+if grep -Fq 'Rebuilt SQLite index' <<< "${out}" && [[ -f "${tmp}/sdlc-spdd/.sdlc/index.sqlite" ]]; then
   ok "sdlc.sh db rebuild --target hits the project"
 else
   bad "sdlc.sh --target db rebuild unexpected: ${out}"
