@@ -8,11 +8,19 @@ from .cli_parser import build_parser
 
 from .commands import cmd_next, cmd_version
 
+PASSTHROUGH_VERBS = frozenset({"capture", "complete"})
+
 
 def main(argv: list[str] | None = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     parser = build_parser()
-    args = parser.parse_args(argv)
+    args, extra = parser.parse_known_args(argv)
+    if extra:
+        if getattr(args, "command", None) in PASSTHROUGH_VERBS:
+            # capture/complete forward unknown options to the session script.
+            args.script_args = list(getattr(args, "script_args", None) or []) + extra
+        else:
+            parser.error(f"unrecognized arguments: {' '.join(extra)}")
     if getattr(args, "version", False) and not getattr(args, "command", None):
         return cmd_version(args)
     if not getattr(args, "command", None):

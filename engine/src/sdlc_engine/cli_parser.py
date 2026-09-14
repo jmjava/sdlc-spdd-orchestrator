@@ -617,12 +617,12 @@ def build_parser() -> argparse.ArgumentParser:
     cap = sub.add_parser("capture", help="Guarded capture (pointer must match); stages lessons")
     cap.add_argument("--work-id", default="")
     cap.add_argument("--phase", default="")
-    cap.add_argument("script_args", nargs=argparse.REMAINDER, help="capture-session-memory.sh options, e.g. --summary ...")
-    cap.set_defaults(func=cmd_capture)
+    # Remaining options (e.g. --summary ...) pass through to capture-session-memory.sh;
+    # cli.main collects them via parse_known_args.
+    cap.set_defaults(func=cmd_capture, script_args=[])
 
     comp = sub.add_parser("complete", help="Capture --complete with a required verify receipt")
-    comp.add_argument("script_args", nargs=argparse.REMAINDER)
-    comp.set_defaults(func=cmd_complete)
+    comp.set_defaults(func=cmd_complete, script_args=[])
 
     acc = sub.add_parser("accept", help="Promote staged lessons to spdd/memory/lessons.jsonl")
     acc.add_argument("--work-id", default="")
