@@ -46,14 +46,21 @@ live_resolve_root() {
   mktemp -d /tmp/sdlc-spdd-live.XXXXXX
 }
 
+# Storage v3: the framework home is always <root>/sdlc-spdd.
 live_home() {
-  local root="$1"
-  if [[ -d "${root}/sdlc-spdd" ]]; then
-    printf '%s/sdlc-spdd\n' "${root}"
-  else
-    printf '%s\n' "${root}"
-  fi
+  printf '%s/sdlc-spdd\n' "$1"
 }
+
+# Installed targets have no engine venv of their own; run the orchestrator's
+# engine (same as a consumer with `pip install sdlc-engine` on PATH).
+live_export_engine() {
+  if [[ -z "${PYTHON:-}" && -x "${REPO_ROOT}/.venv/bin/python" ]]; then
+    export PYTHON="${REPO_ROOT}/.venv/bin/python"
+  fi
+  export PYTHONPATH="${REPO_ROOT}/engine/src${PYTHONPATH:+:${PYTHONPATH}}"
+  unset SDLC_ENGINE SDLC_GATE_ENGINE
+}
+live_export_engine
 
 live_runtime() {
   printf '%s/.sdlc\n' "$(live_home "$1")"
@@ -94,11 +101,7 @@ live_install_cursor() {
 live_sdlc() {
   local root="$1"
   shift
-  local cli="${root}/sdlc-spdd/scripts/sdlc.sh"
-  if [[ ! -x "${cli}" ]]; then
-    cli="${root}/scripts/sdlc-spdd/sdlc.sh"
-  fi
-  SDLC_USER="${SDLC_USER}" SDLC_ROOT="${root}" "${cli}" "$@"
+  SDLC_USER="${SDLC_USER}" SDLC_ROOT="${root}" "${root}/sdlc-spdd/scripts/sdlc.sh" "$@"
 }
 
 live_summary() {

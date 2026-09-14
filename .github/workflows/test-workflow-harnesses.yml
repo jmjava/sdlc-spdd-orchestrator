@@ -1,0 +1,86 @@
+name: Test Workflow Harnesses
+
+# Bash regression harnesses that drive the Python engine through the installed
+# sdlc-spdd/scripts/sdlc.sh dispatcher (one engine, storage v3).
+
+on:
+  pull_request:
+    paths:
+      - 'engine/src/**'
+      - 'scripts/**'
+      - 'templates/**'
+      - 'tests/lib/harness.sh'
+      - 'tests/test-sdlc-pointer.sh'
+      - 'tests/test-sdlc-workflow.sh'
+      - 'tests/test-archive-work.sh'
+      - 'tests/test-verify-receipt.sh'
+      - 'tests/test-gate-review-validation.sh'
+      - 'tests/test-gate-advisory-visible.sh'
+      - 'tests/test-quality-gates-match-labels.sh'
+      - 'tests/test-quality-gates-constraint-honest.sh'
+      - 'tests/test-canvas-readiness.sh'
+      - 'tests/test-sdlc-engine-shim.sh'
+      - 'sdlc-spdd/harness/quality-gates.md'
+      - '.github/workflows/test-workflow-harnesses.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'engine/src/**'
+      - 'scripts/**'
+      - 'templates/**'
+      - 'tests/lib/harness.sh'
+      - 'tests/test-*.sh'
+      - '.github/workflows/test-workflow-harnesses.yml'
+
+jobs:
+  workflow-harnesses:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install engine
+        run: python -m pip install -q -e ./engine
+
+      - name: Check shell syntax
+        run: |
+          bash -n scripts/sdlc.sh
+          bash -n scripts/start-agent-session.sh
+          bash -n scripts/capture-session-memory.sh
+          bash -n scripts/lib/paths.sh
+          bash -n scripts/lib/readiness.sh
+          bash -n tests/lib/harness.sh
+          for t in tests/test-*.sh; do bash -n "$t"; done
+
+      - name: Pointer contract
+        run: ./tests/test-sdlc-pointer.sh
+
+      - name: Workflow state contract
+        run: ./tests/test-sdlc-workflow.sh
+
+      - name: Dispatcher (one engine)
+        run: ./tests/test-sdlc-engine-shim.sh
+
+      - name: Verify receipt (I1)
+        run: ./tests/test-verify-receipt.sh
+
+      - name: Review Validation gate
+        run: ./tests/test-gate-review-validation.sh
+
+      - name: Advisory gates visible
+        run: ./tests/test-gate-advisory-visible.sh
+
+      - name: Quality gates match labels
+        run: ./tests/test-quality-gates-match-labels.sh
+
+      - name: Quality gates constraint honesty
+        run: ./tests/test-quality-gates-constraint-honest.sh
+
+      - name: Canvas readiness
+        run: ./tests/test-canvas-readiness.sh
+
+      - name: Archive work (storage v3 delete semantics)
+        run: ./tests/test-archive-work.sh
