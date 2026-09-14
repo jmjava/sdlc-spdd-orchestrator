@@ -46,8 +46,9 @@ between "move", "archive", and "delete".
   in `scripts/` the only hits are the install-source path
   `templates/agent-context/` and the file name `resolve-agent-context.sh`
   (`verify-project-install.sh` keeps its parts-assembled legacy-absent checks)
-- [ ] `upgrade-project.sh` on a pre-v3 tree exits non-zero with one message
-  naming the offending paths and the fresh-init command; moves nothing
+- [ ] `upgrade-project.sh` / `init-project.sh` contain no legacy detection,
+  migration, consolidation, or archive logic (owner 2026-09-14: no refusal
+  helper either — pre-v3 trees are unsupported; breaking change accepted)
 - [ ] `Project.home` is `root/sdlc-spdd` (or `SDLC_HOME`) unconditionally;
   `Project.harness_dir` is `home/harness`
 - [ ] `TESTING.md`, `docs/storage-v3.md` (+ shipped copy), and the upgrade
@@ -82,11 +83,9 @@ between "move", "archive", and "delete".
   `framework_archive_remaining_legacy_layout` — deleted;
   `framework_rewrite_adapter_paths`, `framework_ensure_dir`,
   `framework_ensure_gitignore_runtime`, `framework_is_orchestrator_root` stay
-- `upgrade-project.sh` Phase 1 (migrate) / Phase 2 (consolidate) — replaced
-  by a legacy-layout refusal
-- Legacy layout markers (refusal input): root `agent-context/`, root `spdd/`,
-  root `requirements/` or `session-notes/` when `sdlc-spdd/` is absent,
-  `scripts/sdlc-spdd/`, `docs/sdlc-spdd/`, any `work-registry.tsv`
+- `upgrade-project.sh` Phase 1 (migrate) / Phase 2 (consolidate) — deleted
+- `migrate_playbooks_extensions_to_skills` and its meta helpers in
+  `scripts/lib/skills.sh` — deleted (pre-skills harness migration)
 
 ### Files likely affected
 
@@ -100,8 +99,9 @@ between "move", "archive", and "delete".
 - `scripts/`: `upgrade-project.sh`, `init-project.sh`,
   `lib/framework-install.sh`, `lib/paths.sh`
 - `tests/`: delete `test-upgrade-consolidate.sh`,
-  `test-framework-install-consolidate.sh`; add `test-upgrade-refuses-legacy.sh`
-- `.github/workflows/test-upgrade-consolidate.yml` → runs the refusal test
+  `test-framework-install-consolidate.sh`; drop the two playbook-migration
+  tests from `test-resolve-agent-context.sh`
+- `.github/workflows/test-upgrade-consolidate.yml` — deleted
 - docs: `TESTING.md`, `README.md`, `docs/storage-v3.md`,
   `docs/framework-upgrade.md`, `docs/installing-into-your-project.md`,
   `docs/maintaining-your-project.md`, `docs/agent-session-scripts.md`,
@@ -119,9 +119,10 @@ that TEST-004 later generalizes. Docs (T07) close the Work ID; every
 operation also removes the doc sentence that described the behavior it
 deleted, so no intermediate commit documents a path that no longer exists.
 
-The upgrade refuses instead of consolidating: detection is a fixed list of
-layout markers, the message lists the paths found and the fresh-init command,
-exit code 2, nothing moved. `framework_rewrite_adapter_paths` stays because
+No legacy awareness remains: no detection, no refusal message, no markers.
+Init and upgrade install into `<target>/sdlc-spdd/` and nothing else; what an
+old tree looks like is not the framework's concern (breaking change accepted
+by the owner). `framework_rewrite_adapter_paths` stays because
 template grounding text still needs the install-time rewrite (DOC-005 owns the
 text). `installer/rollback.py` stays because upgrade backups are v3.
 
@@ -131,8 +132,6 @@ text). `installer/rollback.py` stays because upgrade backups are v3.
 
 - `engine/tests_unit/conftest.py` — `project_home` fixture: creates
   `tmp_path/sdlc-spdd/` and returns `Project(tmp_path)`
-- `tests/test-upgrade-refuses-legacy.sh` — seeds a sprawled tree, asserts
-  exit 2, message names each marker, tree unchanged (checksum before/after)
 - `engine/tests_unit/test_project_home.py` — strict home / harness_dir /
   `SDLC_HOME` override
 
@@ -154,8 +153,8 @@ text). `installer/rollback.py` stays because upgrade backups are v3.
   `agent-context`; `quiet-status` is top-level; `TeamRegistry.rows()` returns
   `[]` when `registry.jsonl` is absent even if a TSV exists; `detect()` has no
   legacy markers; `is_quiet` reads `project.harness_dir`; strict home.
-- Bash (`tests/`): upgrade refusal; `test-scripts-lib.sh` still passes with
-  the consolidation helpers gone (it never covered them).
+- Bash (`tests/`): `test-scripts-lib.sh` asserts the consolidation helpers
+  are gone; `test-adapter-install.sh` proves a v3 target still inits/upgrades.
 - Full: `./scripts/run-test-suites.sh` (or the CI-local wrapper) green
   before and after each operation; `ruff check --select F,E9 engine/src
   scripts`; `shellcheck -S error` over touched shell files.
@@ -174,29 +173,31 @@ text). `installer/rollback.py` stays because upgrade backups are v3.
 - Tests: `python -m pytest engine/tests_unit/test_registry_archive.py`
 - Validation: no `spdd/*/archive/` directory exists in the tree after archive
 
-### T02 - `upgrade-project.sh` refuses pre-v3 layouts; consolidation helpers deleted
+### T02 - Delete upgrade consolidation, migration hooks, and legacy harness fallbacks
 
-- Status: Pending
-- Description: Replace Phase 1 (legacy memory → `storage migrate`) and
-  Phase 2 (merge / prune / archive) in `upgrade-project.sh` with a
-  `refuse_legacy_layout` check that lists the markers found and exits 2 with
-  the fresh-init pointer. Delete `framework_merge_dir_into`,
+- Status: Complete
+- Description: Delete Phase 1 (legacy memory → `storage migrate`) and Phase 2
+  (merge / prune / `legacy-layout-archive`) from `upgrade-project.sh`, the
+  `--consolidate` flag, the "Consolidated" summary, and the root
+  `milestone-*.md` lookup. Delete `framework_merge_dir_into`,
   `framework_consolidate_path`, `framework_prune_legacy_layout_shells`,
   `framework_archive_legacy_path`, `framework_archive_remaining_legacy_layout`
-  from `framework-install.sh`. Remove `agent-context/harness` fallbacks from
-  `paths.sh` and the "home or legacy root" milestone lookup in
-  `init-project.sh`. Delete the two consolidation harnesses and point the
-  workflow at the new refusal test. Drop the `--consolidate` no-op flag and
-  the header prose that describes consolidation.
-- Files: `scripts/upgrade-project.sh`, `scripts/lib/framework-install.sh`,
-  `scripts/lib/paths.sh`, `scripts/init-project.sh`,
-  `tests/test-upgrade-consolidate.sh` (delete),
+  from `framework-install.sh`. Delete `migrate_playbooks_extensions_to_skills`
+  and its meta helpers from `skills.sh` (and the calls in init/upgrade). Remove
+  the `agent-context/harness` fallbacks from `paths.sh`. Delete the two
+  consolidation harnesses, their workflow, and the two playbook-migration tests
+  in `test-resolve-agent-context.sh`. No detection or refusal logic is added.
+- Files: `scripts/upgrade-project.sh`, `scripts/init-project.sh`,
+  `scripts/lib/framework-install.sh`, `scripts/lib/skills.sh`,
+  `scripts/lib/paths.sh`, `tests/test-upgrade-consolidate.sh` (delete),
   `tests/test-framework-install-consolidate.sh` (delete),
-  `tests/test-upgrade-refuses-legacy.sh` (add),
-  `.github/workflows/test-upgrade-consolidate.yml`, `tests/test-scripts-lib.sh`
-- Tests: `./tests/test-upgrade-refuses-legacy.sh`; `./tests/test-scripts-lib.sh` (adds `framework_refuse_legacy_layout` cases);
-  `./tests/test-adapter-install.sh`; `shellcheck -S error scripts/upgrade-project.sh scripts/lib/framework-install.sh scripts/lib/paths.sh scripts/init-project.sh tests/test-upgrade-refuses-legacy.sh`
-- Validation: refusal test green; `rg -n 'legacy-layout-archive|consolidate_into_home|framework_archive' scripts tests` is empty; a clean v3 target still upgrades (`test-adapter-install.sh`)
+  `.github/workflows/test-upgrade-consolidate.yml` (delete),
+  `tests/test-scripts-lib.sh`, `tests/test-resolve-agent-context.sh`,
+  `tests/test-sdlc-workflow.sh`, `scripts/start-agent-session.sh`,
+  `scripts/capture-session-memory.sh`, `scripts/resolve-context-backend.sh`
+- Tests: `./tests/test-scripts-lib.sh`; `./tests/test-resolve-agent-context.sh`; `./tests/test-sdlc-workflow.sh`;
+  `./tests/test-adapter-install.sh`; `shellcheck -S error` on touched shell files
+- Validation: `rg -n 'legacy-layout-archive|consolidate_into_home|framework_archive|migrate_playbooks' scripts tests .github` is empty; a v3 target still inits and upgrades
 
 ### T03 - Delete `storage migrate` / `agent-context detect|upgrade` and the migration modules
 
@@ -236,13 +237,9 @@ text). `installer/rollback.py` stays because upgrade backups are v3.
 ### T05 - Detect, ADF, and quiet-mode paths are v3-only
 
 - Status: Pending
-- Description: Drop `LEGACY_MARKERS` from `installer/detect.py`. Keep
-  `MARKERS` as-is: the two sprawled entries (`spdd/memory/lessons.jsonl`,
-  `scripts/sdlc-spdd/sdlc.sh`) still classify the tree as `upgrade`, so the
-  console's `auto` action runs `upgrade-project.sh` and surfaces the T02
-  refusal in the run log instead of silently running `install` beside the old
-  dirs (console-ui `InstallTab.vue` only branches on `recommendation ===
-  "upgrade"`). Drop the
+- Description: Drop `LEGACY_MARKERS` and the two sprawled entries in
+  `MARKERS` (`spdd/memory/lessons.jsonl`, `scripts/sdlc-spdd/sdlc.sh`) from
+  `installer/detect.py`; only v3 and adapter markers remain. Drop the
   `root/agent-context/features` candidate in `adf_work.py`; make
   `quiet.is_quiet` read `project.harness_dir / "quiet-mode.md"`. Update the
   affected unit tests; check `console-ui` for a consumer of the removed
@@ -280,8 +277,8 @@ text). `installer/rollback.py` stays because upgrade backups are v3.
   sentences in `installing-into-your-project.md`, `maintaining-your-project.md`,
   `agent-session-scripts.md`, `README.md:307-308`; the `storage` verbs from
   `docs/engine-v2.md`; the `legacy-layout-archive` paragraph and consolidate
-  harness rows from `TESTING.md`. Add the refusal behavior to
-  `framework-upgrade.md`. Sync shipped copies under `sdlc-spdd/docs/`.
+  harness rows from `TESTING.md`. State in `framework-upgrade.md` that v3 is
+  the only layout and older installs are unsupported. Sync shipped copies under `sdlc-spdd/docs/`.
   CHANGELOG `[Unreleased]` → Removed / Changed entries.
 - Files: `docs/storage-v3.md`, `docs/framework-upgrade.md`,
   `docs/installing-into-your-project.md`, `docs/maintaining-your-project.md`,
@@ -325,11 +322,11 @@ text). `installer/rollback.py` stays because upgrade backups are v3.
   `db_rebuild.py`) import only v3 names; the legacy parsers are consumed by
   `storage_migrate` alone.
 - `test-scripts-lib.sh` never covered the consolidation helpers, so deleting
-  them only requires removing the two dedicated harnesses; the workflow file
-  is repointed rather than deleted (CHORE-005 will fold workflows later).
+  them only requires removing the two dedicated harnesses and their workflow.
 - Console impact of T05 is nil at the API shape level (`markers`,
-  `recommendation` keys unchanged); the observable change is that a sprawled
-  target's upgrade now ends in the refusal message.
+  `recommendation` keys unchanged).
+- Owner decision 2026-09-14: no refusal / detection helper. A first draft of
+  T02 added one; it was removed before commit. Breaking change accepted.
 - T06 is the only operation with a wide test diff; the measured baseline is
   72 failing tests across 22 files with strict home, so the fixture-first
   approach (conftest, then mechanical path moves) is required, not optional.
@@ -337,13 +334,13 @@ text). `installer/rollback.py` stays because upgrade backups are v3.
   bash for the refusal; full `run-test-suites.sh` after T02, T03, T06, T07.
 - Quality gates: `ruff --select F,E9`, `shellcheck -S error`,
   `check-complexity.py --base main` (no new function may exceed CCN 10 /
-  80 NLOC — the refusal helper must stay small).
+  80 NLOC).
 - Readiness: Ready For Coding. Optional DIF fold not run (`dif-fold.sh` absent).
 
 ## Review Checklist
 
 - [x] T01 archive contract
-- [ ] T02 shell refusal + helper deletion
+- [x] T02 consolidation / migration deletion
 - [ ] T03 migration modules gone
 - [ ] T04 registry JSONL only
 - [ ] T05 detect / adf / quiet v3-only

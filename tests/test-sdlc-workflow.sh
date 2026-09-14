@@ -42,19 +42,19 @@ wf() { SDLC_ROOT="${1}" "${WORKFLOW}" "${@:2}"; }
 setup_feature() {
   local t="$1"
   local work_id="$2"
+  # Workflow CLI lives at <home>/scripts/ (storage v3); home == t here.
   mkdir -p "${t}/.sdlc/sessions" \
-    "${t}/agent-context" \
     "${t}/spdd/canvas" \
     "${t}/spdd/analysis" \
     "${t}/scripts/lib"
-  cp "${POINTER}" "${t}/agent-context/sdlc-pointer.sh"
-  cp "${WORKFLOW}" "${t}/agent-context/sdlc-workflow.sh"
-  cp "${TEAM_REG}" "${t}/agent-context/sdlc-team-registry.sh"
+  cp "${POINTER}" "${t}/scripts/sdlc-pointer.sh"
+  cp "${WORKFLOW}" "${t}/scripts/sdlc-workflow.sh"
+  cp "${TEAM_REG}" "${t}/scripts/sdlc-team-registry.sh"
   cp "${REPO_ROOT}/scripts/lib/paths.sh" "${t}/scripts/lib/paths.sh"
   mkdir -p "${t}/spdd/memory"
   : > "${t}/spdd/memory/registry.jsonl"
   cp "${REPO_ROOT}/scripts/lib/readiness.sh" "${t}/scripts/lib/readiness.sh"
-  chmod +x "${t}/agent-context/sdlc-pointer.sh" "${t}/agent-context/sdlc-workflow.sh" "${t}/agent-context/sdlc-team-registry.sh"
+  chmod +x "${t}/scripts/sdlc-pointer.sh" "${t}/scripts/sdlc-workflow.sh" "${t}/scripts/sdlc-team-registry.sh"
 }
 
 # ---------------------------------------------------------------------------
@@ -62,7 +62,7 @@ echo "== Test 1: resume sets pointer and creates workflow state =="
 T="${WORK}/resume"
 setup_feature "${T}" "FEAT-001-alpha"
 wf "${T}" resume FEAT-001-alpha >/dev/null
-ptr="$(SDLC_ROOT="${T}" "${T}/agent-context/sdlc-pointer.sh" get)"
+ptr="$(SDLC_ROOT="${T}" "${T}/scripts/sdlc-pointer.sh" get)"
 if [[ "${ptr}" == "FEAT-001-alpha" ]]; then ok "resume sets pointer"; else bad "pointer not set"; fi
 if [[ -f "${T}/.sdlc/workflows/FEAT-001-alpha.state" ]]; then ok "workflow state created"; else bad "missing state file"; fi
 
@@ -84,7 +84,7 @@ fi
 # ---------------------------------------------------------------------------
 echo "== Test 4: shelf and resume shelved work =="
 wf "${T}" shelf --reason "context switch" >/dev/null
-ptr="$(SDLC_ROOT="${T}" "${T}/agent-context/sdlc-pointer.sh" get)"
+ptr="$(SDLC_ROOT="${T}" "${T}/scripts/sdlc-pointer.sh" get)"
 if [[ -z "${ptr}" ]]; then ok "shelf clears pointer"; else bad "pointer should be empty"; fi
 active="$(grep '^active=' "${T}/.sdlc/workflows/FEAT-001-alpha.state" | cut -d= -f2)"
 if [[ "${active}" == "0" ]]; then ok "shelf marks inactive"; else bad "expected active=0"; fi
@@ -93,7 +93,7 @@ setup_feature "${T}" "CHORE-002-beta"
 wf "${T}" resume CHORE-002-beta >/dev/null
 if wf "${T}" list-shelved | grep -q 'FEAT-001-alpha'; then ok "shelved list includes parked work"; else bad "shelved list missing FEAT-001-alpha"; fi
 wf "${T}" resume FEAT-001-alpha >/dev/null
-ptr="$(SDLC_ROOT="${T}" "${T}/agent-context/sdlc-pointer.sh" get)"
+ptr="$(SDLC_ROOT="${T}" "${T}/scripts/sdlc-pointer.sh" get)"
 if [[ "${ptr}" == "FEAT-001-alpha" ]]; then ok "resume restores shelved pointer"; else bad "resume failed"; fi
 
 # ---------------------------------------------------------------------------
@@ -169,11 +169,11 @@ echo "== Test 10: sdlc.sh wrapper delegates =="
 T="${WORK}/wrapper"
 work_id="FEAT-005-wrap"
 setup_feature "${T}" "${work_id}"
-mkdir -p "${T}/scripts/sdlc-spdd"
-cp "${REPO_ROOT}/scripts/sdlc.sh" "${T}/scripts/sdlc-spdd/sdlc.sh"
-chmod +x "${T}/scripts/sdlc-spdd/sdlc.sh"
-SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" resume "${work_id}" >/dev/null
-out="$(SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" next)"
+mkdir -p "${T}/scripts"
+cp "${REPO_ROOT}/scripts/sdlc.sh" "${T}/scripts/sdlc.sh"
+chmod +x "${T}/scripts/sdlc.sh"
+SDLC_ROOT="${T}" "${T}/scripts/sdlc.sh" resume "${work_id}" >/dev/null
+out="$(SDLC_ROOT="${T}" "${T}/scripts/sdlc.sh" next)"
 if grep -q "${work_id}" <<< "${out}"; then ok "sdlc.sh wrapper works"; else bad "sdlc.sh wrapper failed"; fi
 
 # ---------------------------------------------------------------------------
@@ -181,12 +181,12 @@ echo "== Test 10b: sdlc.sh claim does not re-enter CLI (exec + nested source) ==
 T="${WORK}/wrapper-claim"
 work_id="FEAT-005b-claim"
 setup_feature "${T}" "${work_id}"
-mkdir -p "${T}/scripts/sdlc-spdd" "${T}/spdd/canvas"
+mkdir -p "${T}/scripts" "${T}/spdd/canvas"
 printf '%s\n' "# ${work_id}" '' '## Final Status' '' '- Status: In Progress' \
   > "${T}/spdd/canvas/${work_id}.md"
-cp "${REPO_ROOT}/scripts/sdlc.sh" "${T}/scripts/sdlc-spdd/sdlc.sh"
-chmod +x "${T}/scripts/sdlc-spdd/sdlc.sh"
-if SDLC_USER="tester" SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" claim "${work_id}" >/dev/null 2>"${T}/claim.err"; then
+cp "${REPO_ROOT}/scripts/sdlc.sh" "${T}/scripts/sdlc.sh"
+chmod +x "${T}/scripts/sdlc.sh"
+if SDLC_USER="tester" SDLC_ROOT="${T}" "${T}/scripts/sdlc.sh" claim "${work_id}" >/dev/null 2>"${T}/claim.err"; then
   if registry_matches "${T}" "${work_id}" '"status": "active"'; then
     ok "sdlc.sh claim updates registry without CLI re-entry"
   else
@@ -470,7 +470,7 @@ if grep -q '"readiness":"needs-redesign"' <<< "${json}"; then
 else
   bad "json YAML readiness: ${json}"
 fi
-brief="$(SDLC_ROOT="${T}" bash -c "source '${T}/agent-context/sdlc-workflow.sh'; sdlc_workflow_brief_markdown '${work_id}'")"
+brief="$(SDLC_ROOT="${T}" bash -c "source '${T}/scripts/sdlc-workflow.sh'; sdlc_workflow_brief_markdown '${work_id}'")"
 if grep -q '| Readiness | needs-redesign |' <<< "${brief}"; then
   ok "brief includes Readiness row"
 else
@@ -575,20 +575,20 @@ echo "== Test 13: capture wrapper guards pointer =="
 T="${WORK}/capture-guard"
 work_id="FEAT-008-cap"
 setup_feature "${T}" "${work_id}"
-mkdir -p "${T}/scripts/sdlc-spdd/lib"
-cp "${REPO_ROOT}/scripts/sdlc.sh" "${T}/scripts/sdlc-spdd/sdlc.sh"
-cp "${CAPTURE}" "${T}/scripts/sdlc-spdd/capture-session-memory.sh"
-# capture-session-memory.sh sources scripts/sdlc-spdd/lib/*.sh (FEAT-001)
-cp "${REPO_ROOT}/scripts/lib/"*.sh "${T}/scripts/sdlc-spdd/lib/"
-chmod +x "${T}/scripts/sdlc-spdd/sdlc.sh" "${T}/scripts/sdlc-spdd/capture-session-memory.sh"
-SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" resume "${work_id}" >/dev/null
-if SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" capture --summary "ok" >/dev/null 2>&1; then
+mkdir -p "${T}/scripts/lib"
+cp "${REPO_ROOT}/scripts/sdlc.sh" "${T}/scripts/sdlc.sh"
+cp "${CAPTURE}" "${T}/scripts/capture-session-memory.sh"
+# capture-session-memory.sh sources <home>/scripts/lib/*.sh (FEAT-001)
+cp "${REPO_ROOT}/scripts/lib/"*.sh "${T}/scripts/lib/"
+chmod +x "${T}/scripts/sdlc.sh" "${T}/scripts/capture-session-memory.sh"
+SDLC_ROOT="${T}" "${T}/scripts/sdlc.sh" resume "${work_id}" >/dev/null
+if SDLC_ROOT="${T}" "${T}/scripts/sdlc.sh" capture --summary "ok" >/dev/null 2>&1; then
   ok "capture succeeds when pointer matches"
 else
   bad "capture should succeed for active pointer"
 fi
-SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" resume FEAT-999-other >/dev/null 2>&1 || true
-if SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" capture --work-id "${work_id}" --summary "bad" >/dev/null 2>&1; then
+SDLC_ROOT="${T}" "${T}/scripts/sdlc.sh" resume FEAT-999-other >/dev/null 2>&1 || true
+if SDLC_ROOT="${T}" "${T}/scripts/sdlc.sh" capture --work-id "${work_id}" --summary "bad" >/dev/null 2>&1; then
   bad "capture should refuse mismatched work-id"
 else
   ok "capture refuses stale work-id"
@@ -621,16 +621,16 @@ echo "== Test 14b: claim --force takes over foreign claim =="
 T="${WORK}/team-claim-force"
 work_id="FEAT-009b-force"
 setup_feature "${T}" "${work_id}"
-mkdir -p "${T}/scripts/sdlc-spdd"
-cp "${REPO_ROOT}/scripts/sdlc.sh" "${T}/scripts/sdlc-spdd/sdlc.sh"
-chmod +x "${T}/scripts/sdlc-spdd/sdlc.sh"
+mkdir -p "${T}/scripts"
+cp "${REPO_ROOT}/scripts/sdlc.sh" "${T}/scripts/sdlc.sh"
+chmod +x "${T}/scripts/sdlc.sh"
 SDLC_USER="alice" SDLC_ROOT="${T}" wf "${T}" claim "${work_id}" >/dev/null
-if SDLC_USER="bob" SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" claim "${work_id}" >/dev/null 2>&1; then
+if SDLC_USER="bob" SDLC_ROOT="${T}" "${T}/scripts/sdlc.sh" claim "${work_id}" >/dev/null 2>&1; then
   bad "claim without --force should refuse foreign owner"
 else
   ok "claim without --force refuses foreign owner"
 fi
-if SDLC_USER="bob" SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" claim "${work_id}" --force >"${T}/claim-force.out" 2>"${T}/claim-force.err"; then
+if SDLC_USER="bob" SDLC_ROOT="${T}" "${T}/scripts/sdlc.sh" claim "${work_id}" --force >"${T}/claim-force.out" 2>"${T}/claim-force.err"; then
   if registry_matches "${T}" "${work_id}" '"status": "active".*"owner": "bob"'; then
     ok "claim --force takes over via sdlc.sh wrapper"
   else
@@ -705,13 +705,13 @@ T="${WORK}/hook"
 work_id="FEAT-012-hook"
 setup_feature "${T}" "${work_id}"
 hook_log="${T}/hook.log"
-mkdir -p "${T}/agent-context/hooks"
-cat > "${T}/agent-context/hooks/notify.sh" <<EOF
+mkdir -p "${T}/scripts/hooks"
+cat > "${T}/scripts/hooks/notify.sh" <<EOF
 #!/usr/bin/env bash
 echo "\$*" >> "${hook_log}"
 EOF
-chmod +x "${T}/agent-context/hooks/notify.sh"
-SDLC_TEAM_REGISTRY_HOOK="${T}/agent-context/hooks/notify.sh" \
+chmod +x "${T}/scripts/hooks/notify.sh"
+SDLC_TEAM_REGISTRY_HOOK="${T}/scripts/hooks/notify.sh" \
   SDLC_USER="hooker" SDLC_ROOT="${T}" wf "${T}" claim "${work_id}" >/dev/null
 if [[ -f "${hook_log}" ]] && grep -q 'FEAT-012-hook' "${hook_log}"; then
   ok "registry hook invoked"
@@ -845,19 +845,19 @@ echo "== Test 22: code capture / complete without verify receipt refuse =="
 T="${WORK}/i1-receipt"
 work_id="FEAT-018-i1"
 setup_feature "${T}" "${work_id}"
-mkdir -p "${T}/scripts/sdlc-spdd/lib"
-cp "${REPO_ROOT}/scripts/sdlc.sh" "${T}/scripts/sdlc-spdd/sdlc.sh"
-cp "${CAPTURE}" "${T}/scripts/sdlc-spdd/capture-session-memory.sh"
-cp "${REPO_ROOT}/scripts/lib/"*.sh "${T}/scripts/sdlc-spdd/lib/"
-chmod +x "${T}/scripts/sdlc-spdd/sdlc.sh" "${T}/scripts/sdlc-spdd/capture-session-memory.sh"
-SDLC_ENGINE=shell SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" resume "${work_id}" --phase code >/dev/null
-if SDLC_ENGINE=shell SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" \
+mkdir -p "${T}/scripts/lib"
+cp "${REPO_ROOT}/scripts/sdlc.sh" "${T}/scripts/sdlc.sh"
+cp "${CAPTURE}" "${T}/scripts/capture-session-memory.sh"
+cp "${REPO_ROOT}/scripts/lib/"*.sh "${T}/scripts/lib/"
+chmod +x "${T}/scripts/sdlc.sh" "${T}/scripts/capture-session-memory.sh"
+SDLC_ENGINE=shell SDLC_ROOT="${T}" "${T}/scripts/sdlc.sh" resume "${work_id}" --phase code >/dev/null
+if SDLC_ENGINE=shell SDLC_ROOT="${T}" "${T}/scripts/sdlc.sh" \
   capture --phase code --summary "T01 complete" >/dev/null 2>&1; then
   bad "code capture without receipt should refuse"
 else
   ok "code capture without receipt refuses"
 fi
-if SDLC_ENGINE=shell SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" \
+if SDLC_ENGINE=shell SDLC_ROOT="${T}" "${T}/scripts/sdlc.sh" \
   complete --summary "T01 complete" >/dev/null 2>&1; then
   bad "complete without receipt should refuse"
 else

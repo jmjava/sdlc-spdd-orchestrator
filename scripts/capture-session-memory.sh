@@ -232,7 +232,7 @@ collect_session_content() {
 area_path_excluded() {
   local norm="$1"
   case "${norm}" in
-    agent-context/*|spdd/canvas/*|docs/*|session-notes/*|requirements/*|.cursor/*|.sdlc/*)
+    spdd/canvas/*|docs/*|session-notes/*|requirements/*|.cursor/*|.sdlc/*)
       return 0 ;;
   esac
   return 1
@@ -491,9 +491,6 @@ if [[ -n "${ROADMAP_NOTE}" ]]; then
 fi
 
 workflow_script="${HOME}/scripts/sdlc-workflow.sh"
-if [[ ! -f "${workflow_script}" ]]; then
-  workflow_script="${TARGET}/agent-context/sdlc-workflow.sh"
-fi
 if [[ -f "${workflow_script}" ]]; then
   SDLC_ROOT="${TARGET}"
   # shellcheck source=/dev/null

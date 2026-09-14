@@ -103,9 +103,6 @@ export SDLC_ROOT="${TARGET}"
 HOME="$(sdlc_home "${TARGET}")"
 
 pointer_script="${HOME}/scripts/sdlc-pointer.sh"
-if [[ ! -f "${pointer_script}" ]]; then
-  pointer_script="${TARGET}/agent-context/sdlc-pointer.sh"
-fi
 if [[ -f "${pointer_script}" && -n "${WORK_ID}" ]]; then
   SDLC_ROOT="${TARGET}"
   # shellcheck source=/dev/null
@@ -114,13 +111,7 @@ if [[ -f "${pointer_script}" && -n "${WORK_ID}" ]]; then
 fi
 
 workflow_script="${HOME}/scripts/sdlc-workflow.sh"
-if [[ ! -f "${workflow_script}" ]]; then
-  workflow_script="${TARGET}/agent-context/sdlc-workflow.sh"
-fi
 team_script="${HOME}/scripts/sdlc-team-registry.sh"
-if [[ ! -f "${team_script}" ]]; then
-  team_script="${TARGET}/agent-context/sdlc-team-registry.sh"
-fi
 workflow_brief_md="Workflow tools not installed."
 jira_status=""
 jira_ask_prompt=""

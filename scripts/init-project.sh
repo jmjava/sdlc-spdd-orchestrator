@@ -5,8 +5,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 # shellcheck source=/dev/null
 source "${REPO_ROOT}/scripts/lib/framework-install.sh"
-# shellcheck source=/dev/null
-source "${REPO_ROOT}/scripts/lib/skills.sh"
 
 usage() {
   cat <<'EOF'
@@ -198,9 +196,9 @@ copy_if_missing \
   "${HOME_DIR}/ROADMAP.md"
 
 # Prefer subdirectory milestone layout for new projects; keep existing
-# milestone definitions (home or legacy root) if already present.
+# milestone definitions under the home if already present.
 shopt -s nullglob
-root_milestones=("${TARGET}"/milestone-*.md "${HOME_DIR}"/milestone-*.md)
+root_milestones=("${HOME_DIR}"/milestone-*.md)
 subdir_milestones=("${HOME_DIR}"/requirements/milestones/milestone-*/MILESTONE-*.md)
 shopt -u nullglob
 if ((${#root_milestones[@]} == 0 && ${#subdir_milestones[@]} == 0)); then
@@ -238,8 +236,6 @@ copy_if_missing \
 copy_if_missing \
   "${REPO_ROOT}/templates/agent-context/harness/validation-rules.md" \
   "${HOME_DIR}/harness/validation-rules.md"
-
-migrate_playbooks_extensions_to_skills "${TARGET}" "${DRY_RUN}"
 
 # Optional Guide DICE backend opt-in. The marker only enables runtime probing
 # (resolve-context-backend.sh); commands still fall back to file-based context

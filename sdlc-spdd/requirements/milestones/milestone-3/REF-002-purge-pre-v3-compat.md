@@ -48,7 +48,7 @@ Storage v3 (ledger + registry + .sdlc/ runtime under sdlc-spdd/) is the only per
 - Remove root-layout and agent-context/harness fallbacks in project.py; sdlc-spdd/ is the home
 - Remove legacy TSV registry reading in registry.py; registry.jsonl only
 - Remove storage_migrate legacy parsers, agent_context_upgrade, context_model legacy markdown paths, installer/rollback legacy-layout archive
-- upgrade-project.sh / verify-project-install.sh / framework-install.sh stop consolidating legacy sprawl; they refuse with a clear message and pointer to a fresh init
+- upgrade-project.sh / init-project.sh / framework-install.sh stop consolidating legacy sprawl; no detection or refusal logic either — pre-v3 trees are simply unsupported (owner, 2026-09-14: breaking change accepted)
 - Tests and docs (storage-v3.md, TESTING.md, README) describe only v3
 
 ### NOT IN SCOPE
