@@ -27,8 +27,8 @@ quietly and accepted at gates.**
 - **Projections are regenerable.** SQLite cache and Guide are pure projections
   of the ledger — one write path, parity by construction.
 
-Older installs with scattered memory trees are converted by
-`sdlc-engine storage migrate` ([migration](#migrating-a-legacy-install)).
+Storage v3 is the only supported layout; there is no migration path from
+older scattered memory trees ([details](#pre-v3-installs)).
 
 ## The model at a glance
 
@@ -205,16 +205,13 @@ Archive **never truncates**, filters, or deletes `spdd/memory/lessons.jsonl`. De
 
 Policy: `sdlc-spdd/docs/research/dogfood-ledger-policy.md`.
 
-## Migrating a legacy install
+## Pre-v3 installs
 
-```bash
-sdlc-engine storage status          # detect non-v3 layouts
-sdlc-engine storage migrate         # one-shot → ledger + registry
-./scripts/upgrade-project.sh --target . --all   # always consolidates into sdlc-spdd/
-sdlc-engine context parity --repair # rebuild projections
-```
-
-See [framework upgrade](framework-upgrade.md).
+The engine and scripts read only the v3 layout. Root-level framework folders,
+`agent-context/` trees, markdown context indexes, and `work-registry.tsv` are
+not detected, migrated, or consolidated. Move any content you still need into
+`sdlc-spdd/` by hand (or re-init), then run `sdlc-engine context parity --repair`
+to rebuild projections. See [framework upgrade](framework-upgrade.md).
 
 ## Related
 

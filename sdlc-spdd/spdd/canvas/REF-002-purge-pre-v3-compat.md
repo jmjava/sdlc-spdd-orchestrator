@@ -201,7 +201,7 @@ text). `installer/rollback.py` stays because upgrade backups are v3.
 
 ### T03 - Delete `storage migrate` / `agent-context detect|upgrade` and the migration modules
 
-- Status: Pending
+- Status: Complete (quiet.py re-homed to `<home>/harness/quiet-mode.md` here rather than in T05, since the quiet test was rewritten in this operation)
 - Description: Remove `storage_migrate.py`, `agent_context_upgrade.py`, the
   `storage` subparser, the `agent-context` subparser, `cmd_storage`, and
   `cmd_agent_context`. Re-home `quiet-status` as a top-level verb backed by
@@ -341,7 +341,7 @@ text). `installer/rollback.py` stays because upgrade backups are v3.
 
 - [x] T01 archive contract
 - [x] T02 consolidation / migration deletion
-- [ ] T03 migration modules gone
+- [x] T03 migration modules gone
 - [ ] T04 registry JSONL only
 - [ ] T05 detect / adf / quiet v3-only
 - [ ] T06 strict home + fixture

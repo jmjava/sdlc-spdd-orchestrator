@@ -170,9 +170,8 @@ sdlc-engine context parity --repair
 sdlc-engine context backends
 sdlc-engine context backends --set git-pointers,guide-dice,sqlite
 
-# Legacy install migration
-sdlc-engine storage status
-sdlc-engine storage migrate [--dry-run]
+# Quiet / product-test mode
+sdlc-engine quiet-status [--quiet]
 ```
 
 ## Local SQLite cache (opt-in)

@@ -31,7 +31,7 @@ From the orchestrator repository:
     ./scripts/upgrade-project.sh --target /path/to/app --all
 
 The upgrade preserves application work, requirements, canvases, and the committed
-lessons ledger. Legacy layouts are migrated by `sdlc-engine storage migrate` — see
+lessons ledger. Pre-v3 layouts are not migrated — see
 [Framework upgrade](framework-upgrade.md).
 
 Review backups under:

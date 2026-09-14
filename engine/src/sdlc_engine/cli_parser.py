@@ -24,8 +24,7 @@ from .cli_commands import (
     cmd_archive,
     cmd_pointer,
     cmd_context,
-    cmd_storage,
-    cmd_agent_context,
+    cmd_quiet_status,
     cmd_version,
     cmd_shell,
     cmd_links,
@@ -600,34 +599,10 @@ def build_parser() -> argparse.ArgumentParser:
     cmc.add_argument("--timeout", type=float, default=30.0)
     cmc.set_defaults(func=cmd_context)
 
-    st = sub.add_parser("storage", help="Storage v3 migration and status")
-    st_sub = st.add_subparsers(dest="storage_cmd", required=True)
-    st_sub.add_parser("status", help="Detect legacy layout / migration state").set_defaults(
-        func=cmd_storage
-    )
-    stm = st_sub.add_parser("migrate", help="Migrate legacy agent-context to ledger v3")
-    stm.add_argument("--dry-run", action="store_true")
-    stm.set_defaults(func=cmd_storage)
-
-    ac = sub.add_parser(
-        "agent-context",
-        help="Upgrade/re-init noisy agent-context runtime + quiet mode (#80/#91)",
-    )
-    ac_sub = ac.add_subparsers(dest="agent_context_cmd", required=True)
-    ac_sub.add_parser("detect", help="Detect legacy sessions/features noise").set_defaults(
-        func=cmd_agent_context
-    )
-    acu = ac_sub.add_parser(
-        "upgrade",
-        help="Archive sessions/features to .sdlc/legacy-export and seed lean runtime",
-    )
-    acu.add_argument("--dry-run", action="store_true")
-    acu.add_argument("--no-rebuild", action="store_true")
-    acu.set_defaults(func=cmd_agent_context)
-    aqs = ac_sub.add_parser("quiet-status", help="Show quiet/product-test mode status")
+    aqs = sub.add_parser("quiet-status", help="Show quiet/product-test mode status")
     aqs.add_argument("--quiet", action="store_true", help="Treat as --quiet flag set")
     aqs.add_argument("--guide-live", action="store_true")
-    aqs.set_defaults(func=cmd_agent_context)
+    aqs.set_defaults(func=cmd_quiet_status)
 
     shell = sub.add_parser("shell", help="Run a v1 scripts/*.sh via bridge")
     shell.add_argument("script")

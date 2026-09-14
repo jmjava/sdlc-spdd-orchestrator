@@ -9,7 +9,6 @@ from pathlib import Path
 
 import pytest
 
-from sdlc_engine.agent_context_upgrade import AgentContextUpgrade
 from sdlc_engine.cli import main
 from sdlc_engine.context_store import ContextStore
 from sdlc_engine.db import LocalIndex
@@ -102,11 +101,10 @@ def test_capture_stages_session_record_only(tmp_path: Path) -> None:
     sessions = [r for r in records if r["kind"] == "session" and r["work_id"] == wid]
     assert sessions
     assert sessions[-1]["area"] == "scripts/lib"
-    # Committed ledger untouched; no legacy index/mirror trees created.
+    # Committed ledger untouched; no index/mirror trees created.
     assert not (tmp_path / "spdd" / "memory" / "lessons.jsonl").exists()
     assert not (tmp_path / "spdd" / "memory" / "context-index.md").exists()
     assert not (tmp_path / "spdd" / "memory" / "entries").exists()
-    assert not (tmp_path / "agent-context" / "features").exists()
 
 
 def test_create_feature_stages_record_no_mirrors(tmp_path: Path) -> None:
@@ -132,49 +130,9 @@ def test_create_feature_stages_record_no_mirrors(tmp_path: Path) -> None:
     assert len(canvases) == 1
     wid = canvases[0].stem
     assert (tmp_path / "requirements" / "milestones" / f"{wid}.md").is_file()
-    assert not (tmp_path / "agent-context" / "features").exists()
     assert not (tmp_path / "spdd" / "memory" / "entries").exists()
     records = _staged_records(tmp_path)
     assert any(r["kind"] == "session" and r["work_id"] == wid for r in records)
-
-
-def test_upgrade_memory_only_exports_then_idempotent(tmp_path: Path) -> None:
-    mem = tmp_path / "agent-context" / "memory"
-    mem.mkdir(parents=True)
-    (mem / "context-index.md").write_text(
-        """# Context Index
-
-| Area | Kind | Work ID | Phase | Timestamp | Source | Entry |
-|------|------|---------|-------|-----------|--------|-------|
-| engine | pitfall | FEAT-X | sync | 2026-08-08T00:00:00Z | t | export me |
-""",
-        encoding="utf-8",
-    )
-    up = AgentContextUpgrade(Project(tmp_path))
-    first = up.run(dry_run=False, rebuild_db=False)
-    assert first.ok
-    assert first.moved
-    assert (tmp_path / ".sdlc" / "storage-v3-migrated").is_file()
-    second = up.run(dry_run=False, rebuild_db=False)
-    assert second.ok
-    assert any("delegated" in n.lower() or "idempotent" in n.lower() for n in second.notes)
-
-
-def test_upgrade_archives_features_then_second_run_idempotent(tmp_path: Path) -> None:
-    wid = "FEAT-941-up"
-    feat = tmp_path / "agent-context" / "features" / wid
-    feat.mkdir(parents=True)
-    (feat / "progress-log.md").write_text("x\n", encoding="utf-8")
-    sess = tmp_path / "agent-context" / "sessions"
-    sess.mkdir(parents=True)
-    (sess / "current-session.md").write_text("legacy\n", encoding="utf-8")
-    up = AgentContextUpgrade(Project(tmp_path))
-    a = up.run(dry_run=False, rebuild_db=False)
-    assert a.ok
-    assert a.moved
-    assert not (tmp_path / "agent-context" / "features").exists()
-    b = up.run(dry_run=False, rebuild_db=False)
-    assert b.ok
 
 
 def test_cli_context_retrieve_assembles_paths(tmp_path: Path, capsys) -> None:

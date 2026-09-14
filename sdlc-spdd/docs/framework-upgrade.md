@@ -53,27 +53,16 @@ managed grounding block inside `CLAUDE.md`:
     ...
     <!-- END SDLC-SPDD MANAGED CLAUDE GROUNDING -->
 
-## Storage migration and consolidation
+## Storage v3 is the only layout
 
-After upgrading framework files, run the engine storage commands from the target
-project root:
+The upgrade assumes the target already uses storage v3: one `sdlc-spdd/` home,
+`spdd/memory/lessons.jsonl` + `spdd/memory/registry.jsonl` committed, runtime
+gitignored under `sdlc-spdd/.sdlc/`. Pre-v3 layouts (root-level framework
+folders, `agent-context/` trees, `work-registry.tsv`) are not detected,
+migrated, or consolidated; there is no `storage migrate` verb. Move such
+content by hand or re-init. Full model: [Storage v3](storage-v3.md).
 
-```bash
-# Detect legacy layouts and show what would change
-sdlc-engine storage status
-
-# One-shot: convert legacy memory trees → ledger + registry
-sdlc-engine storage migrate [--dry-run]
-
-# Move scattered framework paths into the single sdlc-spdd/ home
-./scripts/upgrade-project.sh --target . --all
-```
-
-Migration exports converted originals aside; the committed system of record becomes
-`spdd/memory/lessons.jsonl` + `spdd/memory/registry.jsonl`. Hot runtime stays
-gitignored under `.sdlc/`. Full model: [Storage v3](storage-v3.md).
-
-Verify parity after migration:
+Verify parity after upgrading:
 
 ```bash
 sdlc-engine context parity
