@@ -67,8 +67,8 @@ class SutDocTests(unittest.TestCase):
         text = SUT_DOC.read_text(encoding="utf-8")
         blob = text.lower()
         self.assertIn("workflowengine.gate_check", blob)
-        self.assertIn("sdlc_engine=auto", blob)
         self.assertIn("sdlc_gate_engine=shell", blob)
+        self.assertIn("rejected", blob)
         self.assertIn("not the sut", blob)
 
     def test_testing_and_roadmap_name_sut(self) -> None:

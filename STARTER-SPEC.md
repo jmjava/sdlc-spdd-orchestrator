@@ -268,10 +268,7 @@ Create the repo with this structure:
     │   ├── sync/
     │   └── memory/               # lessons.jsonl + registry.jsonl
     ├── .sdlc/                    # gitignored runtime (sessions, staged, sqlite)
-    ├── agent-context/            # workflow scripts in dogfood repo only
-    │   ├── sdlc-pointer.sh
-    │   ├── sdlc-workflow.sh
-    │   └── sdlc-team-registry.sh
+    ├── agent-context/            # dogfood repo only
     │   └── harness/              # dogfood mirror of harness/
     │       ├── validation-rules.md
     │       └── quality-gates.md

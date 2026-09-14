@@ -225,7 +225,7 @@ Python engine (same surface, importable):
 
 ```bash
 python3 -m pip install -e './engine[dev,viewer]'
-SDLC_ENGINE=python ./scripts/sdlc.sh next
+./scripts/sdlc.sh next
 sdlc-engine context retrieve --work-id FEAT-001-order-status
 sdlc-engine context backends
 ```

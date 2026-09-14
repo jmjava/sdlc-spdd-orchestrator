@@ -37,12 +37,28 @@ All notable changes to this project will be documented in this file.
 
 ### Removed
 
+- REF-003: the bash workflow twin — `sdlc-workflow.sh`, `sdlc-team-registry.sh`,
+  and `sdlc-pointer.sh` — from `templates/agent-context/` and
+  `sdlc-spdd/scripts/` (3,100 shipped LOC). Init and upgrade no longer install
+  them, upgrade deletes the exact retired paths, and install verification
+  asserts their absence. Their shell harnesses
+  (`test-sdlc-workflow.sh`, `test-sdlc-pointer.sh`, `test-archive-work.sh`)
+  are replaced by `engine/tests_unit/` coverage (#321).
 - REF-002: pre-v3 consolidation, layout migration, TSV registry fallback,
   migration-only parsers and CLI verbs, duplicate-canvas synchronization, and
   executable root-layout fallbacks. Storage v3 is the only runtime layout.
 
 ### Changed
 
+- REF-003: `scripts/sdlc.sh` is a thin dispatcher that requires Python 3.12 and
+  an importable `sdlc_engine`, with no bash fallback. `SDLC_ENGINE=shell` and
+  `SDLC_GATE_ENGINE=shell` now exit non-zero instead of selecting a second
+  implementation; `SDLC_ENGINE=python` stays accepted as a no-op. The retained
+  `start-agent-session.sh`, `capture-session-memory.sh`, and
+  `accept-lessons.sh` utilities call the engine, and `sdlc-engine shell`
+  resolves helpers in both orchestrator `scripts/` and installed
+  `sdlc-spdd/scripts/` layouts. Operator, testing, engine, and research docs
+  describe one mandatory engine (#321).
 - Milestone 3 (one flow on storage v3) opened from SPIKE-005: Python
   `sdlc-engine` is the only engine, storage v3 the only persistence model;
   pre-v3 compatibility and the bash workflow twin are removed, not

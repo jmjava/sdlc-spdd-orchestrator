@@ -382,7 +382,7 @@ METRICS_JSON="$(
   METRIC_CONTEXT_FILES="${METRIC_CONTEXT_FILES}" \
   METRIC_VALIDATE_CYCLES="${METRIC_VALIDATE_CYCLES}" \
   METRIC_REVIEW_CYCLES="${METRIC_REVIEW_CYCLES}" \
-  python3 - <<'PY'
+  "${SDLC_PY}" - <<'PY'
 import json, os
 m = {}
 r = os.environ.get("METRIC_READINESS", "").strip()
@@ -413,7 +413,7 @@ if [[ -n "${VERIFY_COMMAND}" ]]; then
     VERIFY_COMMAND="${VERIFY_COMMAND}" \
     VERIFY_EXIT="${VERIFY_EXIT}" \
     VERIFY_RESULT="${VERIFY_RESULT}" \
-    python3 - <<'PY'
+    "${SDLC_PY}" - <<'PY'
 import json, os
 print(json.dumps({
     "command": os.environ["VERIFY_COMMAND"],

@@ -26,25 +26,26 @@ install/upgrade packaging and retained session/capture utilities.
 
 ### Acceptance Criteria
 
-- [ ] `templates/agent-context/` and `sdlc-spdd/scripts/` contain no
+- [x] `templates/agent-context/` and `sdlc-spdd/scripts/` contain no
   `sdlc-workflow.sh`, `sdlc-team-registry.sh`, or `sdlc-pointer.sh`.
-- [ ] `SDLC_ENGINE=shell ./scripts/sdlc.sh next` exits non-zero with a clear
+- [x] `SDLC_ENGINE=shell ./scripts/sdlc.sh next` exits non-zero with a clear
   Python-only message.
-- [ ] `SDLC_GATE_ENGINE=shell ./scripts/sdlc.sh gate ...` exits non-zero with
+- [x] `SDLC_GATE_ENGINE=shell ./scripts/sdlc.sh gate ...` exits non-zero with
   the same single-engine contract.
-- [ ] Missing/unusable Python 3.12 or `sdlc_engine` exits non-zero with the
+- [x] Missing/unusable Python 3.12 or `sdlc_engine` exits non-zero with the
   install/setup hint; no bash fallback runs.
-- [ ] Gate and utility engine calls resolve `SDLC_PY`; no touched path invokes
+- [x] Gate and utility engine calls resolve `SDLC_PY`; no touched path invokes
   bare `python3` for engine behavior.
-- [ ] `cmd_shell` bridges both orchestrator `scripts/` and installed
+- [x] `cmd_shell` bridges both orchestrator `scripts/` and installed
   `sdlc-spdd/scripts/`.
-- [ ] Fresh installs and upgrades omit/remove the three retired files, and
+- [x] Fresh installs and upgrades omit/remove the three retired files, and
   install verification asserts their absence.
-- [ ] All current 28 shell harnesses pass against the Python-only dispatcher
-  or are replaced by equivalent pytest coverage.
-- [ ] Shipped duplicate implementation decreases by at least 3,000 LOC
+- [x] All current shell harnesses pass against the Python-only dispatcher
+  or are replaced by equivalent pytest coverage (28 before REF-003; the three
+  twin harnesses retired to pytest leave 25).
+- [x] Shipped duplicate implementation decreases by at least 3,000 LOC
   (measured template deletion: 3,100 LOC).
-- [ ] Current README, testing, engine, template, and shipped documentation
+- [x] Current README, testing, engine, template, and shipped documentation
   describe one mandatory Python engine.
 
 ### Non-Goals
@@ -67,7 +68,9 @@ install/upgrade packaging and retained session/capture utilities.
 - Retired files: `sdlc-workflow.sh`, `sdlc-team-registry.sh`,
   `sdlc-pointer.sh`
 - Installed home: `<target>/sdlc-spdd/scripts/`
-- Current shell harness inventory: 28 `tests/test-*.sh` files
+- Shell harness inventory: 28 `tests/test-*.sh` files at REF-003 start; 25
+  after `test-sdlc-workflow.sh`, `test-sdlc-pointer.sh`, and
+  `test-archive-work.sh` move to pytest
 
 ## A - Approach
 
@@ -169,7 +172,7 @@ already means the only supported engine. `SDLC_ENGINE=shell` and any
 
 ### T04 - Migrate the shell-harness and CI matrix
 
-- Status: Pending
+- Status: Complete
 - Description: Rewrite affected workflow, pointer, gate, archive, integration,
   and live-consumer harnesses to exercise Python-only behavior; remove only
   tests/workflows made obsolete by equivalent pytest coverage. Reconcile the
@@ -182,7 +185,7 @@ already means the only supported engine. `SDLC_ENGINE=shell` and any
 
 ### T05 - Synchronize the one-engine documentation contract
 
-- Status: Pending
+- Status: Complete
 - Description: Update active operator, testing, engine, template, and shipped
   docs to state the mandatory Python contract; preserve historical audit
   records; update changelog and REF-003 lifecycle status.
@@ -245,8 +248,8 @@ already means the only supported engine. `SDLC_ENGINE=shell` and any
 - [x] T02 retained utilities have no twin dependency
 - [x] T03 twin files are absent from source and installs
 - [x] T03 shipped LOC reduction is at least 3,000
-- [ ] T04 current shell/pytest matrix is green
-- [ ] T05 current docs state one engine
+- [x] T04 current shell/pytest matrix is green
+- [x] T05 current docs state one engine
 - [ ] T06 review, retro, sync, and dependency docs are complete
 - [ ] Full validation suite is green
 

@@ -33,13 +33,11 @@ Or without activating the venv:
 .venv/bin/python -m sdlc_engine next --root .
 ```
 
-Prefer the engine from the existing wrapper (shell remains the default):
+Or through the `sdlc.sh` dispatcher, which always runs this engine:
 
 ```bash
-SDLC_ENGINE=python ./scripts/sdlc.sh next
-SDLC_ENGINE=auto ./scripts/sdlc.sh next   # python if importable, else shell
+./scripts/sdlc.sh next
 
-# Local/offline sessions + SQLite index always use the Python engine (even with SDLC_ENGINE=shell)
 ./scripts/sdlc.sh local start --name scratch --intent "explore without a FEAT"
 ./scripts/sdlc.sh local promote --type feature --name "Documented title"
 ./scripts/sdlc.sh db rebuild
@@ -86,8 +84,10 @@ python3 -m pip install -e './engine[dev,viewer]'
 ## Compatibility
 
 - File formats stay identical (`.sdlc/`, `spdd/memory/registry.jsonl`, canvas paths).
-- Shell `sdlc.sh` can delegate to this engine (`SDLC_ENGINE=auto|python|shell`).
-- Target projects can keep using bash until they opt into the engine.
+- Shell `sdlc.sh` is a thin dispatcher into this engine; it requires Python 3.12
+  and an importable `sdlc_engine` and has no bash fallback (REF-003).
+- `SDLC_ENGINE=python` is accepted as a no-op; `SDLC_ENGINE=shell` and
+  `SDLC_GATE_ENGINE=shell` are rejected.
 
 ## Tests
 

@@ -364,7 +364,7 @@ digest_md=""
 if [[ -n "${WORK_ID}" ]]; then
   _milestone_path="${HOME}/requirements/milestones/${WORK_ID}.md"
   _analysis_path="${HOME}/spdd/analysis/${WORK_ID}-analysis.md"
-  digest_md="$(python3 - <<PY
+  digest_md="$("${SDLC_PY}" - <<PY
 import json, re, subprocess
 from pathlib import Path
 
