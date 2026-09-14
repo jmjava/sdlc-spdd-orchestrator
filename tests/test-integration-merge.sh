@@ -124,9 +124,7 @@ fi
 echo "== F. Nested harnesses =="
 for t in \
   test-scripts-lib.sh \
-  test-resolve-agent-context.sh \
-  test-archive-work.sh \
-  test-sdlc-pointer.sh; do
+  test-resolve-agent-context.sh; do
   if "${REPO_ROOT}/tests/${t}" >/dev/null; then
     ok "nested ${t}"
   else

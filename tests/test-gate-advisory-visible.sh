@@ -4,14 +4,8 @@ set -euo pipefail
 # Leftover #14 proving test: sdlc.sh gate must show advisory rows that did not run.
 # GATE_LABELS append "(advisory)" on next; gate used to print only failures.
 
-export SDLC_ENGINE=shell
-export SDLC_GATE_ENGINE=shell
-
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-WORKFLOW="${REPO_ROOT}/templates/agent-context/sdlc-workflow.sh"
-POINTER="${REPO_ROOT}/templates/agent-context/sdlc-pointer.sh"
-TEAM_REG="${REPO_ROOT}/templates/agent-context/sdlc-team-registry.sh"
 CAPTURE="${REPO_ROOT}/scripts/capture-session-memory.sh"
 SDLC_SH="${REPO_ROOT}/scripts/sdlc.sh"
 
@@ -55,9 +49,6 @@ setup_feature() {
     "${t}/sdlc-spdd/spdd/analysis" \
     "${t}/sdlc-spdd/spdd/memory" \
     "${t}/sdlc-spdd/scripts/lib"
-  cp "${POINTER}" "${t}/sdlc-spdd/scripts/sdlc-pointer.sh"
-  cp "${WORKFLOW}" "${t}/sdlc-spdd/scripts/sdlc-workflow.sh"
-  cp "${TEAM_REG}" "${t}/sdlc-spdd/scripts/sdlc-team-registry.sh"
   : > "${t}/sdlc-spdd/spdd/memory/registry.jsonl"
   cp "${SDLC_SH}" "${t}/sdlc-spdd/scripts/sdlc.sh"
   cp "${CAPTURE}" "${t}/sdlc-spdd/scripts/capture-session-memory.sh"
@@ -70,7 +61,9 @@ setup_feature() {
 sdlc() {
   local t="$1"
   shift
-  SDLC_ROOT="${t}" SDLC_ENGINE=shell SDLC_GATE_ENGINE=shell \
+  SDLC_ROOT="${t}" \
+    PYTHON="${REPO_ROOT}/.venv/bin/python" \
+    PYTHONPATH="${REPO_ROOT}/engine/src" \
     "${t}/sdlc-spdd/scripts/sdlc.sh" "$@"
 }
 
@@ -80,7 +73,6 @@ work_id="FEAT-014-advisory-visible"
 setup_feature "${T}"
 write_requirement "${T}" "${work_id}"
 write_canvas "${T}" "${work_id}"
-sdlc "${T}" resume "${work_id}" --phase plan >/dev/null
 if out="$(sdlc "${T}" gate architect --work-id "${work_id}" 2>&1)"; then
   if grep -q 'Architect review completed (advisory)' <<< "${out}" \
     && grep -q 'Operations are task-sized (advisory)' <<< "${out}" \
@@ -97,7 +89,6 @@ echo "== test_gate_architect_blocked_still_shows_advisory =="
 T="${WORK}/architect-blocked"
 work_id="FEAT-014-advisory-blocked"
 setup_feature "${T}"
-sdlc "${T}" resume "${work_id}" --phase plan >/dev/null
 if out="$(sdlc "${T}" gate architect --work-id "${work_id}" 2>&1)"; then
   bad "gate architect must fail without canvas/requirement: ${out}"
 else
@@ -115,7 +106,6 @@ T="${WORK}/analysis-ok"
 work_id="FEAT-014-no-advisory"
 setup_feature "${T}"
 write_requirement "${T}" "${work_id}"
-sdlc "${T}" resume "${work_id}" --phase init >/dev/null
 if out="$(sdlc "${T}" gate analysis --work-id "${work_id}" 2>&1)"; then
   if grep -q '(advisory)' <<< "${out}" || grep -q 'did not run' <<< "${out}"; then
     bad "gate analysis should not invent advisory rows: ${out}"

@@ -4,14 +4,8 @@ set -euo pipefail
 # Leftover #7 proving test: gate review requires Validation ran, not any ledger row.
 # Capture a dummy lesson, skip tests, `gate review` must fail.
 
-export SDLC_ENGINE=shell
-export SDLC_GATE_ENGINE=shell
-
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-WORKFLOW="${REPO_ROOT}/templates/agent-context/sdlc-workflow.sh"
-POINTER="${REPO_ROOT}/templates/agent-context/sdlc-pointer.sh"
-TEAM_REG="${REPO_ROOT}/templates/agent-context/sdlc-team-registry.sh"
 CAPTURE="${REPO_ROOT}/scripts/capture-session-memory.sh"
 SDLC_SH="${REPO_ROOT}/scripts/sdlc.sh"
 
@@ -48,9 +42,6 @@ setup_feature() {
     "${t}/sdlc-spdd/spdd/analysis" \
     "${t}/sdlc-spdd/spdd/memory" \
     "${t}/sdlc-spdd/scripts/lib"
-  cp "${POINTER}" "${t}/sdlc-spdd/scripts/sdlc-pointer.sh"
-  cp "${WORKFLOW}" "${t}/sdlc-spdd/scripts/sdlc-workflow.sh"
-  cp "${TEAM_REG}" "${t}/sdlc-spdd/scripts/sdlc-team-registry.sh"
   : > "${t}/sdlc-spdd/spdd/memory/registry.jsonl"
   cp "${SDLC_SH}" "${t}/sdlc-spdd/scripts/sdlc.sh"
   cp "${CAPTURE}" "${t}/sdlc-spdd/scripts/capture-session-memory.sh"
@@ -63,7 +54,9 @@ setup_feature() {
 sdlc() {
   local t="$1"
   shift
-  SDLC_ROOT="${t}" SDLC_ENGINE=shell SDLC_GATE_ENGINE=shell \
+  SDLC_ROOT="${t}" \
+    PYTHON="${REPO_ROOT}/.venv/bin/python" \
+    PYTHONPATH="${REPO_ROOT}/engine/src" \
     "${t}/sdlc-spdd/scripts/sdlc.sh" "$@"
 }
 
@@ -72,7 +65,7 @@ T="${WORK}/dummy-skip"
 work_id="FEAT-025-dummy-review"
 setup_feature "${T}"
 write_canvas "${T}" "${work_id}"
-sdlc "${T}" resume "${work_id}" --phase plan >/dev/null
+sdlc "${T}" pointer set "${work_id}" >/dev/null
 if ! sdlc "${T}" capture --phase plan --summary "dummy lesson" \
   --validation "skipped tests" >/dev/null; then
   bad "plan-phase dummy capture should succeed"
@@ -99,7 +92,7 @@ T="${WORK}/receipt-ok"
 work_id="FEAT-026-review-receipt"
 setup_feature "${T}"
 write_canvas "${T}" "${work_id}"
-sdlc "${T}" resume "${work_id}" --phase code >/dev/null
+sdlc "${T}" pointer set "${work_id}" >/dev/null
 if sdlc "${T}" capture --phase code --summary "T01 complete" \
   --verify-command "pytest tests/test_foo.py" \
   --verify-exit 0 \
