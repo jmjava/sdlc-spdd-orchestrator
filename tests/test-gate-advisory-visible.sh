@@ -73,7 +73,7 @@ work_id="FEAT-014-advisory-visible"
 setup_feature "${T}"
 write_requirement "${T}" "${work_id}"
 write_canvas "${T}" "${work_id}"
-if out="$(sdlc "${T}" gate architect --work-id "${work_id}" 2>&1)"; then
+if out="$(sdlc "${T}" gate --phase architect --work-id "${work_id}" 2>&1)"; then
   if grep -q 'Architect review completed (advisory)' <<< "${out}" \
     && grep -q 'Operations are task-sized (advisory)' <<< "${out}" \
     && grep -q 'did not run' <<< "${out}"; then
@@ -89,7 +89,7 @@ echo "== test_gate_architect_blocked_still_shows_advisory =="
 T="${WORK}/architect-blocked"
 work_id="FEAT-014-advisory-blocked"
 setup_feature "${T}"
-if out="$(sdlc "${T}" gate architect --work-id "${work_id}" 2>&1)"; then
+if out="$(sdlc "${T}" gate --phase architect --work-id "${work_id}" 2>&1)"; then
   bad "gate architect must fail without canvas/requirement: ${out}"
 else
   if grep -q 'BLOCKED' <<< "${out}" \
@@ -106,7 +106,7 @@ T="${WORK}/analysis-ok"
 work_id="FEAT-014-no-advisory"
 setup_feature "${T}"
 write_requirement "${T}" "${work_id}"
-if out="$(sdlc "${T}" gate analysis --work-id "${work_id}" 2>&1)"; then
+if out="$(sdlc "${T}" gate --phase analysis --work-id "${work_id}" 2>&1)"; then
   if grep -q '(advisory)' <<< "${out}" || grep -q 'did not run' <<< "${out}"; then
     bad "gate analysis should not invent advisory rows: ${out}"
   else
