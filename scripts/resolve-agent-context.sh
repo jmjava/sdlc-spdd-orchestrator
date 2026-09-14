@@ -33,7 +33,6 @@ Options:
   --work-id <id>      Load code areas from analysis + Work ID artifacts; scope
                       the ledger progress excerpt by those areas
   --areas <list>      Comma-separated code areas (overrides/supplements work-id)
-  --index-limit <n>   Ignored (legacy; kept for CLI compatibility)
   --text <string>     Prompt text containing #SkillName and !SkillName tokens
   --text-file <path>  Read prompt text from a file
   --format <fmt>      Output: paths (default), markdown, json
@@ -56,7 +55,6 @@ AREAS_ARG=""
 TEXT=""
 TEXT_FILE=""
 FORMAT="paths"
-INDEX_LIMIT=12
 LIST_SKILLS=0
 DRY_RUN=0
 
@@ -66,7 +64,6 @@ while [[ $# -gt 0 ]]; do
     --phase) PHASE="${2:-}"; shift 2 ;;
     --work-id) WORK_ID="${2:-}"; shift 2 ;;
     --areas) AREAS_ARG="${2:-}"; shift 2 ;;
-    --index-limit) INDEX_LIMIT="${2:-}"; shift 2 ;;
     --text) TEXT="${2:-}"; shift 2 ;;
     --text-file) TEXT_FILE="${2:-}"; shift 2 ;;
     --format) FORMAT="${2:-}"; shift 2 ;;
@@ -419,10 +416,6 @@ add_phase_index_path() {
   fi
 
   case "${raw}" in
-    agent-context/harness/*)
-      add_path "$(sdlc_harness_dir "${TARGET}")/${raw#agent-context/harness/}"
-      return 0
-      ;;
     harness/*)
       add_path "$(sdlc_harness_dir "${TARGET}")/${raw#harness/}"
       return 0
@@ -489,9 +482,9 @@ emit_markdown() {
   echo "|------|------|"
   for p in "${resolved_paths[@]}"; do
     kind="file"
-    if [[ "${p}" == */harness/skills/* || "${p}" == agent-context/harness/skills/* ]]; then
+    if [[ "${p}" == */harness/skills/* ]]; then
       kind="skill"
-    elif [[ "${p}" == */harness/* || "${p}" == agent-context/harness/* ]]; then
+    elif [[ "${p}" == */harness/* ]]; then
       kind="harness"
     elif [[ "${p}" == spdd/* || "${p}" == */spdd/* ]]; then
       kind="spdd"

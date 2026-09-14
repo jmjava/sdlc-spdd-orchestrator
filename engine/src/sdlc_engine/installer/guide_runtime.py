@@ -8,6 +8,8 @@ import signal
 import subprocess
 import time
 from pathlib import Path
+
+from ..project import Project
 from typing import Any
 
 from ..io_util import clear_file, load_json_dict, save_json_dict
@@ -55,7 +57,7 @@ def relax_codegen_gradle_network_timeout(home: Path | str) -> bool:
 
 
 def runtime_path(target: Path | str) -> Path:
-    return Path(target).expanduser().resolve() / RUNTIME_REL
+    return Project.resolve(target).sdlc_dir / RUNTIME_REL.name
 
 
 def _load_runtime(target: Path | str) -> dict[str, Any]:

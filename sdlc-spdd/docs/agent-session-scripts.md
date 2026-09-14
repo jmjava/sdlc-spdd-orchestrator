@@ -18,7 +18,7 @@ They solve four operational needs:
 | `scripts/upgrade-project.sh` | Framework-only upgrade for older initialized projects without overwriting implementation files or existing memory |
 | `sdlc-spdd/scripts/sdlc.sh` | Workflow CLI: `next`, `claim`, `resume`, `advance`, `skip`, `shelf`, `sync`, `capture`, `accept`, `team`, `list-work`, `archive`, `gate`, `db`, `issues`, `local`, `quick` |
 | `sdlc-spdd/scripts/start-agent-session.sh` | Target-local script that creates a session brief for a new agent |
-| `sdlc-spdd/scripts/resync-agent-session.sh` | Target-local script that checks or reconciles the canonical canvas, validates it, and creates a session brief |
+| `sdlc-spdd/scripts/resync-agent-session.sh` | Target-local script that validates the canvas and creates a session brief |
 | `sdlc-spdd/scripts/capture-session-memory.sh` | Stage session summary, decisions/pitfalls/patterns, and optional metrics as lesson records in `.sdlc/staged/lessons.jsonl` |
 | `sdlc-spdd/scripts/accept-lessons.sh` | Promote staged lesson records into the committed `spdd/memory/lessons.jsonl` (also `sdlc.sh accept`) |
 | `sdlc-spdd/scripts/index-spdd-analysis.sh` | Stage an `analysis` lesson record from a Fowler analysis artifact |
@@ -27,7 +27,6 @@ They solve four operational needs:
 | `sdlc-spdd/scripts/create-work-from-milestone.sh` | Target-local script that maps milestone checklist items into SDLC-SPDD work artifacts |
 | `sdlc-spdd/scripts/sync-roadmap-from-spdd.sh` | Target-local script that refreshes a managed roadmap summary from canvas metadata |
 | `sdlc-spdd/scripts/summarize-session-notes.sh` | Target-local script that imports existing session notes as staged lesson records |
-| `sdlc-spdd/scripts/sync-agent-context.sh` | Target-local low-level canvas copy synchronization |
 | `sdlc-spdd/scripts/validate-command-adapters.sh` | Target-local checker that validates Cursor/Copilot/Claude Code command-pack parity in the installed project |
 | `sdlc-spdd/scripts/verify-agent-command-effects.sh` | Target-local verifier for deterministic artifact side-effects after `/sdlc-spdd-*` command invocations and post-capture planning sync |
 | `sdlc-spdd/scripts/validate-reasons-canvas.sh` | REASONS Canvas structure validation (+ optional readiness vocabulary) |
@@ -75,7 +74,7 @@ Preview first:
 
     ./scripts/upgrade-project.sh --target /path/to/app --all --dry-run
 
-The upgrade updates framework-owned prompts, harness/skills files, target-local docs under `docs/sdlc-spdd/`, and target-local runtime scripts. It preserves application source, application docs outside `docs/sdlc-spdd/`, requirements, canvases, reviews, sync logs, the lessons ledger, existing root `CLAUDE.md`, and target workflow customizations. Legacy memory layouts are converted by `sdlc-engine storage migrate` — see [Framework upgrade](framework-upgrade.md).
+The upgrade updates framework-owned prompts, harness/skills files, target-local docs under `docs/sdlc-spdd/`, and target-local runtime scripts. It preserves application source, application docs outside `docs/sdlc-spdd/`, requirements, canvases, reviews, sync logs, the lessons ledger, existing root `CLAUDE.md`, and target workflow customizations. See [Framework upgrade](framework-upgrade.md).
 
 ## 2. Start a New Agent Session
 
@@ -138,21 +137,14 @@ Check the canonical canvas and validate it:
 
     ./sdlc-spdd/scripts/resync-agent-session.sh --target . --work-id FEAT-001-order-status-api --check-only
 
-`--check-only` runs sync check and canvas validation, then stops. It does **not** create a session brief. Run `start-agent-session.sh` next.
+`--check-only` validates the canvas, then stops. It does **not** create a session brief. Run `start-agent-session.sh` next.
 
-### Reconcile drift (creates session brief)
+### Validate and create a session brief
 
-If drift exists, reconcile and create a session brief in one step. **Default:** canonical `spdd/canvas/<WORK-ID>.md` is authoritative:
+Without `--check-only`, resync validates the single canvas and creates a fresh
+session brief for the requested phase:
 
-    ./sdlc-spdd/scripts/resync-agent-session.sh --target . --work-id FEAT-001-order-status-api --from-canvas --force --phase code
-
-When reconciling, you do **not** need a separate `start-agent-session.sh` call — resync creates the brief.
-
-The reconcile path:
-
-1. Runs `sync-agent-context.sh`.
-2. Validates the canonical canvas.
-3. Creates a fresh session brief for the requested `--phase`.
+    ./sdlc-spdd/scripts/resync-agent-session.sh --target . --work-id FEAT-001-order-status-api --phase code
 
 ## 4. Capture Current Session Memory
 

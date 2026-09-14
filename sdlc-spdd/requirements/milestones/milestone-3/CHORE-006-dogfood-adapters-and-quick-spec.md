@@ -4,7 +4,7 @@ jira_key: ""
 github_number: ""
 jira_epic: ""
 jira_type: "Chore"
-jira_status: "To Do"
+jira_status: "In Progress"
 jira_assignee: ""
 jira_due_date: ""
 jira_sprint: ""
@@ -22,7 +22,7 @@ related:
 
 **Work ID:** CHORE-006-dogfood-adapters-and-quick-spec  
 **Milestone:** Milestone 3 — One flow on storage v3  
-**Status:** To Do  
+**Status:** In Progress  
 **Priority / size:** P0 / S  
 **Date:** 2026-09-13  
 **Beck stage:** make it right (one engine, one persistence model, aligned docs/tests)
@@ -53,9 +53,9 @@ This repo's installed command packs (.cursor/commands, .claude/commands, .github
 
 ## Acceptance Criteria
 
-- [ ] Path-rewritten templates diff clean against .cursor/commands, .claude/commands, .github/prompts
+- [x] Path-rewritten templates diff clean against .cursor/commands, .claude/commands, .github/prompts
 - [ ] generate-command-adapters.sh --check covers quick
-- [ ] CI fails when a dogfood pack is stale
+- [x] CI fails when a dogfood pack is stale
 
 ## Non-Goals
 

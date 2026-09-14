@@ -1,33 +1,27 @@
 #!/usr/bin/env bash
 # Simple pointer manager for SDLC chores/tasks
 # Usage:
-#   source agent-context/sdlc-pointer.sh
+#   source sdlc-spdd/scripts/sdlc-pointer.sh
 #   sdlc_init                          # call on initialization
 #   sdlc_set_pointer ID                # sets pointer
 #   sdlc_get_pointer                   # prints pointer or empty
 #   sdlc_reset_pointer                 # clears pointer
 #   run_against_pointer "<expected>" -- <command...>
 #
-# Default storage: .sdlc/pointer in the repository root.
+# Default storage: sdlc-spdd/.sdlc/pointer.
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   set -euo pipefail
 fi
 
 SDLC_ROOT="${SDLC_ROOT:-$(git -C "${PWD}" rev-parse --show-toplevel 2>/dev/null || pwd)}"
-_paths_lib="${SDLC_ROOT}/scripts/lib/paths.sh"
-if [[ ! -f "${_paths_lib}" ]]; then
-  _paths_lib="${SDLC_ROOT}/sdlc-spdd/scripts/lib/paths.sh"
-fi
-if [[ ! -f "${_paths_lib}" ]]; then
-  _paths_lib="${SDLC_ROOT}/scripts/sdlc-spdd/lib/paths.sh"
-fi
+_paths_lib="${SDLC_ROOT}/sdlc-spdd/scripts/lib/paths.sh"
 if [[ -f "${_paths_lib}" ]]; then
   # shellcheck source=/dev/null
   source "${_paths_lib}"
   SDLC_DIR="${SDLC_DIR:-$(sdlc_runtime_dir "${SDLC_ROOT}")}"
 else
-  SDLC_DIR="${SDLC_DIR:-${SDLC_ROOT}/.sdlc}"
+  SDLC_DIR="${SDLC_DIR:-${SDLC_HOME:-${SDLC_ROOT}/sdlc-spdd}/.sdlc}"
 fi
 SDLC_POINTER="${SDLC_DIR}/pointer"
 SDLC_LOCK="${SDLC_DIR}/pointer.lock"

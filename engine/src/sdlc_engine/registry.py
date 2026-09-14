@@ -2,11 +2,8 @@
 
 ``spdd/memory/registry.jsonl`` is the only write store: append-only events
 ``{"event","work_id","status","phase","operation","owner","note","ts"}``.
-``rows()`` derives current state = latest event per ``work_id``.
-
-During transition, if ``registry.jsonl`` is missing and legacy
-``agent-context/work-registry.tsv`` exists, ``rows()`` falls back to a
-read-only TSV parse (no writes to TSV).
+``rows()`` derives current state = latest event per ``work_id``. There is no
+other registry store: a missing file means no events.
 """
 
 from __future__ import annotations
@@ -55,11 +52,6 @@ class TeamRegistry:
     def path(self) -> Path:
         return self.project.registry_jsonl_path
 
-    @property
-    def legacy_tsv_path(self) -> Path:
-        # Read-only transition fallback (see module docstring).
-        return self.project.home / "agent-context" / "work-registry.tsv"
-
     def _owner(self) -> str:
         if os.environ.get("SDLC_USER"):
             return os.environ["SDLC_USER"]
@@ -83,42 +75,19 @@ class TeamRegistry:
             self.path.write_text("", encoding="utf-8")
 
     def _read_events(self) -> list[dict[str, str]]:
-        if self.path.is_file():
-            out: list[dict[str, str]] = []
-            for line in self.path.read_text(encoding="utf-8").splitlines():
-                line = line.strip()
-                if not line:
-                    continue
-                try:
-                    row = json.loads(line)
-                    if isinstance(row, dict) and row.get("work_id"):
-                        out.append({k: str(v or "") for k, v in row.items()})
-                except json.JSONDecodeError:
-                    continue
-            return out
-        # Transition read-only fallback: legacy TSV when JSONL absent.
-        tsv = self.legacy_tsv_path
-        if not tsv.is_file():
+        if not self.path.is_file():
             return []
-        out = []
-        for line in tsv.read_text(encoding="utf-8").splitlines():
-            if not line or line.startswith("#") or line.startswith("work_id"):
+        out: list[dict[str, str]] = []
+        for line in self.path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line:
                 continue
-            parts = line.split("\t")
-            while len(parts) < 7:
-                parts.append("")
-            out.append(
-                {
-                    "event": "legacy-tsv",
-                    "work_id": parts[0],
-                    "status": parts[1],
-                    "phase": parts[2],
-                    "operation": parts[3],
-                    "owner": parts[4],
-                    "ts": parts[5],
-                    "note": parts[6],
-                }
-            )
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if isinstance(row, dict) and row.get("work_id"):
+                out.append({k: str(v or "") for k, v in row.items()})
         return out
 
     def rows(self) -> list[RegistryRow]:

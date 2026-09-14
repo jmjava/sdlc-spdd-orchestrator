@@ -40,8 +40,6 @@ Options:
   --roadmap-note <text> Append a progress note to ROADMAP.md
   --session-note        Write session-notes/YYYY-MM-DD.md (opt-in)
   --next <text>         Next recommended command or action
-  --history-limit <n>   Ignored (legacy; kept for CLI compatibility)
-  --no-history-rotate   Ignored (legacy; kept for CLI compatibility)
   --readiness <text>    Optional capture metric: canvas readiness value
   --review-result <v>   Optional: pass|fail|mixed|blocked
   --rework <n>          Optional non-negative integer
@@ -67,8 +65,6 @@ MILESTONE=""
 ROADMAP_NOTE=""
 NEXT_STEP=""
 WRITE_SESSION_NOTE=0
-HISTORY_LIMIT=20
-ROTATE_HISTORY=1
 RESOLVE_SESSION_AREAS=1
 DRY_RUN=0
 METRIC_READINESS=""
@@ -99,8 +95,6 @@ while [[ $# -gt 0 ]]; do
     --next) NEXT_STEP="${2:-}"; shift 2 ;;
     --session-note) WRITE_SESSION_NOTE=1; shift ;;
     --no-session-note) WRITE_SESSION_NOTE=0; shift ;;
-    --history-limit) HISTORY_LIMIT="${2:-}"; shift 2 ;;
-    --no-history-rotate) ROTATE_HISTORY=0; shift ;;
     --no-session-areas) RESOLVE_SESSION_AREAS=0; shift ;;
     --readiness) METRIC_READINESS="${2:-}"; shift 2 ;;
     --review-result) METRIC_REVIEW_RESULT="${2:-}"; shift 2 ;;
@@ -232,7 +226,7 @@ collect_session_content() {
 area_path_excluded() {
   local norm="$1"
   case "${norm}" in
-    agent-context/*|spdd/canvas/*|docs/*|session-notes/*|requirements/*|.cursor/*|.sdlc/*)
+    spdd/canvas/*|docs/*|session-notes/*|requirements/*|.cursor/*|.sdlc/*)
       return 0 ;;
   esac
   return 1
@@ -491,9 +485,6 @@ if [[ -n "${ROADMAP_NOTE}" ]]; then
 fi
 
 workflow_script="${HOME}/scripts/sdlc-workflow.sh"
-if [[ ! -f "${workflow_script}" ]]; then
-  workflow_script="${TARGET}/agent-context/sdlc-workflow.sh"
-fi
 if [[ -f "${workflow_script}" ]]; then
   SDLC_ROOT="${TARGET}"
   # shellcheck source=/dev/null

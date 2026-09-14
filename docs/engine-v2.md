@@ -36,7 +36,6 @@ engine/
     lessons_ledger.py   # lessons.jsonl + gitignored stage
     context_store.py    # persist/retrieve/accept/parity
     persistence.py      # CONTEXT_BACKENDS config
-    storage_migrate.py  # legacy → ledger migration
     archive.py
     canvas.py
     links.py            # milestone/canvas/registry link parsing
@@ -170,9 +169,8 @@ sdlc-engine context parity --repair
 sdlc-engine context backends
 sdlc-engine context backends --set git-pointers,guide-dice,sqlite
 
-# Legacy install migration
-sdlc-engine storage status
-sdlc-engine storage migrate [--dry-run]
+# Quiet / product-test mode
+sdlc-engine quiet-status [--quiet]
 ```
 
 ## Local SQLite cache (opt-in)

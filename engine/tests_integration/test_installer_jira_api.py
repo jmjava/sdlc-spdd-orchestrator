@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 import pytest
@@ -15,7 +14,7 @@ from sdlc_engine.registry import TeamRegistry
 
 
 def _seed(root: Path, work_id: str) -> None:
-    req = root / "requirements" / "milestones" / f"{work_id}.md"
+    req = root / "sdlc-spdd" / "requirements" / "milestones" / f"{work_id}.md"
     req.parent.mkdir(parents=True, exist_ok=True)
     req.write_text(
         f"""---
@@ -44,7 +43,7 @@ Local description
 """,
         encoding="utf-8",
     )
-    canvas = root / "spdd" / "canvas" / f"{work_id}.md"
+    canvas = root / "sdlc-spdd" / "spdd" / "canvas" / f"{work_id}.md"
     canvas.parent.mkdir(parents=True, exist_ok=True)
     canvas.write_text(
         f"""# REASONS Canvas: {work_id} - Demo
@@ -58,8 +57,8 @@ Local description
 """,
         encoding="utf-8",
     )
-    (root / "spdd" / "memory").mkdir(parents=True, exist_ok=True)
-    reg = root / "spdd" / "memory" / "registry.jsonl"
+    (root / "sdlc-spdd" / "spdd" / "memory").mkdir(parents=True, exist_ok=True)
+    reg = root / "sdlc-spdd" / "spdd" / "memory" / "registry.jsonl"
     if not reg.is_file():
         reg.write_text("", encoding="utf-8")
     TeamRegistry(Project.resolve(root)).claim(work_id)
@@ -87,7 +86,7 @@ def test_api_jira_link_dry_run_and_apply(tmp_path: Path) -> None:
     assert body["dry_run"] is True
     assert any("would set" in a for a in body["actions"])
 
-    req_text = (tmp_path / "requirements" / "milestones" / f"{work_id}.md").read_text()
+    req_text = (tmp_path / "sdlc-spdd" / "requirements" / "milestones" / f"{work_id}.md").read_text()
     assert "PROJ-123" not in req_text
 
     apply = client.post(
@@ -104,10 +103,10 @@ def test_api_jira_link_dry_run_and_apply(tmp_path: Path) -> None:
     applied = apply.get_json()
     assert applied["linked"] is True
 
-    req_text = (tmp_path / "requirements" / "milestones" / f"{work_id}.md").read_text()
+    req_text = (tmp_path / "sdlc-spdd" / "requirements" / "milestones" / f"{work_id}.md").read_text()
     assert "Key: PROJ-123" in req_text
     assert 'jira_key: "PROJ-123"' in req_text
-    canvas = (tmp_path / "spdd" / "canvas" / f"{work_id}.md").read_text()
+    canvas = (tmp_path / "sdlc-spdd" / "spdd" / "canvas" / f"{work_id}.md").read_text()
     assert "Source Issue: PROJ-123" in canvas
 
     status = client.post(

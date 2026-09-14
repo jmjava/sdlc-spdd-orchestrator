@@ -25,28 +25,28 @@ bad() { echo "  FAIL $1" >&2; fail=$((fail + 1)); }
 
 setup_feature() {
   local t="$1"
-  mkdir -p "${t}/.sdlc/sessions" \
-    "${t}/agent-context" \
-    "${t}/spdd/canvas" \
-    "${t}/spdd/analysis" \
-    "${t}/spdd/memory" \
-    "${t}/scripts/sdlc-spdd/lib"
-  cp "${POINTER}" "${t}/agent-context/sdlc-pointer.sh"
-  cp "${WORKFLOW}" "${t}/agent-context/sdlc-workflow.sh"
-  cp "${TEAM_REG}" "${t}/agent-context/sdlc-team-registry.sh"
-  : > "${t}/spdd/memory/registry.jsonl"
-  cp "${SDLC_SH}" "${t}/scripts/sdlc-spdd/sdlc.sh"
-  cp "${CAPTURE}" "${t}/scripts/sdlc-spdd/capture-session-memory.sh"
-  cp "${REPO_ROOT}/scripts/lib/"*.sh "${t}/scripts/sdlc-spdd/lib/"
-  chmod +x "${t}/agent-context/"*.sh \
-    "${t}/scripts/sdlc-spdd/sdlc.sh" \
-    "${t}/scripts/sdlc-spdd/capture-session-memory.sh"
+  mkdir -p "${t}/sdlc-spdd/.sdlc/sessions" \
+    "${t}/sdlc-spdd/scripts" \
+    "${t}/sdlc-spdd/spdd/canvas" \
+    "${t}/sdlc-spdd/spdd/analysis" \
+    "${t}/sdlc-spdd/spdd/memory" \
+    "${t}/sdlc-spdd/scripts/lib"
+  cp "${POINTER}" "${t}/sdlc-spdd/scripts/sdlc-pointer.sh"
+  cp "${WORKFLOW}" "${t}/sdlc-spdd/scripts/sdlc-workflow.sh"
+  cp "${TEAM_REG}" "${t}/sdlc-spdd/scripts/sdlc-team-registry.sh"
+  : > "${t}/sdlc-spdd/spdd/memory/registry.jsonl"
+  cp "${SDLC_SH}" "${t}/sdlc-spdd/scripts/sdlc.sh"
+  cp "${CAPTURE}" "${t}/sdlc-spdd/scripts/capture-session-memory.sh"
+  cp "${REPO_ROOT}/scripts/lib/"*.sh "${t}/sdlc-spdd/scripts/lib/"
+  chmod +x "${t}/sdlc-spdd/scripts/"*.sh \
+    "${t}/sdlc-spdd/scripts/sdlc.sh" \
+    "${t}/sdlc-spdd/scripts/capture-session-memory.sh"
 }
 
 sdlc() {
   local t="$1"
   shift
-  SDLC_ROOT="${t}" SDLC_ENGINE=shell "${t}/scripts/sdlc-spdd/sdlc.sh" "$@"
+  SDLC_ROOT="${t}" SDLC_ENGINE=shell "${t}/sdlc-spdd/scripts/sdlc.sh" "$@"
 }
 
 echo "== test_capture_without_verify_receipt_refuses =="
@@ -63,7 +63,7 @@ else
     bad "capture refuse message missing receipt: ${out}"
   fi
 fi
-if [[ -f "${T}/.sdlc/staged/lessons.jsonl" ]]; then
+if [[ -f "${T}/sdlc-spdd/.sdlc/staged/lessons.jsonl" ]]; then
   bad "refused capture must not stage a lesson"
 else
   ok "refused capture left no staged lesson"
@@ -113,7 +113,7 @@ if sdlc "${T}" capture --phase code --summary "T01 complete" \
 else
   bad "capture with receipt should succeed"
 fi
-stage="${T}/.sdlc/staged/lessons.jsonl"
+stage="${T}/sdlc-spdd/.sdlc/staged/lessons.jsonl"
 if [[ -f "${stage}" ]] \
   && grep -q '"command": "pytest tests/test_foo.py"' "${stage}" \
   && grep -q '"exit": 0' "${stage}" \

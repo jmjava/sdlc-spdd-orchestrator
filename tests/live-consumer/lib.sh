@@ -95,9 +95,6 @@ live_sdlc() {
   local root="$1"
   shift
   local cli="${root}/sdlc-spdd/scripts/sdlc.sh"
-  if [[ ! -x "${cli}" ]]; then
-    cli="${root}/scripts/sdlc-spdd/sdlc.sh"
-  fi
   SDLC_USER="${SDLC_USER}" SDLC_ROOT="${root}" "${cli}" "$@"
 }
 

@@ -6,7 +6,6 @@ import json
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
 
 from sdlc_engine.cli import main
 from sdlc_engine.context_store import ContextStore
@@ -16,10 +15,10 @@ from sdlc_engine.project import Project
 
 
 def _seed_canvas(root: Path, work_id: str) -> None:
-    req = root / "requirements" / "milestones" / f"{work_id}.md"
+    req = root / "sdlc-spdd" / "requirements" / "milestones" / f"{work_id}.md"
     req.parent.mkdir(parents=True, exist_ok=True)
     req.write_text(f"# Requirement: {work_id}\n\n## Summary\nProof.\n", encoding="utf-8")
-    canvas = root / "spdd" / "canvas" / f"{work_id}.md"
+    canvas = root / "sdlc-spdd" / "spdd" / "canvas" / f"{work_id}.md"
     canvas.parent.mkdir(parents=True, exist_ok=True)
     canvas.write_text(
         f"""# REASONS Canvas: {work_id}
@@ -54,7 +53,7 @@ def test_persist_lesson_stages_git_and_sqlite(tmp_path: Path) -> None:
     assert result.git.get("staged") is True
     assert result.sqlite.get("ok") is True
 
-    staged_path = tmp_path / ".sdlc" / "staged" / "lessons.jsonl"
+    staged_path = tmp_path / "sdlc-spdd" / ".sdlc" / "staged" / "lessons.jsonl"
     assert staged_path.is_file()
     assert "Never open PRs" in staged_path.read_text(encoding="utf-8")
 
@@ -79,7 +78,7 @@ def test_persist_accept_and_parity(tmp_path: Path) -> None:
         project_guide=False,
     )
     store.accept(work_id=wid, project_guide=False)
-    ledger_path = tmp_path / "spdd" / "memory" / "lessons.jsonl"
+    ledger_path = tmp_path / "sdlc-spdd" / "spdd" / "memory" / "lessons.jsonl"
     assert ledger_path.is_file()
     parity = store.parity(repair=False)
     assert parity["sqlite"]["enabled"] is True
@@ -131,7 +130,7 @@ def test_cli_persist_lesson_area_only_no_work_id(tmp_path: Path) -> None:
         ]
     )
     assert rc == 0
-    staged = (tmp_path / ".sdlc" / "staged" / "lessons.jsonl").read_text(encoding="utf-8")
+    staged = (tmp_path / "sdlc-spdd" / ".sdlc" / "staged" / "lessons.jsonl").read_text(encoding="utf-8")
     assert "FEAT-" not in staged
     assert '"work_id": ""' in staged
     assert "pitfall:(none):notify:adhoc-prompt" in staged

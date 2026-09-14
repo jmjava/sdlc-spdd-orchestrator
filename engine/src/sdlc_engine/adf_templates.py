@@ -340,11 +340,9 @@ class AdfTemplateLibrary:
             "business_value": business_value.strip() or "(none)",
             "scope_in": scope_in.strip() or "(none)",
             "scope_out": scope_out.strip() or "(none)",
-            "requirement_rel": (
-                f"requirements/milestones/{wid}.md" if req_path.is_file() else "(missing)"
-            ),
+            "requirement_rel": project.rel(req_path) if req_path.is_file() else "(missing)",
             "analysis_rel": (
-                f"spdd/analysis/{wid}-analysis.md" if analysis_path.is_file() else "(missing)"
+                project.rel(analysis_path) if analysis_path.is_file() else "(missing)"
             ),
             "canvas_rel": (
                 str(canvas_path.relative_to(project.root))

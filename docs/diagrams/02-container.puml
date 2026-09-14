@@ -12,7 +12,7 @@ System_Boundary(repo, "Project repository") {
         Container(contracts, "Contracts (committed)", "Markdown", "requirements/ + ROADMAP.md, spdd/canvas|analysis|reviews|sync, harness/ playbooks/ extensions/")
         ContainerDb(ledger, "Lessons ledger + registry (committed)", "JSONL", "spdd/memory/lessons.jsonl - accepted records (decision, pitfall, pattern, session, analysis). spdd/memory/registry.jsonl - claim/release events")
         Container(scripts, "Workflow CLI", "Bash", "scripts/sdlc.sh: capture, accept, claim, release, db; start-agent-session digest; paths.sh home resolution")
-        Container(engine, "sdlc-engine", "Python", "context retrieve/show/digest/accept/parity, storage migrate, sqlite rebuild, guide projection client")
+        Container(engine, "sdlc-engine", "Python", "context retrieve/show/digest/accept/parity, sqlite rebuild, guide projection client")
         ContainerDb(runtime, ".sdlc/ runtime (gitignored)", "Files", "sessions/current-session.md hot brief, staged/lessons.jsonl captures, index.sqlite opt-in cache (schema v5)")
     }
 }

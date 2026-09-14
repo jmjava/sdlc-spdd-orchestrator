@@ -4,7 +4,7 @@ jira_key: ""
 github_number: ""
 jira_epic: ""
 jira_type: "Chore"
-jira_status: "To Do"
+jira_status: "Done"
 jira_assignee: ""
 jira_due_date: ""
 jira_sprint: ""
@@ -22,7 +22,7 @@ related:
 
 **Work ID:** CHORE-004-lint-and-complexity-gates-real  
 **Milestone:** Milestone 3 — One flow on storage v3  
-**Status:** To Do  
+**Status:** Done  
 **Priority / size:** P0 / M  
 **Date:** 2026-09-13  
 **Beck stage:** make it right (one engine, one persistence model, aligned docs/tests)
@@ -55,9 +55,9 @@ CI only checks F401/F811 and only proves the complexity checker on a synthetic r
 
 ## Acceptance Criteria
 
-- [ ] CI ruff step uses the pyproject rule set; tree is clean
-- [ ] A PR adding a CCN 11 function fails the complexity step (proved once, recorded in TESTING.md)
-- [ ] shellcheck -S error passes in CI on all shell paths
+- [x] CI ruff step uses the pyproject rule set; tree is clean
+- [x] A PR adding a CCN 11 function fails the complexity step (proved once, recorded in TESTING.md)
+- [x] shellcheck -S error passes in CI on all shell paths
 
 ## Non-Goals
 

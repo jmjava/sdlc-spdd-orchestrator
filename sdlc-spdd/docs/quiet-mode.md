@@ -22,7 +22,7 @@ Any one of:
 | Environment | `export SDLC_QUIET=1` (also `true` / `yes` / `on`, case-insensitive) |
 | Harness marker | create `harness/quiet-mode.md` (any content) |
 | Session flag | `./scripts/start-agent-session.sh … --quiet` |
-| CLI inspect | `sdlc-engine agent-context quiet-status` |
+| CLI inspect | `sdlc-engine quiet-status` |
 
 ```bash
 # Shell workflow
@@ -31,8 +31,8 @@ SDLC_QUIET=on ./scripts/sdlc.sh status --json   # includes "quiet": true
 
 # Python engine
 SDLC_QUIET=1 sdlc-engine next
-sdlc-engine agent-context quiet-status
-sdlc-engine agent-context quiet-status --quiet   # force flag
+sdlc-engine quiet-status
+sdlc-engine quiet-status --quiet   # force flag
 ```
 
 ## What changes

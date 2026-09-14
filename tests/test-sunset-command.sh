@@ -72,8 +72,8 @@ git -C "${smoke_root}" config user.name "CI"
 printf '# smoke\n' > "${smoke_root}/README.md"
 git -C "${smoke_root}" add README.md
 git -C "${smoke_root}" commit -q -m "init"
-mkdir -p "${smoke_root}/requirements/milestones" "${smoke_root}/spdd/canvas" "${smoke_root}/spdd/memory"
-cat > "${smoke_root}/requirements/milestones/FEAT-014-feature-sunset.md" <<'EOF'
+mkdir -p "${smoke_root}/sdlc-spdd/requirements/milestones" "${smoke_root}/sdlc-spdd/spdd/canvas" "${smoke_root}/sdlc-spdd/spdd/memory"
+cat > "${smoke_root}/sdlc-spdd/requirements/milestones/FEAT-014-feature-sunset.md" <<'EOF'
 # Requirement: FEAT-014-feature-sunset
 
 ## Summary
@@ -86,7 +86,7 @@ Smoke sunset.
 - Summary: Smoke sunset
 EOF
 printf '%s\n' '# REASONS Canvas: FEAT-014-feature-sunset' '' '## Final Status' '' '- Status: Complete' \
-  > "${smoke_root}/spdd/canvas/FEAT-014-feature-sunset.md"
+  > "${smoke_root}/sdlc-spdd/spdd/canvas/FEAT-014-feature-sunset.md"
 if PYTHONPATH="${REPO_ROOT}/engine/src${PYTHONPATH:+:${PYTHONPATH}}" \
   python3 -m sdlc_engine --root "${smoke_root}" sunset --work-id FEAT-014-feature-sunset --apply \
   >/tmp/sdlc-sunset-smoke.out 2>/tmp/sdlc-sunset-smoke.err
@@ -99,8 +99,8 @@ then
   else
     bad "engine output missing sunset snapshot"
   fi
-  if [[ -f "${smoke_root}/.sdlc/staged/lessons.jsonl" ]] \
-    && grep -Fq '"source": "sunset"' "${smoke_root}/.sdlc/staged/lessons.jsonl"
+  if [[ -f "${smoke_root}/sdlc-spdd/.sdlc/staged/lessons.jsonl" ]] \
+    && grep -Fq '"source": "sunset"' "${smoke_root}/sdlc-spdd/.sdlc/staged/lessons.jsonl"
   then
     ok "sunset --apply staged a session record"
   else

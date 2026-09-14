@@ -451,51 +451,24 @@ def cmd_context(args: argparse.Namespace) -> int:
     return 2
 
 
-def cmd_storage(args: argparse.Namespace) -> int:
-    from .storage_migrate import StorageMigration
-
-    mig = StorageMigration(_project(args))
-    if args.storage_cmd == "status":
-        print(json.dumps(mig.detect(), indent=2))
-        return 0
-    if args.storage_cmd == "migrate":
-        print(json.dumps(mig.run(dry_run=bool(args.dry_run)), indent=2))
-        return 0
-    return 2
-
-
-def cmd_agent_context(args: argparse.Namespace) -> int:
-    """Upgrade/re-init and quiet-mode helpers for agent-context cleanup."""
-    from .agent_context_upgrade import AgentContextUpgrade
+def cmd_quiet_status(args: argparse.Namespace) -> int:
+    """Report quiet/product-test mode (#91) for the resolved project."""
     from .quiet import is_quiet, quiet_resume_blurb
 
     project = _project(args)
-    action = args.agent_context_cmd
-    if action == "detect":
-        print(json.dumps(AgentContextUpgrade(project).detect(), indent=2))
-        return 0
-    if action == "upgrade":
-        result = AgentContextUpgrade(project).run(
-            dry_run=bool(args.dry_run),
-            rebuild_db=not bool(args.no_rebuild),
+    quiet = is_quiet(project, quiet_flag=bool(getattr(args, "quiet", False)))
+    print(
+        json.dumps(
+            {
+                "quiet": quiet,
+                "blurb": quiet_resume_blurb(guide_live=bool(args.guide_live)),
+                "hot_session_dir": str(project.hot_session_dir()),
+                "current_session": str(project.current_session_path()),
+            },
+            indent=2,
         )
-        print(json.dumps(result.as_dict(), indent=2))
-        return 0 if result.ok else 1
-    if action == "quiet-status":
-        quiet = is_quiet(project, quiet_flag=bool(getattr(args, "quiet", False)))
-        print(
-            json.dumps(
-                {
-                    "quiet": quiet,
-                    "blurb": quiet_resume_blurb(guide_live=bool(args.guide_live)),
-                    "hot_session_dir": str(project.hot_session_dir()),
-                    "current_session": str(project.current_session_path()),
-                },
-                indent=2,
-            )
-        )
-        return 0
-    return 2
+    )
+    return 0
 
 
 def cmd_version(_: argparse.Namespace) -> int:

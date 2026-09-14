@@ -10,7 +10,7 @@ from .cli_parser import build_parser
 from .cli_commands import (  # noqa: F401
     _project,
     cmd_advance,
-    cmd_agent_context,
+    cmd_quiet_status,
     cmd_archive,
     cmd_claim,
     cmd_commit_message,
@@ -32,7 +32,6 @@ from .cli_commands import (  # noqa: F401
     cmd_shell,
     cmd_skip,
     cmd_status,
-    cmd_storage,
     cmd_sunset,
     cmd_sync,
     cmd_sync_links,

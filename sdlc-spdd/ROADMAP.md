@@ -218,11 +218,11 @@ Milestone 1 feature track is Complete on the integration branch.
 | CHORE-003-dogfood-ledger | make it right | Complete (P2) |
 | REF-001-engine-single-source | make it right | Complete (P2) |
 | TEST-003-cretrieve-roundtrip | make it right | Complete (T01–T05) |
-| SPIKE-005-architecture-review | make it right (program) | In Progress — opened Milestones 3–5 |
-| BUG-001-db-query-undefined-names | make it right | Milestone 3 P0 |
-| CHORE-004-lint-and-complexity-gates-real | make it right | Milestone 3 P0 |
-| CHORE-006-dogfood-adapters-and-quick-spec | make it right | Milestone 3 P0 |
-| REF-002-purge-pre-v3-compat | make it right | Milestone 3 P0 |
+| SPIKE-005-architecture-review | make it right (program) | In Progress — opened Milestones 3–5 (#308); canvas close-out pending |
+| BUG-001-db-query-undefined-names | make it right | Complete (Milestone 3 P0, #308) |
+| CHORE-004-lint-and-complexity-gates-real | make it right | Complete (Milestone 3 P0, #308) |
+| CHORE-006-dogfood-adapters-and-quick-spec | make it right | In Progress (Milestone 3 P0; `quick` spec outstanding) |
+| REF-002-purge-pre-v3-compat | make it right | In Progress (Milestone 3 P0; T01 archive contract in #308) |
 | REF-003-retire-bash-workflow-dual-path | make it right | Milestone 3 P0 |
 | REF-004…REF-011, CHORE-005, TEST-004 | make it right | Milestone 3 P1/P2 |
 | DOC-004…DOC-007, CHORE-007…CHORE-010 | make it right (docs) | Milestone 4 |

@@ -163,7 +163,6 @@ Ensure canvas Metadata includes:
 | `validate-reasons-canvas.sh` | Suggests architect or plan command after validation |
 | `create-work-from-milestone.sh` | Prints plan and architect prompts per created Work ID |
 | `resync-agent-session.sh` | Creates session brief with SPDD artifact status |
-| `sync-agent-context.sh` | Low-level canvas copy — run before validate when reconciling drift |
 
 ## Where SPDD Prompts Are Defined
 

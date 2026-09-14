@@ -303,9 +303,6 @@ your-app/
   adf/                       Optional checked-in ADF JSON
 ```
 
-Legacy sprawled installs (framework folders at the repo root, `agent-context/`
-trees, `work-registry.tsv`) keep working read-only and are consolidated by
-`upgrade` + `sdlc-engine storage migrate`.
 
 | Path (this repo) | Purpose |
 | ---------------- | ------- |

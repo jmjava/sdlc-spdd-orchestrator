@@ -8,7 +8,7 @@ from sdlc_engine.sync_local import LocalSyncService
 
 
 def _seed(root: Path, work_id: str, *, jira_key: str = "ORCH-42", gh: str = "99") -> None:
-    req = root / "requirements" / "milestones" / f"{work_id}.md"
+    req = root / "sdlc-spdd" / "requirements" / "milestones" / f"{work_id}.md"
     req.parent.mkdir(parents=True, exist_ok=True)
     req.write_text(
         f"""# Requirement: {work_id}
@@ -34,7 +34,7 @@ Body text
 """,
         encoding="utf-8",
     )
-    canvas = root / "spdd" / "canvas" / f"{work_id}.md"
+    canvas = root / "sdlc-spdd" / "spdd" / "canvas" / f"{work_id}.md"
     canvas.parent.mkdir(parents=True, exist_ok=True)
     canvas.write_text(
         f"""# REASONS Canvas: {work_id} - Demo
@@ -92,7 +92,7 @@ def test_sync_links_detects_and_repairs(tmp_path: Path, monkeypatch) -> None:
     assert "canvas_source_issue_mismatch" in codes or "linked_work_status_drift" in codes
     actions = svc.repair_links(work_id)
     assert actions
-    canvas = (tmp_path / "spdd" / "canvas" / f"{work_id}.md").read_text(encoding="utf-8")
+    canvas = (tmp_path / "sdlc-spdd" / "spdd" / "canvas" / f"{work_id}.md").read_text(encoding="utf-8")
     assert "Source Issue: ORCH-42" in canvas
     assert "Source System: Jira" in canvas
     ms = (tmp_path / "milestone-1.md").read_text(encoding="utf-8")
@@ -102,7 +102,7 @@ def test_sync_links_detects_and_repairs(tmp_path: Path, monkeypatch) -> None:
 def test_sync_roadmap_updates_markers(tmp_path: Path) -> None:
     work_id = "FEAT-202-roadmap"
     _seed(tmp_path, work_id)
-    roadmap = tmp_path / "ROADMAP.md"
+    roadmap = tmp_path / "sdlc-spdd" / "ROADMAP.md"
     roadmap.write_text(
         "# Roadmap\n\n<!-- SDLC-SPDD-ROADMAP-SUMMARY:START -->\nold\n<!-- SDLC-SPDD-ROADMAP-SUMMARY:END -->\n",
         encoding="utf-8",
@@ -141,9 +141,9 @@ def test_sync_links_manual_only_exits_zero(tmp_path: Path) -> None:
     ms = tmp_path / "milestone-1.md"
     text = ms.read_text(encoding="utf-8").replace("| Draft |", "| In Progress |")
     ms.write_text(text, encoding="utf-8")
-    canvas = tmp_path / "spdd" / "canvas" / f"{work_id}.md"
+    canvas = tmp_path / "sdlc-spdd" / "spdd" / "canvas" / f"{work_id}.md"
     # clear github number by rewriting req without number
-    req = tmp_path / "requirements" / "milestones" / f"{work_id}.md"
+    req = tmp_path / "sdlc-spdd" / "requirements" / "milestones" / f"{work_id}.md"
     req.write_text(
         f"""# Requirement: {work_id}
 

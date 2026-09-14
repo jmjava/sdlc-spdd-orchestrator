@@ -10,6 +10,8 @@ import time
 import urllib.error
 import urllib.request
 from pathlib import Path
+
+from ..project import Project
 from typing import Any
 from urllib.parse import quote
 
@@ -25,7 +27,7 @@ DEFAULT_PORT = 5050
 
 
 def runtime_path(target: Path | str) -> Path:
-    return Path(target).expanduser().resolve() / RUNTIME_REL
+    return Project.resolve(target).sdlc_dir / RUNTIME_REL.name
 
 
 def _load_runtime(target: Path | str) -> dict[str, Any]:

@@ -8,7 +8,6 @@ import pytest
 
 from sdlc_engine.integration_config import (
     integration_env,
-    load_config,
     resolve_integrations,
     save_config,
     status_dict,

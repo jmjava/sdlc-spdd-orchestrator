@@ -9,6 +9,7 @@ from typing import Any
 
 from ..io_util import save_json_dict
 from ..timeutil import utc_now
+from ..project import Project
 from .runner import orchestrator_root
 
 PLAYGROUND_DIRNAME = "console-playground"
@@ -23,11 +24,11 @@ WORKS: tuple[tuple[str, str, str], ...] = (
 
 def default_playground_dir(orch: Path | str | None = None) -> Path:
     root = Path(orch) if orch is not None else orchestrator_root()
-    return root / ".sdlc" / PLAYGROUND_DIRNAME
+    return Project(root).sdlc_dir / PLAYGROUND_DIRNAME
 
 
 def is_playground(target: Path | str) -> bool:
-    return (Path(target).expanduser().resolve() / ".sdlc" / MARKER_NAME).is_file()
+    return (Project.resolve(target).sdlc_dir / MARKER_NAME).is_file()
 
 
 def materialize_playground(
@@ -48,13 +49,15 @@ def materialize_playground(
     root.mkdir(parents=True, exist_ok=True)
 
     ts = utc_now()
-    sdlc = root / ".sdlc"
-    memory = root / "spdd" / "memory"
-    canvas_dir = root / "spdd" / "canvas"
-    analysis_dir = root / "spdd" / "analysis"
-    reviews_dir = root / "spdd" / "reviews"
-    milestones = root / "requirements" / "milestones"
-    adf_dir = root / "adf"
+    project = Project(root)
+    home = project.home
+    sdlc = project.sdlc_dir
+    memory = home / "spdd" / "memory"
+    canvas_dir = home / "spdd" / "canvas"
+    analysis_dir = home / "spdd" / "analysis"
+    reviews_dir = home / "spdd" / "reviews"
+    milestones = home / "requirements" / "milestones"
+    adf_dir = home / "adf"
     sessions = sdlc / "sessions"
     staged = sdlc / "staged"
     backup = root / ".sdlc-spdd-upgrade-backups" / "20260815T120000Z"

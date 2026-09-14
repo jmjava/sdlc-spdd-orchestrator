@@ -509,6 +509,10 @@ fw_dry="$(framework_ensure_dir "${fw}/c" 1)"
 assert_contains "${fw_dry}" "[dry-run] would mkdir -p" "framework_ensure_dir dry-run"
 assert_false "framework_ensure_dir dry-run skips create" test -d "${fw}/c"
 
+# REF-002: storage v3 is the only layout; the consolidation/archive helpers are gone.
+assert_false "consolidation helpers are gone" declare -F framework_consolidate_path
+assert_false "legacy-layout archive helper is gone" declare -F framework_archive_remaining_legacy_layout
+
 # ---------------------------------------------------------------------------
 echo "== python.sh: 3.12 resolver skips broken shims =="
 # shellcheck source=/dev/null

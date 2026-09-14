@@ -18,7 +18,7 @@ bad() { echo "  FAIL $1" >&2; fail=$((fail + 1)); }
 
 registry_file() {
   local t="$1"
-  printf '%s' "${t}/spdd/memory/registry.jsonl"
+  printf '%s' "${t}/sdlc-spdd/spdd/memory/registry.jsonl"
 }
 
 registry_matches() {
@@ -35,42 +35,42 @@ setup_work() {
   local work_id="$2"
   local final_status="$3"
   mkdir -p \
-    "${t}/agent-context" \
-    "${t}/spdd/canvas" \
-    "${t}/spdd/analysis" \
-    "${t}/spdd/reviews" \
-    "${t}/spdd/sync" \
-    "${t}/requirements/milestones" \
-    "${t}/.sdlc/workflows" \
-    "${t}/.sdlc/sessions" \
-    "${t}/scripts/sdlc-spdd"
-  cp "${POINTER}" "${t}/agent-context/sdlc-pointer.sh"
-  cp "${WORKFLOW}" "${t}/agent-context/sdlc-workflow.sh"
-  cp "${TEAM}" "${t}/agent-context/sdlc-team-registry.sh"
-  mkdir -p "${t}/spdd/memory" "${t}/scripts/lib"
-  cp "${REPO_ROOT}/scripts/lib/paths.sh" "${t}/scripts/lib/paths.sh"
-  : > "${t}/spdd/memory/registry.jsonl"
-  cp "${REPO_ROOT}/scripts/sdlc.sh" "${t}/scripts/sdlc-spdd/sdlc.sh"
+    "${t}/sdlc-spdd/scripts" \
+    "${t}/sdlc-spdd/spdd/canvas" \
+    "${t}/sdlc-spdd/spdd/analysis" \
+    "${t}/sdlc-spdd/spdd/reviews" \
+    "${t}/sdlc-spdd/spdd/sync" \
+    "${t}/sdlc-spdd/requirements/milestones" \
+    "${t}/sdlc-spdd/.sdlc/workflows" \
+    "${t}/sdlc-spdd/.sdlc/sessions" \
+    "${t}/sdlc-spdd/scripts"
+  cp "${POINTER}" "${t}/sdlc-spdd/scripts/sdlc-pointer.sh"
+  cp "${WORKFLOW}" "${t}/sdlc-spdd/scripts/sdlc-workflow.sh"
+  cp "${TEAM}" "${t}/sdlc-spdd/scripts/sdlc-team-registry.sh"
+  mkdir -p "${t}/sdlc-spdd/spdd/memory" "${t}/sdlc-spdd/scripts/lib"
+  cp "${REPO_ROOT}/scripts/lib/paths.sh" "${t}/sdlc-spdd/scripts/lib/paths.sh"
+  : > "${t}/sdlc-spdd/spdd/memory/registry.jsonl"
+  cp "${REPO_ROOT}/scripts/sdlc.sh" "${t}/sdlc-spdd/scripts/sdlc.sh"
   chmod +x \
-    "${t}/agent-context/sdlc-pointer.sh" \
-    "${t}/agent-context/sdlc-workflow.sh" \
-    "${t}/agent-context/sdlc-team-registry.sh" \
-    "${t}/scripts/sdlc-spdd/sdlc.sh"
+    "${t}/sdlc-spdd/scripts/sdlc-pointer.sh" \
+    "${t}/sdlc-spdd/scripts/sdlc-workflow.sh" \
+    "${t}/sdlc-spdd/scripts/sdlc-team-registry.sh" \
+    "${t}/sdlc-spdd/scripts/sdlc.sh"
 
-  cat > "${t}/spdd/canvas/${work_id}.md" <<EOF
+  cat > "${t}/sdlc-spdd/spdd/canvas/${work_id}.md" <<EOF
 # ${work_id}
 
 ## Final Status
 
 - Status: ${final_status}
 EOF
-  printf '# analysis\n' > "${t}/spdd/analysis/${work_id}-analysis.md"
-  printf '# review\n' > "${t}/spdd/reviews/${work_id}-review.md"
-  printf '# sync\n' > "${t}/spdd/sync/${work_id}-sync.md"
-  printf '# feature\n' > "${t}/requirements/milestones/${work_id}.md"
-  printf 'phase=code\nactive=1\n' > "${t}/.sdlc/workflows/${work_id}.state"
-  printf '# session for %s\n' "${work_id}" > "${t}/.sdlc/sessions/20260727T000000Z-plan-${work_id}.md"
-  printf '# current\n' > "${t}/.sdlc/sessions/current-session.md"
+  printf '# analysis\n' > "${t}/sdlc-spdd/spdd/analysis/${work_id}-analysis.md"
+  printf '# review\n' > "${t}/sdlc-spdd/spdd/reviews/${work_id}-review.md"
+  printf '# sync\n' > "${t}/sdlc-spdd/spdd/sync/${work_id}-sync.md"
+  printf '# feature\n' > "${t}/sdlc-spdd/requirements/milestones/${work_id}.md"
+  printf 'phase=code\nactive=1\n' > "${t}/sdlc-spdd/.sdlc/workflows/${work_id}.state"
+  printf '# session for %s\n' "${work_id}" > "${t}/sdlc-spdd/.sdlc/sessions/20260727T000000Z-plan-${work_id}.md"
+  printf '# current\n' > "${t}/sdlc-spdd/.sdlc/sessions/current-session.md"
 }
 
 echo "== Test 1: refuse in-progress work without --force =="
@@ -81,7 +81,7 @@ if SDLC_ROOT="${T}" wf "${T}" archive FEAT-100-active >/dev/null 2>&1; then
 else
   ok "archive refuses In Progress"
 fi
-if [[ -f "${T}/spdd/canvas/FEAT-100-active.md" ]]; then
+if [[ -f "${T}/sdlc-spdd/spdd/canvas/FEAT-100-active.md" ]]; then
   ok "in-progress canvas left in place"
 else
   bad "in-progress canvas was removed"
@@ -92,21 +92,21 @@ T="${WORK}/complete"
 setup_work "${T}" "FEAT-101-done" "Complete"
 SDLC_USER="archiver" SDLC_ROOT="${T}" wf "${T}" claim FEAT-101-done >/dev/null
 SDLC_ROOT="${T}" wf "${T}" archive FEAT-101-done >/dev/null
-if [[ ! -f "${T}/spdd/canvas/FEAT-101-done.md" \
-   && ! -f "${T}/spdd/analysis/FEAT-101-done-analysis.md" \
-   && ! -f "${T}/spdd/reviews/FEAT-101-done-review.md" \
-   && ! -f "${T}/spdd/sync/FEAT-101-done-sync.md" ]]; then
+if [[ ! -f "${T}/sdlc-spdd/spdd/canvas/FEAT-101-done.md" \
+   && ! -f "${T}/sdlc-spdd/spdd/analysis/FEAT-101-done-analysis.md" \
+   && ! -f "${T}/sdlc-spdd/spdd/reviews/FEAT-101-done-review.md" \
+   && ! -f "${T}/sdlc-spdd/spdd/sync/FEAT-101-done-sync.md" ]]; then
   ok "canvas and sidecar artifacts removed"
 else
   bad "contract artifacts still present after archive"
 fi
-if [[ -f "${T}/requirements/milestones/FEAT-101-done.md" ]]; then
+if [[ -f "${T}/sdlc-spdd/requirements/milestones/FEAT-101-done.md" ]]; then
   ok "milestone requirement left in place"
 else
   bad "milestone should not be removed"
 fi
-if [[ ! -f "${T}/.sdlc/sessions/20260727T000000Z-plan-FEAT-101-done.md" \
-   && -f "${T}/.sdlc/sessions/current-session.md" ]]; then
+if [[ ! -f "${T}/sdlc-spdd/.sdlc/sessions/20260727T000000Z-plan-FEAT-101-done.md" \
+   && -f "${T}/sdlc-spdd/.sdlc/sessions/current-session.md" ]]; then
   ok "matching session brief removed; current-session kept"
 else
   bad "session archive behavior incorrect"
@@ -116,14 +116,14 @@ if registry_matches "${T}" "FEAT-101-done" '"status": "archived"'; then
 else
   bad "registry missing archived row"
 fi
-ptr="$(SDLC_ROOT="${T}" "${T}/agent-context/sdlc-pointer.sh" get)"
+ptr="$(SDLC_ROOT="${T}" "${T}/sdlc-spdd/scripts/sdlc-pointer.sh" get)"
 if [[ -z "${ptr}" ]]; then ok "pointer cleared on archive"; else bad "pointer still set (${ptr})"; fi
 
 echo "== Test 3: archive cancelled work =="
 T="${WORK}/cancelled"
 setup_work "${T}" "FEAT-102-cancel" "Cancelled"
 SDLC_ROOT="${T}" wf "${T}" archive FEAT-102-cancel >/dev/null
-if [[ ! -f "${T}/spdd/canvas/FEAT-102-cancel.md" ]] \
+if [[ ! -f "${T}/sdlc-spdd/spdd/canvas/FEAT-102-cancel.md" ]] \
   && registry_matches "${T}" "FEAT-102-cancel" '"status": "archived"' \
   && registry_matches "${T}" "FEAT-102-cancel" 'archived:cancelled'; then
   ok "cancelled work archived with note token"
@@ -135,7 +135,7 @@ echo "== Test 4: canceled spelling (US) treated as cancelled =="
 T="${WORK}/canceled-us"
 setup_work "${T}" "FEAT-103-us" "Canceled — scope cut"
 SDLC_ROOT="${T}" wf "${T}" archive FEAT-103-us >/dev/null
-if [[ ! -f "${T}/spdd/canvas/FEAT-103-us.md" ]]; then
+if [[ ! -f "${T}/sdlc-spdd/spdd/canvas/FEAT-103-us.md" ]]; then
   ok "Canceled spelling is archivable"
 else
   bad "Canceled spelling not accepted"
@@ -145,7 +145,7 @@ echo "== Test 5: dry-run does not remove files =="
 T="${WORK}/dry"
 setup_work "${T}" "FEAT-104-dry" "Complete"
 out="$(SDLC_ROOT="${T}" wf "${T}" archive FEAT-104-dry --dry-run)"
-if [[ -f "${T}/spdd/canvas/FEAT-104-dry.md" ]]; then
+if [[ -f "${T}/sdlc-spdd/spdd/canvas/FEAT-104-dry.md" ]]; then
   ok "dry-run leaves canvas in place"
 else
   bad "dry-run removed canvas"
@@ -162,9 +162,9 @@ setup_work "${T}" "FEAT-105-a" "Complete"
 setup_work "${T}" "FEAT-105-b" "Cancelled"
 setup_work "${T}" "FEAT-105-c" "In Progress"
 SDLC_ROOT="${T}" wf "${T}" archive --all >/dev/null
-if [[ ! -f "${T}/spdd/canvas/FEAT-105-a.md" \
-   && ! -f "${T}/spdd/canvas/FEAT-105-b.md" \
-   && -f "${T}/spdd/canvas/FEAT-105-c.md" ]]; then
+if [[ ! -f "${T}/sdlc-spdd/spdd/canvas/FEAT-105-a.md" \
+   && ! -f "${T}/sdlc-spdd/spdd/canvas/FEAT-105-b.md" \
+   && -f "${T}/sdlc-spdd/spdd/canvas/FEAT-105-c.md" ]]; then
   ok "--all archives complete+cancelled, skips in-progress"
 else
   bad "--all selection incorrect"
@@ -173,8 +173,8 @@ fi
 echo "== Test 7: list-work ignores stray legacy archive paths =="
 T="${WORK}/discover"
 setup_work "${T}" "FEAT-106-live" "In Progress"
-mkdir -p "${T}/spdd/canvas/archive"
-printf '# old canvas\n' > "${T}/spdd/canvas/archive/FEAT-999-old.md"
+mkdir -p "${T}/sdlc-spdd/spdd/canvas/archive"
+printf '# old canvas\n' > "${T}/sdlc-spdd/spdd/canvas/archive/FEAT-999-old.md"
 out="$(SDLC_ROOT="${T}" wf "${T}" list-work)"
 if grep -q 'FEAT-106-live' <<< "${out}" && ! grep -q 'FEAT-999-old' <<< "${out}"; then
   ok "list-work skips Work IDs only under legacy archive paths"
@@ -187,7 +187,7 @@ T="${WORK}/sync-cancel"
 setup_work "${T}" "FEAT-107-sync" "Cancelled"
 SDLC_ROOT="${T}" wf "${T}" sync-team >/dev/null
 if registry_matches "${T}" "FEAT-107-sync" '"status": "cancelled"' \
-  && [[ -f "${T}/spdd/canvas/FEAT-107-sync.md" ]]; then
+  && [[ -f "${T}/sdlc-spdd/spdd/canvas/FEAT-107-sync.md" ]]; then
   ok "sync-team sets cancelled and leaves files"
 else
   bad "sync-team cancelled behavior wrong"
@@ -196,8 +196,8 @@ fi
 echo "== Test 9: sdlc.sh wrapper archive path =="
 T="${WORK}/wrapper"
 setup_work "${T}" "FEAT-108-wrap" "Complete"
-if SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" archive FEAT-108-wrap >/dev/null \
-  && [[ ! -f "${T}/spdd/canvas/FEAT-108-wrap.md" ]]; then
+if SDLC_ROOT="${T}" "${T}/sdlc-spdd/scripts/sdlc.sh" archive FEAT-108-wrap >/dev/null \
+  && [[ ! -f "${T}/sdlc-spdd/spdd/canvas/FEAT-108-wrap.md" ]]; then
   ok "sdlc.sh archive wrapper works"
 else
   bad "sdlc.sh archive wrapper failed"
@@ -207,7 +207,7 @@ echo "== Test 10: --force archives non-terminal work =="
 T="${WORK}/force"
 setup_work "${T}" "FEAT-109-force" "In Progress"
 if SDLC_ROOT="${T}" wf "${T}" archive FEAT-109-force --force >/dev/null \
-  && [[ ! -f "${T}/spdd/canvas/FEAT-109-force.md" ]] \
+  && [[ ! -f "${T}/sdlc-spdd/spdd/canvas/FEAT-109-force.md" ]] \
   && registry_matches "${T}" "FEAT-109-force" 'archived:forced'; then
   ok "--force archives non-terminal work"
 else
@@ -217,11 +217,11 @@ fi
 echo "== Test 12: archive leaves lessons.jsonl in place =="
 T="${WORK}/ledger"
 setup_work "${T}" "FEAT-111-mem" "Complete"
-mkdir -p "${T}/spdd/memory"
-printf '%s\n' '{"id":"pitfall:FEAT-111-mem:engine:test","kind":"pitfall","work_id":"FEAT-111-mem","area":"engine","title":"keep me","body":"archive must not drop this dogfood record from lessons.jsonl.","source":"test","keywords":[],"schema":1}' > "${T}/spdd/memory/lessons.jsonl"
-before="$(cat "${T}/spdd/memory/lessons.jsonl")"
+mkdir -p "${T}/sdlc-spdd/spdd/memory"
+printf '%s\n' '{"id":"pitfall:FEAT-111-mem:engine:test","kind":"pitfall","work_id":"FEAT-111-mem","area":"engine","title":"keep me","body":"archive must not drop this dogfood record from lessons.jsonl.","source":"test","keywords":[],"schema":1}' > "${T}/sdlc-spdd/spdd/memory/lessons.jsonl"
+before="$(cat "${T}/sdlc-spdd/spdd/memory/lessons.jsonl")"
 out="$(SDLC_ROOT="${T}" wf "${T}" archive FEAT-111-mem)"
-after="$(cat "${T}/spdd/memory/lessons.jsonl")"
+after="$(cat "${T}/sdlc-spdd/spdd/memory/lessons.jsonl")"
 if [[ "${before}" == "${after}" ]] && grep -Fq 'lessons.jsonl' <<< "${out}"; then
   ok "archive leaves lessons.jsonl unchanged and says so"
 else
@@ -236,7 +236,7 @@ out="$(SDLC_ROOT="${T}" wf "${T}" archive --all)"
 if grep -q 'processed 0 eligible' <<< "${out}"; then
   ok "--all skips already-archived registry rows"
 else
-  if [[ ! -f "${T}/spdd/canvas/FEAT-110-once.md" ]]; then
+  if [[ ! -f "${T}/sdlc-spdd/spdd/canvas/FEAT-110-once.md" ]]; then
     ok "--all did not duplicate archive (artifacts remain removed)"
   else
     bad "re-archive behavior unexpected: ${out}"

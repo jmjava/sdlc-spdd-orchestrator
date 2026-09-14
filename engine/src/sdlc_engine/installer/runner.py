@@ -16,7 +16,6 @@ _SECTION_HEADERS = (
     ("Updated framework files", "updated"),
     ("Unchanged framework files", "unchanged"),
     ("Preserved existing project content", "preserved"),
-    ("Consolidated", "consolidated"),
     ("Backups", "backups"),
 )
 _HEADLINE_HINTS = (
@@ -50,7 +49,6 @@ def summarize_run_log(
         "updated": [],
         "unchanged": [],
         "preserved": [],
-        "consolidated": [],
         "backups": [],
         "checks_ok": [],
         "checks_fail": [],

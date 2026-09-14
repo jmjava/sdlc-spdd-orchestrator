@@ -51,10 +51,10 @@ SOURCE = "test-003"
 
 
 def _seed(root: Path) -> None:
-    req = root / "requirements" / "milestones"
+    req = root / "sdlc-spdd" / "requirements" / "milestones"
     req.mkdir(parents=True, exist_ok=True)
     (req / f"{WID}.md").write_text(f"# Requirement {WID}\n\nRetrieve proof.\n", encoding="utf-8")
-    canvas = root / "spdd" / "canvas"
+    canvas = root / "sdlc-spdd" / "spdd" / "canvas"
     canvas.mkdir(parents=True, exist_ok=True)
     (canvas / f"{WID}.md").write_text(
         f"""# REASONS Canvas: {WID}
@@ -67,7 +67,7 @@ def _seed(root: Path) -> None:
 """,
         encoding="utf-8",
     )
-    (root / "spdd" / "memory").mkdir(parents=True, exist_ok=True)
+    (root / "sdlc-spdd" / "spdd" / "memory").mkdir(parents=True, exist_ok=True)
 
 
 def _store(root: Path, backends: list[str]) -> ContextStore:
@@ -94,7 +94,7 @@ def _persist_accept(store: ContextStore) -> str:
 
 def _seed_plan(root: Path) -> None:
     _seed(root)
-    canvas = root / "spdd" / "canvas" / f"{WID}.md"
+    canvas = root / "sdlc-spdd" / "spdd" / "canvas" / f"{WID}.md"
     canvas.write_text(
         canvas.read_text(encoding="utf-8")
         + "\n## O - Operations\n\n### T01\n\n- Status: Complete\n\n"
@@ -331,7 +331,7 @@ class CommandEffectsParityTests(unittest.TestCase):
                 "keywords": [],
                 "schema": 1,
             }
-            ledger = root / "spdd" / "memory" / "lessons.jsonl"
+            ledger = root / "sdlc-spdd" / "spdd" / "memory" / "lessons.jsonl"
             with ledger.open("a", encoding="utf-8") as handle:
                 handle.write(json.dumps(extra) + "\n")
             result = _run_verify(root)

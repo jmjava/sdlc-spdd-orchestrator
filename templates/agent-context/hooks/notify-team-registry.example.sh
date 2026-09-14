@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Example SDLC_TEAM_REGISTRY_HOOK — copy to agent-context/hooks/notify-team-registry.sh
-# and set: export SDLC_TEAM_REGISTRY_HOOK=./agent-context/hooks/notify-team-registry.sh
+# Example SDLC_TEAM_REGISTRY_HOOK — copy to sdlc-spdd/scripts/hooks/notify-team-registry.sh
+# and set: export SDLC_TEAM_REGISTRY_HOOK=./sdlc-spdd/scripts/hooks/notify-team-registry.sh
 #
 # Args: work_id status phase operation owner updated note
 #

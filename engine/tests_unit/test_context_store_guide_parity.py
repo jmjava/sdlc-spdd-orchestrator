@@ -14,16 +14,16 @@ from sdlc_engine.project import Project
 
 
 def _seed(root: Path, work_id: str) -> None:
-    req = root / "requirements" / "milestones" / f"{work_id}.md"
+    req = root / "sdlc-spdd" / "requirements" / "milestones" / f"{work_id}.md"
     req.parent.mkdir(parents=True, exist_ok=True)
     req.write_text(f"# Requirement {work_id}\n", encoding="utf-8")
-    canvas = root / "spdd" / "canvas" / f"{work_id}.md"
+    canvas = root / "sdlc-spdd" / "spdd" / "canvas" / f"{work_id}.md"
     canvas.parent.mkdir(parents=True, exist_ok=True)
     canvas.write_text(
         f"# REASONS Canvas: {work_id}\n\n## Metadata\n\n- Work ID: {work_id}\n",
         encoding="utf-8",
     )
-    (root / "spdd" / "memory").mkdir(parents=True, exist_ok=True)
+    (root / "sdlc-spdd" / "spdd" / "memory").mkdir(parents=True, exist_ok=True)
 
 
 def test_lesson_ids_from_subgraph_collects_record_ids() -> None:
@@ -209,9 +209,9 @@ def test_project_to_guide_writes_ingest_index_before_load(tmp_path: Path) -> Non
     with patch("sdlc_engine.context_store.urllib.request.urlopen", return_value=Resp()):
         out = store.project_to_guide()
     assert out["status"] == 200
-    index = tmp_path / "spdd" / "memory" / "context-index.md"
+    index = tmp_path / "sdlc-spdd" / "spdd" / "memory" / "context-index.md"
     assert index.is_file()
-    assert out.get("ingestIndex") == "spdd/memory/context-index.md"
+    assert out.get("ingestIndex") == "sdlc-spdd/spdd/memory/context-index.md"
     assert wid in index.read_text(encoding="utf-8")
 
 

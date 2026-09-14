@@ -53,27 +53,13 @@ managed grounding block inside `CLAUDE.md`:
     ...
     <!-- END SDLC-SPDD MANAGED CLAUDE GROUNDING -->
 
-## Storage migration and consolidation
+## Storage v3 layout
 
-After upgrading framework files, run the engine storage commands from the target
-project root:
+Upgrade operates on one `sdlc-spdd/` home. The lessons and registry JSONL files
+are committed under `spdd/memory/`; runtime stays gitignored under `.sdlc/`.
+Full model: [Storage v3](storage-v3.md).
 
-```bash
-# Detect legacy layouts and show what would change
-sdlc-engine storage status
-
-# One-shot: convert legacy memory trees → ledger + registry
-sdlc-engine storage migrate [--dry-run]
-
-# Move scattered framework paths into the single sdlc-spdd/ home
-./scripts/upgrade-project.sh --target . --all
-```
-
-Migration exports converted originals aside; the committed system of record becomes
-`spdd/memory/lessons.jsonl` + `spdd/memory/registry.jsonl`. Hot runtime stays
-gitignored under `.sdlc/`. Full model: [Storage v3](storage-v3.md).
-
-Verify parity after migration:
+Verify parity after upgrading:
 
 ```bash
 sdlc-engine context parity
@@ -86,8 +72,7 @@ Run from the SDLC-SPDD orchestrator repository:
 
     ./scripts/upgrade-project.sh --target /path/to/app --all
 
-For backward compatibility, omitting assistant flags upgrades Cursor and GitHub
-Copilot only. Use `--all` or `--claude` when you want Claude Code files.
+By default, omitting assistant flags upgrades Cursor and GitHub Copilot only. Use `--all` or `--claude` when you want Claude Code files.
 
 Upgrade only Cursor prompts:
 

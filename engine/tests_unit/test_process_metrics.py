@@ -21,17 +21,17 @@ REPO = Path(__file__).resolve().parents[2]
 
 
 def _seed(root: Path, work_id: str) -> None:
-    (root / "requirements" / "milestones").mkdir(parents=True, exist_ok=True)
-    (root / "requirements" / "milestones" / f"{work_id}.md").write_text(
+    (root / "sdlc-spdd" / "requirements" / "milestones").mkdir(parents=True, exist_ok=True)
+    (root / "sdlc-spdd" / "requirements" / "milestones" / f"{work_id}.md").write_text(
         f"# Requirement: {work_id}\n\n## Summary\nMetrics.\n",
         encoding="utf-8",
     )
-    (root / "spdd" / "canvas").mkdir(parents=True, exist_ok=True)
-    (root / "spdd" / "canvas" / f"{work_id}.md").write_text(
+    (root / "sdlc-spdd" / "spdd" / "canvas").mkdir(parents=True, exist_ok=True)
+    (root / "sdlc-spdd" / "spdd" / "canvas" / f"{work_id}.md").write_text(
         f"# REASONS Canvas: {work_id}\n\n## Metadata\n\n- Work ID: {work_id}\n",
         encoding="utf-8",
     )
-    (root / "spdd" / "memory").mkdir(parents=True, exist_ok=True)
+    (root / "sdlc-spdd" / "spdd" / "memory").mkdir(parents=True, exist_ok=True)
 
 
 def test_query_uses_structured_fields_not_body() -> None:
@@ -124,7 +124,7 @@ def test_cli_persist_flags_round_trip_metrics_query(tmp_path: Path) -> None:
         ]
     )
     assert rc == 0
-    staged = (tmp_path / ".sdlc" / "staged" / "lessons.jsonl").read_text(
+    staged = (tmp_path / "sdlc-spdd" / ".sdlc" / "staged" / "lessons.jsonl").read_text(
         encoding="utf-8"
     )
     rec = json.loads(staged.splitlines()[0])
@@ -229,7 +229,7 @@ def test_capture_script_writes_metrics_object_round_trip(tmp_path: Path) -> None
         check=False,
     )
     assert proc.returncode == 0, proc.stderr + proc.stdout
-    staged = tmp_path / ".sdlc" / "staged" / "lessons.jsonl"
+    staged = tmp_path / "sdlc-spdd" / ".sdlc" / "staged" / "lessons.jsonl"
     sessions = [
         json.loads(line)
         for line in staged.read_text(encoding="utf-8").splitlines()

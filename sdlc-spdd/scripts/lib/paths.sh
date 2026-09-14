@@ -49,18 +49,14 @@ sdlc_root() {
   git -C "${PWD}" rev-parse --show-toplevel 2>/dev/null || pwd
 }
 
-# Framework home: SDLC_HOME > <root>/sdlc-spdd if dir > root.
+# Framework home: SDLC_HOME, else <root>/sdlc-spdd. No fallback to root.
 sdlc_home() {
   local root="${1:-$(sdlc_root)}"
   if [[ -n "${SDLC_HOME:-}" ]]; then
     printf '%s' "${SDLC_HOME}"
     return 0
   fi
-  if [[ -d "${root}/sdlc-spdd" ]]; then
-    printf '%s' "${root}/sdlc-spdd"
-  else
-    printf '%s' "${root}"
-  fi
+  printf '%s' "${root}/sdlc-spdd"
 }
 
 sdlc_runtime_dir() {
@@ -88,13 +84,7 @@ sdlc_requirements_dir() {
 }
 
 sdlc_harness_dir() {
-  local home
-  home="$(sdlc_home "$1")"
-  if [[ -d "${home}/harness" ]]; then
-    printf '%s' "${home}/harness"
-  else
-    printf '%s' "${home}/agent-context/harness"
-  fi
+  printf '%s' "$(sdlc_home "$1")/harness"
 }
 
 sdlc_sessions_dir() {
@@ -102,15 +92,7 @@ sdlc_sessions_dir() {
 }
 
 sdlc_skills_dir() {
-  local home
-  home="$(sdlc_home "$1")"
-  if [[ -d "${home}/harness/skills" ]]; then
-    printf '%s' "${home}/harness/skills"
-  elif [[ -d "${home}/agent-context/harness/skills" ]]; then
-    printf '%s' "${home}/agent-context/harness/skills"
-  else
-    printf '%s' "${home}/harness/skills"
-  fi
+  printf '%s' "$(sdlc_harness_dir "$1")/skills"
 }
 
 # JSON string escape via python3 (preferred over jq).

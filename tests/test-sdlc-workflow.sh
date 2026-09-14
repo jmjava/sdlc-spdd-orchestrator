@@ -27,7 +27,7 @@ bad() { echo "  FAIL $1" >&2; fail=$((fail + 1)); }
 
 registry_file() {
   local t="$1"
-  printf '%s' "${t}/spdd/memory/registry.jsonl"
+  printf '%s' "${t}/sdlc-spdd/spdd/memory/registry.jsonl"
 }
 
 registry_matches() {
@@ -42,19 +42,19 @@ wf() { SDLC_ROOT="${1}" "${WORKFLOW}" "${@:2}"; }
 setup_feature() {
   local t="$1"
   local work_id="$2"
-  mkdir -p "${t}/.sdlc/sessions" \
-    "${t}/agent-context" \
-    "${t}/spdd/canvas" \
-    "${t}/spdd/analysis" \
-    "${t}/scripts/lib"
-  cp "${POINTER}" "${t}/agent-context/sdlc-pointer.sh"
-  cp "${WORKFLOW}" "${t}/agent-context/sdlc-workflow.sh"
-  cp "${TEAM_REG}" "${t}/agent-context/sdlc-team-registry.sh"
-  cp "${REPO_ROOT}/scripts/lib/paths.sh" "${t}/scripts/lib/paths.sh"
-  mkdir -p "${t}/spdd/memory"
-  : > "${t}/spdd/memory/registry.jsonl"
-  cp "${REPO_ROOT}/scripts/lib/readiness.sh" "${t}/scripts/lib/readiness.sh"
-  chmod +x "${t}/agent-context/sdlc-pointer.sh" "${t}/agent-context/sdlc-workflow.sh" "${t}/agent-context/sdlc-team-registry.sh"
+  # Workflow CLI and all framework state live under <root>/sdlc-spdd/.
+  mkdir -p "${t}/sdlc-spdd/.sdlc/sessions" \
+    "${t}/sdlc-spdd/spdd/canvas" \
+    "${t}/sdlc-spdd/spdd/analysis" \
+    "${t}/sdlc-spdd/scripts/lib"
+  cp "${POINTER}" "${t}/sdlc-spdd/scripts/sdlc-pointer.sh"
+  cp "${WORKFLOW}" "${t}/sdlc-spdd/scripts/sdlc-workflow.sh"
+  cp "${TEAM_REG}" "${t}/sdlc-spdd/scripts/sdlc-team-registry.sh"
+  cp "${REPO_ROOT}/scripts/lib/paths.sh" "${t}/sdlc-spdd/scripts/lib/paths.sh"
+  mkdir -p "${t}/sdlc-spdd/spdd/memory"
+  : > "${t}/sdlc-spdd/spdd/memory/registry.jsonl"
+  cp "${REPO_ROOT}/scripts/lib/readiness.sh" "${t}/sdlc-spdd/scripts/lib/readiness.sh"
+  chmod +x "${t}/sdlc-spdd/scripts/sdlc-pointer.sh" "${t}/sdlc-spdd/scripts/sdlc-workflow.sh" "${t}/sdlc-spdd/scripts/sdlc-team-registry.sh"
 }
 
 # ---------------------------------------------------------------------------
@@ -62,20 +62,20 @@ echo "== Test 1: resume sets pointer and creates workflow state =="
 T="${WORK}/resume"
 setup_feature "${T}" "FEAT-001-alpha"
 wf "${T}" resume FEAT-001-alpha >/dev/null
-ptr="$(SDLC_ROOT="${T}" "${T}/agent-context/sdlc-pointer.sh" get)"
+ptr="$(SDLC_ROOT="${T}" "${T}/sdlc-spdd/scripts/sdlc-pointer.sh" get)"
 if [[ "${ptr}" == "FEAT-001-alpha" ]]; then ok "resume sets pointer"; else bad "pointer not set"; fi
-if [[ -f "${T}/.sdlc/workflows/FEAT-001-alpha.state" ]]; then ok "workflow state created"; else bad "missing state file"; fi
+if [[ -f "${T}/sdlc-spdd/.sdlc/workflows/FEAT-001-alpha.state" ]]; then ok "workflow state created"; else bad "missing state file"; fi
 
 # ---------------------------------------------------------------------------
 echo "== Test 2: advance moves through phases =="
 wf "${T}" advance >/dev/null
-phase="$(grep '^phase=' "${T}/.sdlc/workflows/FEAT-001-alpha.state" | cut -d= -f2)"
+phase="$(grep '^phase=' "${T}/sdlc-spdd/.sdlc/workflows/FEAT-001-alpha.state" | cut -d= -f2)"
 if [[ "${phase}" == "analysis" ]]; then ok "advance to analysis"; else bad "expected analysis, got ${phase}"; fi
 
 # ---------------------------------------------------------------------------
 echo "== Test 3: skip records reason and moves past phase =="
 wf "${T}" skip api-test --reason "no HTTP surface" >/dev/null
-if grep -q '^skip_api-test=' "${T}/.sdlc/workflows/FEAT-001-alpha.state"; then
+if grep -q '^skip_api-test=' "${T}/sdlc-spdd/.sdlc/workflows/FEAT-001-alpha.state"; then
   ok "skip recorded in state"
 else
   bad "skip not recorded"
@@ -84,16 +84,16 @@ fi
 # ---------------------------------------------------------------------------
 echo "== Test 4: shelf and resume shelved work =="
 wf "${T}" shelf --reason "context switch" >/dev/null
-ptr="$(SDLC_ROOT="${T}" "${T}/agent-context/sdlc-pointer.sh" get)"
+ptr="$(SDLC_ROOT="${T}" "${T}/sdlc-spdd/scripts/sdlc-pointer.sh" get)"
 if [[ -z "${ptr}" ]]; then ok "shelf clears pointer"; else bad "pointer should be empty"; fi
-active="$(grep '^active=' "${T}/.sdlc/workflows/FEAT-001-alpha.state" | cut -d= -f2)"
+active="$(grep '^active=' "${T}/sdlc-spdd/.sdlc/workflows/FEAT-001-alpha.state" | cut -d= -f2)"
 if [[ "${active}" == "0" ]]; then ok "shelf marks inactive"; else bad "expected active=0"; fi
 
 setup_feature "${T}" "CHORE-002-beta"
 wf "${T}" resume CHORE-002-beta >/dev/null
 if wf "${T}" list-shelved | grep -q 'FEAT-001-alpha'; then ok "shelved list includes parked work"; else bad "shelved list missing FEAT-001-alpha"; fi
 wf "${T}" resume FEAT-001-alpha >/dev/null
-ptr="$(SDLC_ROOT="${T}" "${T}/agent-context/sdlc-pointer.sh" get)"
+ptr="$(SDLC_ROOT="${T}" "${T}/sdlc-spdd/scripts/sdlc-pointer.sh" get)"
 if [[ "${ptr}" == "FEAT-001-alpha" ]]; then ok "resume restores shelved pointer"; else bad "resume failed"; fi
 
 # ---------------------------------------------------------------------------
@@ -101,14 +101,14 @@ echo "== Test 5: sync infers phase from artifacts =="
 T="${WORK}/sync"
 work_id="FEAT-003-gamma"
 setup_feature "${T}" "${work_id}"
-mkdir -p "${T}/requirements/milestones"
-printf '# req\n' > "${T}/requirements/milestones/${work_id}.md"
-printf '# analysis\n' > "${T}/spdd/analysis/${work_id}-analysis.md"
-printf '# canvas\nReady For Coding\n' > "${T}/spdd/canvas/${work_id}.md"
+mkdir -p "${T}/sdlc-spdd/requirements/milestones"
+printf '# req\n' > "${T}/sdlc-spdd/requirements/milestones/${work_id}.md"
+printf '# analysis\n' > "${T}/sdlc-spdd/spdd/analysis/${work_id}-analysis.md"
+printf '# canvas\nReady For Coding\n' > "${T}/sdlc-spdd/spdd/canvas/${work_id}.md"
 wf "${T}" resume "${work_id}" >/dev/null
-phase="$(grep '^phase=' "${T}/.sdlc/workflows/${work_id}.state" | cut -d= -f2)"
+phase="$(grep '^phase=' "${T}/sdlc-spdd/.sdlc/workflows/${work_id}.state" | cut -d= -f2)"
 if [[ "${phase}" == "code" ]]; then ok "sync infers code from artifacts"; else bad "expected code, got ${phase}"; fi
-if grep -q '^gate_canvas_exists=passed' "${T}/.sdlc/workflows/${work_id}.state"; then
+if grep -q '^gate_canvas_exists=passed' "${T}/sdlc-spdd/.sdlc/workflows/${work_id}.state"; then
   ok "sync marks canvas gate passed"
 else
   bad "canvas gate not passed"
@@ -129,13 +129,13 @@ T="${WORK}/integrate"
 work_id="FEAT-004-delta"
 setup_feature "${T}" "${work_id}"
 "${START}" --target "${T}" --work-id "${work_id}" --phase plan >/dev/null
-if grep -q '^last_session_at=' "${T}/.sdlc/workflows/${work_id}.state"; then
+if grep -q '^last_session_at=' "${T}/sdlc-spdd/.sdlc/workflows/${work_id}.state"; then
   ok "start-agent-session touches workflow"
 else
   bad "missing last_session_at"
 fi
 "${CAPTURE}" --target "${T}" --work-id "${work_id}" --phase plan --summary "planned" >/dev/null
-if grep -q '^last_capture_at=' "${T}/.sdlc/workflows/${work_id}.state"; then
+if grep -q '^last_capture_at=' "${T}/sdlc-spdd/.sdlc/workflows/${work_id}.state"; then
   ok "capture-session-memory records workflow capture"
 else
   bad "missing last_capture_at"
@@ -146,7 +146,7 @@ echo "== Test 8: next command gives actionable output =="
 T="${WORK}/next"
 work_id="FEAT-005-next"
 setup_feature "${T}" "${work_id}"
-printf '# canvas\nReady For Coding\n' > "${T}/spdd/canvas/${work_id}.md"
+printf '# canvas\nReady For Coding\n' > "${T}/sdlc-spdd/spdd/canvas/${work_id}.md"
 wf "${T}" resume "${work_id}" >/dev/null
 out="$(wf "${T}" next)"
 if grep -q 'Do now (assistant):' <<< "${out}" && grep -q 'When this phase is done:' <<< "${out}"; then
@@ -169,11 +169,11 @@ echo "== Test 10: sdlc.sh wrapper delegates =="
 T="${WORK}/wrapper"
 work_id="FEAT-005-wrap"
 setup_feature "${T}" "${work_id}"
-mkdir -p "${T}/scripts/sdlc-spdd"
-cp "${REPO_ROOT}/scripts/sdlc.sh" "${T}/scripts/sdlc-spdd/sdlc.sh"
-chmod +x "${T}/scripts/sdlc-spdd/sdlc.sh"
-SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" resume "${work_id}" >/dev/null
-out="$(SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" next)"
+mkdir -p "${T}/sdlc-spdd/scripts"
+cp "${REPO_ROOT}/scripts/sdlc.sh" "${T}/sdlc-spdd/scripts/sdlc.sh"
+chmod +x "${T}/sdlc-spdd/scripts/sdlc.sh"
+SDLC_ROOT="${T}" "${T}/sdlc-spdd/scripts/sdlc.sh" resume "${work_id}" >/dev/null
+out="$(SDLC_ROOT="${T}" "${T}/sdlc-spdd/scripts/sdlc.sh" next)"
 if grep -q "${work_id}" <<< "${out}"; then ok "sdlc.sh wrapper works"; else bad "sdlc.sh wrapper failed"; fi
 
 # ---------------------------------------------------------------------------
@@ -181,12 +181,12 @@ echo "== Test 10b: sdlc.sh claim does not re-enter CLI (exec + nested source) ==
 T="${WORK}/wrapper-claim"
 work_id="FEAT-005b-claim"
 setup_feature "${T}" "${work_id}"
-mkdir -p "${T}/scripts/sdlc-spdd" "${T}/spdd/canvas"
+mkdir -p "${T}/sdlc-spdd/scripts" "${T}/sdlc-spdd/spdd/canvas"
 printf '%s\n' "# ${work_id}" '' '## Final Status' '' '- Status: In Progress' \
-  > "${T}/spdd/canvas/${work_id}.md"
-cp "${REPO_ROOT}/scripts/sdlc.sh" "${T}/scripts/sdlc-spdd/sdlc.sh"
-chmod +x "${T}/scripts/sdlc-spdd/sdlc.sh"
-if SDLC_USER="tester" SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" claim "${work_id}" >/dev/null 2>"${T}/claim.err"; then
+  > "${T}/sdlc-spdd/spdd/canvas/${work_id}.md"
+cp "${REPO_ROOT}/scripts/sdlc.sh" "${T}/sdlc-spdd/scripts/sdlc.sh"
+chmod +x "${T}/sdlc-spdd/scripts/sdlc.sh"
+if SDLC_USER="tester" SDLC_ROOT="${T}" "${T}/sdlc-spdd/scripts/sdlc.sh" claim "${work_id}" >/dev/null 2>"${T}/claim.err"; then
   if registry_matches "${T}" "${work_id}" '"status": "active"'; then
     ok "sdlc.sh claim updates registry without CLI re-entry"
   else
@@ -202,8 +202,8 @@ T="${WORK}/brief"
 work_id="FEAT-006-brief"
 setup_feature "${T}" "${work_id}"
 "${START}" --target "${T}" --work-id "${work_id}" --phase plan >/dev/null
-if grep -q '## Workflow State' "${T}/.sdlc/sessions/current-session.md" \
-  && grep -q 'Assistant command' "${T}/.sdlc/sessions/current-session.md"; then
+if grep -q '## Workflow State' "${T}/sdlc-spdd/.sdlc/sessions/current-session.md" \
+  && grep -q 'Assistant command' "${T}/sdlc-spdd/.sdlc/sessions/current-session.md"; then
   ok "session brief embeds workflow state"
 else
   bad "session brief missing workflow state"
@@ -215,10 +215,10 @@ T="${WORK}/ops"
 work_id="FEAT-007-ops"
 setup_feature "${T}" "${work_id}"
 cp "${REPO_ROOT}/examples/spring-boot-order-api/spdd/canvas/FEAT-001-order-status-api.md" \
-  "${T}/spdd/canvas/${work_id}.md"
+  "${T}/sdlc-spdd/spdd/canvas/${work_id}.md"
 wf "${T}" resume "${work_id}" >/dev/null
 wf "${T}" sync "${work_id}" >/dev/null
-op="$(grep '^operation=' "${T}/.sdlc/workflows/${work_id}.state" | cut -d= -f2)"
+op="$(grep '^operation=' "${T}/sdlc-spdd/.sdlc/workflows/${work_id}.state" | cut -d= -f2)"
 if [[ "${op}" == "T03" ]]; then ok "sync infers next operation T03"; else bad "expected T03, got ${op}"; fi
 out="$(wf "${T}" next)"
 if grep -q 'operation T03' <<< "${out}"; then ok "next recommends T03 in code command"; else bad "next missing T03 command"; fi
@@ -234,7 +234,7 @@ echo "== Test 12b: empty Final Status does not keep last op incomplete =="
 T="${WORK}/ops-final"
 work_id="FEAT-012b-final"
 setup_feature "${T}" "${work_id}"
-cat > "${T}/spdd/canvas/${work_id}.md" <<'EOF'
+cat > "${T}/sdlc-spdd/spdd/canvas/${work_id}.md" <<'EOF'
 # REASONS Canvas: FEAT-012b-final - empty Final Status
 
 ## Metadata
@@ -259,7 +259,7 @@ cat > "${T}/spdd/canvas/${work_id}.md" <<'EOF'
 EOF
 wf "${T}" resume "${work_id}" --phase code >/dev/null
 wf "${T}" sync "${work_id}" >/dev/null
-op="$(grep '^operation=' "${T}/.sdlc/workflows/${work_id}.state" | cut -d= -f2 || true)"
+op="$(grep '^operation=' "${T}/sdlc-spdd/.sdlc/workflows/${work_id}.state" | cut -d= -f2 || true)"
 if [[ -z "${op}" ]]; then
   ok "all-complete canvas has empty next operation"
 else
@@ -277,7 +277,7 @@ echo "== Test 12c: code phase with Needs Analysis redirects next to architect ==
 T="${WORK}/ops-readiness"
 work_id="FEAT-012c-readiness"
 setup_feature "${T}" "${work_id}"
-cat > "${T}/spdd/canvas/${work_id}.md" <<'EOF'
+cat > "${T}/sdlc-spdd/spdd/canvas/${work_id}.md" <<'EOF'
 # REASONS Canvas: FEAT-012c-readiness
 
 ## Metadata
@@ -315,7 +315,7 @@ echo "== Test 12d: advance to code refused when readiness blocks coding =="
 T="${WORK}/advance-readiness"
 work_id="FEAT-012d-advance"
 setup_feature "${T}" "${work_id}"
-cat > "${T}/spdd/canvas/${work_id}.md" <<'EOF'
+cat > "${T}/sdlc-spdd/spdd/canvas/${work_id}.md" <<'EOF'
 # REASONS Canvas: FEAT-012d-advance
 
 ## Metadata
@@ -343,7 +343,7 @@ else
     bad "advance error missing readiness message: $(cat "${WORK}/advance-err.txt")"
   fi
 fi
-phase="$(grep '^phase=' "${T}/.sdlc/workflows/${work_id}.state" | cut -d= -f2)"
+phase="$(grep '^phase=' "${T}/sdlc-spdd/.sdlc/workflows/${work_id}.state" | cut -d= -f2)"
 if [[ "${phase}" == "architect" ]]; then
   ok "phase stays architect after refused advance"
 else
@@ -354,7 +354,7 @@ if wf "${T}" advance --force >/dev/null; then
 else
   bad "advance --force should succeed"
 fi
-phase="$(grep '^phase=' "${T}/.sdlc/workflows/${work_id}.state" | cut -d= -f2)"
+phase="$(grep '^phase=' "${T}/sdlc-spdd/.sdlc/workflows/${work_id}.state" | cut -d= -f2)"
 if [[ "${phase}" == "code" ]]; then
   ok "force advance reaches code"
 else
@@ -366,7 +366,7 @@ echo "== Test 12e: resume --phase code warns when readiness blocks =="
 T="${WORK}/resume-readiness"
 work_id="FEAT-012e-resume"
 setup_feature "${T}" "${work_id}"
-cat > "${T}/spdd/canvas/${work_id}.md" <<'EOF'
+cat > "${T}/sdlc-spdd/spdd/canvas/${work_id}.md" <<'EOF'
 # REASONS Canvas: FEAT-012e-resume
 
 ## Metadata
@@ -396,7 +396,7 @@ echo "== Test 12f: advance to code succeeds when Ready For Coding =="
 T="${WORK}/advance-ok"
 work_id="FEAT-012f-ok"
 setup_feature "${T}" "${work_id}"
-cat > "${T}/spdd/canvas/${work_id}.md" <<'EOF'
+cat > "${T}/sdlc-spdd/spdd/canvas/${work_id}.md" <<'EOF'
 # REASONS Canvas: FEAT-012f-ok
 
 ## Metadata
@@ -414,7 +414,7 @@ if wf "${T}" advance >/dev/null; then
 else
   bad "advance should succeed when Ready For Coding"
 fi
-phase="$(grep '^phase=' "${T}/.sdlc/workflows/${work_id}.state" | cut -d= -f2)"
+phase="$(grep '^phase=' "${T}/sdlc-spdd/.sdlc/workflows/${work_id}.state" | cut -d= -f2)"
 if [[ "${phase}" == "code" ]]; then ok "phase is code after ready advance"; else bad "expected code, got ${phase}"; fi
 out="$(wf "${T}" next)"
 if grep -q 'sdlc-spdd-code' <<< "${out}"; then ok "next recommends code when ready"; else bad "next should recommend code: ${out}"; fi
@@ -424,7 +424,7 @@ echo "== Test 12g: absent readiness still allows advance to code (compat) =="
 T="${WORK}/advance-absent"
 work_id="FEAT-012g-absent"
 setup_feature "${T}" "${work_id}"
-cat > "${T}/spdd/canvas/${work_id}.md" <<'EOF'
+cat > "${T}/sdlc-spdd/spdd/canvas/${work_id}.md" <<'EOF'
 # REASONS Canvas: FEAT-012g-absent
 
 ## Metadata
@@ -448,7 +448,7 @@ echo "== Test 12h: YAML readiness + brief Readiness row + gate inference =="
 T="${WORK}/yaml-ready"
 work_id="FEAT-012h-yaml"
 setup_feature "${T}" "${work_id}"
-cat > "${T}/spdd/canvas/${work_id}.md" <<'EOF'
+cat > "${T}/sdlc-spdd/spdd/canvas/${work_id}.md" <<'EOF'
 ---
 readiness: needs-redesign
 ---
@@ -470,14 +470,14 @@ if grep -q '"readiness":"needs-redesign"' <<< "${json}"; then
 else
   bad "json YAML readiness: ${json}"
 fi
-brief="$(SDLC_ROOT="${T}" bash -c "source '${T}/agent-context/sdlc-workflow.sh'; sdlc_workflow_brief_markdown '${work_id}'")"
+brief="$(SDLC_ROOT="${T}" bash -c "source '${T}/sdlc-spdd/scripts/sdlc-workflow.sh'; sdlc_workflow_brief_markdown '${work_id}'")"
 if grep -q '| Readiness | needs-redesign |' <<< "${brief}"; then
   ok "brief includes Readiness row"
 else
   bad "brief missing Readiness: ${brief}"
 fi
 # Sync should not mark architect_review passed for needs-redesign
-gate="$(grep '^gate_architect_review=' "${T}/.sdlc/workflows/${work_id}.state" | cut -d= -f2 || true)"
+gate="$(grep '^gate_architect_review=' "${T}/sdlc-spdd/.sdlc/workflows/${work_id}.state" | cut -d= -f2 || true)"
 if [[ "${gate}" != "passed" ]]; then
   ok "architect_review not auto-passed for needs-redesign"
 else
@@ -489,9 +489,9 @@ echo "== Test 12i: start-agent-session recommends architect when code blocked ==
 T="${WORK}/start-ready"
 work_id="FEAT-012i-start"
 setup_feature "${T}" "${work_id}"
-mkdir -p "${T}/scripts/lib"
-cp "${REPO_ROOT}/scripts/lib/"*.sh "${T}/scripts/lib/"
-cat > "${T}/spdd/canvas/${work_id}.md" <<'EOF'
+mkdir -p "${T}/sdlc-spdd/scripts/lib"
+cp "${REPO_ROOT}/scripts/lib/"*.sh "${T}/sdlc-spdd/scripts/lib/"
+cat > "${T}/sdlc-spdd/spdd/canvas/${work_id}.md" <<'EOF'
 # REASONS Canvas: FEAT-012i-start
 
 ## Metadata
@@ -504,7 +504,7 @@ cat > "${T}/spdd/canvas/${work_id}.md" <<'EOF'
 EOF
 # Point SDLC_ROOT at T so workflow readiness lib resolves; start uses TARGET workflow copy
 out="$("${START}" --target "${T}" --work-id "${work_id}" --phase code 2>&1)"
-brief="${T}/.sdlc/sessions/current-session.md"
+brief="${T}/sdlc-spdd/.sdlc/sessions/current-session.md"
 if grep -q 'sdlc-spdd-architect' "${brief}" && grep -q 'Readiness | needs-analysis' "${brief}"; then
   ok "session brief readiness-gates code recommendation"
 else
@@ -516,7 +516,7 @@ echo "== Test 12j: advance --to code from plan refused when blocked =="
 T="${WORK}/advance-to"
 work_id="FEAT-012j-to"
 setup_feature "${T}" "${work_id}"
-cat > "${T}/spdd/canvas/${work_id}.md" <<'EOF'
+cat > "${T}/sdlc-spdd/spdd/canvas/${work_id}.md" <<'EOF'
 # REASONS Canvas: FEAT-012j-to
 
 ## Metadata
@@ -537,14 +537,14 @@ else
     bad "missing readiness error: $(cat "${WORK}/advance-to-err.txt")"
   fi
 fi
-phase="$(grep '^phase=' "${T}/.sdlc/workflows/${work_id}.state" | cut -d= -f2)"
+phase="$(grep '^phase=' "${T}/sdlc-spdd/.sdlc/workflows/${work_id}.state" | cut -d= -f2)"
 if [[ "${phase}" == "plan" ]]; then ok "phase stays plan after refused --to code"; else bad "expected plan, got ${phase}"; fi
 
 # Ready For Coding Metadata passes architect_review on sync (no analysis file required)
 T="${WORK}/gate-meta"
 work_id="FEAT-012j-gate"
 setup_feature "${T}" "${work_id}"
-cat > "${T}/spdd/canvas/${work_id}.md" <<'EOF'
+cat > "${T}/sdlc-spdd/spdd/canvas/${work_id}.md" <<'EOF'
 # REASONS Canvas: FEAT-012j-gate
 
 ## Metadata
@@ -557,13 +557,13 @@ cat > "${T}/spdd/canvas/${work_id}.md" <<'EOF'
 EOF
 wf "${T}" resume "${work_id}" --phase architect >/dev/null
 wf "${T}" sync "${work_id}" >/dev/null
-gate="$(grep '^gate_architect_review=' "${T}/.sdlc/workflows/${work_id}.state" | cut -d= -f2 || true)"
+gate="$(grep '^gate_architect_review=' "${T}/sdlc-spdd/.sdlc/workflows/${work_id}.state" | cut -d= -f2 || true)"
 if [[ "${gate}" == "passed" ]]; then
   ok "sync passes architect_review from Metadata Ready For Coding"
 else
   bad "expected architect_review=passed, got '${gate}'"
 fi
-gate_c="$(grep '^gate_canvas_exists=' "${T}/.sdlc/workflows/${work_id}.state" | cut -d= -f2 || true)"
+gate_c="$(grep '^gate_canvas_exists=' "${T}/sdlc-spdd/.sdlc/workflows/${work_id}.state" | cut -d= -f2 || true)"
 if [[ "${gate_c}" == "passed" ]]; then
   ok "sync passes canvas_exists without analysis artifact"
 else
@@ -575,20 +575,20 @@ echo "== Test 13: capture wrapper guards pointer =="
 T="${WORK}/capture-guard"
 work_id="FEAT-008-cap"
 setup_feature "${T}" "${work_id}"
-mkdir -p "${T}/scripts/sdlc-spdd/lib"
-cp "${REPO_ROOT}/scripts/sdlc.sh" "${T}/scripts/sdlc-spdd/sdlc.sh"
-cp "${CAPTURE}" "${T}/scripts/sdlc-spdd/capture-session-memory.sh"
-# capture-session-memory.sh sources scripts/sdlc-spdd/lib/*.sh (FEAT-001)
-cp "${REPO_ROOT}/scripts/lib/"*.sh "${T}/scripts/sdlc-spdd/lib/"
-chmod +x "${T}/scripts/sdlc-spdd/sdlc.sh" "${T}/scripts/sdlc-spdd/capture-session-memory.sh"
-SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" resume "${work_id}" >/dev/null
-if SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" capture --summary "ok" >/dev/null 2>&1; then
+mkdir -p "${T}/sdlc-spdd/scripts/lib"
+cp "${REPO_ROOT}/scripts/sdlc.sh" "${T}/sdlc-spdd/scripts/sdlc.sh"
+cp "${CAPTURE}" "${T}/sdlc-spdd/scripts/capture-session-memory.sh"
+# capture-session-memory.sh sources <home>/scripts/lib/*.sh (FEAT-001)
+cp "${REPO_ROOT}/scripts/lib/"*.sh "${T}/sdlc-spdd/scripts/lib/"
+chmod +x "${T}/sdlc-spdd/scripts/sdlc.sh" "${T}/sdlc-spdd/scripts/capture-session-memory.sh"
+SDLC_ROOT="${T}" "${T}/sdlc-spdd/scripts/sdlc.sh" resume "${work_id}" >/dev/null
+if SDLC_ROOT="${T}" "${T}/sdlc-spdd/scripts/sdlc.sh" capture --summary "ok" >/dev/null 2>&1; then
   ok "capture succeeds when pointer matches"
 else
   bad "capture should succeed for active pointer"
 fi
-SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" resume FEAT-999-other >/dev/null 2>&1 || true
-if SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" capture --work-id "${work_id}" --summary "bad" >/dev/null 2>&1; then
+SDLC_ROOT="${T}" "${T}/sdlc-spdd/scripts/sdlc.sh" resume FEAT-999-other >/dev/null 2>&1 || true
+if SDLC_ROOT="${T}" "${T}/sdlc-spdd/scripts/sdlc.sh" capture --work-id "${work_id}" --summary "bad" >/dev/null 2>&1; then
   bad "capture should refuse mismatched work-id"
 else
   ok "capture refuses stale work-id"
@@ -621,16 +621,16 @@ echo "== Test 14b: claim --force takes over foreign claim =="
 T="${WORK}/team-claim-force"
 work_id="FEAT-009b-force"
 setup_feature "${T}" "${work_id}"
-mkdir -p "${T}/scripts/sdlc-spdd"
-cp "${REPO_ROOT}/scripts/sdlc.sh" "${T}/scripts/sdlc-spdd/sdlc.sh"
-chmod +x "${T}/scripts/sdlc-spdd/sdlc.sh"
+mkdir -p "${T}/sdlc-spdd/scripts"
+cp "${REPO_ROOT}/scripts/sdlc.sh" "${T}/sdlc-spdd/scripts/sdlc.sh"
+chmod +x "${T}/sdlc-spdd/scripts/sdlc.sh"
 SDLC_USER="alice" SDLC_ROOT="${T}" wf "${T}" claim "${work_id}" >/dev/null
-if SDLC_USER="bob" SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" claim "${work_id}" >/dev/null 2>&1; then
+if SDLC_USER="bob" SDLC_ROOT="${T}" "${T}/sdlc-spdd/scripts/sdlc.sh" claim "${work_id}" >/dev/null 2>&1; then
   bad "claim without --force should refuse foreign owner"
 else
   ok "claim without --force refuses foreign owner"
 fi
-if SDLC_USER="bob" SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" claim "${work_id}" --force >"${T}/claim-force.out" 2>"${T}/claim-force.err"; then
+if SDLC_USER="bob" SDLC_ROOT="${T}" "${T}/sdlc-spdd/scripts/sdlc.sh" claim "${work_id}" --force >"${T}/claim-force.out" 2>"${T}/claim-force.err"; then
   if registry_matches "${T}" "${work_id}" '"status": "active".*"owner": "bob"'; then
     ok "claim --force takes over via sdlc.sh wrapper"
   else
@@ -651,7 +651,7 @@ echo "== Test 15: list-work discovers repo Work IDs =="
 T="${WORK}/team"
 work_id="FEAT-009-team"
 printf '# REASONS Canvas: %s\n\n## Metadata\n\n- Work ID: %s\n' "${work_id}" "${work_id}" \
-  > "${T}/spdd/canvas/${work_id}.md"
+  > "${T}/sdlc-spdd/spdd/canvas/${work_id}.md"
 # reuse team fixture from Test 14 (bob owns after --force resume)
 out="$(SDLC_ROOT="${T}" wf "${T}" list-work)"
 if grep -q 'FEAT-009-team' <<< "${out}"; then ok "list-work shows work id"; else bad "list-work missing id"; fi
@@ -663,7 +663,7 @@ work_id="FEAT-010-stale"
 setup_feature "${T}" "${work_id}"
 printf '%s\n' \
   '{"event":"claim","work_id":"FEAT-010-stale","status":"active","phase":"code","operation":"","owner":"alice","note":"","ts":"2020-01-01T00:00:00Z"}' \
-  > "${T}/spdd/memory/registry.jsonl"
+  > "${T}/sdlc-spdd/spdd/memory/registry.jsonl"
 out="$(SDLC_TEAM_STALE_DAYS=0 SDLC_ROOT="${T}" wf "${T}" team)"
 if grep -q 'STALE' <<< "${out}"; then ok "stale claim flagged"; else bad "stale flag missing"; fi
 
@@ -672,7 +672,7 @@ echo "== Test 17: done status from canvas Final Status =="
 T="${WORK}/done"
 work_id="CHORE-001-done"
 setup_feature "${T}" "${work_id}"
-cat > "${T}/spdd/canvas/${work_id}.md" <<'EOF'
+cat > "${T}/sdlc-spdd/spdd/canvas/${work_id}.md" <<'EOF'
 # CHORE-001-done
 
 ## Final Status
@@ -705,13 +705,13 @@ T="${WORK}/hook"
 work_id="FEAT-012-hook"
 setup_feature "${T}" "${work_id}"
 hook_log="${T}/hook.log"
-mkdir -p "${T}/agent-context/hooks"
-cat > "${T}/agent-context/hooks/notify.sh" <<EOF
+mkdir -p "${T}/sdlc-spdd/scripts/hooks"
+cat > "${T}/sdlc-spdd/scripts/hooks/notify.sh" <<EOF
 #!/usr/bin/env bash
 echo "\$*" >> "${hook_log}"
 EOF
-chmod +x "${T}/agent-context/hooks/notify.sh"
-SDLC_TEAM_REGISTRY_HOOK="${T}/agent-context/hooks/notify.sh" \
+chmod +x "${T}/sdlc-spdd/scripts/hooks/notify.sh"
+SDLC_TEAM_REGISTRY_HOOK="${T}/sdlc-spdd/scripts/hooks/notify.sh" \
   SDLC_USER="hooker" SDLC_ROOT="${T}" wf "${T}" claim "${work_id}" >/dev/null
 if [[ -f "${hook_log}" ]] && grep -q 'FEAT-012-hook' "${hook_log}"; then
   ok "registry hook invoked"
@@ -724,8 +724,8 @@ echo "== Test 20: claim auto-reads jira Key from milestone requirement =="
 T="${WORK}/milestone-jira"
 work_id="FEAT-013-jira"
 setup_feature "${T}" "${work_id}"
-mkdir -p "${T}/requirements/milestones"
-cat > "${T}/requirements/milestones/${work_id}.md" <<'EOF'
+mkdir -p "${T}/sdlc-spdd/requirements/milestones"
+cat > "${T}/sdlc-spdd/requirements/milestones/${work_id}.md" <<'EOF'
 # Requirement: FEAT-013-jira
 
 ## Jira
@@ -760,7 +760,7 @@ else
   bad "next should ask when Jira missing"
 fi
 "${START}" --target "${T}" --work-id "${work_id}" --phase plan >/dev/null
-current="${T}/.sdlc/sessions/current-session.md"
+current="${T}/sdlc-spdd/.sdlc/sessions/current-session.md"
 if grep -q '^- Jira: missing$' "${current}" \
   && grep -A20 '## Resume Prompt' "${current}" | grep -q 'Tracker link: Jira key is missing'; then
   ok "session brief Resume Prompt asks when Jira missing"
@@ -771,8 +771,8 @@ fi
 T="${WORK}/jira-ask-draft"
 work_id="FEAT-015-jira-draft"
 setup_feature "${T}" "${work_id}"
-mkdir -p "${T}/requirements/milestones"
-cat > "${T}/requirements/milestones/${work_id}.md" <<'EOF'
+mkdir -p "${T}/sdlc-spdd/requirements/milestones"
+cat > "${T}/sdlc-spdd/requirements/milestones/${work_id}.md" <<'EOF'
 # Requirement: FEAT-015-jira-draft
 
 ## Jira
@@ -787,7 +787,7 @@ else
   bad "next should ask when Jira draft"
 fi
 "${START}" --target "${T}" --work-id "${work_id}" --phase plan >/dev/null
-current="${T}/.sdlc/sessions/current-session.md"
+current="${T}/sdlc-spdd/.sdlc/sessions/current-session.md"
 if grep -A20 '## Resume Prompt' "${current}" | grep -q 'Jira draft exists'; then
   ok "session brief asks when Jira draft"
 else
@@ -797,8 +797,8 @@ fi
 T="${WORK}/jira-ask-present"
 work_id="FEAT-016-jira-present"
 setup_feature "${T}" "${work_id}"
-mkdir -p "${T}/requirements/milestones"
-cat > "${T}/requirements/milestones/${work_id}.md" <<'EOF'
+mkdir -p "${T}/sdlc-spdd/requirements/milestones"
+cat > "${T}/sdlc-spdd/requirements/milestones/${work_id}.md" <<'EOF'
 # Requirement: FEAT-016-jira-present
 
 ## Jira
@@ -813,7 +813,7 @@ else
   bad "next should not ask when Jira key present"
 fi
 "${START}" --target "${T}" --work-id "${work_id}" --phase plan >/dev/null
-current="${T}/.sdlc/sessions/current-session.md"
+current="${T}/sdlc-spdd/.sdlc/sessions/current-session.md"
 if grep -q '^- Jira: ORCH-99$' "${current}" \
   && grep -A20 '## Resume Prompt' "${current}" | grep -q 'Jira: ORCH-99' \
   && ! grep -A20 '## Resume Prompt' "${current}" | grep -q 'Ask the user for the issue key'; then
@@ -833,7 +833,7 @@ else
   bad "SDLC_SESSION_ASK_JIRA=0 should suppress ask"
 fi
 SDLC_SESSION_ASK_JIRA=0 "${START}" --target "${T}" --work-id "${work_id}" --phase plan >/dev/null
-current="${T}/.sdlc/sessions/current-session.md"
+current="${T}/sdlc-spdd/.sdlc/sessions/current-session.md"
 if ! grep -A20 '## Resume Prompt' "${current}" | grep -q 'Ask the user for the issue key'; then
   ok "start respects SDLC_SESSION_ASK_JIRA=0"
 else
@@ -845,19 +845,19 @@ echo "== Test 22: code capture / complete without verify receipt refuse =="
 T="${WORK}/i1-receipt"
 work_id="FEAT-018-i1"
 setup_feature "${T}" "${work_id}"
-mkdir -p "${T}/scripts/sdlc-spdd/lib"
-cp "${REPO_ROOT}/scripts/sdlc.sh" "${T}/scripts/sdlc-spdd/sdlc.sh"
-cp "${CAPTURE}" "${T}/scripts/sdlc-spdd/capture-session-memory.sh"
-cp "${REPO_ROOT}/scripts/lib/"*.sh "${T}/scripts/sdlc-spdd/lib/"
-chmod +x "${T}/scripts/sdlc-spdd/sdlc.sh" "${T}/scripts/sdlc-spdd/capture-session-memory.sh"
-SDLC_ENGINE=shell SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" resume "${work_id}" --phase code >/dev/null
-if SDLC_ENGINE=shell SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" \
+mkdir -p "${T}/sdlc-spdd/scripts/lib"
+cp "${REPO_ROOT}/scripts/sdlc.sh" "${T}/sdlc-spdd/scripts/sdlc.sh"
+cp "${CAPTURE}" "${T}/sdlc-spdd/scripts/capture-session-memory.sh"
+cp "${REPO_ROOT}/scripts/lib/"*.sh "${T}/sdlc-spdd/scripts/lib/"
+chmod +x "${T}/sdlc-spdd/scripts/sdlc.sh" "${T}/sdlc-spdd/scripts/capture-session-memory.sh"
+SDLC_ENGINE=shell SDLC_ROOT="${T}" "${T}/sdlc-spdd/scripts/sdlc.sh" resume "${work_id}" --phase code >/dev/null
+if SDLC_ENGINE=shell SDLC_ROOT="${T}" "${T}/sdlc-spdd/scripts/sdlc.sh" \
   capture --phase code --summary "T01 complete" >/dev/null 2>&1; then
   bad "code capture without receipt should refuse"
 else
   ok "code capture without receipt refuses"
 fi
-if SDLC_ENGINE=shell SDLC_ROOT="${T}" "${T}/scripts/sdlc-spdd/sdlc.sh" \
+if SDLC_ENGINE=shell SDLC_ROOT="${T}" "${T}/sdlc-spdd/scripts/sdlc.sh" \
   complete --summary "T01 complete" >/dev/null 2>&1; then
   bad "complete without receipt should refuse"
 else

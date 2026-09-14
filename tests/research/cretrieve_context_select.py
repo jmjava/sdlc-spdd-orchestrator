@@ -53,11 +53,11 @@ def ids_matching(
 
 def seed_canvases(root: Path, records: list[dict[str, str]]) -> None:
     works = sorted({row["work_id"] for row in records})
-    req = root / "requirements" / "milestones"
+    req = root / "sdlc-spdd" / "requirements" / "milestones"
     req.mkdir(parents=True, exist_ok=True)
-    canvas = root / "spdd" / "canvas"
+    canvas = root / "sdlc-spdd" / "spdd" / "canvas"
     canvas.mkdir(parents=True, exist_ok=True)
-    (root / "spdd" / "memory").mkdir(parents=True, exist_ok=True)
+    (root / "sdlc-spdd" / "spdd" / "memory").mkdir(parents=True, exist_ok=True)
     for wid in works:
         (req / f"{wid}.md").write_text(
             f"# Requirement {wid}\n\nContext-select proof.\n", encoding="utf-8"

@@ -100,7 +100,7 @@ def test_build_github_markdown_matches_jira_sections() -> None:
 
 def test_github_draft_from_structured_sections(tmp_path: Path) -> None:
     work_id = "FEAT-502-gh-template"
-    req = tmp_path / "requirements" / "milestones" / f"{work_id}.md"
+    req = tmp_path / "sdlc-spdd" / "requirements" / "milestones" / f"{work_id}.md"
     req.parent.mkdir(parents=True)
     req.write_text(
         f"""# Requirement: {work_id}
@@ -146,7 +146,7 @@ def test_jira_push_sends_adf_on_cloud(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setenv("JIRA_API_TOKEN", "token")
     monkeypatch.setenv("JIRA_PROJECT", "ORCH")
     work_id = "FEAT-402-adf-push"
-    req = tmp_path / "requirements" / "milestones" / f"{work_id}.md"
+    req = tmp_path / "sdlc-spdd" / "requirements" / "milestones" / f"{work_id}.md"
     req.parent.mkdir(parents=True)
     req.write_text(
         f"""# Requirement: {work_id}
@@ -174,8 +174,8 @@ Need **formatted** descriptions in Jira Cloud.
 """,
         encoding="utf-8",
     )
-    (tmp_path / "spdd" / "canvas").mkdir(parents=True)
-    (tmp_path / "spdd" / "canvas" / f"{work_id}.md").write_text(
+    (tmp_path / "sdlc-spdd" / "spdd" / "canvas").mkdir(parents=True)
+    (tmp_path / "sdlc-spdd" / "spdd" / "canvas" / f"{work_id}.md").write_text(
         f"# REASONS Canvas: {work_id}\n\n## Metadata\n\n- Work ID: {work_id}\n"
         "- Source System:\n- Source Issue:\n\n## Final Status\n\n- Status: Draft\n",
         encoding="utf-8",
@@ -219,7 +219,7 @@ def test_jira_push_wiki_when_forced(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setenv("JIRA_API_VERSION", "2")
     monkeypatch.setenv("JIRA_DESCRIPTION_FORMAT", "wiki")
     work_id = "FEAT-403-wiki"
-    req = tmp_path / "requirements" / "milestones" / f"{work_id}.md"
+    req = tmp_path / "sdlc-spdd" / "requirements" / "milestones" / f"{work_id}.md"
     req.parent.mkdir(parents=True)
     req.write_text(
         f"""# Requirement: {work_id}
@@ -239,8 +239,8 @@ Plain server install.
 """,
         encoding="utf-8",
     )
-    (tmp_path / "spdd" / "canvas").mkdir(parents=True)
-    (tmp_path / "spdd" / "canvas" / f"{work_id}.md").write_text(
+    (tmp_path / "sdlc-spdd" / "spdd" / "canvas").mkdir(parents=True)
+    (tmp_path / "sdlc-spdd" / "spdd" / "canvas" / f"{work_id}.md").write_text(
         f"# C\n\n## Metadata\n\n- Work ID: {work_id}\n- Source Issue:\n\n## Final Status\n\n- Status: Draft\n",
         encoding="utf-8",
     )
@@ -272,7 +272,7 @@ def test_jira_pull_adf_description_to_milestone(tmp_path: Path, monkeypatch) -> 
     monkeypatch.setenv("JIRA_EMAIL", "bot@example.com")
     monkeypatch.setenv("JIRA_API_TOKEN", "token")
     work_id = "FEAT-404-pull-adf"
-    req = tmp_path / "requirements" / "milestones" / f"{work_id}.md"
+    req = tmp_path / "sdlc-spdd" / "requirements" / "milestones" / f"{work_id}.md"
     req.parent.mkdir(parents=True)
     req.write_text(
         f"""# Requirement: {work_id}
@@ -411,7 +411,7 @@ def test_jira_push_updates_existing_key_with_raw_adf(tmp_path: Path, monkeypatch
     monkeypatch.setenv("JIRA_PROJECT", "ORCH")
     monkeypatch.delenv("JIRA_DESCRIPTION_FALLBACK", raising=False)
     work_id = "FEAT-405-update-adf"
-    req = tmp_path / "requirements" / "milestones" / f"{work_id}.md"
+    req = tmp_path / "sdlc-spdd" / "requirements" / "milestones" / f"{work_id}.md"
     req.parent.mkdir(parents=True)
     req.write_text(
         f"""# Requirement: {work_id}
@@ -639,7 +639,7 @@ def test_no_silent_adf_to_wiki_fallback_by_default(tmp_path: Path, monkeypatch) 
     monkeypatch.setenv("JIRA_PROJECT", "ORCH")
     monkeypatch.delenv("JIRA_DESCRIPTION_FALLBACK", raising=False)
     work_id = "FEAT-406-no-fallback"
-    req = tmp_path / "requirements" / "milestones" / f"{work_id}.md"
+    req = tmp_path / "sdlc-spdd" / "requirements" / "milestones" / f"{work_id}.md"
     req.parent.mkdir(parents=True)
     req.write_text(
         f"""# Requirement: {work_id}

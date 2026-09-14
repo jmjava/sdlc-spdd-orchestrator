@@ -5,8 +5,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 # shellcheck source=/dev/null
 source "${REPO_ROOT}/scripts/lib/framework-install.sh"
-# shellcheck source=/dev/null
-source "${REPO_ROOT}/scripts/lib/skills.sh"
 
 usage() {
   cat <<'EOF'
@@ -16,17 +14,8 @@ Upgrade SDLC-SPDD framework files in a target project that was initialized by
 an earlier version of this scaffold.
 
 Storage v3: all framework assets live under one folder — <target>/sdlc-spdd/
-(the home). For older sprawled installs this upgrade first consolidates:
-
-  - converts legacy memory (context index, lesson files, registry TSV, …)
-    into the lessons ledger via `sdlc-engine storage migrate` when the Python
-    engine is available (otherwise data is left in place with instructions)
-  - moves framework dirs (requirements/, spdd/, session-notes/, ROADMAP.md,
-    docs/sdlc-spdd/, harness/, agent-context harness/playbooks/extensions,
-    scripts/sdlc-spdd/, .sdlc/) into <target>/sdlc-spdd/ — merging when the
-    home already exists (destination wins on conflicts)
-  - archives any leftover sprawled paths under
-    sdlc-spdd/.sdlc/legacy-layout-archive/<stamp>/ so the project root is clean
+(the home). It is the only supported layout; no alternate layout is read,
+migrated, or archived.
 
 The upgrade is framework-only and idempotent:
   - updates SDLC-SPDD assistant prompts (IDE stubs stay at the repo root but
@@ -93,10 +82,6 @@ while [[ $# -gt 0 ]]; do
       BACKUP=0
       shift
       ;;
-    --consolidate)
-      # No-op: consolidation into sdlc-spdd/ always runs (storage v3).
-      shift
-      ;;
     --help|-h)
       usage
       exit 0
@@ -130,7 +115,6 @@ updated=()
 unchanged=()
 backed_up=()
 preserved=()
-moved=()
 
 CLAUDE_BEGIN="<!-- BEGIN SDLC-SPDD MANAGED CLAUDE GROUNDING -->"
 CLAUDE_END="<!-- END SDLC-SPDD MANAGED CLAUDE GROUNDING -->"
@@ -344,150 +328,7 @@ upsert_claude_memory() {
 }
 
 # ---------------------------------------------------------------------------
-# Phase 1 — legacy memory conversion (delegated to the Python engine).
-# Runs before the home folder is created so the engine resolves home == root
-# and finds the legacy registry TSV and memory trees in place.
-# ---------------------------------------------------------------------------
-
-_engine_python() {
-  if [[ -d "${REPO_ROOT}/engine/src/sdlc_engine" ]]; then
-    PYTHONPATH="${REPO_ROOT}/engine/src${PYTHONPATH:+:${PYTHONPATH}}" python3 "$@"
-  else
-    python3 "$@"
-  fi
-}
-
-_engine_available() {
-  _engine_python -c 'import sdlc_engine' 2>/dev/null
-}
-
-has_legacy_memory() {
-  # Legacy layout names are assembled from parts so the repo-wide
-  # no-legacy-reference sweep over scripts/ stays clean.
-  local ac="agent-context"
-  local wr="work-registry"
-  local ci="context-index"
-  local rel
-  for rel in \
-    "${ac}/memory" \
-    "${ac}/features" \
-    "${ac}/sessions" \
-    "${ac}/${wr}.tsv" \
-    "spdd/memory/${ci}.md" \
-    spdd/memory/lessons \
-    spdd/memory/entries \
-    spdd/memory/sessions; do
-    if [[ -e "${TARGET}/${rel}" || -e "${HOME_DIR}/${rel}" ]]; then
-      return 0
-    fi
-  done
-  return 1
-}
-
-legacy_migration_note=""
-if has_legacy_memory; then
-  if _engine_available; then
-    echo "Legacy memory detected — running sdlc-engine storage migrate..."
-    if [[ "${DRY_RUN}" -eq 1 ]]; then
-      _engine_python -m sdlc_engine --root "${TARGET}" storage migrate --dry-run || true
-    else
-      _engine_python -m sdlc_engine --root "${TARGET}" storage migrate
-    fi
-    legacy_migration_note="Legacy memory converted to the lessons ledger (export under .sdlc/legacy-export/)."
-  else
-    legacy_migration_note="Legacy memory left in place: the Python engine is not installed.
-Convert it later with:
-  python3 -m pip install -e '<orchestrator>/engine'
-  sdlc-engine --root ${TARGET} storage migrate"
-    echo "WARNING: ${legacy_migration_note}" >&2
-  fi
-fi
-
-# ---------------------------------------------------------------------------
-# Phase 2 — consolidation into the single-folder home (idempotent).
-# ---------------------------------------------------------------------------
-
-consolidate_into_home() {
-  local src="$1"
-  local dest="$2"
-  local line action detail
-
-  [[ -e "${src}" ]] || return 0
-  while IFS= read -r line; do
-    [[ -n "${line}" ]] || continue
-    action="${line%% *}"
-    detail="${line#* }"
-    case "${action}" in
-      move|merge)
-        moved+=("${detail}")
-        ;;
-      keep)
-        preserved+=("${detail}")
-        ;;
-      skip)
-        preserved+=("${src#${TARGET}/} (${detail})")
-        ;;
-    esac
-  done < <(framework_consolidate_path "${src}" "${dest}" "${DRY_RUN}" "${TARGET}")
-}
-
-remove_legacy_framework_file() {
-  local path="$1"
-  [[ -e "${path}" ]] || return 0
-  if [[ "${DRY_RUN}" -eq 1 ]]; then
-    echo "[dry-run] would remove legacy framework file ${path#${TARGET}/}"
-  else
-    rm -rf "${path}"
-  fi
-  moved+=("removed ${path#${TARGET}/}")
-}
-
-# Framework dirs and stay-set artifacts move under <target>/sdlc-spdd/.
-# When the home already exists, merge legacy root trees into it (dest wins).
-# Install source for harness/workflow scripts is templates/agent-context/ —
-# any leftover root agent-context/ is legacy and gets archived.
-if framework_is_orchestrator_root "${TARGET}"; then
-  echo "Orchestrator root detected — consolidating dogfood stay-set into sdlc-spdd/; keeping root scripts/ as framework tooling."
-fi
-
-consolidate_into_home "${TARGET}/requirements" "${HOME_DIR}/requirements"
-consolidate_into_home "${TARGET}/spdd" "${HOME_DIR}/spdd"
-consolidate_into_home "${TARGET}/session-notes" "${HOME_DIR}/session-notes"
-consolidate_into_home "${TARGET}/ROADMAP.md" "${HOME_DIR}/ROADMAP.md"
-consolidate_into_home "${TARGET}/docs/sdlc-spdd" "${HOME_DIR}/docs"
-consolidate_into_home "${TARGET}/harness" "${HOME_DIR}/harness"
-consolidate_into_home "${TARGET}/agent-context/harness" "${HOME_DIR}/harness"
-consolidate_into_home "${TARGET}/agent-context/playbooks" "${HOME_DIR}/playbooks"
-consolidate_into_home "${TARGET}/agent-context/extensions" "${HOME_DIR}/extensions"
-migrate_playbooks_extensions_to_skills "${TARGET}" "${DRY_RUN}"
-consolidate_into_home "${TARGET}/scripts/sdlc-spdd" "${HOME_DIR}/scripts"
-consolidate_into_home "${TARGET}/.sdlc" "${HOME_DIR}/.sdlc"
-shopt -s nullglob
-for _root_ms in "${TARGET}"/milestone-*.md; do
-  consolidate_into_home "${_root_ms}" "${HOME_DIR}/$(basename "${_root_ms}")"
-done
-shopt -u nullglob
-
-framework_prune_legacy_layout_shells "${TARGET}" "${HOME_DIR}" "${DRY_RUN}"
-
-# Drop known framework-owned leftovers, then archive any remaining agent-context/.
-remove_legacy_framework_file "${TARGET}/agent-context/sdlc-pointer.sh"
-remove_legacy_framework_file "${TARGET}/agent-context/sdlc-workflow.sh"
-remove_legacy_framework_file "${TARGET}/agent-context/sdlc-team-registry.sh"
-remove_legacy_framework_file "${TARGET}/agent-context/README.md"
-remove_legacy_framework_file "${TARGET}/agent-context/hooks"
-if [[ "${DRY_RUN}" -eq 0 && -d "${TARGET}/agent-context" ]]; then
-  find "${TARGET}/agent-context" -name .gitkeep -delete 2>/dev/null || true
-  find "${TARGET}/agent-context" -type d -empty -delete 2>/dev/null || true
-fi
-
-while IFS= read -r line; do
-  [[ -n "${line}" ]] || continue
-  moved+=("${line#archive }")
-done < <(framework_archive_remaining_legacy_layout "${TARGET}" "${HOME_DIR}" "${DRY_RUN}" "${timestamp}")
-
-# ---------------------------------------------------------------------------
-# Phase 3 — framework file refresh under the home (create missing, upgrade
+# Framework file refresh under the home (create missing, upgrade
 # framework-owned files with backups, preserve project content).
 # ---------------------------------------------------------------------------
 
@@ -522,7 +363,7 @@ create_missing_framework_file \
   "project roadmap"
 
 shopt -s nullglob
-root_milestones=("${HOME_DIR}"/milestone-*.md "${TARGET}"/milestone-*.md)
+root_milestones=("${HOME_DIR}"/milestone-*.md)
 subdir_milestones=("${HOME_DIR}"/requirements/milestones/milestone-*/MILESTONE-*.md)
 shopt -u nullglob
 if ((${#root_milestones[@]} == 0 && ${#subdir_milestones[@]} == 0)); then
@@ -564,8 +405,6 @@ for file in \
     "${HOME_DIR}/harness/${file}"
 done
 
-migrate_playbooks_extensions_to_skills "${TARGET}" "${DRY_RUN}"
-
 # User-facing docs are framework-owned when installed under <home>/docs/.
 # Skip orchestrator-internal docs (see scripts/lib/shipped-docs-boundary.sh).
 # shellcheck source=lib/shipped-docs-boundary.sh
@@ -582,7 +421,7 @@ copy_framework_file \
   "${HOME_DIR}/docs/README.md"
 
 if [[ "${UPGRADE_CURSOR}" -eq 1 && "${UPGRADE_COPILOT}" -eq 1 ]]; then
-  # Framework-owned CI: refresh stale pre-v3 workflows (sdlc-spdd-* only,
+  # Framework-owned CI: refresh stale framework workflows (sdlc-spdd-* only,
   # ./ execute bit) so claim/next/Claude/rules are watched.
   copy_framework_file \
     "${REPO_ROOT}/templates/project-github-workflows/validate-sdlc-spdd-adapters.yml" \
@@ -620,7 +459,6 @@ for file in \
   create-work-from-milestone.sh \
   sync-roadmap-from-spdd.sh \
   summarize-session-notes.sh \
-  sync-agent-context.sh \
   detect-stack.sh \
   validate-command-adapters.sh \
   verify-agent-command-effects.sh \
@@ -705,8 +543,6 @@ fi
 
 echo "SDLC-SPDD framework upgrade complete for: ${TARGET}"
 echo "Framework home: ${HOME_DIR}"
-echo "Consolidated (${#moved[@]}):"
-printf '  %s\n' "${moved[@]:-none}"
 echo "Created (${#created[@]}):"
 printf '  %s\n' "${created[@]:-none}"
 echo "Updated framework files (${#updated[@]}):"
@@ -718,9 +554,6 @@ printf '  %s\n' "${preserved[@]:-none}"
 if [[ "${BACKUP}" -eq 1 ]]; then
   echo "Backups (${#backed_up[@]}):"
   printf '  %s\n' "${backed_up[@]:-none}"
-fi
-if [[ -n "${legacy_migration_note}" ]]; then
-  echo "Legacy memory: ${legacy_migration_note}"
 fi
 echo "Not touched: application source, requirements, canvases, reviews, sync logs, existing roadmap/milestones, accumulated ledger memory, or application docs outside sdlc-spdd/docs."
 

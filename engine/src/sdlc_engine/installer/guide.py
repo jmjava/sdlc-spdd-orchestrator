@@ -8,6 +8,8 @@ import socket
 import urllib.error
 import urllib.request
 from pathlib import Path
+
+from ..project import Project
 from typing import Any
 
 from .guide_runtime import DEFAULT_GIT_URL
@@ -53,7 +55,7 @@ _CONFIG_KEYS = (
 
 
 def config_path(target: Path | str) -> Path:
-    return Path(target).expanduser().resolve() / CONFIG_REL
+    return Project.resolve(target).sdlc_dir / CONFIG_REL.name
 
 
 def _looks_like_guide_home(path: Path) -> bool:

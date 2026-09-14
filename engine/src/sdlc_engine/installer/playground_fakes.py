@@ -32,11 +32,11 @@ FAKE_GH_TOKEN = "playground-gh-token"
 
 
 def runtime_path(target: Path | str) -> Path:
-    return Path(target).expanduser().resolve() / ".sdlc" / RUNTIME_NAME
+    return Project.resolve(target).sdlc_dir / RUNTIME_NAME
 
 
 def fake_guide_home(target: Path | str) -> Path:
-    return Path(target).expanduser().resolve() / ".sdlc" / FAKE_GUIDE_DIRNAME
+    return Project.resolve(target).sdlc_dir / FAKE_GUIDE_DIRNAME
 
 
 def issue_refs(work_id: str) -> tuple[str, str]:

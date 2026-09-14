@@ -24,12 +24,12 @@ assert_count() {
 }
 
 stage_file() {
-  printf '%s' "${1}/.sdlc/staged/lessons.jsonl"
+  printf '%s' "${1}/sdlc-spdd/.sdlc/staged/lessons.jsonl"
 }
 
-mkdir -p "${WORK}/spdd/analysis"
+mkdir -p "${WORK}/sdlc-spdd/spdd/analysis"
 
-cat > "${WORK}/spdd/analysis/FEAT-010-billing-analysis.md" <<'AN'
+cat > "${WORK}/sdlc-spdd/spdd/analysis/FEAT-010-billing-analysis.md" <<'AN'
 # Analysis Context: FEAT-010-billing
 
 ## Domain Keywords
@@ -64,8 +64,8 @@ assert_contains "${STAGE}" 'src/billing' "extra code area in keywords"
 
 echo "== Test 2: dry-run makes no writes =="
 DRY="$(mktemp -d)"
-mkdir -p "${DRY}/spdd/analysis"
-cp "${WORK}/spdd/analysis/FEAT-010-billing-analysis.md" "${DRY}/spdd/analysis/FEAT-010-billing-analysis.md"
+mkdir -p "${DRY}/sdlc-spdd/spdd/analysis"
+cp "${WORK}/sdlc-spdd/spdd/analysis/FEAT-010-billing-analysis.md" "${DRY}/sdlc-spdd/spdd/analysis/FEAT-010-billing-analysis.md"
 "${INDEX}" --target "${DRY}" --work-id FEAT-010-billing --dry-run >/dev/null
 if [[ -f "$(stage_file "${DRY}")" ]]; then
   bad "dry-run should not create staged lessons"
@@ -83,8 +83,8 @@ fi
 
 echo "== Test 4: re-run appends staged records with stable id =="
 IDEM="$(mktemp -d)"
-mkdir -p "${IDEM}/spdd/analysis"
-cat > "${IDEM}/spdd/analysis/FEAT-020-quota-analysis.md" <<'AN'
+mkdir -p "${IDEM}/sdlc-spdd/spdd/analysis"
+cat > "${IDEM}/sdlc-spdd/spdd/analysis/FEAT-020-quota-analysis.md" <<'AN'
 # Analysis Context: FEAT-020-quota
 
 ## Domain Keywords
@@ -108,8 +108,8 @@ rm -rf "${IDEM}"
 
 echo "== Test 5: re-run refreshes a second Work ID without dropping the first =="
 MULTI="$(mktemp -d)"
-mkdir -p "${MULTI}/spdd/analysis"
-cat > "${MULTI}/spdd/analysis/FEAT-030-a-analysis.md" <<'AN'
+mkdir -p "${MULTI}/sdlc-spdd/spdd/analysis"
+cat > "${MULTI}/sdlc-spdd/spdd/analysis/FEAT-030-a-analysis.md" <<'AN'
 # Analysis Context: FEAT-030-a
 
 ## Domain Keywords
@@ -120,7 +120,7 @@ cat > "${MULTI}/spdd/analysis/FEAT-030-a-analysis.md" <<'AN'
 
 - src/alpha
 AN
-cat > "${MULTI}/spdd/analysis/FEAT-031-b-analysis.md" <<'AN'
+cat > "${MULTI}/sdlc-spdd/spdd/analysis/FEAT-031-b-analysis.md" <<'AN'
 # Analysis Context: FEAT-031-b
 
 ## Domain Keywords
@@ -141,8 +141,8 @@ rm -rf "${MULTI}"
 
 echo "== Test 6: keyword-only analysis uses placeholder area =="
 KW="$(mktemp -d)"
-mkdir -p "${KW}/spdd/analysis"
-cat > "${KW}/spdd/analysis/FEAT-040-kw-analysis.md" <<'AN'
+mkdir -p "${KW}/sdlc-spdd/spdd/analysis"
+cat > "${KW}/sdlc-spdd/spdd/analysis/FEAT-040-kw-analysis.md" <<'AN'
 # Analysis Context: FEAT-040-kw
 
 ## Domain Keywords
@@ -161,8 +161,8 @@ rm -rf "${KW}"
 
 echo "== Test 7: area-only analysis (no Domain Keywords) still stages =="
 AR="$(mktemp -d)"
-mkdir -p "${AR}/spdd/analysis"
-cat > "${AR}/spdd/analysis/FEAT-050-ar-analysis.md" <<'AN'
+mkdir -p "${AR}/sdlc-spdd/spdd/analysis"
+cat > "${AR}/sdlc-spdd/spdd/analysis/FEAT-050-ar-analysis.md" <<'AN'
 # Analysis Context: FEAT-050-ar
 
 ## Code Areas

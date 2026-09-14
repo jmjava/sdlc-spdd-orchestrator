@@ -459,7 +459,7 @@ class WorkflowEngine:
             f"  {cmd}",
             "",
             "Or run in terminal:",
-            f"  ./scripts/sdlc-spdd/start-agent-session.sh --target . --work-id {wid} --phase {state.phase}",
+            f"  ./sdlc-spdd/scripts/start-agent-session.sh --target . --work-id {wid} --phase {state.phase}",
             "",
             "Gates still open:",
         ]

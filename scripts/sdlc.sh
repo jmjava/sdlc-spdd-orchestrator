@@ -29,10 +29,6 @@ elif [[ -f "${SCRIPT_DIR}/../templates/agent-context/sdlc-workflow.sh" ]]; then
   # Orchestrator source checkout before dogfood home exists.
   ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
   WORKFLOW="${ROOT}/templates/agent-context/sdlc-workflow.sh"
-elif [[ -f "${SCRIPT_DIR}/../../agent-context/sdlc-workflow.sh" ]]; then
-  # Legacy sprawled install: <root>/scripts/sdlc-spdd/sdlc.sh.
-  ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-  WORKFLOW="${ROOT}/agent-context/sdlc-workflow.sh"
 else
   ROOT="$(git -C "${PWD}" rev-parse --show-toplevel 2>/dev/null || pwd)"
   WORKFLOW="${ROOT}/sdlc-spdd/scripts/sdlc-workflow.sh"
