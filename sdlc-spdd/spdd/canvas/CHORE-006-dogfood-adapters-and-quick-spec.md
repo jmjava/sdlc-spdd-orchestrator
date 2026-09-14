@@ -4,8 +4,8 @@
 
 - Work ID: CHORE-006-dogfood-adapters-and-quick-spec
 - Work Type: Chore
-- Status: In Progress
-- Readiness: Ready For Coding
+- Status: Complete
+- Readiness: Complete
 - Created: 2026-09-14
 - Updated: 2026-09-14
 - Milestone: milestone-3
@@ -14,6 +14,7 @@
 - Related: DOC-005-grounding-path-map-codegen
 - Requirement: `sdlc-spdd/requirements/milestones/milestone-3/CHORE-006-dogfood-adapters-and-quick-spec.md`
 - Analysis: `sdlc-spdd/spdd/analysis/CHORE-006-dogfood-adapters-and-quick-spec-analysis.md`
+- Pull Request: https://github.com/jmjava/sdlc-spdd-orchestrator/pull/320
 - Beck stage: make it right
 - Skills: none requested
 
@@ -33,9 +34,9 @@ source-of-truth contract.
 ### Acceptance Criteria
 
 - [x] Path-rewritten templates match all three dogfood command packs (#308).
-- [ ] `spec/commands/lifecycle-quick.spec.md` generates the current Cursor,
+- [x] `spec/commands/lifecycle-quick.spec.md` generates the current Cursor,
   Copilot, and Claude quick templates without semantic changes.
-- [ ] `generate-command-adapters.sh --check` explicitly covers quick.
+- [x] `generate-command-adapters.sh --check` explicitly covers quick.
 - [x] Installed-mode CI fails when a dogfood pack is stale (#308).
 
 ### Non-Goals
@@ -91,13 +92,15 @@ specs or compare complete template/dogfood packs.
 
 ### T01 - Put quick under the canonical command-spec generator
 
-- Status: Selected
+- Status: Complete
 - Description: Add the lifecycle quick spec, assert its explicit presence and
   shared contract in the command-spec harness, regenerate adapters, and prove
   generated templates plus path-rewritten dogfood outputs remain unchanged.
 - Files: `spec/commands/lifecycle-quick.spec.md`, `tests/test-command-specs.sh`
 - Files: `sdlc-spdd/requirements/milestones/milestone-3/CHORE-006-dogfood-adapters-and-quick-spec.md`
 - Files: `sdlc-spdd/requirements/milestones/milestone-3/MILESTONE-3.md`, `sdlc-spdd/ROADMAP.md`
+- Files: `sdlc-spdd/requirements/milestones/milestone-4/DOC-005-grounding-path-map-codegen.md`
+- Files: `sdlc-spdd/spdd/tasks/2026-10-monthly-goals.md`
 - Files: `sdlc-spdd/spdd/analysis/CHORE-006-dogfood-adapters-and-quick-spec-analysis.md`
 - Files: `sdlc-spdd/spdd/canvas/CHORE-006-dogfood-adapters-and-quick-spec.md`
 - Files: `sdlc-spdd/spdd/reviews/CHORE-006-dogfood-adapters-and-quick-spec-review.md`
@@ -139,18 +142,24 @@ specs or compare complete template/dogfood packs.
 
 ## Review Checklist
 
-- [ ] T01 implementation complete
-- [ ] Generated quick templates unchanged
-- [ ] Generator `--check` passes
-- [ ] Command-spec and adapter validators pass
-- [ ] Review, retro, and sync complete
+- [x] T01 implementation complete
+- [x] Generated quick templates unchanged
+- [x] Generator `--check` passes
+- [x] Command-spec and adapter validators pass
+- [x] Review complete
+- [x] Retro and sync complete
 
 ## Sync Notes
 
 - #308 completed dogfood pack regeneration and stale-pack CI detection; this
   Work ID only closes the missing canonical quick spec.
+- 2026-09-14 — T01 in #320 adds `lifecycle-quick.spec.md`; generator output
+  stays byte-identical, 367 command-spec checks and 785 adapter-install checks
+  pass, and lifecycle records are reconciled.
 
 ## Final Status
 
-- Readiness: Ready For Coding
-- Status: In Progress
+- Readiness: Complete
+- Status: Complete
+- Completed: 2026-09-14
+- Pull Request: https://github.com/jmjava/sdlc-spdd-orchestrator/pull/320

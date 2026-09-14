@@ -33,7 +33,7 @@ related:
 |--------------|---------|--------|-------|
 | Blocks | (none) | — | — |
 | Depends On | `DOC-004-install-path-vocabulary` | To Do | See milestone-4 |
-| Related | `CHORE-006-dogfood-adapters-and-quick-spec` | To Do | See milestone-3 |
+| Related | `CHORE-006-dogfood-adapters-and-quick-spec` | Complete | See milestone-3 |
 
 ## User / Business Goal
 

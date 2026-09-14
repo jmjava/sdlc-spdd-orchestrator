@@ -44,3 +44,5 @@
 {"event": "release", "work_id": "REF-002-purge-pre-v3-compat", "status": "shelved", "phase": "retro", "operation": "", "owner": "Cursor Agent", "note": "REF-002 complete in #314; review, retro, and documentation sync recorded", "ts": "2026-09-14T04:23:05Z"}
 {"event": "refresh", "work_id": "REF-002-purge-pre-v3-compat", "status": "done", "phase": "retro", "operation": "", "owner": "Cursor Agent", "note": "canvas Final Status: Complete", "ts": "2026-09-14T04:24:27Z"}
 {"event": "claim", "work_id": "CHORE-006-dogfood-adapters-and-quick-spec", "status": "active", "phase": "init", "operation": "", "owner": "Cursor Agent", "note": "", "ts": "2026-09-14T04:32:51Z"}
+{"event": "release", "work_id": "CHORE-006-dogfood-adapters-and-quick-spec", "status": "shelved", "phase": "retro", "operation": "", "owner": "Cursor Agent", "note": "CHORE-006 complete in PR #320; review, retro, and sync recorded", "ts": "2026-09-14T04:38:32Z"}
+{"event": "refresh", "work_id": "CHORE-006-dogfood-adapters-and-quick-spec", "status": "done", "phase": "retro", "operation": "", "owner": "Cursor Agent", "note": "canvas Final Status: Complete", "ts": "2026-09-14T04:38:32Z"}

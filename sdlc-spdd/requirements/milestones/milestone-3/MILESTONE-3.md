@@ -26,7 +26,7 @@ P0 — one flow (do first, in order):
 - [x] SPIKE-005-architecture-review — review + this program (canvas pending)
 - [x] BUG-001-db-query-undefined-names — live `NameError` in `db export` (#308)
 - [x] CHORE-004-lint-and-complexity-gates-real — gates run on the real diff (#308)
-- [ ] CHORE-006-dogfood-adapters-and-quick-spec — dogfood packs regenerate from spec (#308: packs regenerated and harness covers all three adapters; `quick` spec still missing)
+- [x] CHORE-006-dogfood-adapters-and-quick-spec — dogfood packs and `quick` regenerate from canonical specs (#308, #320)
 - [x] REF-002-purge-pre-v3-compat — one data model; archive deletes; no migrations (#314)
 - [ ] REF-003-retire-bash-workflow-dual-path — one engine; no shell twin
 
@@ -53,7 +53,7 @@ P2 — finish the consolidation:
 | SPIKE-005-architecture-review | P0 | M | [requirement](SPIKE-005-architecture-review.md) | In Progress | Program opened in #308; spike canvas close-out pending; claim released 2026-09-14 |
 | BUG-001-db-query-undefined-names | P0 | S | [requirement](BUG-001-db-query-undefined-names.md) | Complete | Fix undefined names in db_query.py (export_sql NameError) |
 | CHORE-004-lint-and-complexity-gates-real | P0 | M | [requirement](CHORE-004-lint-and-complexity-gates-real.md) | Complete | Lint, complexity, shellcheck gates on the real diff |
-| CHORE-006-dogfood-adapters-and-quick-spec | P0 | S | [requirement](CHORE-006-dogfood-adapters-and-quick-spec.md) | In Progress | Regenerate dogfood adapters; spec for `/sdlc-spdd-quick` |
+| CHORE-006-dogfood-adapters-and-quick-spec | P0 | S | [requirement](CHORE-006-dogfood-adapters-and-quick-spec.md) | Complete | Dogfood parity in #308; canonical quick spec in #320 |
 | REF-002-purge-pre-v3-compat | P0 | L | [requirement](REF-002-purge-pre-v3-compat.md) | Complete | Storage v3 is the only supported layout (#314) |
 | REF-003-retire-bash-workflow-dual-path | P0 | L | [requirement](REF-003-retire-bash-workflow-dual-path.md) | To Do | Retire the bash workflow twin; Python is the only flow |
 | REF-004-split-installer-blueprints | P1 | M | [requirement](REF-004-split-installer-blueprints.md) | To Do | Split `installer/app.py` `create_app` into blueprints |
@@ -95,3 +95,7 @@ For each work item: `/sdlc-spdd-analysis` on its requirement → `/sdlc-spdd-pla
 supported layout, migration and compatibility paths are removed, product and
 shipped docs match, and all 25 merge-commit checks pass. Next one-flow item:
 REF-003.
+
+2026-09-14 — CHORE-006 Complete in #320: all three dogfood command packs match
+path-rewritten templates, and `/sdlc-spdd-quick` is generated from
+`lifecycle-quick.spec.md`. P0 continues with REF-003.

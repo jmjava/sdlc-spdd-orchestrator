@@ -1,10 +1,10 @@
 ---
 work_id: "CHORE-006-dogfood-adapters-and-quick-spec"
 jira_key: ""
-github_number: ""
+github_number: "320"
 jira_epic: ""
 jira_type: "Chore"
-jira_status: "In Progress"
+jira_status: "Done"
 jira_assignee: ""
 jira_due_date: ""
 jira_sprint: ""
@@ -22,7 +22,7 @@ related:
 
 **Work ID:** CHORE-006-dogfood-adapters-and-quick-spec  
 **Milestone:** Milestone 3 — One flow on storage v3  
-**Status:** In Progress  
+**Status:** Done
 **Priority / size:** P0 / S  
 **Date:** 2026-09-13  
 **Beck stage:** make it right (one engine, one persistence model, aligned docs/tests)
@@ -54,7 +54,7 @@ This repo's installed command packs (.cursor/commands, .claude/commands, .github
 ## Acceptance Criteria
 
 - [x] Path-rewritten templates diff clean against .cursor/commands, .claude/commands, .github/prompts
-- [ ] generate-command-adapters.sh --check covers quick
+- [x] generate-command-adapters.sh --check covers quick
 - [x] CI fails when a dogfood pack is stale
 
 ## Non-Goals
@@ -84,15 +84,21 @@ This repo's installed command packs (.cursor/commands, .claude/commands, .github
 
 Create the issue manually in GitHub UI, then set **Number** (and matching `github_number` frontmatter when used) and commit.
 
-- Number: TBD
+- Number: 320
 - Title: Regenerate dogfood adapters and give /sdlc-spdd-quick a spec
 - Labels: sdlc-spdd, milestone-3, one-flow
-- URL:
+- URL: https://github.com/jmjava/sdlc-spdd-orchestrator/pull/320
 
 ### Description
 
 See this requirement and `spdd/analysis/SPIKE-005-architecture-review-analysis.md`.
 
+## Completion
+
+Completed by PR #320. The canonical quick spec generates the existing three
+adapter templates without a diff; command-spec and adapter-install regression
+suites pass.
+
 ## Next Step
 
-    /sdlc-spdd-analysis @sdlc-spdd/requirements/milestones/milestone-3/CHORE-006-dogfood-adapters-and-quick-spec.md
+Continue Milestone 3 with `REF-003-retire-bash-workflow-dual-path`.
