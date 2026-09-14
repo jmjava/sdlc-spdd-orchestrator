@@ -31,7 +31,7 @@ related: []
 | Relationship | Work ID | Status | Notes |
 |--------------|---------|--------|-------|
 | Blocks | (none) | — | — |
-| Depends On | `REF-002-purge-pre-v3-compat` | To Do | See milestone-3 |
+| Depends On | `REF-002-purge-pre-v3-compat` | Complete | See milestone-3 |
 | Related | (none) | — | — |
 
 ## User / Business Goal

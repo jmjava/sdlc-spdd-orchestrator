@@ -33,7 +33,7 @@ related:
 | Relationship | Work ID | Status | Notes |
 |--------------|---------|--------|-------|
 | Blocks | `REF-010-pythonize-session-and-capture` | To Do | See milestone-3 |
-| Depends On | `REF-002-purge-pre-v3-compat` | To Do | See milestone-3 |
+| Depends On | `REF-002-purge-pre-v3-compat` | Complete | See milestone-3 |
 | Related | `REF-001-engine-single-source` | Complete | See milestone-2 |
 
 ## User / Business Goal

@@ -27,7 +27,7 @@ P0 — one flow (do first, in order):
 - [x] BUG-001-db-query-undefined-names — live `NameError` in `db export` (#308)
 - [x] CHORE-004-lint-and-complexity-gates-real — gates run on the real diff (#308)
 - [ ] CHORE-006-dogfood-adapters-and-quick-spec — dogfood packs regenerate from spec (#308: packs regenerated and harness covers all three adapters; `quick` spec still missing)
-- [ ] REF-002-purge-pre-v3-compat — one data model; archive deletes; no migrations (T01 archive contract landed in #308; purge in progress)
+- [x] REF-002-purge-pre-v3-compat — one data model; archive deletes; no migrations (#314)
 - [ ] REF-003-retire-bash-workflow-dual-path — one engine; no shell twin
 
 P1 — make the one flow maintainable:
@@ -54,7 +54,7 @@ P2 — finish the consolidation:
 | BUG-001-db-query-undefined-names | P0 | S | [requirement](BUG-001-db-query-undefined-names.md) | Complete | Fix undefined names in db_query.py (export_sql NameError) |
 | CHORE-004-lint-and-complexity-gates-real | P0 | M | [requirement](CHORE-004-lint-and-complexity-gates-real.md) | Complete | Lint, complexity, shellcheck gates on the real diff |
 | CHORE-006-dogfood-adapters-and-quick-spec | P0 | S | [requirement](CHORE-006-dogfood-adapters-and-quick-spec.md) | In Progress | Regenerate dogfood adapters; spec for `/sdlc-spdd-quick` |
-| REF-002-purge-pre-v3-compat | P0 | L | [requirement](REF-002-purge-pre-v3-compat.md) | In Progress | Purge pre-v3 persistence compatibility; one data model |
+| REF-002-purge-pre-v3-compat | P0 | L | [requirement](REF-002-purge-pre-v3-compat.md) | Complete | Storage v3 is the only supported layout (#314) |
 | REF-003-retire-bash-workflow-dual-path | P0 | L | [requirement](REF-003-retire-bash-workflow-dual-path.md) | To Do | Retire the bash workflow twin; Python is the only flow |
 | REF-004-split-installer-blueprints | P1 | M | [requirement](REF-004-split-installer-blueprints.md) | To Do | Split `installer/app.py` `create_app` into blueprints |
 | REF-005-cli-command-modules | P1 | M | [requirement](REF-005-cli-command-modules.md) | To Do | One module per CLI command; result objects, not prints |
@@ -90,3 +90,8 @@ For each work item: `/sdlc-spdd-analysis` on its requirement → `/sdlc-spdd-pla
 2026-09-13 — Milestone opened from SPIKE-005. Owner decision: one engine, one persistence model; pre-v3 context may be lost. First P0 fixes started in the SPIKE-005 branch.
 
 2026-09-14 — Bookkeeping sync with `main` (#308): BUG-001 and CHORE-004 Complete; CHORE-006 In Progress (packs regenerated, `quick` spec outstanding); REF-002 T01 (archive deletes, no `spdd/*/archive/`) landed ahead of its canvas. SPIKE-005 claim released. REF-002 claimed; analysis → canvas → remaining purge operations start here.
+
+2026-09-14 — REF-002 Complete in #314 (`06ddb23`): storage v3 is the only
+supported layout, migration and compatibility paths are removed, product and
+shipped docs match, and all 25 merge-commit checks pass. Next one-flow item:
+REF-003.
