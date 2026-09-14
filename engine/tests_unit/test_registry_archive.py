@@ -6,16 +6,16 @@ from sdlc_engine.registry import TeamRegistry
 
 
 def _seed(root: Path, work_id: str, status: str) -> None:
-    canvas = root / "spdd" / "canvas" / f"{work_id}.md"
+    canvas = root / "sdlc-spdd" / "spdd" / "canvas" / f"{work_id}.md"
     canvas.parent.mkdir(parents=True, exist_ok=True)
     canvas.write_text(
         f"# {work_id}\n\n## Final Status\n\n- Status: {status}\n",
         encoding="utf-8",
     )
-    (root / "requirements" / "milestones").mkdir(parents=True, exist_ok=True)
-    (root / "requirements" / "milestones" / f"{work_id}.md").write_text("# m\n", encoding="utf-8")
-    (root / "spdd" / "analysis").mkdir(parents=True, exist_ok=True)
-    (root / "spdd" / "analysis" / f"{work_id}-analysis.md").write_text("# a\n", encoding="utf-8")
+    (root / "sdlc-spdd" / "requirements" / "milestones").mkdir(parents=True, exist_ok=True)
+    (root / "sdlc-spdd" / "requirements" / "milestones" / f"{work_id}.md").write_text("# m\n", encoding="utf-8")
+    (root / "sdlc-spdd" / "spdd" / "analysis").mkdir(parents=True, exist_ok=True)
+    (root / "sdlc-spdd" / "spdd" / "analysis" / f"{work_id}-analysis.md").write_text("# a\n", encoding="utf-8")
 
 
 def test_claim_and_list_work(tmp_path: Path, monkeypatch) -> None:
@@ -41,11 +41,11 @@ def test_archive_complete_removes_contracts_keeps_requirement(tmp_path: Path, mo
     reg.claim(work_id)
     svc = ArchiveService(Project(tmp_path), reg)
     svc.archive_work(work_id)
-    assert not (tmp_path / "spdd" / "canvas" / f"{work_id}.md").exists()
-    assert not (tmp_path / "spdd" / "analysis" / f"{work_id}-analysis.md").exists()
-    assert not (tmp_path / "spdd" / "canvas" / "archive").exists()
-    assert not (tmp_path / "spdd" / "analysis" / "archive").exists()
-    assert (tmp_path / "requirements" / "milestones" / f"{work_id}.md").is_file()
+    assert not (tmp_path / "sdlc-spdd" / "spdd" / "canvas" / f"{work_id}.md").exists()
+    assert not (tmp_path / "sdlc-spdd" / "spdd" / "analysis" / f"{work_id}-analysis.md").exists()
+    assert not (tmp_path / "sdlc-spdd" / "spdd" / "canvas" / "archive").exists()
+    assert not (tmp_path / "sdlc-spdd" / "spdd" / "analysis" / "archive").exists()
+    assert (tmp_path / "sdlc-spdd" / "requirements" / "milestones" / f"{work_id}.md").is_file()
     rows = {r.work_id: r for r in reg.rows()}
     assert rows[work_id].status == "archived"
 
@@ -56,15 +56,15 @@ def test_archive_dry_run_removes_nothing(tmp_path: Path, monkeypatch) -> None:
     _seed(tmp_path, work_id, "Complete")
     svc = ArchiveService(Project(tmp_path))
     svc.archive_work(work_id, dry_run=True)
-    assert (tmp_path / "spdd" / "canvas" / f"{work_id}.md").is_file()
-    assert (tmp_path / "spdd" / "analysis" / f"{work_id}-analysis.md").is_file()
+    assert (tmp_path / "sdlc-spdd" / "spdd" / "canvas" / f"{work_id}.md").is_file()
+    assert (tmp_path / "sdlc-spdd" / "spdd" / "analysis" / f"{work_id}-analysis.md").is_file()
 
 
 def test_archive_does_not_touch_lessons_ledger(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setenv("SDLC_USER", "archiver")
     work_id = "FEAT-024-ledger"
     _seed(tmp_path, work_id, "Complete")
-    ledger = tmp_path / "spdd" / "memory" / "lessons.jsonl"
+    ledger = tmp_path / "sdlc-spdd" / "spdd" / "memory" / "lessons.jsonl"
     ledger.parent.mkdir(parents=True, exist_ok=True)
     payload = (
         '{"id":"pitfall:FEAT-024-ledger:engine:test","kind":"pitfall",'
@@ -78,7 +78,7 @@ def test_archive_does_not_touch_lessons_ledger(tmp_path: Path, monkeypatch) -> N
     reg.claim(work_id)
     svc = ArchiveService(Project(tmp_path), reg)
     svc.archive_work(work_id)
-    assert not (tmp_path / "spdd" / "canvas" / f"{work_id}.md").exists()
+    assert not (tmp_path / "sdlc-spdd" / "spdd" / "canvas" / f"{work_id}.md").exists()
     assert ledger.read_text(encoding="utf-8") == before
 
 
@@ -123,4 +123,4 @@ def test_sync_team_marks_cancelled(tmp_path: Path) -> None:
     reg.refresh_done_status()
     rows = {r.work_id: r for r in reg.rows()}
     assert rows[work_id].status == "cancelled"
-    assert (tmp_path / "spdd" / "canvas" / f"{work_id}.md").is_file()
+    assert (tmp_path / "sdlc-spdd" / "spdd" / "canvas" / f"{work_id}.md").is_file()

@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
-from unittest.mock import MagicMock
 
 import pytest
 
@@ -42,8 +40,8 @@ def test_api_rollback_endpoint(tmp_path: Path) -> None:
     (backup / "manifest.json").write_text(
         '{"files": ["spdd/memory/lessons.jsonl"]}\n', encoding="utf-8"
     )
-    (backup / "spdd" / "memory").mkdir(parents=True)
-    (backup / "spdd" / "memory" / "lessons.jsonl").write_text(
+    (backup / "sdlc-spdd" / "spdd" / "memory").mkdir(parents=True)
+    (backup / "sdlc-spdd" / "spdd" / "memory" / "lessons.jsonl").write_text(
         '{"id": "from-backup"}\n', encoding="utf-8"
     )
 

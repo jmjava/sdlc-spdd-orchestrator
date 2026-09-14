@@ -8,7 +8,6 @@ import pytest
 
 from sdlc_engine.integration_config import (
     integration_env,
-    load_config,
     resolve_integrations,
     save_config,
     status_dict,
@@ -91,4 +90,4 @@ def test_v3_home_writes_under_sdlc_spdd_runtime(tmp_path: Path) -> None:
     save_config(project, {"tracker": "github", "github": {"repo": "acme/app"}})
     cfg = tmp_path / "sdlc-spdd" / ".sdlc" / "integrations-config.json"
     assert cfg.is_file()
-    assert not (tmp_path / ".sdlc" / "integrations-config.json").exists()
+    assert not (tmp_path / ".sdlc").exists()

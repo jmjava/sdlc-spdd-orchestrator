@@ -102,7 +102,7 @@ def test_live_adf_start_probe_stop_via_api(tmp_path: Path) -> None:
             time.sleep(0.15)
         assert not vr._pid_alive(pid), f"pid {pid} still alive after stop"
         assert not vr._tcp_open(host, port), f"port {port} still open after stop"
-        assert not (tmp_path / ".sdlc" / "adf-viewer-runtime.json").is_file()
+        assert not (tmp_path / "sdlc-spdd" / ".sdlc" / "adf-viewer-runtime.json").is_file()
 
         after = client.post("/api/adf", json=body)
         assert after.status_code == 200

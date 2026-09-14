@@ -411,10 +411,10 @@ def _init_scope_repo(tmp_path: Path) -> Path:
     _git(root, "config", "user.email", "test@example.com")
     _git(root, "config", "user.name", "Test")
     (root / "README.md").write_text("# demo\n", encoding="utf-8")
-    canvas_dir = root / "spdd" / "canvas"
+    canvas_dir = root / "sdlc-spdd" / "spdd" / "canvas"
     canvas_dir.mkdir(parents=True)
     (canvas_dir / "SCOPE-I2.md").write_text(_SCOPE_CANVAS, encoding="utf-8")
-    _git(root, "add", "README.md", "spdd/canvas/SCOPE-I2.md")
+    _git(root, "add", "README.md", "sdlc-spdd/spdd/canvas/SCOPE-I2.md")
     _git(root, "commit", "-m", "init")
     current = subprocess.check_output(
         ["git", "-C", str(root), "branch", "--show-current"],

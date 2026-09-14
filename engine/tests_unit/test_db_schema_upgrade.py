@@ -23,10 +23,10 @@ _V5_LESSON_COLUMNS = {"title", "phase", "keywords", "staged"}
 
 
 def _seed_stay_set(root: Path, work_id: str) -> None:
-    req = root / "requirements" / "milestones" / f"{work_id}.md"
+    req = root / "sdlc-spdd" / "requirements" / "milestones" / f"{work_id}.md"
     req.parent.mkdir(parents=True, exist_ok=True)
     req.write_text(f"# Requirement: {work_id}\n\n## Summary\nOld cache.\n", encoding="utf-8")
-    canvas = root / "spdd" / "canvas" / f"{work_id}.md"
+    canvas = root / "sdlc-spdd" / "spdd" / "canvas" / f"{work_id}.md"
     canvas.parent.mkdir(parents=True, exist_ok=True)
     canvas.write_text(
         f"""# REASONS Canvas: {work_id}
@@ -39,7 +39,7 @@ def _seed_stay_set(root: Path, work_id: str) -> None:
 """,
         encoding="utf-8",
     )
-    root.joinpath("spdd/memory").mkdir(parents=True, exist_ok=True)
+    root.joinpath("sdlc-spdd/spdd/memory").mkdir(parents=True, exist_ok=True)
 
 
 def _write_v4_sqlite(
@@ -129,7 +129,7 @@ def _v5_persist_insert(conn: sqlite3.Connection) -> None:
 
 def test_v5_persist_row_fails_on_old_schema_without_upgrade(tmp_path: Path) -> None:
     """Confirm: the persistence write cannot land until the old format is upgraded."""
-    db_path = tmp_path / ".sdlc" / "index.sqlite"
+    db_path = tmp_path / "sdlc-spdd" / ".sdlc" / "index.sqlite"
     _write_v4_sqlite(db_path)
     conn = sqlite3.connect(str(db_path))
     with pytest.raises(sqlite3.OperationalError, match="staged|title|phase|keywords"):
@@ -147,7 +147,7 @@ def test_persist_upgrades_v4_sqlite_in_place_then_succeeds(tmp_path: Path) -> No
     wid = "FEAT-OLD-V4"
     _seed_stay_set(tmp_path, wid)
     save_config(tmp_path, {"backends": ["git-pointers", "sqlite"]})
-    db_path = tmp_path / ".sdlc" / "index.sqlite"
+    db_path = tmp_path / "sdlc-spdd" / ".sdlc" / "index.sqlite"
     _write_v4_sqlite(db_path, work_id=wid)
 
     store = ContextStore(Project(tmp_path), guide_base_url="http://127.0.0.1:9")
@@ -180,7 +180,7 @@ def test_persist_upgrades_stale_v5_label_with_v4_columns(tmp_path: Path) -> None
     wid = "FEAT-STALE-LABEL"
     _seed_stay_set(tmp_path, wid)
     save_config(tmp_path, {"backends": ["git-pointers", "sqlite"]})
-    db_path = tmp_path / ".sdlc" / "index.sqlite"
+    db_path = tmp_path / "sdlc-spdd" / ".sdlc" / "index.sqlite"
     _write_v4_sqlite(db_path, work_id=wid, schema_version=SCHEMA_VERSION)
 
     store = ContextStore(Project(tmp_path), guide_base_url="http://127.0.0.1:9")
@@ -205,7 +205,7 @@ def test_persist_upgrades_stale_v5_label_with_v4_columns(tmp_path: Path) -> None
 
 def test_ensure_schema_rebuilds_unreadable_legacy_db(tmp_path: Path) -> None:
     _seed_stay_set(tmp_path, "FEAT-NO-META")
-    db_path = tmp_path / ".sdlc" / "index.sqlite"
+    db_path = tmp_path / "sdlc-spdd" / ".sdlc" / "index.sqlite"
     _write_unreadable_legacy_sqlite(db_path)
     idx = LocalIndex(Project(tmp_path))
     idx.ensure_schema()

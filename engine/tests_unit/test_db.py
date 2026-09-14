@@ -7,7 +7,7 @@ from sdlc_engine.registry import TeamRegistry
 
 
 def _seed(root: Path, work_id: str, *, jira: str = "ORCH-1", status: str = "In Progress") -> None:
-    req = root / "requirements" / "milestones" / f"{work_id}.md"
+    req = root / "sdlc-spdd" / "requirements" / "milestones" / f"{work_id}.md"
     req.parent.mkdir(parents=True, exist_ok=True)
     req.write_text(
         f"""# Requirement: {work_id}
@@ -27,7 +27,7 @@ Body for search.
 """,
         encoding="utf-8",
     )
-    canvas = root / "spdd" / "canvas" / f"{work_id}.md"
+    canvas = root / "sdlc-spdd" / "spdd" / "canvas" / f"{work_id}.md"
     canvas.parent.mkdir(parents=True, exist_ok=True)
     canvas.write_text(
         f"""# REASONS Canvas: {work_id} - Indexed demo

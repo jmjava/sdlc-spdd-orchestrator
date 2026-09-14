@@ -57,13 +57,13 @@ def test_link_normalizers_share_placeholder_set() -> None:
 
 def test_project_rel_and_json_io(tmp_path: Path) -> None:
     project = Project(tmp_path)
-    inside = tmp_path / "spdd" / "memory" / "lessons.jsonl"
+    inside = tmp_path / "sdlc-spdd" / "spdd" / "memory" / "lessons.jsonl"
     inside.parent.mkdir(parents=True)
     inside.write_text("{}\n", encoding="utf-8")
-    assert project.rel(inside) == "spdd/memory/lessons.jsonl"
+    assert project.rel(inside) == "sdlc-spdd/spdd/memory/lessons.jsonl"
     assert rel_to(tmp_path, Path("/tmp/outside-engine-rel")) == "/tmp/outside-engine-rel"
 
-    cfg = tmp_path / ".sdlc" / "runtime.json"
+    cfg = tmp_path / "sdlc-spdd" / ".sdlc" / "runtime.json"
     assert load_json_dict(cfg) == {}
     save_json_dict(cfg, {"ok": True})
     assert load_json_dict(cfg) == {"ok": True}
@@ -83,7 +83,7 @@ def test_process_util_pid_and_run() -> None:
 
 def test_cli_and_db_module_split_keeps_public_imports() -> None:
     from sdlc_engine.cli import build_parser, main
-    from sdlc_engine.cli_commands import cmd_next, cmd_version
+    from sdlc_engine.commands import cmd_next, cmd_version
     from sdlc_engine.db import SCHEMA_VERSION, LocalIndex, RebuildStats, format_rows
     from sdlc_engine.db_query import IndexQueryMixin
     from sdlc_engine.db_rebuild import IndexRebuildMixin

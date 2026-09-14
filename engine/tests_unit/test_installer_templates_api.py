@@ -12,8 +12,8 @@ from sdlc_engine.installer.app import create_app
 
 
 def _seed_work(root: Path, work_id: str) -> None:
-    (root / "requirements" / "milestones").mkdir(parents=True)
-    (root / "requirements" / "milestones" / f"{work_id}.md").write_text(
+    (root / "sdlc-spdd" / "requirements" / "milestones").mkdir(parents=True)
+    (root / "sdlc-spdd" / "requirements" / "milestones" / f"{work_id}.md").write_text(
         f"## Summary\n\nTemplate API for {work_id}.\n",
         encoding="utf-8",
     )

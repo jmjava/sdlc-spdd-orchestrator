@@ -28,26 +28,26 @@ def test_materialize_playground_writes_tabs_data(tmp_path: Path) -> None:
     dest = materialize_playground(tmp_path / "play", orch=tmp_path)
     assert is_playground(dest)
     active = WORKS[0][0]
-    assert (dest / ".sdlc" / "pointer").read_text(encoding="utf-8").strip() == active
-    assert (dest / "spdd" / "canvas" / f"{active}.md").is_file()
-    assert (dest / "requirements" / "milestones" / f"{active}.md").is_file()
+    assert (dest / "sdlc-spdd" / ".sdlc" / "pointer").read_text(encoding="utf-8").strip() == active
+    assert (dest / "sdlc-spdd" / "spdd" / "canvas" / f"{active}.md").is_file()
+    assert (dest / "sdlc-spdd" / "requirements" / "milestones" / f"{active}.md").is_file()
     assert (dest / "adf" / f"{active}.adf.json").is_file()
-    assert (dest / "spdd" / "memory" / "lessons.jsonl").read_text(encoding="utf-8").count("\n") == 3
-    assert (dest / "spdd" / "memory" / "registry.jsonl").is_file()
-    assert (dest / ".sdlc" / "staged" / "lessons.jsonl").is_file()
+    assert (dest / "sdlc-spdd" / "spdd" / "memory" / "lessons.jsonl").read_text(encoding="utf-8").count("\n") == 3
+    assert (dest / "sdlc-spdd" / "spdd" / "memory" / "registry.jsonl").is_file()
+    assert (dest / "sdlc-spdd" / ".sdlc" / "staged" / "lessons.jsonl").is_file()
     assert (dest / "PLAYGROUND.md").is_file()
     backups = list((dest / ".sdlc-spdd-upgrade-backups").iterdir())
     assert backups
-    assert (dest / ".sdlc" / "persistence-config.json").is_file()
-    assert (dest / ".sdlc" / "integrations-config.json").is_file()
-    integ = (dest / ".sdlc" / "integrations-config.json").read_text(encoding="utf-8")
+    assert (dest / "sdlc-spdd" / ".sdlc" / "persistence-config.json").is_file()
+    assert (dest / "sdlc-spdd" / ".sdlc" / "integrations-config.json").is_file()
+    integ = (dest / "sdlc-spdd" / ".sdlc" / "integrations-config.json").read_text(encoding="utf-8")
     assert FAKE_JIRA_TOKEN in integ
     assert FAKE_GH_TOKEN in integ
-    assert (dest / ".sdlc" / "fake-guide" / "compose.yaml").is_file()
-    assert (dest / ".sdlc" / "fake-guide" / "scripts" / "append-ingest.sh").is_file()
-    assert (dest / ".sdlc" / "playground-runtime.json").is_file()
+    assert (dest / "sdlc-spdd" / ".sdlc" / "fake-guide" / "compose.yaml").is_file()
+    assert (dest / "sdlc-spdd" / ".sdlc" / "fake-guide" / "scripts" / "append-ingest.sh").is_file()
+    assert (dest / "sdlc-spdd" / ".sdlc" / "playground-runtime.json").is_file()
     jira_key, gh_num = issue_refs(active)
-    req = (dest / "requirements" / "milestones" / f"{active}.md").read_text(encoding="utf-8")
+    req = (dest / "sdlc-spdd" / "requirements" / "milestones" / f"{active}.md").read_text(encoding="utf-8")
     assert jira_key in req
     assert gh_num in req
 
@@ -83,7 +83,7 @@ def test_health_reports_playground(tmp_path: Path) -> None:
 
 def test_fake_guide_start_stop_and_ingest(tmp_path: Path) -> None:
     dest = materialize_playground(tmp_path / "play")
-    cfg = {"guide_home": str(dest / ".sdlc" / "fake-guide"), "host": "127.0.0.1", "port": 21337}
+    cfg = {"guide_home": str(dest / "sdlc-spdd" / ".sdlc" / "fake-guide"), "host": "127.0.0.1", "port": 21337}
     payload = fake_guide_payload(dest, cfg, orch=tmp_path)
     assert payload["playground"] is True
     assert payload["probe"]["tcp_open"] is True
@@ -125,13 +125,13 @@ def test_fake_issue_sync_dry_run_and_apply(tmp_path: Path) -> None:
         dest, work_id=work_id, system="github", direction="push", apply=True
     )
     assert applied["ok"] is True
-    req = (dest / "requirements" / "milestones" / f"{work_id}.md").read_text(encoding="utf-8")
+    req = (dest / "sdlc-spdd" / "requirements" / "milestones" / f"{work_id}.md").read_text(encoding="utf-8")
     assert "Playground github push" in req
 
 
 def test_fake_guide_remaining_actions(tmp_path: Path) -> None:
     dest = materialize_playground(tmp_path / "play")
-    cfg = {"guide_home": str(dest / ".sdlc" / "fake-guide"), "profile": "sdlc-spdd"}
+    cfg = {"guide_home": str(dest / "sdlc-spdd" / ".sdlc" / "fake-guide"), "profile": "sdlc-spdd"}
     assert fake_guide_action(dest, cfg, "ensure")["ok"] is True
     assert fake_guide_action(dest, cfg, "neo4j_stop")["ok"] is True
     assert load_runtime(dest)["neo4j_up"] is False

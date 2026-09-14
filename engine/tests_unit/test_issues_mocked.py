@@ -12,7 +12,7 @@ from sdlc_engine.sync_local import LocalSyncService
 
 
 def _seed_req(root: Path, work_id: str, *, jira_key: str = "TBD", gh: str = "") -> Path:
-    req = root / "requirements" / "milestones" / f"{work_id}.md"
+    req = root / "sdlc-spdd" / "requirements" / "milestones" / f"{work_id}.md"
     req.parent.mkdir(parents=True, exist_ok=True)
     req.write_text(
         f"""# Requirement: {work_id}
@@ -42,7 +42,7 @@ Demo description body
 """,
         encoding="utf-8",
     )
-    canvas = root / "spdd" / "canvas" / f"{work_id}.md"
+    canvas = root / "sdlc-spdd" / "spdd" / "canvas" / f"{work_id}.md"
     canvas.parent.mkdir(parents=True, exist_ok=True)
     canvas.write_text(
         f"""# REASONS Canvas: {work_id} - Sync demo
@@ -104,11 +104,11 @@ def test_jira_push_apply_mocked(tmp_path: Path, monkeypatch) -> None:
     payload = json.loads(seen["body"].decode())
     desc = payload["fields"]["description"]
     assert isinstance(desc, dict) and desc.get("type") == "doc"
-    text = (tmp_path / "requirements" / "milestones" / f"{work_id}.md").read_text(
+    text = (tmp_path / "sdlc-spdd" / "requirements" / "milestones" / f"{work_id}.md").read_text(
         encoding="utf-8"
     )
     assert "Key: ORCH-99" in text
-    canvas = (tmp_path / "spdd" / "canvas" / f"{work_id}.md").read_text(encoding="utf-8")
+    canvas = (tmp_path / "sdlc-spdd" / "spdd" / "canvas" / f"{work_id}.md").read_text(encoding="utf-8")
     assert "Source Issue: ORCH-99" in canvas
     assert "Source System: Jira" in canvas
 
@@ -148,7 +148,7 @@ def test_jira_pull_apply_mocked(tmp_path: Path, monkeypatch) -> None:
     svc = IssueSyncService(Project(tmp_path), urlopen=fake_urlopen)
     report = svc.pull(work_id, "jira", apply=True)
     assert "Pulled summary from Jira" in report
-    text = (tmp_path / "requirements" / "milestones" / f"{work_id}.md").read_text(
+    text = (tmp_path / "sdlc-spdd" / "requirements" / "milestones" / f"{work_id}.md").read_text(
         encoding="utf-8"
     )
     assert "Summary: Pulled summary from Jira" in text
@@ -171,12 +171,12 @@ def test_github_push_apply_with_fake_gh(tmp_path: Path) -> None:
     svc = IssueSyncService(Project(tmp_path), gh_runner=fake_gh)
     out = svc.push(work_id, "github", apply=True)
     assert "4242" in out
-    text = (tmp_path / "requirements" / "milestones" / f"{work_id}.md").read_text(
+    text = (tmp_path / "sdlc-spdd" / "requirements" / "milestones" / f"{work_id}.md").read_text(
         encoding="utf-8"
     )
     assert "Number: 4242" in text
     assert "URL: https://github.com/example/repo/issues/4242" in text
-    canvas = (tmp_path / "spdd" / "canvas" / f"{work_id}.md").read_text(encoding="utf-8")
+    canvas = (tmp_path / "sdlc-spdd" / "spdd" / "canvas" / f"{work_id}.md").read_text(encoding="utf-8")
     assert "Source Issue: #4242" in canvas or "Source Issue: 4242" in canvas
 
 
@@ -199,7 +199,7 @@ def test_github_pull_apply_with_fake_gh(tmp_path: Path) -> None:
     svc = IssueSyncService(Project(tmp_path), gh_runner=fake_gh)
     report = svc.pull(work_id, "github", apply=True)
     assert "Remote GH title" in report
-    text = (tmp_path / "requirements" / "milestones" / f"{work_id}.md").read_text(
+    text = (tmp_path / "sdlc-spdd" / "requirements" / "milestones" / f"{work_id}.md").read_text(
         encoding="utf-8"
     )
     assert "Title: Remote GH title" in text
@@ -228,7 +228,7 @@ def test_github_repo_env_injected(tmp_path: Path, monkeypatch) -> None:
 def test_empty_metadata_bullets_do_not_swallow_next_line(tmp_path: Path) -> None:
     from sdlc_engine.links import parse_canvas_metadata
 
-    canvas = tmp_path / "spdd" / "canvas" / "FEAT-306-empty.md"
+    canvas = tmp_path / "sdlc-spdd" / "spdd" / "canvas" / "FEAT-306-empty.md"
     canvas.parent.mkdir(parents=True, exist_ok=True)
     canvas.write_text(
         """# REASONS Canvas: FEAT-306-empty - Empty bullets
