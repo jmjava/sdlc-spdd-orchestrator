@@ -115,7 +115,7 @@ validate_file() {
     printf '  - %s\n' "${missing[@]}" >&2
     work_id="$(basename "${file}" .md)"
     echo >&2
-    echo "SPDD fix prompts (see docs/sdlc-spdd/spdd-prompt-standard.md):" >&2
+    echo "SPDD fix prompts (see sdlc-spdd/docs/spdd-prompt-standard.md):" >&2
     echo "  /sdlc-spdd-plan @requirements/milestones/${work_id}.md @milestone-1.md" >&2
     echo "  (milestone work) or /sdlc-spdd-plan @requirements/<file>.md (ad-hoc)" >&2
     echo "  Or complete missing REASONS sections in ${file} before /sdlc-spdd-architect." >&2
@@ -128,7 +128,7 @@ validate_file() {
   work_id="$(basename "${file}" .md)"
   echo "Valid canvas: ${file}"
   echo
-  echo "Next SPDD prompts (see docs/sdlc-spdd/spdd-prompt-standard.md):"
+  echo "Next SPDD prompts (see sdlc-spdd/docs/spdd-prompt-standard.md):"
   echo "  /sdlc-spdd-architect @spdd/canvas/${work_id}.md"
   echo "  Then when Ready For Coding: /sdlc-spdd-code @spdd/canvas/${work_id}.md operation T01"
   return 0

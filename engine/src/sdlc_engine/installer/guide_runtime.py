@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from ..io_util import clear_file, load_json_dict, save_json_dict
+from ..project import Project
 from ..timeutil import utc_now as _utc_now
 from .process_util import pid_alive as _pid_alive
 from .process_util import run_cmd
@@ -55,7 +56,7 @@ def relax_codegen_gradle_network_timeout(home: Path | str) -> bool:
 
 
 def runtime_path(target: Path | str) -> Path:
-    return Path(target).expanduser().resolve() / RUNTIME_REL
+    return Project(Path(target).expanduser().resolve()).sdlc_dir / RUNTIME_REL.name
 
 
 def _load_runtime(target: Path | str) -> dict[str, Any]:

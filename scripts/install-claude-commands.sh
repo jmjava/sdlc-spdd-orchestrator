@@ -49,19 +49,12 @@ MEMORY_DEST="${TARGET}/CLAUDE.md"
 
 # shellcheck source=lib/framework-install.sh
 source "${SCRIPT_DIR}/lib/framework-install.sh"
-# Storage v3 targets keep IDE stubs at the repo root but reference paths under
-# the single-folder home sdlc-spdd/.
-REWRITE_V3=0
-[[ -d "${TARGET}/sdlc-spdd" ]] && REWRITE_V3=1
+# IDE stubs stay at the repo root but reference paths under the sdlc-spdd/ home.
 
-# Rewrite a template into a temp copy when installing into a v3 target so the
-# adapter content references sdlc-spdd/ paths (upsert included).
+# Rewrite a template into a temp copy so the adapter content references
+# sdlc-spdd/ paths (upsert included).
 prepare_adapter_src() {
   local src="$1"
-  if [[ "${REWRITE_V3}" -eq 0 ]]; then
-    printf '%s' "${src}"
-    return
-  fi
   local tmp
   tmp="$(mktemp)"
   cp "${src}" "${tmp}"
@@ -85,7 +78,7 @@ copy_if_missing() {
   fi
   mkdir -p "$(dirname "${dest}")"
   cp "${src}" "${dest}"
-  [[ "${REWRITE_V3}" -eq 1 ]] && framework_rewrite_adapter_paths "${dest}"
+  framework_rewrite_adapter_paths "${dest}"
   installed+=("${dest}")
 }
 

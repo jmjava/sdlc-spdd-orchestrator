@@ -39,7 +39,8 @@ def detect_target(target: Path | str) -> dict[str, Any]:
     if not exists:
         mode = "missing"
         recommendation = "create"
-    elif unsupported_found and not (root / "sdlc-spdd").is_dir():
+    elif unsupported_found:
+        # Matches upgrade-project.sh: any pre-v3 path blocks upgrade until removed.
         mode = "unsupported"
         recommendation = "reinit"
     elif markers_found:

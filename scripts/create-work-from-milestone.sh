@@ -481,7 +481,7 @@ done
 
 if ((${#created_work_ids[@]} > 0)); then
   echo
-  echo "Next SPDD prompts (see docs/sdlc-spdd/spdd-prompt-standard.md):"
+  echo "Next SPDD prompts (see sdlc-spdd/docs/spdd-prompt-standard.md):"
   for work_id in "${created_work_ids[@]}"; do
     req_ref="@${requirement_parent_rel}/${work_id}.md"
     echo

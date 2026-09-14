@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from .guide_runtime import DEFAULT_GIT_URL
+from ..project import Project
 
 CONFIG_REL = Path(".sdlc") / "guide-config.json"
 
@@ -53,7 +54,7 @@ _CONFIG_KEYS = (
 
 
 def config_path(target: Path | str) -> Path:
-    return Path(target).expanduser().resolve() / CONFIG_REL
+    return Project(Path(target).expanduser().resolve()).sdlc_dir / CONFIG_REL.name
 
 
 def _looks_like_guide_home(path: Path) -> bool:
