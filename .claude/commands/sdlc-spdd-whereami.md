@@ -10,9 +10,9 @@ Do not implement code.
 ## Required Behavior
 
 
-1. Run `./sdlc-spdd/scripts/sdlc.sh team` (or `./sdlc-spdd/scripts/sdlc.sh team` in the orchestrator repo) to read the committed team registry.
+1. Run `./sdlc-spdd/scripts/sdlc.sh team` (or `./scripts/sdlc.sh team` in the orchestrator repo) to read the committed team registry.
 2. Run `./sdlc-spdd/scripts/sdlc.sh list-work` when no active pointer or the user asks what Work IDs exist.
-3. Run `./sdlc-spdd/scripts/sdlc.sh next` (or `./sdlc-spdd/scripts/sdlc.sh next`) for local phase, gates, and the recommended command.
+3. Run `./sdlc-spdd/scripts/sdlc.sh next` (or `./scripts/sdlc.sh next`) for local phase, gates, and the recommended command.
 4. Check the team registry for conflicts: another owner with a non-stale `active` claim blocks coding unless the user confirms or uses `--force`.
 5. Treat `[STALE>Nd]` registry rows as safe to take over with coordination; `done` rows mean pick a different Work ID.
 6. If no active Work ID, suggest `./sdlc-spdd/scripts/sdlc.sh claim <WORK-ID>` or `resume <WORK-ID>`.
