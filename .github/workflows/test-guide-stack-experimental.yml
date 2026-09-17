@@ -20,6 +20,8 @@ on:
       - 'engine/tests_e2e/**'
       - 'console-ui/**'
       - 'tests/test-guide-stack-live.sh'
+      - 'tests/test-orch-01-guide-live-pin.sh'
+      - 'scripts/run-test-suites.sh'
       - 'tests/research/test_cretrieve.py'
       - 'sdlc-spdd/docs/research/**'
       - '.github/workflows/test-guide-stack-experimental.yml'
@@ -33,6 +35,8 @@ on:
       - 'engine/tests_e2e/test_vue3_console_live_playwright.py'
       - 'console-ui/**'
       - 'tests/test-guide-stack-live.sh'
+      - 'tests/test-orch-01-guide-live-pin.sh'
+      - 'scripts/run-test-suites.sh'
       - 'tests/research/test_cretrieve.py'
       - 'sdlc-spdd/docs/research/**'
       - '.github/workflows/test-guide-stack-experimental.yml'
@@ -43,6 +47,14 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  live-pin:
+    name: ORCH-01 live stack pin is v3
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Experimental Guide live stack must pin spdd-projection-v3
+        run: ./tests/test-orch-01-guide-live-pin.sh
+
   installer-unit:
     name: Experimental console unit tests
     runs-on: ubuntu-latest
@@ -81,9 +93,25 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: jmjava/orch-guide
-          ref: sdlc-spdd-projection-v2
+          ref: spdd-projection-v3
           path: guide
           token: ${{ secrets.GUIDE_CHECKOUT_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Checked-out Guide is the spdd-projection-v3 tag
+        working-directory: guide
+        run: |
+          set -euo pipefail
+          # ORCH-01: a missing or leftover v2 pin must not count as a live-stack pass.
+          if ! git rev-parse --verify --quiet 'refs/tags/spdd-projection-v3' >/dev/null; then
+            echo "FAIL: checkout has no tag spdd-projection-v3 (leftover v2 pin or shallow miss)" >&2
+            exit 1
+          fi
+          tag="$(git rev-parse 'refs/tags/spdd-projection-v3^{commit}')"
+          head="$(git rev-parse HEAD)"
+          if [[ "${tag}" != "${head}" ]]; then
+            echo "FAIL: HEAD ${head} is not tag spdd-projection-v3 (${tag})" >&2
+            exit 1
+          fi
 
       - uses: actions/setup-python@v5
         with:
@@ -143,7 +171,7 @@ jobs:
           CI: 'true'
           SDLC_GUIDE_STACK_LIVE: '1'
           GUIDE_HOME: ${{ github.workspace }}/guide
-          GUIDE_GIT_REF: sdlc-spdd-projection-v2
+          GUIDE_GIT_REF: spdd-projection-v3
           GUIDE_PORT: '21337'
           NEO4J_BOLT_PORT: '7687'
           NEO4J_HTTP_PORT: '7474'
@@ -190,7 +218,7 @@ jobs:
           CI: 'true'
           SDLC_GUIDE_STACK_LIVE: '1'
           GUIDE_HOME: ${{ github.workspace }}/guide
-          GUIDE_GIT_REF: sdlc-spdd-projection-v2
+          GUIDE_GIT_REF: spdd-projection-v3
           GUIDE_PORT: '21337'
           NEO4J_BOLT_PORT: '7687'
           NEO4J_HTTP_PORT: '7474'

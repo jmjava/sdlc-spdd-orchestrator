@@ -262,7 +262,7 @@ run_e2e() {
     fi
     export SDLC_GUIDE_STACK_LIVE=1
     export GUIDE_HOME="${GUIDE_HOME:-$HOME/github/jmjava/orch-guide}"
-    export GUIDE_GIT_REF="${GUIDE_GIT_REF:-sdlc-spdd-projection-v2}"
+    export GUIDE_GIT_REF="${GUIDE_GIT_REF:-spdd-projection-v3}"
     ./tests/test-guide-stack-live.sh
   fi
   if [[ ${#PYTEST_EXTRA[@]} -gt 0 ]]; then
