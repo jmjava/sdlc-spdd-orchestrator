@@ -21,11 +21,28 @@ echo ""
 echo "== Guide checkout =="
 if [[ -d "${GUIDE_ROOT}" ]]; then
   ok "guide directory exists"
-  branch="$(git -C "${GUIDE_ROOT}" rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)"
-  if [[ "${branch}" == "main" || "${branch}" == "HEAD" || "${branch}" == "sdlc-spdd-projection-v3" ]]; then
-    ok "guide on main or spdd-projection-v3 pin"
+  if ! git -C "${GUIDE_ROOT}" rev-parse --git-dir >/dev/null 2>&1; then
+    bad "GUIDE_ROOT is not a git checkout"
   else
-    note "guide on branch '${branch}' (prefer spdd-projection-v3 or main)"
+    # Leftover #20: the pin is the *tag* refs/tags/spdd-projection-v3.
+    # `rev-parse --abbrev-ref HEAD` is "HEAD" on any detached checkout, so
+    # treating that name (or a local branch named sdlc-spdd-projection-v3 /
+    # spdd-projection-v3) as the pin passed by luck. Compare peeled SHAs.
+    tag_ref="refs/tags/spdd-projection-v3"
+    if ! git -C "${GUIDE_ROOT}" rev-parse --verify --quiet "${tag_ref}" >/dev/null; then
+      bad "missing tag spdd-projection-v3 — a local branch of that name is not the pin"
+    else
+      tag_sha="$(git -C "${GUIDE_ROOT}" rev-parse "${tag_ref}^{commit}")"
+      head_sha="$(git -C "${GUIDE_ROOT}" rev-parse HEAD)"
+      branch="$(git -C "${GUIDE_ROOT}" rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)"
+      if [[ "${head_sha}" == "${tag_sha}" ]]; then
+        ok "HEAD is the spdd-projection-v3 tag"
+      elif [[ "${branch}" == "main" ]]; then
+        ok "guide on main (tag spdd-projection-v3 is present)"
+      else
+        bad "HEAD ${head_sha:0:7} is not tag spdd-projection-v3 (${tag_sha:0:7}); detached HEAD and a local branch named after the pin are not the pin"
+      fi
+    fi
   fi
 else
   bad "guide not found at ${GUIDE_ROOT} — set GUIDE_ROOT"
