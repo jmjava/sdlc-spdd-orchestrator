@@ -1,0 +1,26 @@
+name: Test Guide Pin Is The Tag
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/guide/verify-spike-guide-setup.sh'
+      - 'tests/test-verify-spike-guide-pin.sh'
+      - '.github/workflows/test-verify-spike-guide-pin.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/guide/verify-spike-guide-setup.sh'
+      - 'tests/test-verify-spike-guide-pin.sh'
+      - '.github/workflows/test-verify-spike-guide-pin.yml'
+
+jobs:
+  test-verify-spike-guide-pin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check shell syntax
+        run: bash -n scripts/guide/verify-spike-guide-setup.sh tests/test-verify-spike-guide-pin.sh
+
+      - name: Leftover #20 pin is the spdd-projection-v3 tag
+        run: ./tests/test-verify-spike-guide-pin.sh
