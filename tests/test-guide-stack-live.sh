@@ -10,7 +10,7 @@
 #
 # Env:
 #   GUIDE_HOME              path to orch-guide clone (default: ../orch-guide, ../guide, or ~/github/jmjava/orch-guide)
-#   GUIDE_GIT_REF           branch/tag (default: sdlc-spdd-projection-v2)
+#   GUIDE_GIT_REF           branch/tag (default: spdd-projection-v3)
 #   GUIDE_PORT              default 21337
 #   NEO4J_BOLT_PORT         default 7687
 #   NEO4J_HTTP_PORT         default 7474
@@ -41,7 +41,7 @@ NEO4J_BOLT_PORT="${NEO4J_BOLT_PORT:-7687}"
 NEO4J_HTTP_PORT="${NEO4J_HTTP_PORT:-7474}"
 NEO4J_HTTPS_PORT="${NEO4J_HTTPS_PORT:-7473}"
 GUIDE_PROFILE="${GUIDE_PROFILE:-sdlc-spdd}"
-GUIDE_GIT_REF="${GUIDE_GIT_REF:-sdlc-spdd-projection-v2}"
+GUIDE_GIT_REF="${GUIDE_GIT_REF:-spdd-projection-v3}"
 GUIDE_START_TIMEOUT_SEC="${GUIDE_START_TIMEOUT_SEC:-600}"
 SPRING_PROFILES_ACTIVE="${SPRING_PROFILES_ACTIVE:-neo4j,local,${GUIDE_PROFILE}}"
 
