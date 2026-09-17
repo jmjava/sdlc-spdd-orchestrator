@@ -205,6 +205,38 @@ require_contains() {
   fi
 }
 
+# A pack sentence that names an orchestrator-checkout path beside an
+# installed-project path only informs the reader while the two differ. The
+# install-time path rewrite can collapse them into the same string, leaving
+# prose that tells an agent the contexts share one entry point. Fail that here
+# rather than shipping the contradiction.
+check_distinct_path_branches() {
+  local path="$1"
+  local blob rest whole first second
+  local labelled='orchestrator repo: `([^`]+)`; installed projects: `([^`]+)`'
+  local parenthetical='`([^`]+)` \(or `([^`]+)`'
+  # The sentence wraps across lines in the lifecycle packs, so match on a
+  # single-line, single-spaced view of the file.
+  blob="$(tr '\n' ' ' < "${path}" | tr -s ' ')"
+
+  local pattern
+  for pattern in "${labelled}" "${parenthetical}"; do
+    rest="${blob}"
+    while [[ "${rest}" =~ ${pattern} ]]; do
+      whole="${BASH_REMATCH[0]}"
+      # Compare the command path only; the argument lists differ by design
+      # (`gate ...` as an illustration vs a fully spelled-out invocation).
+      first="${BASH_REMATCH[1]%% *}"
+      second="${BASH_REMATCH[2]%% *}"
+      if [[ "${first}" == "${second}" ]]; then
+        echo "Identical orchestrator/installed path branches in ${path}: both name '${first}'" >&2
+        failures=$((failures + 1))
+      fi
+      rest="${rest#*"${whole}"}"
+    done
+  done
+}
+
 count_required_steps() {
   # Count numbered list items only within the "## Required Behavior" section,
   # stopping at the next "## " heading. Counting the whole file would let
@@ -240,6 +272,7 @@ check_workflow_pack() {
   require_contains "${path}" "## Output" "Output section"
   require_contains "${path}" "Do not implement" "workflow no-code guardrail"
   require_contains "${path}" "sdlc.sh" "workflow shell delegation"
+  check_distinct_path_branches "${path}"
 
   case "${cmd}" in
     next)
@@ -268,6 +301,7 @@ check_pack() {
 
   require_contains "${path}" "## Required Behavior" "Required Behavior section"
   require_contains "${path}" "## Output" "Output section"
+  check_distinct_path_branches "${path}"
 
   case "${cmd}" in
     init)
@@ -397,6 +431,7 @@ check_grounding() {
   local asst="$1"
   local path="$2"
   require_file "${path}" || return 0
+  check_distinct_path_branches "${path}"
   local anchor
   for anchor in "${grounding_anchors[@]}"; do
     require_contains "${path}" "${anchor}" "${asst} grounding anchor '${anchor}'"

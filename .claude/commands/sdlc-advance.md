@@ -16,8 +16,8 @@ Do not implement application code.
 
 
 1. If no active pointer, suggest `./sdlc-spdd/scripts/sdlc.sh claim <WORK-ID>` or `resume <WORK-ID>` (orchestrator: `./sdlc-spdd/scripts/sdlc.sh …`).
-2. Run `./sdlc-spdd/scripts/sdlc.sh next` (or `./sdlc-spdd/scripts/sdlc.sh next`) first so the user sees open gates before advancing.
-3. If the user supplied a target phase, run `./sdlc-spdd/scripts/sdlc.sh advance --to <PHASE>`; otherwise run `./sdlc-spdd/scripts/sdlc.sh advance` (or `./sdlc-spdd/scripts/sdlc.sh advance`).
+2. Run `./sdlc-spdd/scripts/sdlc.sh next` (or `./scripts/sdlc.sh next`) first so the user sees open gates before advancing.
+3. If the user supplied a target phase, run `./sdlc-spdd/scripts/sdlc.sh advance --to <PHASE>`; otherwise run `./sdlc-spdd/scripts/sdlc.sh advance` (or `./scripts/sdlc.sh advance`).
 4. If advance into `code` fails because canvas readiness is not Ready For Coding, report the CLI error and recommend `/sdlc-spdd-architect` (or `/sdlc-spdd-prompt-update`). Only use `advance --force` when the user explicitly overrides the readiness gate.
 5. If advance fails for other reasons (invalid phase, or no pointer), report the CLI error and do not guess a workaround.
 6. After a successful advance, run `next` again and recommend the assistant command for the new phase.

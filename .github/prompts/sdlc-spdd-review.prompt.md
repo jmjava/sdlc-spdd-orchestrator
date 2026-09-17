@@ -14,7 +14,7 @@ Review code changes against the REASONS Canvas. Do not make code changes unless 
 
 
 1. Gate first: run `./sdlc-spdd/scripts/sdlc.sh gate review --work-id <WORK-ID>` (in the
-   orchestrator repo: `./sdlc-spdd/scripts/sdlc.sh gate ...`; installed projects:
+   orchestrator repo: `./scripts/sdlc.sh gate ...`; installed projects:
    `./sdlc-spdd/scripts/sdlc.sh gate ...`). If it fails, STOP — report the
    missing prerequisite and how to create it (requirements come first, then
    analysis, then the REASONS canvas). Do not draft downstream artifacts from
