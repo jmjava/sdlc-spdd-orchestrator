@@ -13,6 +13,9 @@ on:
       - 'scripts/run-test-suites.sh'
       - 'scripts/check-complexity.py'
       - 'scripts/test-check-complexity.sh'
+      - 'scripts/check-vulture.sh'
+      - 'scripts/test-check-vulture.sh'
+      - 'scripts/vulture-whitelist.py'
       - '.github/workflows/test-sdlc-engine.yml'
   push:
     branches: [main]
@@ -27,6 +30,9 @@ on:
       - 'scripts/run-test-suites.sh'
       - 'scripts/check-complexity.py'
       - 'scripts/test-check-complexity.sh'
+      - 'scripts/check-vulture.sh'
+      - 'scripts/test-check-vulture.sh'
+      - 'scripts/vulture-whitelist.py'
       - '.github/workflows/test-sdlc-engine.yml'
 
 jobs:
@@ -45,6 +51,10 @@ jobs:
         run: python3 -m ruff check --select F,E9 engine/src scripts
       - name: Complexity proving test
         run: bash scripts/test-check-complexity.sh
+      - name: Vulture proving test
+        run: bash scripts/test-check-vulture.sh
+      - name: Vulture dead code
+        run: bash scripts/check-vulture.sh engine/src scripts
       - name: Complexity gate on this diff (CCN>10 / NLOC>80 / CCN rise)
         if: github.event_name == 'pull_request'
         run: |
