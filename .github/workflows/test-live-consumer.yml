@@ -14,6 +14,7 @@ on:
       - 'engine/**'
       - 'templates/**'
       - '.github/workflows/test-live-consumer.yml'
+      - 'tests/test-orch-03-live-consumer-fail-closed.sh'
   push:
     branches: [main]
     paths:
@@ -28,6 +29,11 @@ on:
       - 'engine/**'
       - 'templates/**'
       - '.github/workflows/test-live-consumer.yml'
+      - 'tests/test-orch-03-live-consumer-fail-closed.sh'
+
+concurrency:
+  group: live-consumer-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   # Deterministic seed/flush consumer (no Cursor API key).
@@ -48,6 +54,10 @@ jobs:
           bash -n tests/test-live-consumer-matrix.sh
           bash -n tests/live-consumer/*.sh
           bash -n tests/live-consumer/scenarios/*.sh
+          bash -n tests/test-orch-03-live-consumer-fail-closed.sh
+
+      - name: ORCH-03 missing key is not a skip-PASS; ORCH-04 concurrency
+        run: ./tests/test-orch-03-live-consumer-fail-closed.sh
 
       - name: Run live consumer shell matrix
         run: ./tests/test-live-consumer-matrix.sh
@@ -66,6 +76,21 @@ jobs:
             echo "available=true" >> "$GITHUB_OUTPUT"
           else
             echo "available=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  # ORCH-03: a missing key used to skip the SDK job and leave the workflow green.
+  cursor-sdk-not-skip-pass:
+    name: Live-consumer SDK is not a skip-PASS
+    runs-on: ubuntu-latest
+    needs: cursor-api-key-available
+    steps:
+      - name: Fail when CURSOR_API_KEY is missing
+        env:
+          AVAILABLE: ${{ needs.cursor-api-key-available.outputs.available }}
+        run: |
+          if [[ "${AVAILABLE}" != "true" ]]; then
+            echo "FAIL: CURSOR_API_KEY is unset. Live-consumer SDK is not a skip-PASS." >&2
+            exit 1
           fi
 
   # Real Cursor SDK agents — requires repo secret CURSOR_API_KEY.
