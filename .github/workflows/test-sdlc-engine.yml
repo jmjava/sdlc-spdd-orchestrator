@@ -15,7 +15,7 @@ on:
       - 'scripts/test-check-complexity.sh'
       - 'scripts/check-vulture.sh'
       - 'scripts/test-check-vulture.sh'
-      - 'scripts/vulture-whitelist.py'
+      - 'config/vulture-whitelist.py'
       - '.github/workflows/test-sdlc-engine.yml'
   push:
     branches: [main]
@@ -32,7 +32,7 @@ on:
       - 'scripts/test-check-complexity.sh'
       - 'scripts/check-vulture.sh'
       - 'scripts/test-check-vulture.sh'
-      - 'scripts/vulture-whitelist.py'
+      - 'config/vulture-whitelist.py'
       - '.github/workflows/test-sdlc-engine.yml'
 
 jobs:
