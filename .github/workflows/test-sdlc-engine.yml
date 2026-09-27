@@ -15,6 +15,9 @@ on:
       - 'scripts/test-check-complexity.sh'
       - 'scripts/check-vulture.sh'
       - 'scripts/test-check-vulture.sh'
+      - 'scripts/check-hotspots.py'
+      - 'scripts/test-check-hotspots.sh'
+      - 'scripts/check-mutmut-placeholders.sh'
       - 'config/vulture-whitelist.py'
       - '.github/workflows/test-sdlc-engine.yml'
   push:
@@ -32,6 +35,9 @@ on:
       - 'scripts/test-check-complexity.sh'
       - 'scripts/check-vulture.sh'
       - 'scripts/test-check-vulture.sh'
+      - 'scripts/check-hotspots.py'
+      - 'scripts/test-check-hotspots.sh'
+      - 'scripts/check-mutmut-placeholders.sh'
       - 'config/vulture-whitelist.py'
       - '.github/workflows/test-sdlc-engine.yml'
 
@@ -60,8 +66,17 @@ jobs:
         run: |
           git fetch --no-tags origin "${{ github.base_ref }}"
           python3 scripts/check-complexity.py --base "origin/${{ github.base_ref }}" --paths engine/src scripts
+      - name: Hotspot proving test
+        run: bash scripts/test-check-hotspots.sh
+      - name: Hotspot gate (changed Python file is complex and high-churn)
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch --no-tags origin "${{ github.base_ref }}"
+          python3 scripts/check-hotspots.py --base "origin/${{ github.base_ref }}" --paths engine/src scripts
       - name: Suite 1 — unit
         run: PYTHONPATH=engine/src pytest -q engine/tests_unit
+      - name: Mutation (sdlc_engine.placeholders)
+        run: bash scripts/check-mutmut-placeholders.sh
 
   suite-2-integration:
     runs-on: ubuntu-latest

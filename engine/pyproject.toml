@@ -13,7 +13,7 @@ authors = [{ name = "SDLC-SPDD contributors" }]
 dependencies = []
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0", "pytest-cov>=5.0", "ruff>=0.11", "lizard==1.24.0", "vulture>=2.14"]
+dev = ["pytest>=8.0", "pytest-cov>=5.0", "ruff>=0.11", "lizard==1.24.0", "vulture>=2.14", "mutmut>=3.8"]
 viewer = ["flask>=3"]
 viewer-e2e = ["flask>=3", "pytest-playwright>=0.5.0"]
 
@@ -42,3 +42,14 @@ src = ["src"]
 # Full pyflakes (undefined names, unused imports/variables, redefinitions) plus
 # syntax/IO errors. CHORE-004: the narrower F401,F811 set shipped 9 NameErrors.
 select = ["F", "E9"]
+
+[tool.mutmut]
+source_paths = ["src"]
+only_mutate = ["src/sdlc_engine/placeholders.py"]
+also_copy = ["tests_unit"]
+pytest_add_cli_args = ["-o", "pythonpath=mutants/src"]
+pytest_add_cli_args_test_selection = [
+  "tests_unit/test_engine_shared.py::test_placeholders_treat_na_as_empty",
+  "tests_unit/test_engine_shared.py::test_link_normalizers_share_placeholder_set",
+]
+use_git_change_detection = false
