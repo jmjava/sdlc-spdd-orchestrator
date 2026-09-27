@@ -427,6 +427,97 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+echo "== code-command exit-check parity =="
+# Exit checks start at "Run Validation commands" and run through the Validation
+# verify receipt. Cursor, Claude, and Copilot must agree on that text (step
+# numbers stripped) and on the Required Behavior step count. A one-step drift
+# is a failure. Installed packs are compared after undoing the sdlc.sh path
+# rewrite so they must carry the same exit checks as the templates.
+code_exit_norm() {
+  awk '
+    /^## Required Behavior[[:space:]]*$/ { in_section=1; next }
+    in_section && /^## / { exit }
+    in_section && /^[0-9]+\. Run Validation commands/ { capture=1 }
+    capture {
+      sub(/^[0-9]+\.[[:space:]]*/, "")
+      print
+    }
+  ' "$1" | sed 's#\./sdlc-spdd/scripts/sdlc\.sh#./scripts/sdlc.sh#g'
+}
+
+hosts_agree_on_code_exit() {
+  local cursor="$1" copilot="$2" claude="$3"
+  local a b c ca cb cc
+  a="$(code_exit_norm "${cursor}")"
+  b="$(code_exit_norm "${copilot}")"
+  c="$(code_exit_norm "${claude}")"
+  if [[ -z "${a}" || "${a}" != "${b}" || "${a}" != "${c}" ]]; then
+    return 1
+  fi
+  if ! grep -Fq "verify receipt" <<<"${a}"; then
+    return 1
+  fi
+  if ! grep -Fq -- "--verify-command" <<<"${a}"; then
+    return 1
+  fi
+  if ! grep -Fq -- "--verify-result pass" <<<"${a}"; then
+    return 1
+  fi
+  ca="$(count_rb "${cursor}")"
+  cb="$(count_rb "${copilot}")"
+  cc="$(count_rb "${claude}")"
+  [[ "${ca}" == "${cb}" && "${ca}" == "${cc}" && "${ca}" -ge 21 ]]
+}
+
+CODE_CURSOR="${REPO_ROOT}/templates/cursor/sdlc-spdd-code.md"
+CODE_COPILOT="${REPO_ROOT}/templates/copilot/prompts/sdlc-spdd-code.prompt.md"
+CODE_CLAUDE="${REPO_ROOT}/templates/claude/commands/sdlc-spdd-code.md"
+if hosts_agree_on_code_exit "${CODE_CURSOR}" "${CODE_COPILOT}" "${CODE_CLAUDE}"; then
+  ok "code exit checks match across Cursor/Copilot/Claude templates ($(count_rb "${CODE_CURSOR}") steps)"
+else
+  bad "code exit checks disagree across templates cursor=$(count_rb "${CODE_CURSOR}") copilot=$(count_rb "${CODE_COPILOT}") claude=$(count_rb "${CODE_CLAUDE}")"
+  diff -u <(code_exit_norm "${CODE_CURSOR}") <(code_exit_norm "${CODE_COPILOT}") | head -40 >&2 || true
+fi
+
+INST_CURSOR="${REPO_ROOT}/.cursor/commands/sdlc-spdd-code.md"
+INST_COPILOT="${REPO_ROOT}/.github/prompts/sdlc-spdd-code.prompt.md"
+INST_CLAUDE="${REPO_ROOT}/.claude/commands/sdlc-spdd-code.md"
+if hosts_agree_on_code_exit "${INST_CURSOR}" "${INST_COPILOT}" "${INST_CLAUDE}"; then
+  ok "code exit checks match across installed Cursor/Copilot/Claude packs"
+else
+  bad "code exit checks disagree across installed packs"
+fi
+if [[ "$(code_exit_norm "${CODE_CURSOR}")" == "$(code_exit_norm "${INST_CURSOR}")" \
+   && "$(code_exit_norm "${CODE_COPILOT}")" == "$(code_exit_norm "${INST_COPILOT}")" \
+   && "$(code_exit_norm "${CODE_CLAUDE}")" == "$(code_exit_norm "${INST_CLAUDE}")" ]]; then
+  ok "installed code exit checks match templates"
+else
+  bad "installed code exit checks drifted from templates"
+fi
+
+sabotage="$(mktemp -d)"
+mkdir -p "${sabotage}/cursor" "${sabotage}/copilot" "${sabotage}/claude"
+cp "${CODE_CURSOR}" "${sabotage}/cursor/code.md"
+cp "${CODE_COPILOT}" "${sabotage}/copilot/code.md"
+cp "${CODE_CLAUDE}" "${sabotage}/claude/code.md"
+grep -Fv -- 'verify receipt' "${sabotage}/copilot/code.md" > "${sabotage}/copilot/stripped.md"
+mv "${sabotage}/copilot/stripped.md" "${sabotage}/copilot/code.md"
+if hosts_agree_on_code_exit \
+  "${sabotage}/cursor/code.md" \
+  "${sabotage}/copilot/code.md" \
+  "${sabotage}/claude/code.md"; then
+  bad "code exit parity missed a Copilot pack that dropped the verify receipt"
+else
+  ok "code exit parity fails when one host drops the verify receipt"
+fi
+rm -rf "${sabotage}"
+
+assert_contains "${SPEC_DIR}/lifecycle-code.spec.md" "---BLOCK:shared:Required Behavior---" \
+  "lifecycle-code Required Behavior is one shared block"
+assert_contains "${SPEC_DIR}/lifecycle-code.spec.md" "verify receipt" \
+  "lifecycle-code encodes Validation verify receipt"
+
+# ---------------------------------------------------------------------------
 echo "== Outcome enum lock (prompt-update + retro) =="
 OUTCOME_ENUM='`improved` / `neutral` / `worse` / `unknown`'
 for adapter_file in \

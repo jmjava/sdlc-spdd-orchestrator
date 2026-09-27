@@ -22,9 +22,10 @@ Implement exactly one approved operation from a REASONS Canvas.
 2. Read the REASONS Canvas.
 3. Before implementing, run `sdlc-engine context retrieve --work-id <ID> --kind pitfall --area <area>` (or `spdd_areaLessons`) for known pitfalls in the target code areas — load bodies only for relevant ids via `sdlc-engine context show <record-id>`.
 4. Check Metadata `- Readiness:` (or YAML `readiness:`). Proceed only when it is
-   **Ready For Coding** (`ready-for-coding`). If Needs Analysis, Needs Clarification,
-   Needs Redesign, or Blocked, stop and recommend `/sdlc-spdd-architect` before coding.
-5. Identify the selected task or operation.
+   **Ready For Coding** (canonical `ready-for-coding`). If it is Needs Analysis,
+   Needs Clarification, Needs Redesign, or Blocked, stop and recommend
+   `/sdlc-spdd-architect` (or `/sdlc-spdd-prompt-update`) before changing code.
+5. Identify the selected task.
 6. Implement only that task.
 7. Follow all Norms.
 8. Respect all Safeguards.
@@ -34,22 +35,26 @@ Implement exactly one approved operation from a REASONS Canvas.
 12. Do not add dependencies unless the canvas allows it.
 13. Update task status in the canvas and stage progress evidence via `./sdlc-spdd/scripts/sdlc.sh capture` (session record).
 14. If the requested behavior conflicts with the canvas, stop and recommend `/sdlc-spdd-prompt-update` before changing code.
-15. Optional DIF check (never required). If `$DIF_HOME/scripts/dif-fold.sh` or a
+15. If no task is selected, ask which approved operation to implement before changing code.
+16. Optional DIF check (never required). If `$DIF_HOME/scripts/dif-fold.sh` or a
     sibling `../embabel-dif/scripts/dif-fold.sh` exists, run
     `architect --quiet --canvas` on this Work ID. Exit 1: STOP and recommend
     `/sdlc-spdd-architect` — do not implement. If the script is missing, continue
     — that is not an error. Do not start a JVM from `sdlc.sh next` or `sdlc.sh gate`.
-16. Run Validation commands named on the selected canvas operation. If none,
+17. Run Validation commands named on the selected canvas operation. If none,
     discover the project's documented test/lint/typecheck commands when they
     exist.
-17. On failure: do not mark the T## complete. Return the command output AND
+18. On failure: do not mark the T## complete. Return the command output AND
     the Norm/Safeguard it maps to. Host may retry in-session.
-18. If the same verify command fails twice with the same error, STOP.
+19. If the same verify command fails twice with the same error, STOP.
     Recommend `/sdlc-spdd-prompt-update` or shelf. Do not loop forever.
-19. After edits: `git diff --name-only` must stay within the active T##
+20. After edits: `git diff --name-only` must stay within the active T##
     `Files:` plus test paths. Extra paths: do not mark complete.
-
-If no task is selected, ask the user which operation to implement before changing code.
+21. Do not mark the T## complete without a Validation verify receipt
+    (command, exit, and pass/fail). `./sdlc-spdd/scripts/sdlc.sh capture` in the code
+    phase and `./sdlc-spdd/scripts/sdlc.sh complete` refuse without `--verify-command`,
+    `--verify-exit`, and `--verify-result`. Complete requires
+    `--verify-result pass`.
 
 ## Context Backend (runtime-resolved)
 

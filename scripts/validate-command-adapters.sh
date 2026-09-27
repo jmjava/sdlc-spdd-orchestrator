@@ -320,6 +320,10 @@ check_pack() {
       require_contains "${path}" "do not mark the T## complete" "code fail-closed complete"
       require_contains "${path}" "fails twice with the same error" "code repeated-failure stop"
       require_contains "${path}" "git diff --name-only" "code Files: path allowlist"
+      require_contains "${path}" "verify receipt" "code Validation verify receipt"
+      require_contains "${path}" "--verify-command" "code verify-command flag"
+      require_contains "${path}" "--verify-exit" "code verify-exit flag"
+      require_contains "${path}" "--verify-result pass" "code complete requires pass"
       ;;
     review)
       require_contains "${path}" "Do not make code changes unless explicitly asked." "review guardrail"
@@ -476,7 +480,13 @@ for cmd in "${commands[@]}"; do
     if (( max_steps < 0 || s > max_steps )); then max_steps=${s}; fi
   done
 
-  if (( max_steps - min_steps > 1 )); then
+  # Code-command exit checks must match exactly. Other commands still allow
+  # a one-step host difference.
+  diverge_limit=1
+  if [[ "${cmd}" == "code" ]]; then
+    diverge_limit=0
+  fi
+  if (( max_steps - min_steps > diverge_limit )); then
     echo "Required Behavior step count diverges for '${cmd}': ${steps_summary}" >&2
     failures=$((failures + 1))
   fi
