@@ -1,0 +1,26 @@
+name: Test Guide Helper Pin
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/guide/project-spdd-entities.sh'
+      - 'tests/test-project-spdd-entities-pin.sh'
+      - '.github/workflows/test-project-spdd-entities-pin.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/guide/project-spdd-entities.sh'
+      - 'tests/test-project-spdd-entities-pin.sh'
+      - '.github/workflows/test-project-spdd-entities-pin.yml'
+
+jobs:
+  test-project-spdd-entities-pin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check shell syntax
+        run: bash -n scripts/guide/project-spdd-entities.sh tests/test-project-spdd-entities-pin.sh
+
+      - name: Unreachable Guide hint is the spdd-projection-v3 pin
+        run: ./tests/test-project-spdd-entities-pin.sh
