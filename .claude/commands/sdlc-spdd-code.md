@@ -45,6 +45,11 @@ Your job is to implement exactly one approved operation from a REASONS Canvas.
     Recommend `/sdlc-spdd-prompt-update` or shelf. Do not loop forever.
 20. After edits: `git diff --name-only` must stay within the active T##
     `Files:` plus test paths. Extra paths: do not mark complete.
+21. Do not mark the T## complete without a Validation verify receipt
+    (command, exit, and pass/fail). `./sdlc-spdd/scripts/sdlc.sh capture` in the code
+    phase and `./sdlc-spdd/scripts/sdlc.sh complete` refuse without `--verify-command`,
+    `--verify-exit`, and `--verify-result`. Complete requires
+    `--verify-result pass`.
 
 ## Context Backend (runtime-resolved)
 
