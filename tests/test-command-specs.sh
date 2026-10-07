@@ -293,7 +293,7 @@ assert_contains "${REPO_ROOT}/.cursor/commands/sdlc-spdd-code.md" "Optional DIF 
   "dogfood code has Optional DIF"
 assert_contains "${REPO_ROOT}/.cursor/commands/sdlc-spdd-review.md" "Optional DIF check" \
   "dogfood review has Optional DIF"
-assert_contains "${REPO_ROOT}/.cursor/commands/sdlc-spdd-review.md" "python -m sdlc_engine.canvas" \
+assert_contains "${REPO_ROOT}/.cursor/commands/sdlc-spdd-review.md" "python -m sdlc_engine.review_scope" \
   "dogfood review has full I2 check-operation-diff-scope text"
 assert_contains "${REPO_ROOT}/.cursor/commands/sdlc-spdd-code.md" "./scripts/resolve-context-backend.sh" \
   "dogfood code keeps orchestrator-root resolve-context-backend path"

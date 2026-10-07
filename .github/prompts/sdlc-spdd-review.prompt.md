@@ -54,7 +54,7 @@ Review code changes against the REASONS Canvas. Do not make code changes unless 
     `./scripts/check-operation-diff-scope.sh --work-id <WORK-ID>`
     (orchestrator: `./scripts/check-operation-diff-scope.sh`; installed
     projects: `./sdlc-spdd/scripts/check-operation-diff-scope.sh` or
-    `python -m sdlc_engine.canvas --work-id <WORK-ID>`). Optional
+    `python -m sdlc_engine.review_scope --work-id <WORK-ID>`). Optional
     `--base <ref>` adds `git diff --name-only <ref>...HEAD`. Optional
     `--ops T01,T02` limits Files: to those operations; default is
     the T## under review (in-progress/selected, else the last

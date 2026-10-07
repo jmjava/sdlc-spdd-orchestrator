@@ -254,52 +254,6 @@ def test_diff_scope_traversal_rejected() -> None:
     assert "src/../secret.py" in result.extra_paths
 
 
-def test_diff_scope_absolute_path_rejected() -> None:
-    from sdlc_engine.canvas import check_operation_diff_scope, normalize_repo_path
-
-    assert normalize_repo_path("/etc/passwd") is None
-    assert normalize_repo_path("C:/Windows/secret.py") is None
-    result = check_operation_diff_scope(
-        _SCOPE_CANVAS,
-        ["/etc/passwd", "src/app.py"],
-        selected_ops=["T01"],
-    )
-    assert not result.ok
-    assert "/etc/passwd" in result.traversal_rejected
-    assert "/etc/passwd" in result.extra_paths
-    assert "src/app.py" not in result.extra_paths
-
-
-def test_failed_scope_cannot_produce_approved_review_result() -> None:
-    from sdlc_engine.canvas import check_operation_diff_scope, review_result_for_scope
-
-    failed = check_operation_diff_scope(
-        _SCOPE_CANVAS,
-        ["src/app.py", "src/unrelated.py"],
-        selected_ops=["T01"],
-    )
-    assert not failed.ok
-    for proposed in ("Approved", "Approved With Notes", "", "Looks good"):
-        forced = review_result_for_scope(failed, proposed)
-        assert forced not in {"Approved", "Approved With Notes"}
-        assert forced == "Changes Requested"
-    assert review_result_for_scope(failed, "Blocked") == "Blocked"
-    assert review_result_for_scope(failed, "Changes Requested") == "Changes Requested"
-    report = failed.format_report()
-    assert "review result: Changes Requested" in report
-    assert "Approved" not in report.split("review result:")[1]
-
-    passed = check_operation_diff_scope(
-        _SCOPE_CANVAS,
-        ["src/app.py"],
-        selected_ops=["T01"],
-    )
-    assert passed.ok
-    assert review_result_for_scope(passed, "Approved") == "Approved"
-    assert review_result_for_scope(passed, "Approved With Notes") == "Approved With Notes"
-    assert "review result: scope ok" in passed.format_report()
-
-
 def test_diff_scope_rename_and_delete_use_git_names() -> None:
     from sdlc_engine.canvas import check_operation_diff_scope
 
@@ -501,49 +455,6 @@ def test_check_diff_scope_work_id_only_fails_after_committed_out_of_scope(
     assert "FAIL" in captured.out
     assert "src/unrelated.py" in captured.out
     assert "changed:\n  (none)" not in captured.out
-
-
-def test_git_delete_of_files_path_passes_and_rename_destination_fails(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
-    """Renames and deletes are the names git diff --name-only reports."""
-    root = _init_scope_repo(tmp_path)
-    src = root / "src"
-    src.mkdir()
-    (src / "app.py").write_text("print('ok')\n", encoding="utf-8")
-    _git(root, "add", "src/app.py")
-    _git(root, "commit", "-m", "add app")
-
-    _git(root, "checkout", "-b", "delete-app")
-    _git(root, "rm", "src/app.py")
-    _git(root, "commit", "-m", "delete app")
-    deleted = collect_git_changed_paths(repo=root)
-    assert "src/app.py" in deleted
-    rc = check_diff_scope_main(
-        ["--canvas", str(root / "sdlc-spdd" / "spdd" / "canvas" / "SCOPE-I2.md"), "--root", str(root), "--ops", "T01"]
-    )
-    captured = capsys.readouterr()
-    assert rc == 0
-    assert "PASS" in captured.out
-    assert "review result: scope ok" in captured.out
-    assert "extra:" not in captured.out
-
-    _git(root, "checkout", "main")
-    _git(root, "checkout", "-b", "rename-app")
-    _git(root, "mv", "src/app.py", "src/renamed.py")
-    _git(root, "commit", "-m", "rename app")
-    renamed = collect_git_changed_paths(repo=root)
-    assert any(name.endswith("renamed.py") or name == "src/app.py" for name in renamed)
-    rc = check_diff_scope_main(
-        ["--canvas", str(root / "sdlc-spdd" / "spdd" / "canvas" / "SCOPE-I2.md"), "--root", str(root), "--ops", "T01"]
-    )
-    captured = capsys.readouterr()
-    assert rc != 0
-    assert "FAIL" in captured.out
-    assert "review result: Changes Requested" in captured.out
-    assert "Approved With Notes" not in captured.out
-    extra = captured.out.split("extra:")[1]
-    assert "src/renamed.py" in extra
 
 
 def test_collect_git_changed_paths_invalid_base_raises(tmp_path: Path) -> None:

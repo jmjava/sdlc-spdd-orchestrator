@@ -74,6 +74,6 @@ for arg in "$@"; do
   esac
 done
 
-# Invoke the function directly so `python -m sdlc_engine.canvas` does not
+# Invoke the function directly so `python -m sdlc_engine.review_scope` does not
 # re-exec a module already imported via sdlc_engine.__init__ → workflow.
-exec "${PY}" -c "from sdlc_engine.canvas import check_diff_scope_main; raise SystemExit(check_diff_scope_main())" "$@"
+exec "${PY}" -c "from sdlc_engine.review_scope import main; raise SystemExit(main())" "$@"
