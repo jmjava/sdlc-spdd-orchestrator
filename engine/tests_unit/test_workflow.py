@@ -32,7 +32,9 @@ def test_resume_advance_shelf_next(tmp_path: Path) -> None:
             kind="session",
             work_id=work_id,
             body="T01 complete — workflow test",
-            verify=VerifyReceipt(command="pytest", exit=0, result="pass"),
+            verify=VerifyReceipt(
+                command="pytest", exit=0, result="pass", executed=True
+            ),
         )
     )
     eng = WorkflowEngine(Project(root))

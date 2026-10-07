@@ -87,7 +87,7 @@ work_id="FEAT-022-i1-fail"
 setup_feature "${T}"
 sdlc "${T}" pointer set "${work_id}" >/dev/null
 if out="$(sdlc "${T}" complete --summary "T01 complete" \
-  --verify-command "pytest" --verify-exit 1 --verify-result fail 2>&1)"; then
+  --verify-command "false" --verify-exit 1 --verify-result fail 2>&1)"; then
   bad "complete with fail receipt should refuse: ${out}"
 else
   if grep -q 'verify.result=pass' <<< "${out}"; then
@@ -103,7 +103,7 @@ work_id="FEAT-023-i1-ok"
 setup_feature "${T}"
 sdlc "${T}" pointer set "${work_id}" >/dev/null
 if sdlc "${T}" capture --phase code --summary "T01 complete" \
-  --verify-command "pytest tests/test_foo.py" \
+  --verify-command "true" \
   --verify-exit 0 \
   --verify-result pass >/dev/null; then
   ok "capture with receipt succeeds"
@@ -112,13 +112,35 @@ else
 fi
 stage="${T}/sdlc-spdd/.sdlc/staged/lessons.jsonl"
 if [[ -f "${stage}" ]] \
-  && grep -q '"command": "pytest tests/test_foo.py"' "${stage}" \
+  && grep -q '"command": "true"' "${stage}" \
   && grep -q '"exit": 0' "${stage}" \
   && grep -q '"result": "pass"' "${stage}" \
+  && grep -q '"executed": true' "${stage}" \
   && grep -q '"verify"' "${stage}"; then
-  ok "staged LessonRecord has command/exit/pass-fail"
+  ok "staged LessonRecord has command/exit/pass-fail from the run"
 else
-  bad "staged record missing verify object: $(cat "${stage}" 2>/dev/null || true)"
+  bad "staged record missing executed verify object: $(cat "${stage}" 2>/dev/null || true)"
+fi
+
+echo "== test_claimed_exit_that_disagrees_with_the_run_refuses =="
+T="${WORK}/claim-mismatch"
+work_id="FEAT-027-i1-claim"
+setup_feature "${T}"
+sdlc "${T}" pointer set "${work_id}" >/dev/null
+if out="$(sdlc "${T}" complete --summary "T01 complete" \
+  --verify-command "false" --verify-exit 0 --verify-result pass 2>&1)"; then
+  bad "claimed pass on a failing command should refuse: ${out}"
+else
+  if grep -q 'does not match the command that ran' <<< "${out}"; then
+    ok "claimed exit that disagrees with the run refuses"
+  else
+    bad "mismatch message missing: ${out}"
+  fi
+fi
+if [[ -f "${T}/sdlc-spdd/.sdlc/staged/lessons.jsonl" ]]; then
+  bad "mismatched claim must not stage a lesson"
+else
+  ok "mismatched claim left no staged lesson"
 fi
 
 echo "== test_complete_with_pass_receipt_succeeds =="

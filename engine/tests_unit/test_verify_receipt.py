@@ -37,19 +37,23 @@ def test_receipt_round_trips_command_exit_result() -> None:
         body="T01 complete",
         source="capture",
         phase="code",
-        verify=VerifyReceipt(command="pytest tests/test_foo.py", exit=0, result="pass"),
+        verify=VerifyReceipt(
+            command="pytest tests/test_foo.py", exit=0, result="pass", executed=True
+        ),
     )
     payload = rec.to_json()
     assert payload["verify"] == {
         "command": "pytest tests/test_foo.py",
         "exit": 0,
         "result": "pass",
+        "executed": True,
     }
     assert payload["schema"] == SCHEMA_WITH_VERIFY
     restored = LessonRecord.from_json(payload)
     assert restored.verify.command == "pytest tests/test_foo.py"
     assert restored.verify.exit == 0
     assert restored.verify.result == "pass"
+    assert restored.verify.executed is True
 
 
 def test_from_capture_refuses_missing_receipt() -> None:
@@ -68,7 +72,10 @@ def test_dummy_lesson_is_not_a_validation_receipt() -> None:
         phase="plan",
     )
     assert ledger_has_validation_receipt([dummy]) is False
-    dummy.verify = VerifyReceipt(command="pytest", exit=0, result="pass")
+    claimed = VerifyReceipt(command="pytest", exit=0, result="pass", executed=False)
+    dummy.verify = claimed
+    assert ledger_has_validation_receipt([dummy]) is False
+    dummy.verify = VerifyReceipt(command="pytest", exit=0, result="pass", executed=True)
     assert ledger_has_validation_receipt([dummy]) is True
 
 
