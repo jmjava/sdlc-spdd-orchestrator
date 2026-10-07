@@ -79,17 +79,19 @@ Do not make code changes unless explicitly asked.
     `./scripts/check-operation-diff-scope.sh --work-id <WORK-ID>`
     (orchestrator: `./scripts/check-operation-diff-scope.sh`; installed
     projects: `./sdlc-spdd/scripts/check-operation-diff-scope.sh` or
-    `python -m sdlc_engine.canvas --work-id <WORK-ID>`). Optional
+    `python -m sdlc_engine.review_scope --work-id <WORK-ID>`). Optional
     `--base <ref>` adds `git diff --name-only <ref>...HEAD`. Optional
     `--ops T01,T02` limits Files: to those operations; default is
     the T## under review (in-progress/selected, else the last
     completed T## — not the union of every completed T##). Changed paths
-    must be a subset of those Files: plus allowed test paths
+    must be a subset of those Files: plus explicitly allowed test paths
     (`tests/**`, `engine/tests_unit/**`, `engine/tests_integration/**`,
-    `engine/tests_e2e/**`, or basename `test_*.py` / `*_test.py` /
-    `*.spec.md`). Exit 1 (extra production paths or `..` traversal):
-    do not set Result to Approved or Approved With Notes — use Changes
-    Requested or Blocked and list the extra paths. Hunk-level C-DRIFT
+    `engine/tests_e2e/**`, basename `test_*.py` / `*_test.py`, or the
+    documented exception `docs/review.spec.md`). The check prints
+    `review result:`. Exit 1 (extra production paths, absolute paths, or
+    `..` traversal): do not set Result to Approved or Approved With Notes —
+    copy the printed `review result:` line and list the extra paths.
+    Path-level automation is not semantic hunk review. Hunk-level C-DRIFT
     inside an allowed file remains a human finding.
 ---END---
 ---BLOCK:shared:Context Backend (runtime-resolved)---

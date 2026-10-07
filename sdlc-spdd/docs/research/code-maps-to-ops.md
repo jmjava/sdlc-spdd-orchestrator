@@ -19,9 +19,9 @@ This is **not** proof that the diff implements the operation. It is a contract t
 - or basename `test_*.py` / `*_test.py`
 - or the documented exception `docs/review.spec.md` (not any `*.spec.md`)
 
-Repo-relative paths only; `..` traversal is rejected. Renames and deletes are the names git reports. Extra production paths: review cannot be **Approved** or **Approved With Notes**.
+Repo-relative paths only. Absolute paths and `..` traversal are rejected. Renames and deletes are the names git reports. `review_result_for_scope` in `engine/src/sdlc_engine/review_scope.py` prints `review result:`. Extra paths force **Changes Requested** (or a proposed **Blocked**). They cannot produce **Approved** or **Approved With Notes**. A passing check prints `review result: scope ok` and leaves **Approved With Notes** available. The path comparison stays in `canvas.py`; that file is not edited for this result line.
 
-This is **not** `gate_check(code)` and is not an `ENFORCED_GATES` entry.
+This is **not** `gate_check(code)` and is not an `ENFORCED_GATES` entry. Path-level automation is not semantic hunk review.
 
 ## Human remainder (not enforced here)
 
