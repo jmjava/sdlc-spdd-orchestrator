@@ -520,11 +520,15 @@ class DiffScopeResult:
         if self.extra_paths:
             lines.append("extra:")
             lines.extend(f"  {path}" for path in self.extra_paths)
-        if self.ok:
-            lines.append("review result: scope ok")
-        else:
-            lines.append(f"review result: {review_result_for_scope(self)}")
+        lines.append(scope_review_result_line(self))
         return "\n".join(lines) + "\n"
+
+
+def scope_review_result_line(scope: DiffScopeResult) -> str:
+    """Printed ``review result:`` line. Passing checks do not pick a label."""
+    if scope.ok:
+        return "review result: scope ok"
+    return f"review result: {review_result_for_scope(scope)}"
 
 
 def review_result_for_scope(scope: DiffScopeResult, proposed: str | None = None) -> str:
