@@ -31,6 +31,40 @@ persist_sdlc_engine_path() {
   done
 }
 
+# Real checkouts must leave git, gh, repository sdlc.sh, and pytest usable.
+# Stub proving tests omit scripts/sdlc.sh and engine/pyproject.toml.
+# Long-running processes stay out of install (use start or terminals).
+verify_baseline_toolchain() {
+  local root="$1"
+  local missing=()
+  local tool
+  if [[ ! -f "${root}/scripts/sdlc.sh" || ! -f "${root}/engine/pyproject.toml" ]]; then
+    return 0
+  fi
+  command -v git >/dev/null 2>&1 || missing+=(git)
+  command -v gh >/dev/null 2>&1 || missing+=(gh)
+  if ((${#missing[@]} > 0)); then
+    if [[ "${SDLC_INSTALL_SKIP_SYSTEM_DEPS:-}" == "1" ]] || ! command -v sudo >/dev/null 2>&1; then
+      echo "error: baseline tools missing: ${missing[*]}" >&2
+      exit 1
+    fi
+    sudo apt-get update -qq
+    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y "${missing[@]}"
+    for tool in "${missing[@]}"; do
+      if ! command -v "${tool}" >/dev/null 2>&1; then
+        echo "error: ${tool} is required for the SDLC-SPDD baseline" >&2
+        exit 1
+      fi
+    done
+  fi
+  bash "${root}/scripts/sdlc.sh" next >/dev/null
+  if [[ ! -x "${root}/.venv/bin/pytest" ]]; then
+    echo "error: pytest missing after setup-engine-venv.sh (editable ./engine[dev])" >&2
+    exit 1
+  fi
+  "${root}/.venv/bin/pytest" --version >/dev/null
+}
+
 if [[ "${1:-}" == "--path-only" || "${SDLC_INSTALL_PATH_ONLY:-}" == "1" ]]; then
   persist_sdlc_engine_path "${HOME}"
   exit 0
@@ -61,3 +95,5 @@ if [[ ! -x "${ROOT}/.venv/bin/sdlc-engine" ]]; then
   exit 1
 fi
 "${ROOT}/.venv/bin/sdlc-engine" --help >/dev/null
+
+verify_baseline_toolchain "${ROOT}"

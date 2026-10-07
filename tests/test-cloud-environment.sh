@@ -119,6 +119,10 @@ fi
 
 assert_contains "${INSTALL_SH}" "setup-engine-venv.sh" "install.sh calls setup-engine-venv.sh"
 assert_contains "${INSTALL_SH}" "sdlc-engine" "install.sh verifies sdlc-engine"
+assert_contains "${INSTALL_SH}" "scripts/sdlc.sh" "install.sh checks repository sdlc.sh"
+assert_contains "${INSTALL_SH}" "pytest" "install.sh checks pytest from the dev extra"
+assert_contains "${INSTALL_SH}" "command -v gh" "install.sh checks gh"
+assert_contains "${INSTALL_SH}" "command -v git" "install.sh checks git"
 assert_contains "${INSTALL_SH}" "Never writes .git/hooks" "install.sh documents no git hooks"
 assert_absent "${INSTALL_SH}" ".git/hooks/" "install.sh does not write .git/hooks"
 

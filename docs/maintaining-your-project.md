@@ -267,8 +267,21 @@ Builds. This repo may set the key `true` to match that default; omitting
 it has the same schema default on a default-base environment.
 
 Local Agent chat uses your existing checkout and venv; it does not need
-that Environment. Dashboard multi-repo Environments are a different
-object: they scope Automations, not this file.
+that Environment.
+
+This committed file is a single-repository environment. Cursor resolves
+`.cursor/environment.json` for this repo before a personal or team saved
+environment. `install` brings up Python 3.12 and editable `./engine[dev]`
+through `scripts/setup-engine-venv.sh` (that script also installs the
+viewer extra) and checks that `sdlc-engine`, `scripts/sdlc.sh`, `git`,
+`gh`, and `pytest` are usable. There is no `start` or `terminals` entry.
+Long-running processes stay out of `install`. Guide is optional and is
+not required for this baseline boot.
+
+A dashboard-managed multi-repository Environment is a different object.
+Create it in the Cloud Agents dashboard by selecting more than one
+repository; Automations reuse that repo group. Do not put that repository
+list into Uberorchbot.
 
 Secrets stay in Cursor Environment settings, never in `environment.json`.
 `init-project.sh` / `upgrade-project.sh` do not copy this file into
