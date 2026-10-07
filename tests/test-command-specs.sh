@@ -122,6 +122,12 @@ assert_contains "${SPEC_DIR}/lifecycle-code.spec.md" "fails twice with the same 
   "lifecycle-code encodes repeated-failure stop"
 assert_contains "${SPEC_DIR}/lifecycle-code.spec.md" "git diff --name-only" \
   "lifecycle-code encodes Files: path allowlist"
+assert_contains "${SPEC_DIR}/lifecycle-code.spec.md" "explicitly allowed" \
+  "lifecycle-code encodes explicitly allowed tests"
+assert_contains "${SPEC_DIR}/lifecycle-code.spec.md" "incomplete work" \
+  "lifecycle-code encodes extra paths as incomplete work"
+assert_contains "${SPEC_DIR}/lifecycle-code.spec.md" "not a warning" \
+  "lifecycle-code encodes extra paths as not a warning"
 assert_contains "${SPEC_DIR}/lifecycle-architect.spec.md" "Optional DIF check" \
   "lifecycle-architect encodes optional DIF gate"
 assert_contains "${SPEC_DIR}/lifecycle-architect.spec.md" "architect --quiet" \
@@ -181,6 +187,12 @@ for adapter_file in \
     "repeated-failure stop in ${adapter_file#${REPO_ROOT}/templates/}"
   assert_contains "${adapter_file}" "git diff --name-only" \
     "Files: path allowlist in ${adapter_file#${REPO_ROOT}/templates/}"
+  assert_contains "${adapter_file}" "explicitly allowed" \
+    "explicitly allowed tests in ${adapter_file#${REPO_ROOT}/templates/}"
+  assert_contains "${adapter_file}" "incomplete work" \
+    "incomplete work in ${adapter_file#${REPO_ROOT}/templates/}"
+  assert_contains "${adapter_file}" "not a warning" \
+    "not a warning in ${adapter_file#${REPO_ROOT}/templates/}"
 done
 
 for adapter_file in \
@@ -463,6 +475,19 @@ hosts_agree_on_code_exit() {
   if ! grep -Fq -- "--verify-result pass" <<<"${a}"; then
     return 1
   fi
+  local phrase
+  for phrase in \
+    "Validation commands named" \
+    "do not mark the T## complete" \
+    "fails twice with the same error" \
+    "incomplete work" \
+    "explicitly allowed" \
+    "not a warning"
+  do
+    if ! grep -Fq -- "${phrase}" <<<"${a}"; then
+      return 1
+    fi
+  done
   ca="$(count_rb "${cursor}")"
   cb="$(count_rb "${copilot}")"
   cc="$(count_rb "${claude}")"
@@ -511,6 +536,30 @@ else
   ok "code exit parity fails when one host drops the verify receipt"
 fi
 rm -rf "${sabotage}"
+
+for phrase in \
+  "Validation commands named" \
+  "do not mark the T## complete" \
+  "fails twice with the same error" \
+  "incomplete work"
+do
+  sabotage="$(mktemp -d)"
+  mkdir -p "${sabotage}/cursor" "${sabotage}/copilot" "${sabotage}/claude"
+  cp "${CODE_CURSOR}" "${sabotage}/cursor/code.md"
+  cp "${CODE_COPILOT}" "${sabotage}/copilot/code.md"
+  cp "${CODE_CLAUDE}" "${sabotage}/claude/code.md"
+  grep -Fv -- "${phrase}" "${sabotage}/claude/code.md" > "${sabotage}/claude/stripped.md"
+  mv "${sabotage}/claude/stripped.md" "${sabotage}/claude/code.md"
+  if hosts_agree_on_code_exit \
+    "${sabotage}/cursor/code.md" \
+    "${sabotage}/copilot/code.md" \
+    "${sabotage}/claude/code.md"; then
+    bad "code exit parity missed a Claude pack that dropped: ${phrase}"
+  else
+    ok "code exit parity fails when one host drops: ${phrase}"
+  fi
+  rm -rf "${sabotage}"
+done
 
 assert_contains "${SPEC_DIR}/lifecycle-code.spec.md" "---BLOCK:shared:Required Behavior---" \
   "lifecycle-code Required Behavior is one shared block"
