@@ -32,6 +32,10 @@ class VerifyReceipt:
             (self.result or "").strip()
         )
 
+    def ran(self) -> bool:
+        """Receipt filled by executing the command, not by a typed exit."""
+        return self.present() and self.executed
+
     def validate(self) -> None:
         command = (self.command or "").strip()
         if not command:
@@ -127,6 +131,6 @@ def ledger_has_validation_receipt(records: Iterable[Any]) -> bool:
     """
     for rec in records:
         verify = getattr(rec, "verify", None)
-        if isinstance(verify, VerifyReceipt) and verify.present() and verify.executed:
+        if isinstance(verify, VerifyReceipt) and verify.ran():
             return True
     return False
