@@ -98,7 +98,9 @@ Per **target** application (and a separate env for this orchestrator):
 | MCP (`spdd_*` only if Guide is live) | `mcpServerAllowlist` |
 | Network | egress policy on the environment |
 
-Prefer a **repo-managed** `.cursor/environment.json` on each target so branches and PRs get the same platform. Dashboard Environments remain the place to attach **multiple** repos to an Automation fleet. Those are different objects: committed JSON is one repo’s bootstrap; the dashboard list is Automation scope.
+Prefer a **repo-managed** `.cursor/environment.json` on each target so branches and PRs get the same platform. That committed file is one repository’s bootstrap (`install`, and `start` or `terminals` only for processes that must stay up). Cursor resolves it before a personal or team saved environment.
+
+A dashboard-managed multi-repository Environment is a different object. You select the repo group in the Cloud Agents dashboard; Automations reuse that group. Do not put the repository list into Uberorchbot. This orchestrator’s baseline does not require Guide: there is no `start` or `terminals` entry, and a boot succeeds without it.
 
 U2 in this orchestrator is done: `.cursor/environment.json` runs `.cursor/install.sh` so Cloud Agents boot “SDLC-SPDD ready.” `agentCanUpdateSnapshot` means “Whether the agent can update the snapshot” (Cursor schema); public Setup/Builds docs do not say it enables Builds.
 
