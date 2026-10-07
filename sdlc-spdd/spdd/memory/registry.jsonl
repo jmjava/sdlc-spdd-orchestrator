@@ -50,3 +50,4 @@
 {"event": "claim", "work_id": "REF-003-retire-bash-workflow-dual-path", "status": "active", "phase": "code", "operation": "T06", "owner": "Cursor Agent", "note": "", "ts": "2026-09-14T05:50:26Z"}
 {"event": "release", "work_id": "REF-003-retire-bash-workflow-dual-path", "status": "shelved", "phase": "code", "operation": "", "owner": "Cursor Agent", "note": "REF-003 complete; PR #321", "ts": "2026-09-14T06:04:35Z"}
 {"event": "refresh", "work_id": "REF-003-retire-bash-workflow-dual-path", "status": "done", "phase": "code", "operation": "", "owner": "Cursor Agent", "note": "canvas Final Status: Complete", "ts": "2026-09-14T06:05:00Z"}
+{"event": "claim", "work_id": "FEAT-018-kasana-code-command-overlay", "status": "active", "phase": "code", "operation": "T01", "owner": "John Menke", "note": "promoted-from:LOCAL-001-kasana-code-command-overlay", "ts": "2026-10-07T23:20:02Z"}

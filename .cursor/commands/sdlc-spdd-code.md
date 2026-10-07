@@ -43,13 +43,15 @@ Your job is to implement exactly one approved operation from a REASONS Canvas.
     the Norm/Safeguard it maps to. Host may retry in-session.
 19. If the same verify command fails twice with the same error, STOP.
     Recommend `/sdlc-spdd-prompt-update` or shelf. Do not loop forever.
-20. After edits: `git diff --name-only` must stay within the active T##
-    `Files:` plus test paths. Extra paths: do not mark complete.
+20. After edits: compare `git diff --name-only` with the active T##
+    `Files:` plus explicitly allowed test paths. Extra paths are incomplete work,
+    not a warning that can be ignored. Do not mark the T## complete
+    until those paths are restored or dropped.
 21. Do not mark the T## complete without a Validation verify receipt
     (command, exit, and pass/fail). `./sdlc-spdd/scripts/sdlc.sh capture` in the code
-    phase and `./sdlc-spdd/scripts/sdlc.sh complete` refuse without `--verify-command`,
-    `--verify-exit`, and `--verify-result`. Complete requires
-    `--verify-result pass`.
+    phase and `./sdlc-spdd/scripts/sdlc.sh complete` execute `--verify-command` and
+    store the observed exit. A claimed `--verify-exit` or `--verify-result`
+    must match that run. Complete requires `--verify-result pass`.
 
 ## Context Backend (runtime-resolved)
 

@@ -4,6 +4,9 @@
 
 | Area | Kind | Work ID | Phase | Timestamp | Source | Entry |
 |------|------|---------|-------|-----------|--------|-------|
+| (none) | pitfall | FEAT-018-kasana-code-command-overlay | retro | 2026-10-07T23:23:05Z | capture | Pitfall: FEAT-018-kasana-code-command-overlay |
+| (none) | pattern | FEAT-018-kasana-code-command-overlay | retro | 2026-10-07T23:23:05Z | capture | Pattern: FEAT-018-kasana-code-command-overlay |
+| (none) | decision | FEAT-018-kasana-code-command-overlay | retro | 2026-10-07T23:23:05Z | capture | Decision: FEAT-018-kasana-code-command-overlay |
 | tests/test- | pitfall | REF-003-retire-bash-workflow-dual-path | code | 2026-09-14T06:00:59Z | capture | Pitfall: REF-003-retire-bash-workflow-dual-path |
 | tests/test- | pattern | REF-003-retire-bash-workflow-dual-path | code | 2026-09-14T06:00:59Z | capture | Pattern: REF-003-retire-bash-workflow-dual-path |
 | tests/test- | decision | REF-003-retire-bash-workflow-dual-path | code | 2026-09-14T06:00:59Z | capture | Decision: REF-003-retire-bash-workflow-dual-path |
