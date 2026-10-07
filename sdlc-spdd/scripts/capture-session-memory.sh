@@ -29,10 +29,10 @@ Options:
   --summary <text>      Session summary
   --summary-file <path> Read session summary from a file; use - for stdin
   --validation <text>   Validation or tests performed (prose; not an I1 receipt)
-  --verify-command <c>  I1 receipt: command that was run
-  --verify-exit <n>     I1 receipt: integer exit code
-  --verify-result <v>   I1 receipt: pass|fail
-  --complete            Mark T## complete (requires a passing verify receipt)
+  --verify-command <c>  I1 receipt: command to execute (exit is observed)
+  --verify-exit <n>     Optional claimed exit; must match the run
+  --verify-result <v>   Optional claimed pass|fail; must match the run
+  --complete            Mark T## complete (requires a passing executed receipt)
   --decisions <text>    Architecture or product decisions
   --pitfalls <text>     Pitfalls to remember
   --patterns <text>     Reusable patterns to remember
@@ -78,6 +78,7 @@ METRIC_REVIEW_CYCLES=""
 VERIFY_COMMAND=""
 VERIFY_EXIT=""
 VERIFY_RESULT=""
+VERIFY_EXECUTED=0
 COMPLETE=0
 
 while [[ $# -gt 0 ]]; do
@@ -165,8 +166,9 @@ if [[ "${PHASE}" == "resume" ]]; then
   )"
 fi
 
-# I1 machine artifact: code-phase capture and --complete need command/exit/result.
-# Title/body --validation prose is not a verify receipt.
+# I1 machine artifact: code-phase capture and --complete execute --verify-command
+# and store the observed exit. A claimed exit is not evidence the command ran.
+# Title/body --validation prose is not a verify receipt. gate_check stays enter-phase.
 if [[ "${COMPLETE}" -eq 1 ]]; then
   if [[ -z "${PHASE}" || "${PHASE}" == "resume" ]]; then
     PHASE="code"
@@ -176,22 +178,20 @@ needs_verify_receipt=0
 if [[ "${COMPLETE}" -eq 1 || "${PHASE}" == "code" ]]; then
   needs_verify_receipt=1
 fi
-if [[ "${needs_verify_receipt}" -eq 1 ]]; then
-  if [[ -z "${VERIFY_COMMAND}" || -z "${VERIFY_EXIT}" || -z "${VERIFY_RESULT}" ]]; then
-    echo "Error: verify receipt required (command, exit, pass/fail). Refuse capture/complete without it." >&2
-    echo "Pass --verify-command, --verify-exit, and --verify-result." >&2
-    exit 1
-  fi
+if [[ "${needs_verify_receipt}" -eq 1 && -z "${VERIFY_COMMAND}" ]]; then
+  echo "Error: verify receipt required (command, exit, pass/fail). Refuse capture/complete without it." >&2
+  echo "Pass --verify-command. The command is executed; exit and pass/fail come from that run." >&2
+  exit 1
 fi
-if [[ -n "${VERIFY_COMMAND}${VERIFY_EXIT}${VERIFY_RESULT}" ]]; then
-  if [[ -z "${VERIFY_COMMAND}" || -z "${VERIFY_EXIT}" || -z "${VERIFY_RESULT}" ]]; then
-    echo "Error: verify receipt required (command, exit, pass/fail). Refuse capture/complete without it." >&2
-    exit 1
-  fi
-  if [[ ! "${VERIFY_EXIT}" =~ ^-?[0-9]+$ ]]; then
-    echo "Error: --verify-exit must be an integer" >&2
-    exit 1
-  fi
+if [[ -n "${VERIFY_EXIT}${VERIFY_RESULT}" && -z "${VERIFY_COMMAND}" ]]; then
+  echo "Error: verify receipt required (command, exit, pass/fail). Refuse capture/complete without it." >&2
+  exit 1
+fi
+if [[ -n "${VERIFY_EXIT}" && ! "${VERIFY_EXIT}" =~ ^-?[0-9]+$ ]]; then
+  echo "Error: --verify-exit must be an integer" >&2
+  exit 1
+fi
+if [[ -n "${VERIFY_RESULT}" ]]; then
   case "${VERIFY_RESULT}" in
     pass|fail) ;;
     *)
@@ -199,6 +199,32 @@ if [[ -n "${VERIFY_COMMAND}${VERIFY_EXIT}${VERIFY_RESULT}" ]]; then
       exit 1
       ;;
   esac
+fi
+if [[ -n "${VERIFY_COMMAND}" ]]; then
+  echo "verify: running: ${VERIFY_COMMAND}" >&2
+  set +e
+  (
+    cd "${TARGET}"
+    bash -c "${VERIFY_COMMAND}"
+  )
+  observed_exit=$?
+  set -e
+  if [[ "${observed_exit}" -eq 0 ]]; then
+    observed_result="pass"
+  else
+    observed_result="fail"
+  fi
+  if [[ -n "${VERIFY_EXIT}" && "${VERIFY_EXIT}" != "${observed_exit}" ]]; then
+    echo "Error: claimed --verify-exit ${VERIFY_EXIT} does not match the command that ran (exit ${observed_exit})." >&2
+    exit 1
+  fi
+  if [[ -n "${VERIFY_RESULT}" && "${VERIFY_RESULT}" != "${observed_result}" ]]; then
+    echo "Error: claimed --verify-result ${VERIFY_RESULT} does not match the command that ran (${observed_result})." >&2
+    exit 1
+  fi
+  VERIFY_EXIT="${observed_exit}"
+  VERIFY_RESULT="${observed_result}"
+  VERIFY_EXECUTED=1
 fi
 if [[ "${COMPLETE}" -eq 1 && "${VERIFY_RESULT}" != "pass" ]]; then
   echo "Error: complete requires verify.result=pass (do not mark T## complete on fail)" >&2
@@ -413,12 +439,14 @@ if [[ -n "${VERIFY_COMMAND}" ]]; then
     VERIFY_COMMAND="${VERIFY_COMMAND}" \
     VERIFY_EXIT="${VERIFY_EXIT}" \
     VERIFY_RESULT="${VERIFY_RESULT}" \
+    VERIFY_EXECUTED="${VERIFY_EXECUTED}" \
     "${SDLC_PY}" - <<'PY'
 import json, os
 print(json.dumps({
     "command": os.environ["VERIFY_COMMAND"],
     "exit": int(os.environ["VERIFY_EXIT"]),
     "result": os.environ["VERIFY_RESULT"],
+    "executed": os.environ.get("VERIFY_EXECUTED") == "1",
 }, ensure_ascii=False))
 PY
   )"

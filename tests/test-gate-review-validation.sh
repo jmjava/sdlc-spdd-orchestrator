@@ -97,7 +97,7 @@ setup_feature "${T}"
 write_canvas "${T}" "${work_id}"
 sdlc "${T}" pointer set "${work_id}" >/dev/null
 if sdlc "${T}" capture --phase code --summary "T01 complete" \
-  --verify-command "pytest tests/test_foo.py" \
+  --verify-command "true" \
   --verify-exit 0 \
   --verify-result pass >/dev/null; then
   ok "code capture with receipt succeeds"

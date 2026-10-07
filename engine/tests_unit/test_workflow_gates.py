@@ -277,7 +277,9 @@ def test_gate_review_accepts_validation_receipt(
     _stage_record(
         p.root,
         wid,
-        verify=VerifyReceipt(command="pytest tests/test_foo.py", exit=0, result="pass"),
+        verify=VerifyReceipt(
+            command="pytest tests/test_foo.py", exit=0, result="pass", executed=True
+        ),
     )
     ok, failures = eng.gate_check(wid, "review")
     assert ok and not failures

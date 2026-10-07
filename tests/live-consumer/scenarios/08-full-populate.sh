@@ -71,7 +71,7 @@ if "${SCRIPTS}/capture-session-memory.sh" \
   --phase code \
   --summary "${SUMMARY}" \
   --validation "${VALIDATION}" \
-  --verify-command "./tests/test-live-consumer-matrix.sh" \
+  --verify-command "true" \
   --verify-exit 0 \
   --verify-result pass \
   --decisions "${DECISIONS}" \

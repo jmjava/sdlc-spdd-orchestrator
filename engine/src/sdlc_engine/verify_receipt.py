@@ -24,6 +24,8 @@ class VerifyReceipt:
     command: str = ""
     exit: int | None = None
     result: str = ""
+    # True only when capture/complete executed ``command`` and stored that exit.
+    executed: bool = False
 
     def present(self) -> bool:
         return bool(self.command.strip()) and self.exit is not None and bool(
@@ -67,6 +69,7 @@ class VerifyReceipt:
             "command": self.command,
             "exit": int(self.exit) if self.exit is not None else None,
             "result": self.result,
+            "executed": bool(self.executed),
         }
 
     @classmethod
@@ -86,7 +89,8 @@ class VerifyReceipt:
                 exit_code = None
         if result and result not in VERIFY_RESULTS:
             result = ""
-        return cls(command=command, exit=exit_code, result=result)
+        executed = data.get("executed") is True
+        return cls(command=command, exit=exit_code, result=result, executed=executed)
 
     @classmethod
     def from_capture(
@@ -95,6 +99,7 @@ class VerifyReceipt:
         command: str | None = None,
         exit: Any = None,
         result: str | None = None,
+        executed: bool = False,
         required: bool = False,
         require_pass: bool = False,
     ) -> "VerifyReceipt":
@@ -102,6 +107,7 @@ class VerifyReceipt:
             command=(command or "").strip(),
             exit=None if exit in (None, "") else exit,
             result=(result or "").strip().lower(),
+            executed=bool(executed),
         )
         if required or receipt.present() or require_pass:
             if require_pass:
@@ -112,13 +118,15 @@ class VerifyReceipt:
 
 
 def ledger_has_validation_receipt(records: Iterable[Any]) -> bool:
-    """True when any ledger row has a present I1 verify receipt.
+    """True when any ledger row has an executed I1 verify receipt.
 
     A dummy lesson (title/body, including ``--validation`` prose) is not
-    evidence that Validation ran.
+    evidence that Validation ran. A command/exit/result object with
+    ``executed`` false is a claim, not a run. ``gate_check`` stays an
+    enter-phase predicate; this helper is what review and api-test consult.
     """
     for rec in records:
         verify = getattr(rec, "verify", None)
-        if isinstance(verify, VerifyReceipt) and verify.present():
+        if isinstance(verify, VerifyReceipt) and verify.present() and verify.executed:
             return True
     return False

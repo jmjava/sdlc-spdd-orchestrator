@@ -126,7 +126,7 @@ sdlc_lesson_id() {
 
 # Build a lesson JSON object via python3 (handles escaping).
 # Optional METRICS_JSON env carries a structured metrics object (FEAT-015).
-# Optional VERIFY_JSON env carries the I1 receipt {command, exit, result}.
+# Optional VERIFY_JSON env carries the I1 receipt {command, exit, result, executed}.
 sdlc_build_lesson_json() {
   local kind="$1" work_id="$2" area="$3" phase="$4" ts="$5" title="$6" body="$7" source="$8"
   local keywords_csv="${9:-}"
@@ -190,6 +190,7 @@ if raw_verify:
             "command": str(verify["command"]),
             "exit": int(verify["exit"]),
             "result": str(verify["result"]),
+            "executed": verify.get("executed") is True,
         }
         payload["schema"] = max(int(payload.get("schema") or 1), 3)
 print(json.dumps(payload, ensure_ascii=False))
