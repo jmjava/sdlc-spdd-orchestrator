@@ -201,55 +201,123 @@ briefs move to `.sdlc/sessions/archive/`).
 
 ## Optional local verification hooks
 
-SDLC-SPDD install does **not** create or overwrite git hooks. Targets that want
-fail-closed lint, typecheck, or tests should opt in with **their** documented
-commands — do not treat any language-specific command as a framework default.
+SDLC-SPDD install does **not** create or overwrite git hooks. A pre-commit
+hook is an opt-in file the repository copies for itself. It is not a
+framework gate, and install does not assume one language stack.
 
-Record the authoritative commands on each canvas operation (`Validation:` /
-validation steps). After the Kasana I1 overlay, `/sdlc-spdd-code` (local Agent
-chat or Cloud Agent) must run those commands before marking a T## complete.
-If the canvas is silent, the agent should discover the project's documented
-test/lint/typecheck commands when they exist. On failure, do not mark the
-operation complete.
+Targets that want fail-closed lint, typecheck, test, or architecture checks
+opt in with commands **that repository already documents**. The snippets
+below are patterns. They are not commands to run as written.
 
-Example pre-commit (copy and replace the placeholder with a command your repo
-already documents):
+### Command-discovery rule
+
+Pre-commit and CI use the same rule:
+
+1. Commands listed on the active canvas operation under `Validation:` are authoritative.
+2. When `Validation:` is empty, use the lint, typecheck, and test commands this repository already documents (its README, its CI, or its package scripts). Include an architecture command only when this repository already documents one.
+3. Omit a role this repository does not have. Leave the gap empty. A missing role stays missing.
+
+### Recording `Validation:`
+
+Write those commands on the operation. The angle-bracket text is a slot for a command this repository already documents:
+
+```markdown
+### T01 - Task name
+
+- Status: Not Started
+- Files:
+- Tests:
+- Validation:
+  - lint: <command this repository already documents>
+  - typecheck: <command this repository already documents>
+  - test: <command this repository already documents>
+  - architecture: <include only when this repository already documents one>
+```
+
+`/sdlc-spdd-code` (local Agent chat or a Cloud Agent) uses that list at exit:
+
+- It runs the `Validation:` commands named on the selected operation.
+- When none are named, it discovers this project's documented test, lint, and typecheck commands when they exist.
+- On failure it leaves the task incomplete. It returns the command output and the Norm or Safeguard the failure maps to. The host may retry in the same session.
+- When the same verify command fails twice with the same error, it stops and recommends `/sdlc-spdd-prompt-update` or shelf.
+- It leaves the task incomplete until `sdlc.sh capture` or `sdlc.sh complete` has executed `--verify-command` and stored a verify receipt (command, exit, and pass/fail). A claimed exit is not a receipt. Complete requires a passing result.
+- Paths outside the operation `Files:` list and explicitly allowed tests are incomplete work.
+- Those checks stay in the code command. `gate_check` stays an enter-phase check.
+
+Skipping the hook leaves this exit behavior in place.
+
+### Example pre-commit
+
+Copy this pattern and insert commands this repository already documents. An empty command list exits 1, so an unfilled copy does not report success.
 
 ```bash
 #!/usr/bin/env bash
+# Opt-in only. SDLC-SPDD install does not write this file into .git/hooks.
 set -euo pipefail
-# Replace with this repository's documented verify command, e.g. the
-# script named in CI or the canvas Validation: line.
-"${PROJECT_VERIFY_CMD:-./scripts/test-ci-local.sh}"
+
+# Same discovery rule as CI. Uncomment a line only to paste a command
+# this repository already documents. Leave a role commented out when
+# the repository has no such command.
+commands=(
+  # "<documented lint command>"
+  # "<documented typecheck command>"
+  # "<documented test command>"
+  # "<documented architecture command>"
+)
+
+if [[ ${#commands[@]} -eq 0 ]]; then
+  echo "pre-commit: add this repository's documented commands before enabling the hook" >&2
+  exit 1
+fi
+
+for cmd in "${commands[@]}"; do
+  echo "+ ${cmd}"
+  bash -c "${cmd}"
+done
 ```
 
-Install only if you want it. `init-project.sh` / `upgrade-project.sh` copy
-the sample into `sdlc-spdd/scripts/hooks/` and **never** write `.git/hooks/`.
+`init-project.sh` and `upgrade-project.sh` copy
+`templates/agent-context/hooks/pre-commit.sample` into
+`sdlc-spdd/scripts/hooks/` and never write `.git/hooks`. The shipped
+sample falls back to `./scripts/test-ci-local.sh` when `PROJECT_VERIFY_CMD`
+is unset. That path belongs to this orchestrator checkout. Replace it
+with the commands above before the sample becomes a hook.
 
 ```bash
 # installed target
 cp sdlc-spdd/scripts/hooks/pre-commit.sample .git/hooks/pre-commit
 chmod +x .git/hooks/pre-commit
+# Then replace the sample fallback in .git/hooks/pre-commit
+# with the command list above.
 
 # this orchestrator checkout
 cp templates/agent-context/hooks/pre-commit.sample .git/hooks/pre-commit
 chmod +x .git/hooks/pre-commit
+# Then replace the sample fallback in .git/hooks/pre-commit
+# with the command list above.
 ```
 
-Example CI job (same rule: call the project's own verify, not a guessed
-universal command):
+### Example CI
+
+Paste the same commands into this repository's workflow. Delete a step when the repository does not document that role.
 
 ```yaml
-# illustrative — paste into *your* workflow and keep your real command
-- name: Project verify
-  run: ./scripts/test-ci-local.sh
+# illustrative — a workflow this framework does not install
+- name: Lint
+  run: <documented lint command>
+- name: Typecheck
+  run: <documented typecheck command>
+- name: Test
+  run: <documented test command>
+- name: Architecture
+  run: <documented architecture command>
 ```
 
-To opt out, omit the hook and leave CI as-is. That does not weaken
-`/sdlc-spdd-code`: the code command still must run named Validation when
-present. Architecture checkers (ArchUnit, import-linter, and the like)
-belong in the target's Norms and in *that* repo's tests, not as an
-orchestrator-forced hook.
+### Failure and opt-out
+
+A hook or CI failure means a command this repository already documents failed. Fix the change, or fix that documented command.
+
+To opt out, leave `.git/hooks/pre-commit` untouched and leave this repository's CI as it already is. Opting out of the hook leaves `/sdlc-spdd-code` in place: named `Validation:` still runs, and an empty `Validation:` still discovers documented test, lint, and typecheck commands. An architecture checker stays on `Validation:` and in that repository's own tests when the repository already has one.
 
 ## Cloud Environment vs local checkout
 
