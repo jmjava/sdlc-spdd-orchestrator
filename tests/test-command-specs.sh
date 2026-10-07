@@ -148,6 +148,17 @@ assert_contains "${SPEC_DIR}/lifecycle-review.spec.md" "T## under review" \
   "lifecycle-review default --ops is the T## under review, not every T##"
 assert_contains "${SPEC_DIR}/lifecycle-review.spec.md" "do not set Result to Approved or Approved With Notes" \
   "lifecycle-review fail-closes Approved on extra paths"
+assert_contains "${SPEC_DIR}/lifecycle-review.spec.md" "docs/review.spec.md" \
+  "lifecycle-review names the documented spec exception"
+assert_contains "${SPEC_DIR}/lifecycle-review.spec.md" "review result:" \
+  "lifecycle-review copies the printed review result"
+assert_contains "${SPEC_DIR}/lifecycle-review.spec.md" "not semantic hunk review" \
+  "lifecycle-review keeps path check distinct from hunk review"
+if grep -Fq '`*.spec.md`' "${SPEC_DIR}/lifecycle-review.spec.md"; then
+  bad "lifecycle-review still allows any *.spec.md"
+else
+  ok "lifecycle-review does not allow any *.spec.md"
+fi
 assert_contains "${SPEC_DIR}/workflow-advance.spec.md" "Ready For Coding" \
   "workflow-advance encodes readiness gate"
 assert_contains "${SPEC_DIR}/workflow-claim.spec.md" "--jira" \
@@ -215,8 +226,17 @@ for adapter_file in \
     "Files: diff-scope check in ${adapter_file#${REPO_ROOT}/templates/}"
   assert_contains "${adapter_file}" "do not set Result to Approved or Approved With Notes" \
     "fail-closed approval in ${adapter_file#${REPO_ROOT}/templates/}"
+  assert_contains "${adapter_file}" "docs/review.spec.md" \
+    "documented spec exception in ${adapter_file#${REPO_ROOT}/templates/}"
+  assert_contains "${adapter_file}" "review result:" \
+    "printed review result in ${adapter_file#${REPO_ROOT}/templates/}"
+  assert_contains "${adapter_file}" "not semantic hunk review" \
+    "path check is not hunk review in ${adapter_file#${REPO_ROOT}/templates/}"
   assert_contains "${adapter_file}" "T## under review" \
     "default --ops is T## under review in ${adapter_file#${REPO_ROOT}/templates/}"
+  if grep -Fq '`*.spec.md`' "${adapter_file}"; then
+    bad "any *.spec.md still allowed in ${adapter_file#${REPO_ROOT}/templates/}"
+  fi
 done
 
 # ---------------------------------------------------------------------------

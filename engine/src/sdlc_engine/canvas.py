@@ -227,6 +227,10 @@ ALLOWED_TEST_DIR_PREFIXES: tuple[str, ...] = (
 )
 ALLOWED_REVIEW_SPEC_PATHS: frozenset[str] = frozenset({"docs/review.spec.md"})
 
+# Review Result values. A failed path check cannot produce the approved ones.
+APPROVED_REVIEW_RESULTS: frozenset[str] = frozenset({"Approved", "Approved With Notes"})
+SCOPE_FAIL_REVIEW_RESULT = "Changes Requested"
+
 _COMPLETE_STATUS_MARKERS = ("complete", "done")
 _ACTIVE_REVIEW_STATUS_MARKERS = ("selected", "in progress")
 
@@ -516,7 +520,28 @@ class DiffScopeResult:
         if self.extra_paths:
             lines.append("extra:")
             lines.extend(f"  {path}" for path in self.extra_paths)
+        if self.ok:
+            lines.append("review result: scope ok")
+        else:
+            lines.append(f"review result: {review_result_for_scope(self)}")
         return "\n".join(lines) + "\n"
+
+
+def review_result_for_scope(scope: DiffScopeResult, proposed: str | None = None) -> str:
+    """Review Result a failed path check is allowed to produce.
+
+    Extra paths, absolute paths, and ``..`` traversal cannot yield
+    ``Approved`` or ``Approved With Notes``. A proposed ``Changes Requested``
+    or ``Blocked`` is kept. A passing check keeps the proposed result
+    (default ``Approved``). This is path names only, not hunk review, and
+    ``gate_check`` does not call it.
+    """
+    text = (proposed or "").strip()
+    if scope.ok:
+        return text or "Approved"
+    if text in {"Changes Requested", "Blocked"}:
+        return text
+    return SCOPE_FAIL_REVIEW_RESULT
 
 
 def check_operation_diff_scope(

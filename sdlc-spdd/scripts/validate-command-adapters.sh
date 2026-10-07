@@ -333,6 +333,9 @@ check_pack() {
       require_contains "${path}" "Ready For Coding" "review readiness finding"
       require_contains "${path}" "check-operation-diff-scope.sh" "review Files: diff-scope check"
       require_contains "${path}" "do not set Result to Approved or Approved With Notes" "review fail-closed approval"
+      require_contains "${path}" "docs/review.spec.md" "review documented test-path exception"
+      require_contains "${path}" "review result:" "review prints forced result"
+      require_contains "${path}" "not semantic hunk review" "review path check is not hunk review"
       ;;
     sync)
       require_contains "${path}" "Do not implement code unless explicitly asked." "sync guardrail"

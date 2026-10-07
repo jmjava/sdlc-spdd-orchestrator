@@ -32,9 +32,11 @@ Compare git changed paths to coded operations' Files: plus allowed test paths.
   -h, --help       Show this help
 
 Exit 0 when every changed path is in Files: or an allowed test path.
-Exit 1 when extra production paths exist, a path traverses with "..",
-or git collection fails (missing git, invalid --base, no merge-base).
-Prints extra and allowed lists.
+Exit 1 when extra production paths exist, a path is absolute or traverses
+with "..", or git collection fails (missing git, invalid --base, no merge-base).
+Prints extra and allowed lists, plus `review result:`.
+Exit 1 prints Changes Requested. That line cannot be Approved or
+Approved With Notes. Path names are not hunk review.
 
 Collection is uncommitted (`git diff --name-only HEAD`) plus committed
 since the resolved base (`git diff --name-only <base>...HEAD`).
