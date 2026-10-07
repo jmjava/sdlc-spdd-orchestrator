@@ -543,7 +543,7 @@ def review_result_for_scope(scope: DiffScopeResult, proposed: str | None = None)
     text = (proposed or "").strip()
     if scope.ok:
         return text or "Approved"
-    if text in {"Changes Requested", "Blocked"}:
+    if text in ({"Changes Requested", "Blocked"} - APPROVED_REVIEW_RESULTS):
         return text
     return SCOPE_FAIL_REVIEW_RESULT
 
