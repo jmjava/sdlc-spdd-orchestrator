@@ -10,6 +10,12 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
+from .files_grammar import (
+    parse_files_tokens,
+    scope_allow_tokens,
+    token_allows_path,
+)
+
 
 def final_status_text(canvas_path: Path) -> str:
     if not canvas_path.is_file():
@@ -336,22 +342,6 @@ def normalize_repo_path(raw: str) -> str | None:
     return "/".join(parts)
 
 
-def parse_files_tokens(rest: str) -> tuple[str, ...]:
-    """Split a ``- Files:`` remainder into path tokens (backticks or commas)."""
-    quoted = re.findall(r"`([^`]+)`", rest)
-    raw_tokens = quoted if quoted else [part.strip() for part in rest.split(",")]
-    out: list[str] = []
-    seen: set[str] = set()
-    for raw in raw_tokens:
-        tok = raw.strip().strip("`").strip("'\"").strip()
-        if not tok or tok.lower() in {"and", "or"}:
-            continue
-        if tok not in seen:
-            seen.add(tok)
-            out.append(tok)
-    return tuple(out)
-
-
 def is_allowed_test_path(rel: str) -> bool:
     """True when ``rel`` matches the documented review-time test-path rule."""
     if rel == "tests" or any(
@@ -368,14 +358,12 @@ def is_allowed_test_path(rel: str) -> bool:
 
 
 def path_allowed_by_files(rel: str, files: set[str]) -> bool:
-    """Exact Files: match, or a descendant of a Files: directory entry."""
-    if rel in files:
-        return True
-    for allowed in files:
-        prefix = allowed.rstrip("/")
-        if prefix and rel.startswith(prefix + "/"):
-            return True
-    return False
+    """Path entry, directory, bare basename/stem, or a prose Files: phrase.
+
+    ``README`` matches ``README.md``. ``DOC-001 spec`` matches a path that
+    contains ``DOC-001``. ``check_p0_artifacts.py`` matches that basename.
+    """
+    return any(token_allows_path(rel, token) for token in files)
 
 
 def _is_complete_status(status: str) -> bool:
@@ -524,15 +512,18 @@ def check_operation_diff_scope(
     changed_paths: Sequence[str],
     *,
     selected_ops: Sequence[str] | None = None,
+    related_canvases: Sequence[str] | None = None,
 ) -> DiffScopeResult:
     """Compare changed paths to coded operations' Files: plus allowed test paths.
 
-    Extra production paths or ``..`` traversal => ``ok`` is False. Renames and
-    deletes are the path names supplied (whatever ``git diff --name-only``
-    reported). Not used by ``gate_check(code)``.
+    Prose Files: tokens (``README``, ``DOC-001 spec``, a bare basename) count.
+    A work-id phrase also uses that work's canvas Files: tokens when
+    ``related_canvases`` is provided. Extra paths or ``..`` traversal =>
+    ``ok`` is False. Not used by ``gate_check(code)``.
     """
     op_map = operation_files(canvas_text, selected_ops=selected_ops)
     allowed = allowed_files_from_operations(op_map)
+    allowed.update(scope_allow_tokens(canvas_text, op_map.values(), related_canvases))
     changed_norm: list[str] = []
     traversal: list[str] = []
     extra: list[str] = []
