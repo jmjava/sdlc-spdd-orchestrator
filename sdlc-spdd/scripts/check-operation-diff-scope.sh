@@ -6,6 +6,9 @@
 #
 # Allow rule (in addition to canvas Files: on the T## under review —
 # in-progress/selected, else the last completed T##; not every T##):
+#   Files: prose counts: bare README/CHANGELOG (filename stem), a work-id
+#   phrase (DOC-001 spec), and a bare basename (check_p0_artifacts.py).
+#   A work-id phrase also uses that work's canvas Files: tokens.
 #   - paths under tests/, engine/tests_unit/, engine/tests_integration/,
 #     or engine/tests_e2e/
 #   - basename matching test_*.py or *_test.py

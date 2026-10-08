@@ -19,6 +19,7 @@ from .canvas import (
     check_operation_diff_scope,
     collect_git_changed_paths,
 )
+from .files_grammar import load_canvas_texts
 
 APPROVED_REVIEW_RESULTS: frozenset[str] = frozenset({"Approved", "Approved With Notes"})
 SCOPE_FAIL_REVIEW_RESULT = "Changes Requested"
@@ -89,6 +90,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         canvas_path.read_text(encoding="utf-8"),
         changed,
         selected_ops=selected,
+        related_canvases=load_canvas_texts(root),
     )
     sys.stdout.write(format_scope_report(result))
     return 0 if result.ok else 1
