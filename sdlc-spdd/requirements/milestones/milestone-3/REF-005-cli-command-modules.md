@@ -21,7 +21,7 @@ related: []
 
 **Work ID:** REF-005-cli-command-modules  
 **Milestone:** Milestone 3 — One flow on storage v3  
-**Status:** To Do  
+**Status:** In Progress  
 **Priority / size:** P1 / M  
 **Date:** 2026-09-13  
 **Beck stage:** make it right (one engine, one persistence model, aligned docs/tests)
@@ -54,9 +54,9 @@ cli_parser imports every handler; handlers print as their API; importing the CLI
 
 ## Acceptance Criteria
 
-- [ ] `python -c 'import sdlc_engine.cli'` imports no Flask, sqlite3, or urllib modules (test)
-- [ ] No cmd_* function exceeds CCN 10
-- [ ] tests/test-sdlc-engine-shim.sh and unit CLI tests pass
+- [x] `python -c 'import sdlc_engine.cli'` imports no Flask, sqlite3, or urllib modules (test)
+- [x] No cmd_* function exceeds CCN 10
+- [x] tests/test-sdlc-engine-shim.sh and unit CLI tests pass
 
 ## Non-Goals
 
