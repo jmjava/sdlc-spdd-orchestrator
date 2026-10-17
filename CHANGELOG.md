@@ -50,6 +50,12 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- REF-005: `sdlc-engine` handlers live in `sdlc_engine.commands/<verb>` and
+  return `CommandResult` instead of printing. `import sdlc_engine.cli` no
+  longer loads Flask, sqlite3, or urllib HTTP clients. Package `__init__`
+  exports `__version__` only. `issue_tracker.py` and `cli_commands.py` are
+  removed; `canvas.py` library helpers raise `ValueError` instead of
+  `SystemExit`. Command names and flags are unchanged.
 - REF-003: `scripts/sdlc.sh` is a thin dispatcher that requires Python 3.12 and
   an importable `sdlc_engine`, with no bash fallback. `SDLC_ENGINE=shell` and
   `SDLC_GATE_ENGINE=shell` now exit non-zero instead of selecting a second
