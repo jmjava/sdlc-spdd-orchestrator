@@ -88,4 +88,19 @@ if python3 "$CHECK" --repo "$TMP" --base HEAD~1 --paths . --fraction 0.10; then
   exit 1
 fi
 
+# Churn ranks from --base: a branch that adds many new files must not lower the
+# top-10% cutoff far enough to drag a borderline complex file into its own hot set.
+BASE="$(git -C "$TMP" rev-parse HEAD)"
+printf '\n# touch borderline\n' >> "$TMP/cold_complex.py"
+for i in $(seq 1 40); do
+  printf 'def added_%s():\n    return %s\n' "$i" "$i" > "$TMP/added_${i}.py"
+  git -C "$TMP" add "added_${i}.py"
+done
+git -C "$TMP" add cold_complex.py
+git_commit "split into many new modules"
+if ! python3 "$CHECK" --repo "$TMP" --base "$BASE" --paths . --fraction 0.10; then
+  echo "expected PASS: new files in the diff must not redefine the top churn set" >&2
+  exit 1
+fi
+
 echo "test-check-hotspots: PASS"

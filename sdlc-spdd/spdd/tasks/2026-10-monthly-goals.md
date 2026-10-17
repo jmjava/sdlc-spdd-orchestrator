@@ -71,9 +71,9 @@ Each task below is one Work ID (requirement stub under `sdlc-spdd/requirements/m
   - [ ] no function in `installer/` over 80 NLOC or CCN 10
   - [ ] integration + Vue3 Playwright pass unchanged; installer coverage ≥ 90 %
 - [ ] **REF-005** One module per CLI command; result objects, not prints — M
-  - [ ] `import sdlc_engine.cli` loads no Flask / sqlite3 / urllib (test)
-  - [ ] no `cmd_*` over CCN 10; no `SystemExit` in library modules
-  - [ ] `cli.py` re-exports and `issue_tracker.py` shim deleted
+  - [x] `import sdlc_engine.cli` loads no Flask / sqlite3 / urllib (test)
+  - [x] no `cmd_*` over CCN 10; no `SystemExit` in library modules
+  - [x] `cli.py` re-exports and `issue_tracker.py` shim deleted
 - [ ] **REF-006** Typed storage records; atomic, locked JSONL appends — M
   - [ ] `RegistryEvent`, `PersistResult` dataclasses; one `LEDGER_KINDS`
   - [ ] `io_util.append_jsonl_atomic` with lock used by ledger stage and registry

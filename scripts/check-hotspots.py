@@ -8,6 +8,11 @@ Code check; this script does not replace it.
 
 A complex file outside the top churn set does not fail. A frequently changed
 file that is not complex does not fail. Untouched files do not fail.
+
+Churn is ranked from --base, not from HEAD: which files are hotspots is a
+property of the history being changed. Ranking at HEAD let a branch redefine
+its own top set, so splitting one module into many new files lowered the top
+10% cutoff and pulled borderline legacy files in.
 """
 
 from __future__ import annotations
@@ -34,8 +39,8 @@ def load_complexity():
     return module
 
 
-def python_change_counts(repo: Path, paths: list[str]) -> dict[str, int]:
-    log = git("log", "--name-only", "--pretty=format:", "--", *paths, cwd=repo)
+def python_change_counts(repo: Path, rev: str, paths: list[str]) -> dict[str, int]:
+    log = git("log", rev, "--name-only", "--pretty=format:", "--", *paths, cwd=repo)
     counts: dict[str, int] = {}
     for line in log.splitlines():
         rel = line.strip().replace("\\", "/")
@@ -68,7 +73,11 @@ def max_metrics(rows: list[dict[str, str]]) -> tuple[int, int]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--base", default="origin/main", help="git ref to compare against")
+    parser.add_argument(
+        "--base",
+        default="origin/main",
+        help="git ref to diff against and to rank change frequency from",
+    )
     parser.add_argument("--repo", default=".", help="repository root")
     parser.add_argument("--ccn", type=int, default=10)
     parser.add_argument("--nloc", type=int, default=80)
@@ -94,7 +103,7 @@ def main() -> int:
     try:
         complexity = load_complexity()
         files = complexity.changed_files(repo, args.base, args.paths, {".py"})
-        counts = python_change_counts(repo, args.paths)
+        counts = python_change_counts(repo, args.base, args.paths)
         hot, threshold = top_change_set(counts, args.fraction)
         for rel in sorted(set(files) & hot):
             src = complexity.file_at(repo, "HEAD", rel) or ""

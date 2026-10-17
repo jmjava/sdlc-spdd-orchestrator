@@ -69,7 +69,7 @@ Or through the `sdlc.sh` dispatcher, which always runs this engine:
 | `sunset` | Close-out snapshot: GitHub PR + issue + commits + Jira → lesson ledger |
 | `viewer` | ADF WYSIWYG editor for checked-in `adf/*.json` (optional `[viewer]` / Flask) |
 | `installer` / `console` / `dashboard` | **EXPERIMENTAL** ops console: install/upgrade, SQLite, rollback, Guide+Neo4j, ADF viewer lifecycle (optional `[viewer]` / Flask) |
-| `cli` / `cli_commands` / `cli_parser` | `sdlc-engine` / `python -m sdlc_engine` |
+| `cli` / `cli_parser` / `commands/` | `sdlc-engine` / `python -m sdlc_engine` (`CommandResult` per verb) |
 
 Two local GUIs + Guide map: [docs/ops-console.md](../docs/ops-console.md)
 (Guide pin for console dogfood: **`jmjava/orch-guide`** tag **`sdlc-spdd-projection-v2`**).  

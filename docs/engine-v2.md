@@ -23,9 +23,9 @@ engine/
   pyproject.toml
   README.md
   src/sdlc_engine/
-    cli.py              # argparse CLI entry (sdlc-engine)
-    cli_commands.py     # command handlers
-    cli_parser.py       # argparse builders
+    cli.py              # argparse CLI entry (sdlc-engine); emits CommandResult
+    cli_parser.py       # argparse builders; loads command modules in build_parser()
+    commands/           # one module per verb: register() + run() -> CommandResult
     timeutil.py         # shared UTC stamps
     io_util.py          # JSON/path helpers
     placeholders.py     # TBD/TODO/NONE/N/A sentinels

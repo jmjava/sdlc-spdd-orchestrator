@@ -33,7 +33,7 @@ P0 — one flow (do first, in order):
 P1 — make the one flow maintainable:
 
 - [ ] REF-004-split-installer-blueprints
-- [ ] REF-005-cli-command-modules
+- [ ] REF-005-cli-command-modules (In Progress)
 - [ ] REF-006-storage-records-and-atomic-appends
 - [ ] REF-007-single-guide-transport
 - [ ] REF-008-console-viewer-hardening
