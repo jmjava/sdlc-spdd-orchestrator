@@ -7,7 +7,7 @@
 - Status: In Progress
 - Readiness: Ready For Coding
 - Created: 2026-10-17
-- Updated: 2026-10-17
+- Updated: 2026-10-18
 - Milestone: milestone-3
 - Priority / size: P1 / M
 - Depends on: REF-003-retire-bash-workflow-dual-path (Complete)
@@ -37,6 +37,7 @@ print-handler file.
 
 - [x] `python -c 'import sdlc_engine.cli'` imports no Flask, sqlite3, or urllib modules (test)
 - [x] No `cmd_*` function exceeds CCN 10
+- [x] No function in `commands/` exceeds CCN 10, and the diff raises no CCN
 - [x] `tests/test-sdlc-engine-shim.sh` and unit CLI tests pass
 - [x] Command names and flags unchanged
 - [x] `cli.py` has no `cmd_*` re-exports; `issue_tracker.py` is deleted
@@ -70,6 +71,7 @@ print-handler file.
 - `engine/tests_unit/test_cli_import.py` (new)
 - `engine/tests_unit/test_engine_shared.py`
 - `engine/tests_unit/test_cli.py`, `test_cli_shell.py`
+- `scripts/check-hotspots.py`, `scripts/test-check-hotspots.sh`
 - `docs/engine-v2.md`, `engine/README.md`, `CHANGELOG.md`
 
 ## A - Approach
@@ -116,6 +118,7 @@ Assumption: `from sdlc_engine.cli import build_parser, main` stays public.
 - `engine/src/sdlc_engine/canvas.py`
 - `engine/src/sdlc_engine/issues.py`
 - `engine/tests_unit/test_engine_shared.py`
+- `scripts/check-hotspots.py`, `scripts/test-check-hotspots.sh`
 - `docs/engine-v2.md`, `engine/README.md`, `CHANGELOG.md`
 - This canvas, the requirement, `MILESTONE-3.md` when Complete
 
@@ -175,6 +178,29 @@ Assumption: `from sdlc_engine.cli import build_parser, main` stays public.
 - Tests: `tests/test-sdlc-engine-shim.sh`
 - Validation: `bash tests/test-sdlc-engine-shim.sh`
 
+### T04 - Clear the suite-1 complexity and hotspot gates
+
+- Status: Complete
+- Description: `check-complexity.py` failed the split on three new
+  `context.py` handlers over CCN 10 and on two CCN rises. Add
+  `arg_str`/`arg_int`/`arg_flag`/`arg_list` to `commands/util.py` so option
+  reads cost no complexity; move the registrar loop to
+  `_register_subcommands` and the `--changed` choice to
+  `_resolve_changed_paths`. Widen `test_cli_import.py` from `run()` only to
+  every function in `commands/`, counting what lizard counts. Rank
+  `check-hotspots.py` churn from `--base`: 36 new modules dropped the top 10%
+  cutoff from 9 commits to 8, pulling `canvas.py` and `issues.py` in over
+  pre-existing complexity this Work ID must not touch.
+- Files: `engine/src/sdlc_engine/commands/util.py`,
+  `engine/src/sdlc_engine/commands/context.py`,
+  `engine/src/sdlc_engine/cli_parser.py`,
+  `engine/src/sdlc_engine/canvas.py`,
+  `engine/tests_unit/test_cli_import.py`,
+  `scripts/check-hotspots.py`, `scripts/test-check-hotspots.sh`,
+  `CHANGELOG.md`, this canvas
+- Tests: both engine suites, the three proving tests, both diff gates
+- Validation: `python3 scripts/check-complexity.py --base origin/main --paths engine/src scripts` and `python3 scripts/check-hotspots.py --base origin/main --paths engine/src scripts`
+
 ## N - Norms
 
 - One approved operation per commit
@@ -213,5 +239,6 @@ stderr when extras are absent.
 ## Quality gates
 
 - No `cmd_*` CCN > 10
+- No function in `commands/` over CCN 10; no CCN rise in the diff
 - `ruff` on touched engine modules
 - Shim + focused pytest green before marking a T## complete

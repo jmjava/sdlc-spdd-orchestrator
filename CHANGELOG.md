@@ -55,7 +55,14 @@ All notable changes to this project will be documented in this file.
   longer loads Flask, sqlite3, or urllib HTTP clients. Package `__init__`
   exports `__version__` only. `issue_tracker.py` and `cli_commands.py` are
   removed; `canvas.py` library helpers raise `ValueError` instead of
-  `SystemExit`. Command names and flags are unchanged.
+  `SystemExit`. Command names and flags are unchanged. `commands/util.py`
+  exposes `arg_str` / `arg_int` / `arg_flag` / `arg_list` so option reads do
+  not spend cyclomatic complexity.
+- `check-hotspots.py` ranks change frequency from `--base` instead of `HEAD`,
+  so a branch no longer helps decide its own top-churn set. Adding many new
+  modules used to lower the top 10% cutoff and fail the gate on untouched
+  legacy complexity. A file that is hot in the base and complex still fails
+  when the diff touches it.
 - REF-003: `scripts/sdlc.sh` is a thin dispatcher that requires Python 3.12 and
   an importable `sdlc_engine`, with no bash fallback. `SDLC_ENGINE=shell` and
   `SDLC_GATE_ENGINE=shell` now exit non-zero instead of selecting a second
