@@ -1,4 +1,4 @@
-"""Argparse surface for sdlc-engine. Command modules load inside build_parser()."""
+"""Argparse surface for sdlc-engine. Command modules load inside _register_subcommands()."""
 
 from __future__ import annotations
 
@@ -17,8 +17,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Project root (default: SDLC_ROOT or git toplevel). --target is an alias.",
     )
     p.add_argument("--version", action="store_true", help="Print engine version")
-    sub = p.add_subparsers(dest="command")
+    _register_subcommands(p.add_subparsers(dest="command"))
+    return p
 
+
+def _register_subcommands(sub: argparse._SubParsersAction) -> None:
     from .commands.advance import register as register_advance
     from .commands.archive import register as register_archive
     from .commands.claim import register as register_claim
@@ -89,4 +92,3 @@ def build_parser() -> argparse.ArgumentParser:
         register_template,
     ):
         register(sub)
-    return p

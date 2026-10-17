@@ -57,13 +57,34 @@ print("ok")
     assert "ok" in proc.stdout
 
 
-def _ccn(node: ast.AST) -> int:
+FUNC_DEFS = (ast.FunctionDef, ast.AsyncFunctionDef)
+
+
+def _own_nodes(func: ast.AST) -> list[ast.AST]:
+    """Nodes belonging to func, excluding nested def bodies (lizard scores those apart)."""
+    own: list[ast.AST] = []
+    stack: list[ast.AST] = list(ast.iter_child_nodes(func))
+    while stack:
+        node = stack.pop()
+        if isinstance(node, FUNC_DEFS):
+            continue
+        own.append(node)
+        stack.extend(ast.iter_child_nodes(node))
+    return own
+
+
+def _ccn(func: ast.AST) -> int:
+    """Mirror lizard's Python conditions: if/elif/for/while/except/finally/and/or."""
     count = 1
-    for child in ast.walk(node):
-        if isinstance(child, (ast.If, ast.For, ast.While, ast.ExceptHandler, ast.With)):
+    for node in _own_nodes(func):
+        if isinstance(node, (ast.If, ast.IfExp, ast.For, ast.AsyncFor, ast.While, ast.ExceptHandler)):
             count += 1
-        elif isinstance(child, ast.BoolOp):
-            count += max(0, len(child.values) - 1)
+        elif isinstance(node, ast.Try) and node.finalbody:
+            count += 1
+        elif isinstance(node, ast.comprehension):
+            count += 1 + len(node.ifs)
+        elif isinstance(node, ast.BoolOp):
+            count += max(0, len(node.values) - 1)
     return count
 
 
@@ -72,24 +93,54 @@ def test_no_cmd_star_function_exceeds_ccn_10() -> None:
     for path in sorted(ENGINE_SRC.rglob("*.py")):
         tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
         for node in ast.walk(tree):
-            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith(
-                "cmd_"
-            ):
+            if isinstance(node, FUNC_DEFS) and node.name.startswith("cmd_"):
                 ccn = _ccn(node)
                 if ccn > 10:
                     hits.append(f"{path.name}:{node.name} CCN={ccn}")
     assert hits == []
 
 
-def test_command_run_functions_stay_under_ccn_10() -> None:
+def test_command_module_functions_stay_under_ccn_10() -> None:
+    """Every function in commands/, not just run(): scripts/check-complexity.py scores them all."""
     hits: list[str] = []
     for path in sorted(COMMANDS.glob("*.py")):
-        if path.name.startswith("_") or path.name in {"result.py", "util.py"}:
-            continue
         tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
-        for node in tree.body:
-            if isinstance(node, ast.FunctionDef) and node.name == "run":
+        for node in ast.walk(tree):
+            if isinstance(node, FUNC_DEFS):
                 ccn = _ccn(node)
                 if ccn > 10:
-                    hits.append(f"{path.name}:run CCN={ccn}")
+                    hits.append(f"{path.name}:{node.name} CCN={ccn}")
     assert hits == []
+
+
+def test_ccn_proxy_matches_lizard_conditions() -> None:
+    """Guard the proxy itself: ternaries, comprehensions, and finally are lizard conditions."""
+    source = """
+def f(a, b, items):
+    xs = [i for i in items if i and not b]
+    y = a if b else 0
+    try:
+        z = 1
+    except ValueError:
+        z = 2
+    finally:
+        pass
+    return xs, y, z
+"""
+    func = ast.parse(source).body[0]
+    # 1 base + 2 comprehension (for, if) + 1 and + 1 ternary + 1 except + 1 finally
+    assert _ccn(func) == 7
+
+
+def test_ccn_proxy_scores_nested_defs_separately() -> None:
+    source = """
+def outer(items):
+    def inner(x):
+        return x if x else 0
+
+    return [inner(i) for i in items]
+"""
+    outer = ast.parse(source).body[0]
+    inner = outer.body[0]
+    assert _ccn(outer) == 2
+    assert _ccn(inner) == 2

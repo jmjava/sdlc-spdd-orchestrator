@@ -7,7 +7,7 @@ import json
 import sys
 
 from .result import CommandResult
-from .util import project_from
+from .util import arg_flag, arg_int, arg_list, arg_str, project_from
 
 
 def _optional_nonneg_int(value: str) -> int:
@@ -145,25 +145,24 @@ def _body(args: argparse.Namespace) -> str:
 
 
 def _persist_lesson(store, args: argparse.Namespace) -> CommandResult:
-    work_id = getattr(args, "work_id", "") or ""
-    area = getattr(args, "area", "") or ""
+    work_id = arg_str(args, "work_id")
+    area = arg_str(args, "area")
     if not work_id and not area:
         return CommandResult.error("persist-lesson: --work-id or --area is required", code=2)
-    keywords = [k.strip() for k in (args.keywords or "").split(",") if k.strip()]
     try:
         result = store.persist_lesson(
             kind=args.kind,
             work_id=work_id,
             body=_body(args),
-            title=getattr(args, "title", "") or "",
+            title=arg_str(args, "title"),
             area=area,
-            source=args.source or "cli",
-            phase=args.phase or "",
-            keywords=keywords or None,
-            accept=bool(getattr(args, "accept", False)),
-            project_guide=not args.no_guide,
-            readiness=getattr(args, "readiness", "") or None,
-            review_result=getattr(args, "review_result", "") or None,
+            source=arg_str(args, "source", "cli"),
+            phase=arg_str(args, "phase"),
+            keywords=arg_list(args, "keywords") or None,
+            accept=arg_flag(args, "accept"),
+            project_guide=not arg_flag(args, "no_guide"),
+            readiness=arg_str(args, "readiness") or None,
+            review_result=arg_str(args, "review_result") or None,
             rework=getattr(args, "rework", None),
             context_files=getattr(args, "context_files", None),
             validate_cycles=getattr(args, "validate_cycles", None),
@@ -179,12 +178,12 @@ def _persist_entry(store, args: argparse.Namespace) -> CommandResult:
 
     result = store.persist_lesson(
         kind=args.kind if args.kind in LEDGER_KINDS else "decision",
-        work_id=getattr(args, "work_id", "") or "",
+        work_id=arg_str(args, "work_id"),
         body=_body(args),
-        area=args.area or "",
-        source=args.source or "cli",
-        phase=args.phase or "",
-        project_guide=not args.no_guide,
+        area=arg_str(args, "area"),
+        source=arg_str(args, "source", "cli"),
+        phase=arg_str(args, "phase"),
+        project_guide=not arg_flag(args, "no_guide"),
     )
     return CommandResult(
         exit_code=0 if result.git.get("ok") else 1,
@@ -194,12 +193,11 @@ def _persist_entry(store, args: argparse.Namespace) -> CommandResult:
 
 
 def _accept(store, args: argparse.Namespace) -> CommandResult:
-    ids = [i.strip() for i in (getattr(args, "ids", "") or "").split(",") if i.strip()] or None
     out = store.accept(
-        work_id=getattr(args, "work_id", "") or "",
-        ids=ids,
-        discard_rest=bool(getattr(args, "discard_rest", False)),
-        project_guide=not getattr(args, "no_guide", False),
+        work_id=arg_str(args, "work_id"),
+        ids=arg_list(args, "ids") or None,
+        discard_rest=arg_flag(args, "discard_rest"),
+        project_guide=not arg_flag(args, "no_guide"),
     )
     return CommandResult.ok(json.dumps(out, indent=2))
 
@@ -212,42 +210,32 @@ def _show(store, args: argparse.Namespace) -> CommandResult:
 
 
 def _parity(store, args: argparse.Namespace) -> CommandResult:
-    out = store.parity(repair=bool(getattr(args, "repair", False)))
+    out = store.parity(repair=arg_flag(args, "repair"))
     return CommandResult(exit_code=0 if out.get("ok") else 1, stdout=json.dumps(out, indent=2) + "\n")
 
 
 def _digest(store, args: argparse.Namespace) -> CommandResult:
-    areas = [a.strip() for a in (getattr(args, "areas", "") or "").split(",") if a.strip()]
-    keywords = [k.strip() for k in (getattr(args, "keywords", "") or "").split(",") if k.strip()]
-    return CommandResult.ok(
-        json.dumps(
-            store.digest(
-                work_id=getattr(args, "work_id", "") or "",
-                areas=areas or None,
-                keywords=keywords or None,
-                limit=int(getattr(args, "limit", 8) or 8),
-            ),
-            indent=2,
-        )
+    payload = store.digest(
+        work_id=arg_str(args, "work_id"),
+        areas=arg_list(args, "areas") or None,
+        keywords=arg_list(args, "keywords") or None,
+        limit=arg_int(args, "limit", 8),
     )
+    return CommandResult.ok(json.dumps(payload, indent=2))
 
 
 def _retrieve(store, args: argparse.Namespace) -> CommandResult:
-    return CommandResult.ok(
-        json.dumps(
-            store.retrieve(
-                work_id=args.work_id or "",
-                area=args.area or "",
-                kind=getattr(args, "kind", "") or "",
-                keyword=getattr(args, "keyword", "") or "",
-                query=getattr(args, "query", "") or "",
-                rank=getattr(args, "rank", "") or "",
-                include_staged=not bool(getattr(args, "no_staged", False)),
-                limit=int(getattr(args, "limit", 50) or 50),
-            ),
-            indent=2,
-        )
+    payload = store.retrieve(
+        work_id=arg_str(args, "work_id"),
+        area=arg_str(args, "area"),
+        kind=arg_str(args, "kind"),
+        keyword=arg_str(args, "keyword"),
+        query=arg_str(args, "query"),
+        rank=arg_str(args, "rank"),
+        include_staged=not arg_flag(args, "no_staged"),
+        limit=arg_int(args, "limit", 50),
     )
+    return CommandResult.ok(json.dumps(payload, indent=2))
 
 
 def _eval_retrieve(_store, args: argparse.Namespace) -> CommandResult:
@@ -264,10 +252,10 @@ def _eval_retrieve(_store, args: argparse.Namespace) -> CommandResult:
 def _metrics(store, args: argparse.Namespace) -> CommandResult:
     try:
         payload = store.metrics_query(
-            construct=getattr(args, "construct", "") or "",
-            work_id=getattr(args, "work_id", "") or "",
-            phase=getattr(args, "phase", "") or "",
-            include_staged=not bool(getattr(args, "no_staged", False)),
+            construct=arg_str(args, "construct"),
+            work_id=arg_str(args, "work_id"),
+            phase=arg_str(args, "phase"),
+            include_staged=not arg_flag(args, "no_staged"),
         )
     except ValueError as exc:
         return CommandResult.error(f"metrics: {exc}", code=2)
@@ -286,7 +274,7 @@ def _backends(_store, args: argparse.Namespace) -> CommandResult:
     project = project_from(args)
     if getattr(args, "set_backends", None) is None:
         return CommandResult.ok(json.dumps(status_dict(project), indent=2))
-    raw = str(args.set_backends or "").strip()
+    raw = arg_str(args, "set_backends").strip()
     if not raw:
         return CommandResult.error("error: --set requires a non-empty backend list", code=2)
     backends = [p.strip() for p in raw.replace(";", ",").split(",") if p.strip()]
@@ -308,44 +296,43 @@ def _guide_client(args: argparse.Namespace):
 
     cfg = load_persist_cfg(project_from(args))
     base = resolve_guide_base_url(
-        explicit=getattr(args, "guide_url", None) or None,
+        explicit=arg_str(args, "guide_url") or None,
         project_url=str(cfg.get("guide_base_url") or ""),
     )
-    return GuideClient(base, timeout=float(getattr(args, "timeout", 30) or 30))
+    return GuideClient(base, timeout=float(getattr(args, "timeout", None) or 30))
 
 
 def _guide_query(_store, args: argparse.Namespace) -> CommandResult:
     from ..guide_query import format_guide_answer, run_guide_query
 
     client = _guide_client(args)
-    tool_args = {}
-    if getattr(args, "tool_json", None):
-        tool_args = json.loads(args.tool_json)
+    tool_json = arg_str(args, "tool_json")
+    tool_args = json.loads(tool_json) if tool_json else {}
     try:
         payload = run_guide_query(
             client,
-            work_id=getattr(args, "work_id", "") or "",
-            area=getattr(args, "area", "") or "",
-            lesson_id=getattr(args, "lesson_id", "") or "",
-            label=getattr(args, "label", "") or "",
-            question=getattr(args, "question", "") or "",
-            stats=bool(getattr(args, "stats", False)),
-            tool=getattr(args, "tool", "") or "",
+            work_id=arg_str(args, "work_id"),
+            area=arg_str(args, "area"),
+            lesson_id=arg_str(args, "lesson_id"),
+            label=arg_str(args, "label"),
+            question=arg_str(args, "question"),
+            stats=arg_flag(args, "stats"),
+            tool=arg_str(args, "tool"),
             tool_args=tool_args,
-            limit=int(getattr(args, "limit", 20) or 20),
+            limit=arg_int(args, "limit", 20),
         )
     except ValueError as exc:
         return CommandResult.error(f"error: {exc}", code=2)
-    text = format_guide_answer(payload) if getattr(args, "text", False) else json.dumps(payload, indent=2)
+    text = format_guide_answer(payload) if arg_flag(args, "text") else json.dumps(payload, indent=2)
     return CommandResult(exit_code=0 if payload.get("ok") else 1, stdout=text + ("" if text.endswith("\n") else "\n"))
 
 
 def _mcp_call(_store, args: argparse.Namespace) -> CommandResult:
     client = _guide_client(args)
-    tool = str(getattr(args, "tool", "") or "").strip()
+    tool = arg_str(args, "tool").strip()
     if not tool:
         return CommandResult.error("error: --tool required (spdd_workSubgraph, …)", code=2)
-    raw = getattr(args, "json", None) or getattr(args, "tool_json", None) or "{}"
+    raw = arg_str(args, "json") or arg_str(args, "tool_json") or "{}"
     try:
         arguments = json.loads(raw)
     except json.JSONDecodeError as exc:

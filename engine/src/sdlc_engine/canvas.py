@@ -665,6 +665,13 @@ def _resolve_canvas_path(work_id: str | None, canvas: str | None, root: Path) ->
     raise ValueError(f"check-diff-scope: canvas not found: {path}")
 
 
+def _resolve_changed_paths(args: argparse.Namespace, root: Path) -> list[str]:
+    """Explicit --changed wins; otherwise collect from git."""
+    if args.changed:
+        return list(args.changed)
+    return collect_git_changed_paths(repo=root, base=args.base)
+
+
 def check_diff_scope_main(argv: Sequence[str] | None = None) -> int:
     """Thin CLI: compare git/changed paths to canvas Files: plus test paths."""
     parser = argparse.ArgumentParser(
@@ -713,14 +720,11 @@ def check_diff_scope_main(argv: Sequence[str] | None = None) -> int:
         print(f"check-diff-scope: canvas not found: {canvas_path}", file=sys.stderr)
         return 1
     selected = [part.strip() for part in (args.ops or "").split(",") if part.strip()] or None
-    if args.changed:
-        changed = list(args.changed)
-    else:
-        try:
-            changed = collect_git_changed_paths(repo=root, base=args.base)
-        except GitChangedPathsError as exc:
-            print(f"check-diff-scope: {exc}", file=sys.stderr)
-            return 1
+    try:
+        changed = _resolve_changed_paths(args, root)
+    except GitChangedPathsError as exc:
+        print(f"check-diff-scope: {exc}", file=sys.stderr)
+        return 1
     result = check_operation_diff_scope(
         canvas_path.read_text(encoding="utf-8"),
         changed,
