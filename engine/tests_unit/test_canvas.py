@@ -5,6 +5,7 @@ import pytest
 
 from sdlc_engine.canvas import (
     GitChangedPathsError,
+    _resolve_canvas_path,
     check_diff_scope_main,
     coding_gate_issues,
     collect_git_changed_paths,
@@ -483,3 +484,14 @@ def test_check_diff_scope_invalid_base_exits_nonzero(
     assert rc != 0
     assert "PASS" not in captured.out
     assert "does-not-exist" in captured.err
+
+
+def test_check_diff_scope_missing_canvas_returns_2_without_systemexit(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    with pytest.raises(ValueError, match="--canvas or --work-id"):
+        _resolve_canvas_path(None, None, tmp_path)
+    rc = check_diff_scope_main(["--root", str(tmp_path)])
+    captured = capsys.readouterr()
+    assert rc == 2
+    assert "--canvas or --work-id is required" in captured.err

@@ -656,13 +656,13 @@ def _resolve_canvas_path(work_id: str | None, canvas: str | None, root: Path) ->
     if canvas:
         return Path(canvas)
     if not work_id:
-        raise SystemExit("check-diff-scope: --canvas or --work-id is required")
+        raise ValueError("check-diff-scope: --canvas or --work-id is required")
     from .project import Project
 
     path = Project.resolve(root).canvas_path(work_id)
     if path.is_file():
         return path
-    raise SystemExit(f"check-diff-scope: canvas not found: {path}")
+    raise ValueError(f"check-diff-scope: canvas not found: {path}")
 
 
 def check_diff_scope_main(argv: Sequence[str] | None = None) -> int:
@@ -704,7 +704,11 @@ def check_diff_scope_main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(list(argv) if argv is not None else None)
 
     root = Path(args.root).expanduser()
-    canvas_path = _resolve_canvas_path(args.work_id, args.canvas, root)
+    try:
+        canvas_path = _resolve_canvas_path(args.work_id, args.canvas, root)
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
     if not canvas_path.is_file():
         print(f"check-diff-scope: canvas not found: {canvas_path}", file=sys.stderr)
         return 1

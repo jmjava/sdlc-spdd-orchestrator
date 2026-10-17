@@ -83,7 +83,8 @@ def test_process_util_pid_and_run() -> None:
 
 def test_cli_and_db_module_split_keeps_public_imports() -> None:
     from sdlc_engine.cli import build_parser, main
-    from sdlc_engine.cli_commands import cmd_next, cmd_version
+    from sdlc_engine.commands.next import run as run_next
+    from sdlc_engine.commands.version import run as run_version
     from sdlc_engine.db import SCHEMA_VERSION, LocalIndex, RebuildStats, format_rows
     from sdlc_engine.db_query import IndexQueryMixin
     from sdlc_engine.db_rebuild import IndexRebuildMixin
@@ -91,7 +92,7 @@ def test_cli_and_db_module_split_keeps_public_imports() -> None:
 
     parser = build_parser()
     assert parser.prog == "sdlc-engine"
-    assert callable(main) and callable(cmd_next) and callable(cmd_version)
+    assert callable(main) and callable(run_next) and callable(run_version)
     assert SCHEMA_VERSION == "5"
     assert issubclass(LocalIndex, IndexRebuildMixin)
     assert issubclass(LocalIndex, IndexQueryMixin)
