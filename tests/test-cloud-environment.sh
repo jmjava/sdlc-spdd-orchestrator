@@ -118,6 +118,7 @@ else
 fi
 
 assert_contains "${INSTALL_SH}" "setup-engine-venv.sh" "install.sh calls setup-engine-venv.sh"
+assert_contains "${INSTALL_SH}" "python3.12-venv" "install.sh ensures python3.12-venv when venv creation fails"
 assert_contains "${INSTALL_SH}" "sdlc-engine" "install.sh verifies sdlc-engine"
 assert_contains "${INSTALL_SH}" "scripts/sdlc.sh" "install.sh checks repository sdlc.sh"
 assert_contains "${INSTALL_SH}" "pytest" "install.sh checks pytest from the dev extra"
