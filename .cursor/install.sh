@@ -31,6 +31,37 @@ persist_sdlc_engine_path() {
   done
 }
 
+# Cloud build images often ship python3.12 without the Debian venv/ensurepip
+# split package; setup-engine-venv.sh needs both.
+ensure_python312_and_venv() {
+  if [[ "${SDLC_INSTALL_SKIP_SYSTEM_DEPS:-}" == "1" ]]; then
+    if ! command -v python3.12 >/dev/null 2>&1; then
+      echo "error: python3.12 is required for sdlc-engine" >&2
+      exit 1
+    fi
+    return 0
+  fi
+  local missing=() probe
+  if ! command -v python3.12 >/dev/null 2>&1; then
+    missing+=(python3.12)
+  else
+    probe="$(mktemp -d)"
+    if ! python3.12 -m venv "${probe}" >/dev/null 2>&1; then
+      missing+=(python3.12-venv)
+    fi
+    rm -rf "${probe}"
+  fi
+  if ((${#missing[@]} == 0)); then
+    return 0
+  fi
+  if ! command -v sudo >/dev/null 2>&1; then
+    echo "error: required packages missing: ${missing[*]}" >&2
+    exit 1
+  fi
+  sudo apt-get update -qq
+  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y "${missing[@]}"
+}
+
 # Real checkouts must leave git, gh, repository sdlc.sh, and pytest usable.
 # Stub proving tests omit scripts/sdlc.sh and engine/pyproject.toml.
 # Long-running processes stay out of install (use start or terminals).
@@ -72,19 +103,7 @@ fi
 
 cd "${ROOT}"
 
-if ! command -v python3.12 >/dev/null 2>&1; then
-  if [[ "${SDLC_INSTALL_SKIP_SYSTEM_DEPS:-}" == "1" ]]; then
-    echo "error: python3.12 is required for sdlc-engine" >&2
-    exit 1
-  fi
-  if command -v sudo >/dev/null 2>&1; then
-    sudo apt-get update -qq
-    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y python3.12 python3.12-venv
-  else
-    echo "error: python3.12 is required for sdlc-engine" >&2
-    exit 1
-  fi
-fi
+ensure_python312_and_venv
 
 "${ROOT}/scripts/setup-engine-venv.sh"
 
